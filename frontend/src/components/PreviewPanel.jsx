@@ -1,0 +1,557 @@
+import React, { forwardRef, useState, useEffect } from 'react';
+
+const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, customTemplate, customColumns = [] }, ref) => {
+    const [layoutMode, setLayoutMode] = useState('grid');
+    const [renderedHtml, setRenderedHtml] = useState('');
+
+    // Excel Serial Date Conversion Utilities
+    const excelSerialToDate = (serial) => {
+        if (!serial || isNaN(serial) || serial < 1) return null;
+        const excelEpoch = new Date(1899, 11, 30);
+        const date = new Date(excelEpoch.getTime() + serial * 24 * 60 * 60 * 1000);
+        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const year = String(date.getFullYear()).slice(-2);
+        return `${day}/${month}/${year}`;
+    };
+
+    const formatDateValue = (value) => {
+        if (!value || value === '-' || value === '') return '-';
+        const numVal = Number(value);
+        if (!isNaN(numVal) && numVal > 1000 && numVal < 100000) {
+            return excelSerialToDate(numVal) || '-';
+        }
+        if (typeof value === 'string') {
+            const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
+            if (isoMatch) return `${isoMatch[3]}/${isoMatch[2]}/${isoMatch[1].slice(-2)}`;
+            const dmyMatch = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+            if (dmyMatch) return `${dmyMatch[1].padStart(2, '0')}/${dmyMatch[2].padStart(2, '0')}/${dmyMatch[3].slice(-2)}`;
+            return value;
+        }
+        return String(value);
+    };
+
+    // Helper to get mapped value with optional date formatting
+    const getValue = (fieldId, isDateField = false) => {
+        if (!data || !mappings[fieldId]) return '-';
+        const value = data[mappings[fieldId]] || '-';
+        return isDateField ? formatDateValue(value) : value;
+    };
+
+    // Render custom template effect
+    useEffect(() => {
+        if (!customTemplate) {
+            setRenderedHtml('');
+            return;
+        }
+
+        const renderTemplate = async () => {
+            let html = customTemplate.content;
+
+            // 1. Prepare Data
+            const reportData = {};
+            // Reverse mapping to help looking up by Label
+            // (Standard fields are "CENTRO", "NIS", etc.)
+            // We need to support {{ report.data.get('CENTRO', '-') }}
+            // We'll iterate the Mappings and providing values for specific Keys
+            if (data && mappings) {
+                // Define which fields are date fields
+                const dateFieldKeys = ['fecha_corte', 'fecha-corte'];
+
+                Object.keys(mappings).forEach(key => {
+                    // key is like 'centro', 'nis'
+                    // mappings[key] is the Excel Header
+                    // data[mappings[key]] is the value
+                    let value = data[mappings[key]] || '-';
+
+                    // Apply date formatting for date fields
+                    if (dateFieldKeys.includes(key)) {
+                        value = formatDateValue(value);
+                    }
+
+                    reportData[key.toUpperCase()] = value;
+                    reportData[key] = value;
+
+                    // Also add direct access by Excel Header if needed, but the template uses fixed keys like 'CENTRO'
+                    // We need to map standard keys:
+                    const standardKeys = {
+                        'centro': 'CENTRO', 'nis': 'NIS', 'ot': 'Nro OT',
+                        'direccion': 'DIRECCION', 'localidad': 'LOCALIDAD', 'distrito': 'DISTRITO',
+                        'estado': 'ESTADO', 'tipo-red': 'TIPO RED', 'sector': 'SECTOR',
+                        'actividad': 'ACTIVIDAD', 'contrata': 'CONTRATA',
+                        'subactividad': 'SUBACTIVIDAD', 'cuadrilla': 'CUADRILLA',
+                        'obs-sedapal': 'OBSERVACION SEDAPAL', 'obs-contrata': 'OBSERVACION CONTRATA',
+                        'fecha_corte': 'FECHA CORTE', 'fecha-corte': 'FECHA CORTE',
+                        'direcciones_afectadas': 'DIRECCIONES AFECTADAS', 'direcciones-afectadas': 'DIRECCIONES AFECTADAS'
+                    };
+                    if (standardKeys[key]) {
+                        reportData[standardKeys[key]] = value;
+                    }
+                });
+
+                // Add custom columns to reportData
+                customColumns.forEach(col => {
+                    if (mappings[col.id]) {
+                        let value = data[mappings[col.id]] || '-';
+
+                        // Check if custom column name suggests it's a date
+                        const colNameUpper = col.name.toUpperCase();
+                        if (colNameUpper.includes('FECHA') || colNameUpper.includes('DATE')) {
+                            value = formatDateValue(value);
+                        }
+
+                        reportData[col.name] = value;
+                        reportData[col.name.toLowerCase()] = value;
+                    }
+                });
+            }
+
+
+            // 2. Variable Replacements
+            const emptyPixel = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E";
+
+            // Handle specific logic for photos and logos before generic stripping
+            const photosIfRegex = /\{%\s*if\s+report\.images\s+and\s+report\.images\|length\s*>\s*0\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            html = html.replace(photosIfRegex, (match, ifContent, elseContent) => images.length > 0 ? ifContent : elseContent);
+
+            // Handle nested if/elif/else blocks based on image count (for adaptive grids)
+            // Pattern: {% if report.images|length == X %}...{% elif report.images|length == Y %}...{% else %}...{% endif %}
+            const imageCountIfElifRegex = /\{%\s*if\s+report\.images\|length\s*==\s*(\d+)\s*%\}([\s\S]*?)\{%\s*elif\s+report\.images\|length\s*==\s*(\d+)\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            html = html.replace(imageCountIfElifRegex, (match, count1, content1, count2, content2, elseContent) => {
+                if (images.length === parseInt(count1)) return content1;
+                if (images.length === parseInt(count2)) return content2;
+                return elseContent;
+            });
+
+            // Handle simple if/else based on image count (without elif)
+            const imageCountIfElseRegex = /\{%\s*if\s+report\.images\|length\s*==\s*(\d+)\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            html = html.replace(imageCountIfElseRegex, (match, count, ifContent, elseContent) => {
+                return images.length === parseInt(count) ? ifContent : elseContent;
+            });
+
+            // Handle if without else based on image count
+            const imageCountIfOnlyRegex = /\{%\s*if\s+report\.images\|length\s*==\s*(\d+)\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            html = html.replace(imageCountIfOnlyRegex, (match, count, content) => {
+                return images.length === parseInt(count) ? content : '';
+            });
+
+            // Handle if image count < X patterns
+            const imageCountLtRegex = /\{%\s*if\s+report\.images\|length\s*<\s*(\d+)\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            html = html.replace(imageCountLtRegex, (match, count, content) => {
+                return images.length < parseInt(count) ? content : '';
+            });
+
+            // Handle if image count != X and != Y patterns (for else-like conditions)
+            const imageCountNotAndRegex = /\{%\s*if\s+report\.images\|length\s*!=\s*(\d+)\s+and\s+report\.images\|length\s*!=\s*(\d+)\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            html = html.replace(imageCountNotAndRegex, (match, count1, count2, content) => {
+                return (images.length !== parseInt(count1) && images.length !== parseInt(count2)) ? content : '';
+            });
+
+            const logoLeftRegex = /\{%\s*if\s+logo_left\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            html = html.replace(logoLeftRegex, (match, ifPart, elsePart) => logoLeft ? ifPart : elsePart);
+
+            const logoRightRegex = /\{%\s*if\s+logo_right\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            html = html.replace(logoRightRegex, (match, ifPart, elsePart) => logoRight ? ifPart : elsePart);
+
+
+            const replacements = {
+                '{{ title }}': 'PANEL FOTOGRÁFICO VOLANTEO',
+                '{{ logo_left }}': logoLeft || emptyPixel,
+                '{{ logo_right }}': logoRight || emptyPixel,
+            };
+
+            // Replace simple variables
+            Object.keys(replacements).forEach(key => {
+                html = html.replaceAll(key, replacements[key]);
+            });
+
+            // Replace {{ report.data.get('KEY', '-') }}
+            // Regex to match {{ report.data.get('KEY', 'DEFAULT') }}
+            html = html.replace(/\{\{\s*report\.data\.get\('([^']+)',\s*'([^']*)'\)\s*\}\}/g, (match, key, def) => {
+                return reportData[key] || def || '-';
+            });
+            html = html.replace(/\{\{\s*report\.data\.get\('([^']+)',\s*([^)]+)\)\s*\}\}/g, (match, key, def) => {
+                // handle non-quoted default like report.data.get('OT', '-')
+                return reportData[key] || '-';
+            });
+
+            // 3. Image Loop Handling
+            // Match {% for img in report.images... %} (permissive match for filter conditions)
+            const loopRegex = /\{%\s*for\s+img\s+in\s+report\.images.*?\s*%\}([\s\S]*?)\{%\s*endfor\s*%\}/g;
+
+            // Track which loop index we're on (for format_etapas which has 4 separate loops)
+            let loopIndex = 0;
+            const matches = [...html.matchAll(loopRegex)];
+
+            for (const match of matches) {
+                const fullMatch = match[0];
+                const loopContent = match[1]; // inner content (single capture group)
+
+                // Check if loop had a specific slice limit like [:9]
+                const limitMatch = match[0].match(/\[:(\d+)\]/);
+                const limit = limitMatch ? parseInt(limitMatch[1]) : images.length;
+
+                // Check if this loop (or its content) has a suffix filter like '_1.' in img.name
+                // Could be in the loop declaration OR in an if statement inside the loop
+                const suffixMatch = fullMatch.match(/'_(\d+)\.'\s+in\s+img\.name/) ||
+                    loopContent.match(/'_(\d+)\.'\s+in\s+img\.name/);
+
+                let generatedLoopHtml = '';
+                let imagesToRender = [];
+
+                if (suffixMatch) {
+                    // This is a suffix-filtered loop (format_etapas style)
+                    const targetSuffix = `_${suffixMatch[1]}.`;
+
+                    // Find image matching this suffix
+                    const matchingImage = images.find(img => img.name.includes(targetSuffix));
+
+                    if (matchingImage) {
+                        imagesToRender = [matchingImage];
+                    } else {
+                        // Fallback: use image at this loop's index position if available
+                        if (loopIndex < images.length) {
+                            imagesToRender = [images[loopIndex]];
+                        }
+                    }
+                } else {
+                    // Standard loop without suffix filter
+                    imagesToRender = images.slice(0, limit);
+                }
+
+                for (let i = 0; i < imagesToRender.length; i++) {
+                    const img = imagesToRender[i];
+                    const imgUrl = URL.createObjectURL(img);
+                    let itemHtml = loopContent;
+
+                    // Replace {{ img.path }}
+                    itemHtml = itemHtml.replaceAll('{{ img.path }}', imgUrl);
+                    itemHtml = itemHtml.replaceAll('{{ img.name }}', img.name);
+
+                    // Mock metadata
+                    const dateStr = new Date(img.lastModified).toLocaleString();
+                    itemHtml = itemHtml.replace(/\{\{\s*img\.date.*\}\}/g, dateStr);
+                    itemHtml = itemHtml.replace(/\{\{\s*img\.coords.*\}\}/g, '');
+                    itemHtml = itemHtml.replaceAll('{{ loop.index }}', i + 1);
+
+                    // Strip namespace and condition statements, just show the inner content
+                    itemHtml = itemHtml.replace(/\{%\s*if\s+loop\.first\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g, (m, c) => i === 0 ? c : '');
+                    itemHtml = itemHtml.replace(/\{%\s*if\s+not\s+ns\.found\s+and\s+'_\d+\.'\s+in\s+img\.name\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g, '$1');
+                    itemHtml = itemHtml.replace(/\{%\s*set\s+ns\.found\s*=\s*true\s*%\}/g, '');
+
+                    generatedLoopHtml += itemHtml;
+                }
+
+                html = html.replace(fullMatch, generatedLoopHtml);
+                loopIndex++;
+            }
+
+            // 4. Remove Outer Loop (report_list)
+            html = html.replace(/\{%\s*for\s+report\s+in\s+.*%\}/g, '');
+
+            // 5. Clean up other Jinja2 tags (Aggressive)
+            // Remove any remaining control blocks that weren't processed
+            html = html.replace(/\{%\s*[\s\S]*?\s*%\}/g, '');
+            html = html.replace(/\{#.*?#\}/g, '');
+
+            // 6. Remove "Sin imagen" placeholder divs when images are present
+            if (images.length > 0) {
+                html = html.replace(/<div class="photo-placeholder">Sin imagen<\/div>/g, '');
+                html = html.replace(/<div class="photo-placeholder">\s*Sin imagen\s*<\/div>/g, '');
+            }
+
+            // 6. Fill remaining loop (range-based) logic
+            const rangeRegex = /\{%\s*for\s+i\s+in\s+range\(report\.images\|length,\s*(\d+)\)\s*%\}([\s\S]*?)(?:\{%\s*endfor\s*%\}|$)/g;
+            html = html.replace(rangeRegex, (match, max, content) => {
+                const remaining = parseInt(max) - images.length;
+                if (remaining <= 0) return '';
+                return content.repeat(remaining);
+            });
+
+
+            setRenderedHtml(html);
+        };
+
+        renderTemplate();
+    }, [customTemplate, data, images, mappings, logoLeft, logoRight, customColumns]);
+
+
+    // Detect image orientations and set layout mode
+    useEffect(() => {
+        if (!images || images.length === 0) {
+            setLayoutMode('grid');
+            return;
+        }
+
+        const analyzeImages = async () => {
+            const orientations = await Promise.all(
+                images.map(img => new Promise(resolve => {
+                    const el = new window.Image();
+                    el.onload = () => resolve(el.width >= el.height); // true = landscape
+                    el.onerror = () => resolve(true);
+                    el.src = URL.createObjectURL(img);
+                }))
+            );
+
+            const count = images.length;
+            const majorityLandscape = orientations.filter(Boolean).length > orientations.length / 2;
+
+            // Apply same logic as backend
+            if (count === 2) {
+                setLayoutMode(majorityLandscape ? '2v' : '2h');
+            } else if (count === 4) {
+                setLayoutMode(majorityLandscape ? '4h' : '4v');
+            } else {
+                setLayoutMode('grid');
+            }
+        };
+
+        analyzeImages();
+    }, [images]);
+
+    // Logos (Clear by default)
+    const emptyLogo = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E";
+    const defaultSedapal = emptyLogo;
+    const defaultAcciona = emptyLogo;
+
+    // Get grid layout class based on image count (matching PDF template)
+    const getPhotoGridStyle = () => {
+        const count = images.length;
+        const baseStyle = {
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '2mm',
+            width: '100%',
+            height: '100%',
+        };
+
+        if (count === 2) {
+            return { ...baseStyle, gridTemplateRows: '1fr', alignItems: 'center' };
+        } else if (count === 3 || count === 4) {
+            return { ...baseStyle, gridTemplateRows: '1fr 1fr' };
+        }
+        return { ...baseStyle, gridAutoRows: '7cm' };
+    };
+
+    // Get photo item style based on position and count
+    const getPhotoItemStyle = (index) => {
+        const count = images.length;
+        const baseStyle = {
+            border: '1px solid #ddd',
+            background: '#fff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            overflow: 'hidden',
+            padding: '2mm',
+        };
+
+        if (count === 2) {
+            return { ...baseStyle, height: '100%' };
+        } else if (count === 3 && index === 2) {
+            // Third image spans both columns and is centered
+            return {
+                ...baseStyle,
+                gridColumn: '1 / 3',
+                width: '50%',
+                maxWidth: '95mm',
+                margin: '0 auto',
+                height: '100%',
+            };
+        } else if (count === 4) {
+            return { ...baseStyle, height: '100%' };
+        }
+        return { ...baseStyle, height: '7cm' };
+    };
+
+    if (customTemplate && renderedHtml) {
+        return (
+            <div className="flex-1 bg-neutral-300 p-4 overflow-auto flex justify-center items-start">
+                <div
+                    ref={ref}
+                    className="bg-white text-black shadow-2xl flex flex-col"
+                    style={{
+                        width: '210mm',
+                        minHeight: '297mm', // Allow growth or fixed
+                        padding: '0', // Template usually handles padding
+                        boxSizing: 'border-box',
+                        overflow: 'hidden',
+                    }}
+                    dangerouslySetInnerHTML={{ __html: renderedHtml }}
+                />
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex-1 bg-neutral-300 p-4 overflow-auto flex justify-center items-start">
+            {/* A4 Paper Container - Strict dimensions */}
+            <div
+                ref={ref}
+                id="panel-render"
+                className="bg-white text-black shadow-2xl flex flex-col"
+                style={{
+                    width: '210mm',
+                    height: '297mm',
+                    padding: '5mm',
+                    boxSizing: 'border-box',
+                    overflow: 'hidden',
+                    fontFamily: "'Segoe UI', Arial, sans-serif",
+                    fontSize: '8pt',
+                    lineHeight: '1.15'
+                }}
+            >
+                {/* HEADER - Fixed Height */}
+                <div className="flex justify-between items-center border-b border-neutral-300 pb-1 mb-1" style={{ height: '20mm', flexShrink: 0 }}>
+                    <div className="flex items-center" style={{ width: '55mm', height: '18mm' }}>
+                        <img src={logoLeft || defaultSedapal} className="max-w-full max-h-full object-contain" alt="Logo" />
+                    </div>
+                    <div className="flex-1 text-center font-bold uppercase text-neutral-800" style={{ fontSize: '13pt' }}>
+                        PANEL FOTOGRÁFICO
+                    </div>
+                    <div className="flex items-center justify-end" style={{ width: '55mm', height: '18mm' }}>
+                        <img src={logoRight || defaultAcciona} className="max-w-full max-h-full object-contain" alt="Logo" />
+                    </div>
+                </div>
+
+                {/* INFO BAR */}
+                <div className="flex justify-between bg-neutral-100 border border-neutral-300 px-2 py-0.5 mb-1" style={{ fontSize: '7.5pt', flexShrink: 0 }}>
+                    <div className="flex gap-1"><span className="font-bold text-neutral-600">CENTRO:</span> {getValue('centro')}</div>
+                    <div className="flex gap-1"><span className="font-bold text-neutral-600">NIS:</span> {getValue('nis')}</div>
+                    <div className="flex gap-1"><span className="font-bold text-neutral-600">Nro OT:</span> {getValue('ot')}</div>
+                </div>
+
+                {/* 1.0 LOCALIZACION */}
+                <div className="text-[#0056b3] font-bold uppercase border-b border-[#0056b3] pb-0.5 mb-0.5 mt-1" style={{ fontSize: '7.5pt', flexShrink: 0 }}>
+                    1.0 LOCALIZACIÓN
+                </div>
+                <div className="grid gap-x-2 gap-y-0.5 mb-1" style={{ gridTemplateColumns: 'auto 1fr auto 1fr auto 1fr', fontSize: '7pt', flexShrink: 0 }}>
+                    <Lbl>DIRECCION:</Lbl><Val>{getValue('direccion')}</Val>
+                    <Lbl>LOCALIDAD:</Lbl><Val>{getValue('localidad')}</Val>
+                    <Lbl>DISTRITO:</Lbl><Val>{getValue('distrito')}</Val>
+                    <Lbl>ESTADO:</Lbl><Val>{getValue('estado')}</Val>
+                    <Lbl>TIPO RED:</Lbl><Val>{getValue('tipo-red')}</Val>
+                    <Lbl>SECTOR:</Lbl><Val>{getValue('sector')}</Val>
+                </div>
+
+                {/* 2.0 DETALLES */}
+                <div className="text-[#0056b3] font-bold uppercase border-b border-[#0056b3] pb-0.5 mb-0.5 mt-1" style={{ fontSize: '7.5pt', flexShrink: 0 }}>
+                    2.0 DETALLES DE ORDEN DE TRABAJO
+                </div>
+                <div className="grid gap-x-2 gap-y-0.5 mb-1" style={{ gridTemplateColumns: 'auto 1fr auto 1fr', fontSize: '7pt', flexShrink: 0 }}>
+                    <Lbl>ACTIVIDAD:</Lbl><Val>{getValue('actividad')}</Val>
+                    <Lbl>CONTRATA:</Lbl><Val>{getValue('contrata')}</Val>
+                    <Lbl>SUBACTIVIDAD:</Lbl><Val>{getValue('subactividad')}</Val>
+                    <Lbl>CUADRILLA:</Lbl><Val>{getValue('cuadrilla')}</Val>
+                    <Lbl>OBS. SEDAPAL:</Lbl><Val className="col-span-3">{getValue('obs-sedapal')}</Val>
+                    <Lbl>OBS. CONTRATA:</Lbl><Val className="col-span-3">{getValue('obs-contrata')}</Val>
+                </div>
+
+                {/* 3.0 PANEL FOTOGRAFICO - Flex-grow to fill remaining space */}
+                <div className="text-[#0056b3] font-bold uppercase border-b border-[#0056b3] pb-0.5 mb-0.5 mt-1" style={{ fontSize: '7.5pt', flexShrink: 0 }}>
+                    3.0 PANEL FOTOGRÁFICO
+                </div>
+                <div className="flex-1 border-2 border-neutral-800 p-1 flex flex-col min-h-0 overflow-hidden">
+                    {images.length > 0 ? (
+                        images.length === 3 ? (
+                            /* Special layout for 3 images - matching PDF template */
+                            <div className="flex-1 flex flex-col gap-[2mm]" style={{ minHeight: 0 }}>
+                                {/* Top row: 2 images side by side */}
+                                <div className="flex flex-row gap-[2mm]" style={{ height: 'calc(50% - 1mm)' }}>
+                                    <div style={{
+                                        flex: 1,
+                                        border: '1px solid #ddd',
+                                        background: '#fff',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        overflow: 'hidden',
+                                        padding: '2mm',
+                                    }}>
+                                        <img
+                                            src={URL.createObjectURL(images[0])}
+                                            alt={images[0].name}
+                                            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                                        />
+                                    </div>
+                                    <div style={{
+                                        flex: 1,
+                                        border: '1px solid #ddd',
+                                        background: '#fff',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        overflow: 'hidden',
+                                        padding: '2mm',
+                                    }}>
+                                        <img
+                                            src={URL.createObjectURL(images[1])}
+                                            alt={images[1].name}
+                                            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                                        />
+                                    </div>
+                                </div>
+                                {/* Bottom row: 1 image centered */}
+                                <div className="flex justify-center" style={{ height: 'calc(50% - 1mm)' }}>
+                                    <div style={{
+                                        width: 'calc(50% - 1mm)',
+                                        height: '100%',
+                                        border: '1px solid #ddd',
+                                        background: '#fff',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        overflow: 'hidden',
+                                        padding: '2mm',
+                                    }}>
+                                        <img
+                                            src={URL.createObjectURL(images[2])}
+                                            alt={images[2].name}
+                                            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            /* Standard grid for 2, 4, or other image counts */
+                            <div className="flex-1" style={{ ...getPhotoGridStyle(), minHeight: 0 }}>
+                                {images.map((img, idx) => (
+                                    <div
+                                        key={idx}
+                                        style={getPhotoItemStyle(idx)}
+                                    >
+                                        <img
+                                            src={URL.createObjectURL(img)}
+                                            alt={img.name}
+                                            style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        )
+                    ) : (
+                        <div className="flex-1 flex items-center justify-center border border-dashed border-neutral-400 text-neutral-500 italic" style={{ fontSize: '8pt' }}>
+                            No se encontraron imágenes asociadas a esta orden.
+                        </div>
+                    )}
+                </div>
+
+            </div>
+        </div>
+    );
+});
+
+// Compact subcomponents
+const Lbl = ({ children }) => (
+    <span className="font-semibold text-right text-neutral-600 whitespace-nowrap" style={{ fontSize: '6.5pt' }}>
+        {children}
+    </span>
+);
+
+const Val = ({ children, className = '' }) => (
+    <div className={`border border-dotted border-neutral-500 bg-white px-1 py-0.5 flex items-center ${className}`} style={{ fontSize: '7pt', minHeight: '4mm' }}>
+        {children}
+    </div>
+);
+
+export default PreviewPanel;

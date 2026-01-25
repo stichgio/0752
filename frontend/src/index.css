@@ -1,0 +1,145 @@
+/* Google Fonts - DotGothic16 for Nothing Tech dot-matrix display */
+@import url('https://fonts.googleapis.com/css2?family=DotGothic16&display=swap');
+
+/* Tailwind CSS Directives */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Tailwind Layer Utilities */
+@layer utilities {
+  .break-inside-avoid {
+    break-inside: avoid;
+  }
+}
+
+/* ================================================
+   Nothing Tech Pomodoro Styles
+   ================================================ */
+
+/* Glyph Animation Keyframes */
+@keyframes nothing-glyph-pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes nothing-dot-blink {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* Glyph Progress Bar */
+.nothing-glyph-bar {
+  display: flex;
+  gap: 2px;
+}
+
+.nothing-glyph-segment {
+  width: 3px;
+  height: 10px;
+  background-color: #333;
+  border-radius: 1px;
+  transition: background-color 0.3s ease;
+}
+
+.nothing-glyph-segment.active {
+  background-color: #D71921;
+  box-shadow: 0 0 4px rgba(215, 25, 33, 0.5);
+}
+
+/* Nothing Tech Decorative Label */
+.nothing-tech-label {
+  font-family: 'DotGothic16', monospace;
+  font-size: 8px;
+  color: #444;
+  letter-spacing: 0.5px;
+}
+
+/* ================================================
+   Pomodoro Timer Display - Optimized for no flicker
+   ================================================ */
+
+/* Timer display - uses class-based styling instead of inline styles */
+.pomodoro-timer-display {
+  font-family: 'DotGothic16', monospace;
+  /* Use will-change to hint browser about animations */
+  will-change: contents;
+  /* Prevent layout shift with fixed width for monospace numbers */
+  font-variant-numeric: tabular-nums;
+}
+
+.pomodoro-timer-display.pomodoro-active {
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+}
+
+/* Progress bar segments - optimized with GPU acceleration */
+.pomodoro-bar-segment {
+  width: 3px;
+  height: 6px;
+  border-radius: 1px;
+  background-color: #333;
+  /* Use transform for GPU-accelerated transitions instead of layout-triggering properties */
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  /* Promote to own layer to avoid repainting siblings */
+  will-change: background-color, box-shadow;
+}
+
+.pomodoro-bar-segment.active {
+  background-color: #D71921;
+  box-shadow: 0 0 4px rgba(215, 25, 33, 0.5);
+}
+
+/* ================================================
+   Print Styles
+   ================================================ */
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+
+  body {
+    background: white;
+  }
+
+  /* Hide sidebar and non-printable elements */
+  aside,
+  button,
+  select,
+  input,
+  label {
+    display: none !important;
+  }
+
+  /* Panel render dimensions for A4 */
+  #panel-render {
+    width: 210mm !important;
+    min-height: 297mm !important;
+    margin: 0 !important;
+    padding: 15mm !important;
+    box-shadow: none !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  /* Force background colors in print */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

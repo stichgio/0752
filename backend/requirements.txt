@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+pandas
+openpyxl
+weasyprint
+jinja2
+python-multipart
+piexif
+Pillow
+pypdf>=4.0.0
+httpx

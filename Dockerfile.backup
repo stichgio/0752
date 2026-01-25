@@ -1,0 +1,54 @@
+# Stage 1: Build the React Frontend
+FROM node:20-alpine as frontend-build
+
+WORKDIR /app/frontend
+
+# Copy package files first for caching
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+
+# Copy the rest of the frontend source code and build
+COPY frontend ./
+RUN npm run build
+
+# Stage 2: Setup Python Backend and Serve
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+# WeasyPrint requires: libcairo2, libpango-1.0-0, libpangoft2-1.0-0, libgdk-pixbuf2.0-0, libffi-dev, shared-mime-info
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    python3-cffi \
+    python3-brotli \
+    libpango-1.0-0 \
+    libpangoft2-1.0-0 \
+    libharfbuzz-subset0 \
+    libjpeg-dev \
+    libopenjp2-7-dev \
+    libffi-dev \
+    fonts-liberation \
+    fontconfig \
+    # Cleanup to keep image small
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy backend requirements
+COPY backend/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the backend code
+COPY backend .
+
+# Copy built frontend static files from the previous stage
+# We assume the output is in 'dist' (standard Vite)
+COPY --from=frontend-build /app/frontend/dist /app/static
+
+# Create output folder for PDFs if needed
+RUN mkdir -p /app/output
+
+# Expose the API port
+EXPOSE 8000
+
+# Run the application
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

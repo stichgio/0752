@@ -1,0 +1,20 @@
+export const REPORT_FIELDS = [
+    { id: 'centro', label: 'Centro' },
+    { id: 'nis', label: 'NIS' },
+    { id: 'ot', label: 'Nro OT' },
+    { id: 'direccion', label: 'Dirección' },
+    { id: 'localidad', label: 'Localidad' },
+    { id: 'distrito', label: 'Distrito' },
+    { id: 'estado', label: 'Estado' },
+    { id: 'tipo-red', label: 'Tipo Red' },
+    { id: 'sector', label: 'Sector' },
+    { id: 'actividad', label: 'Actividad' },
+    { id: 'contrata', label: 'Contrata' },
+    { id: 'subactividad', label: 'Subactividad' },
+    { id: 'cuadrilla', label: 'Cuadrilla' },
+    { id: 'obs-sedapal', label: 'Obs. SEDAPAL' },
+    { id: 'obs-contrata', label: 'Obs. Contrata' },
+    { id: 'observaciones', label: 'Obs. Finales' },
+    { id: 'fecha-corte', label: 'Fecha Corte' },
+    { id: 'direcciones-afectadas', label: 'Dir. Afectadas' }
+];
