@@ -13,11 +13,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpango-1.0-0 \
     libpangocairo-1.0-0 \
     libpangoft2-1.0-0 \
-    libgdk-pixbuf2.0-0 \
+    libgdk-pixbuf-2.0-0 \
     libharfbuzz-subset0 \
     # Imagen processing
     libjpeg-dev \
-    libjpeg62-turbo-dev \
     libopenjp2-7-dev \
     zlib1g-dev \
     libffi-dev \
