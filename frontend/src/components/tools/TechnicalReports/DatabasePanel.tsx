@@ -74,31 +74,41 @@ export default function DatabasePanel({
                             key={report.id}
                             onClick={() => onReportSelect(report.id)}
                             className={`
-                        w-full text-left p-2.5 rounded-lg border transition-colors
+                        w-full text-left p-3 rounded-md border transition-all duration-200 group
                         ${selectedReportId === report.id
-                                    ? 'bg-blue-50 border-blue-500'
-                                    : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
+                                    ? 'bg-[#D71921]/10 border-[#D71921] shadow-[0_0_10px_rgba(215,25,33,0.2)]'
+                                    : 'bg-transparent border-gray-800 hover:border-gray-600 hover:bg-white/5'
                                 }
                     `}
                         >
-                            <div className="flex items-start gap-2">
-                                <FileText size={14} className="mt-0.5 flex-shrink-0" />
+                            <div className="flex items-start gap-3">
+                                <div className={`
+                                    mt-1 w-2 h-2 rounded-full flex-shrink-0 transition-colors
+                                    ${selectedReportId === report.id ? 'bg-[#D71921]' : 'bg-gray-700 group-hover:bg-gray-500'}
+                                `} />
+
                                 <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-xs truncate">
+                                    <p className={`font-mono text-xs font-bold truncate mb-0.5 ${selectedReportId === report.id ? 'text-[#D71921]' : 'text-gray-300'}`}>
                                         #{report.metadata.informe_id} - {report.header.cs}
                                     </p>
-                                    <p className="text-[10px] text-gray-600 truncate">
-                                        {report.header.codigo_infraestructura}
+                                    <p className="text-[10px] text-gray-500 truncate mb-1.5 font-mono">
+                                        {report.header.codigo_infraestructura || 'Sin código'}
                                     </p>
-                                    <span className={`
-                                inline-block text-[9px] px-1.5 py-0.5 rounded-full mt-1
-                                ${report.status === 'completed'
-                                            ? 'bg-green-100 text-green-800'
-                                            : 'bg-yellow-100 text-yellow-800'
-                                        }
-                            `}>
-                                        {report.status === 'completed' ? 'Completado' : 'Borrador'}
-                                    </span>
+
+                                    <div className="flex items-center justify-between">
+                                        <span className={`
+                                            inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium border
+                                            ${report.status === 'completed'
+                                                ? 'bg-green-900/20 text-green-400 border-green-900'
+                                                : 'bg-yellow-900/20 text-yellow-500 border-yellow-900'
+                                            }
+                                        `}>
+                                            {report.status === 'completed' ? 'COMPLETADO' : 'BORRADOR'}
+                                        </span>
+                                        <span className="text-[9px] text-gray-600 font-mono uppercase">
+                                            {report.metadata.dia} {report.metadata.mes?.substring(0, 3)} {report.metadata.anio}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                         </button>
