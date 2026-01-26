@@ -261,15 +261,15 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
                     </thead>
                     <tbody>
                         {[
-                            { key: 'caja_registro', label: 'CAJA DE REGISTRO' },
-                            { key: 'marco_tapa', label: 'MARCO Y TAPA SANITARIA' },
+                            { key: 'caja_registro', label: 'CAJA DE REGISTRO', obsKey: 'observaciones_caja_registro', sugKey: 'sugerencias_caja_registro' },
+                            { key: 'marco_tapa', label: 'MARCO Y TAPA SANITARIA', obsKey: 'observaciones_marco_tapa', sugKey: 'sugerencias_marco_tapa' },
                         ].map(item => (
                             <tr key={item.key}>
                                 <td colSpan={2} style={{ ...styles.td, ...styles.rowLabel }}>{item.label}</td>
                                 <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion[item.key], 'normal')}</td>
                                 <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion[item.key], 'critico')}</td>
-                                <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion[item.key] === 'critico' ? reportData.observaciones : ''}</td>
-                                <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion[item.key] === 'critico' ? reportData.sugerencias : ''}</td>
+                                <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion[item.obsKey] || ''}</td>
+                                <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion[item.sugKey] || ''}</td>
                             </tr>
                         ))}
 
@@ -279,15 +279,15 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
                             <td style={{ ...styles.td, ...styles.subLabel }}>INTERIOR</td>
                             <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.escalera_interior, 'normal')}</td>
                             <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.escalera_interior, 'critico')}</td>
-                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.escalera_interior === 'critico' ? reportData.observaciones : ''}</td>
-                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.escalera_interior === 'critico' ? reportData.sugerencias : ''}</td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.observaciones_escalera_int || ''}</td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.sugerencias_escalera_int || ''}</td>
                         </tr>
                         <tr>
                             <td style={{ ...styles.td, ...styles.subLabel }}>EXTERIOR</td>
                             <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.escalera_exterior, 'normal')}</td>
                             <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.escalera_exterior, 'critico')}</td>
-                            <td style={{ ...styles.td }}></td>
-                            <td style={{ ...styles.td }}></td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.observaciones_escalera_ext || ''}</td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.sugerencias_escalera_ext || ''}</td>
                         </tr>
 
                         {/* CUBA */}
@@ -296,15 +296,15 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
                             <td style={{ ...styles.td, ...styles.subLabel }}>INTERIOR</td>
                             <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.cuba_interior, 'normal')}</td>
                             <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.cuba_interior, 'critico')}</td>
-                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.cuba_interior === 'critico' ? reportData.observaciones : ''}</td>
-                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.cuba_interior === 'critico' ? reportData.sugerencias : ''}</td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.observaciones_cuba_int || ''}</td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.sugerencias_cuba_int || ''}</td>
                         </tr>
                         <tr>
                             <td style={{ ...styles.td, ...styles.subLabel }}>EXTERIOR</td>
                             <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.cuba_exterior, 'normal')}</td>
                             <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.cuba_exterior, 'critico')}</td>
-                            <td style={{ ...styles.td }}></td>
-                            <td style={{ ...styles.td }}></td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.observaciones_cuba_ext || ''}</td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.sugerencias_cuba_ext || ''}</td>
                         </tr>
 
                         {/* Others */}
@@ -312,8 +312,8 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
                             <td colSpan={2} style={{ ...styles.td, ...styles.rowLabel }}>LOZA DE FONDO</td>
                             <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.loza_fondo, 'normal')}</td>
                             <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.loza_fondo, 'critico')}</td>
-                            <td style={{ ...styles.td }}></td>
-                            <td style={{ ...styles.td }}></td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.observaciones_loza_fondo || ''}</td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.sugerencias_loza_fondo || ''}</td>
                         </tr>
 
                         {/* LOZA TECHO */}
@@ -322,28 +322,28 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
                             <td style={{ ...styles.td, ...styles.subLabel }}>INTERIOR</td>
                             <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.loza_techo_interior, 'normal')}</td>
                             <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.loza_techo_interior, 'critico')}</td>
-                            <td style={{ ...styles.td }}>{reportData.inspeccion.loza_techo_interior === 'critico' ? reportData.observaciones : ''}</td>
-                            <td style={{ ...styles.td }}>{reportData.inspeccion.loza_techo_interior === 'critico' ? reportData.sugerencias : ''}</td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.observaciones_loza_techo_int || ''}</td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.sugerencias_loza_techo_int || ''}</td>
                         </tr>
                         <tr>
                             <td style={{ ...styles.td, ...styles.subLabel }}>EXTERIOR</td>
                             <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.loza_techo_exterior, 'normal')}</td>
                             <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.loza_techo_exterior, 'critico')}</td>
-                            <td style={{ ...styles.td }}></td>
-                            <td style={{ ...styles.td }}></td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.observaciones_loza_techo_ext || ''}</td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.sugerencias_loza_techo_ext || ''}</td>
                         </tr>
 
                         {[
-                            { key: 'ducto_ventilacion', label: 'DUCTO DE VENTILACIÓN' },
-                            { key: 'cerco_perimetrico', label: 'CERCO PERIMÉTRICO' },
-                            { key: 'descarga', label: 'DESCARGA' },
+                            { key: 'ducto_ventilacion', label: 'DUCTO DE VENTILACIÓN', obsKey: 'observaciones_ducto', sugKey: 'sugerencias_ducto' },
+                            { key: 'cerco_perimetrico', label: 'CERCO PERIMÉTRICO', obsKey: 'observaciones_cerco', sugKey: 'sugerencias_cerco' },
+                            { key: 'descarga', label: 'DESCARGA', obsKey: 'observaciones_descarga', sugKey: 'sugerencias_descarga' },
                         ].map(item => (
                             <tr key={item.key}>
                                 <td colSpan={2} style={{ ...styles.td, ...styles.rowLabel }}>{item.label}</td>
                                 <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion[item.key], 'normal')}</td>
                                 <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion[item.key], 'critico')}</td>
-                                <td style={{ ...styles.td }}>{reportData.inspeccion[item.key] === 'critico' ? reportData.observaciones : ''}</td>
-                                <td style={{ ...styles.td }}>{reportData.inspeccion[item.key] === 'critico' ? reportData.sugerencias : ''}</td>
+                                <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion[item.obsKey] || ''}</td>
+                                <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion[item.sugKey] || ''}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -380,13 +380,21 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
                             {['2', '3', '4', '6', '8', '10', '12'].map(d => (
                                 <td key={d} style={{ ...styles.td, textAlign: 'center' }}>{reportData.valvulas.diametros[d] || ''}</td>
                             ))}
-                            <td style={styles.td}></td><td style={styles.td}></td><td style={styles.td}></td><td style={styles.td}></td>
+                            <td style={styles.td}></td><td style={styles.td}></td>
+                            <td style={styles.td}>{reportData.valvulas.observaciones_conduccion || ''}</td>
+                            <td style={styles.td}>{reportData.valvulas.sugerencias_conduccion || ''}</td>
                         </tr>
-                        {['ADUCCIÓN', 'BY PASS', 'DESAGÜE'].map(type => (
-                            <tr key={type}>
-                                <td style={{ ...styles.td, ...styles.rowLabel }}>{type}</td>
+                        {[
+                            { type: 'ADUCCIÓN', obsKey: 'observaciones_aduccion', sugKey: 'sugerencias_aduccion' },
+                            { type: 'BY PASS', obsKey: 'observaciones_bypass', sugKey: 'sugerencias_bypass' },
+                            { type: 'DESAGÜE', obsKey: 'observaciones_desague', sugKey: 'sugerencias_desague' }
+                        ].map(item => (
+                            <tr key={item.type}>
+                                <td style={{ ...styles.td, ...styles.rowLabel }}>{item.type}</td>
                                 <td colSpan={7} style={styles.td}></td>
-                                <td style={styles.td}></td><td style={styles.td}></td><td style={styles.td}></td><td style={styles.td}></td>
+                                <td style={styles.td}></td><td style={styles.td}></td>
+                                <td style={styles.td}>{reportData.valvulas[item.obsKey] || ''}</td>
+                                <td style={styles.td}>{reportData.valvulas[item.sugKey] || ''}</td>
                             </tr>
                         ))}
                         <tr style={{ background: '#d4d8dd' }}>
@@ -432,11 +440,11 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
                             ))}
                             <td style={styles.td}></td>
                             <td style={styles.td}></td>
-                            <td style={{ ...styles.td, textAlign: 'center', fontWeight: 'bold', color: '#c00' }}>
-                                {reportData.canastillas.no_operativas > 0 ? 'NO TIENE' : ''}
+                            <td style={{ ...styles.td, textAlign: 'center' }}>
+                                {reportData.canastillas.observaciones_aduccion || ''}
                             </td>
-                            <td style={{ ...styles.td, textAlign: 'center', fontWeight: 'bold', color: '#c00' }}>
-                                {reportData.canastillas.no_operativas > 0 ? 'INSTALAR' : ''}
+                            <td style={{ ...styles.td, textAlign: 'center' }}>
+                                {reportData.canastillas.sugerencias_aduccion || ''}
                             </td>
                         </tr>
                         <tr style={{ background: '#d4d8dd' }}>
