@@ -88,17 +88,25 @@ export default function TechnicalReports() {
 
         try {
             const result = await technicalReportsApi.importCSV(file);
+            console.log('Import result:', result);
 
             if (result.errors && result.errors.length > 0) {
                 setError(`Importado con ${result.errors.length} errores`);
+                console.error('Import errors:', result.errors);
             } else {
-                alert(`${result.imported_count} informes importados exitosamente`);
+                alert(`✅ ${result.imported_count} informes importados exitosamente`);
             }
 
             await loadReports();
-        } catch (err) {
-            setError('Error importando CSV');
-            console.error(err);
+
+            // Si se importó al menos 1, seleccionar el primero automáticamente
+            if (result.created_ids && result.created_ids.length > 0) {
+                await handleReportSelect(result.created_ids[0]);
+            }
+        } catch (err: any) {
+            const errorMsg = err.response?.data?.detail || err.message || 'Error desconocido';
+            setError('Error importando CSV: ' + errorMsg);
+            console.error('Import error:', err);
         } finally {
             setIsLoading(false);
         }
