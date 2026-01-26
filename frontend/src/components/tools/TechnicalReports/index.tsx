@@ -97,6 +97,7 @@ export default function TechnicalReports() {
                 alert(`✅ ${result.imported_count} informes importados exitosamente`);
             }
 
+            // 2. Reload reports strictly AFTER import is done
             await loadReports();
 
             // Si se importó al menos 1, seleccionar el primero automáticamente

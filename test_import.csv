@@ -1,3 +1,3 @@
-﻿INFORME_ID,DIA,MES,AÑO,C_S,CONTRATISTA,CODIGO_INFRAESTRUCTURA,UBICACION,SUMINISTRO,TIPO,VOLUMEN
-1,15,ENERO,2025,LIMA NORTE,HIDRO SERVICIOS,LN-RES-001,Av. Test 123,SUB-001,ELEVADO,500
-2,16,ENERO,2025,LIMA SUR,AQUA TECH,LS-RES-002,Jr. Test 456,SUB-002,ENTERRADO,300
+﻿informe_id,dia,mes,anio,cs,contratista,codigo_infraestructura,ubicacion,suministro,tipo,volumen,caja_registro,marco_tapa,escalera_interior,escalera_exterior,cuba_interior,cuba_exterior,loza_fondo,loza_techo_interior,loza_techo_exterior,ducto_ventilacion,cerco_perimetrico,descarga,observaciones,sugerencias
+1,15,ENERO,2025,LIMA NORTE,HIDRO SERVICIOS,LN-RES-001,Av. Test 123,SUB-001,ELEVADO,500,normal,normal,critico,critico,normal,critico,normal,critico,normal,critico,normal,normal,Requiere mantenimiento,Programar limpieza
+2,16,ENERO,2025,LIMA SUR,AQUA TECH,LS-RES-002,Jr. Test 456,SUB-002,ENTERRADO,300,normal,normal,normal,normal,normal,normal,normal,normal,normal,normal,normal,normal,Estado aceptable,Sin observaciones
