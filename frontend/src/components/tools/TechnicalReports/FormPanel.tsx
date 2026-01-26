@@ -9,6 +9,10 @@ interface Props {
     hasUnsavedChanges: boolean;
     onImageSelect: (files: File[]) => void;
     selectedImages: File[];
+    logoLeft: File | null;
+    logoRight: File | null;
+    onLogoLeftChange: (file: File | null) => void;
+    onLogoRightChange: (file: File | null) => void;
 }
 
 export default function FormPanel({
@@ -17,7 +21,11 @@ export default function FormPanel({
     onSave,
     hasUnsavedChanges,
     onImageSelect,
-    selectedImages
+    selectedImages,
+    logoLeft,
+    logoRight,
+    onLogoLeftChange,
+    onLogoRightChange
 }: Props) {
     if (!reportData) {
         return (
@@ -41,7 +49,13 @@ export default function FormPanel({
         return 'unchecked';
     };
 
-
+    const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>, isLeft: boolean) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            if (isLeft) onLogoLeftChange(file);
+            else onLogoRightChange(file);
+        }
+    };
 
     return (
         <div className="flex flex-col h-full bg-[#111] rounded-lg shadow border border-[#333] text-[#eee]">
@@ -60,7 +74,40 @@ export default function FormPanel({
 
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
 
-
+                {/* LOGOS SECTION */}
+                <div className="bg-[#1a1a1a] p-3 rounded border border-[#333]">
+                    <div className="flex items-center gap-2 mb-3 text-sm font-semibold text-[#eee]">
+                        <div className="bg-[#eee] text-[#000] rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">0</div>
+                        <Settings size={14} />
+                        LOGOS Y CABECERA
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                        {/* Logo Left */}
+                        <div className="flex flex-col items-center gap-2">
+                            <span className="text-xs text-[#888]">Logo Izq</span>
+                            <label className="w-full aspect-[3/2] border border-dashed border-[#444] rounded flex flex-col items-center justify-center cursor-pointer hover:border-[#666] hover:bg-[#222] transition-colors relative overflow-hidden">
+                                {logoLeft ? (
+                                    <img src={URL.createObjectURL(logoLeft)} className="w-full h-full object-contain p-1" />
+                                ) : (
+                                    <span className="text-[10px] text-[#666]">Subir Logo</span>
+                                )}
+                                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleLogoUpload(e, true)} />
+                            </label>
+                        </div>
+                        {/* Logo Right */}
+                        <div className="flex flex-col items-center gap-2">
+                            <span className="text-xs text-[#888]">Logo Der</span>
+                            <label className="w-full aspect-[3/2] border border-dashed border-[#444] rounded flex flex-col items-center justify-center cursor-pointer hover:border-[#666] hover:bg-[#222] transition-colors relative overflow-hidden">
+                                {logoRight ? (
+                                    <img src={URL.createObjectURL(logoRight)} className="w-full h-full object-contain p-1" />
+                                ) : (
+                                    <span className="text-[10px] text-[#666]">Subir Logo</span>
+                                )}
+                                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleLogoUpload(e, false)} />
+                            </label>
+                        </div>
+                    </div>
+                </div>
 
                 <div>
                     <h3 className="font-semibold mb-2 text-sm text-[#888] uppercase tracking-wider">Información General</h3>
@@ -167,7 +214,7 @@ export default function FormPanel({
                         </p>
                     </div>
                 </div>
-            </div >
-        </div >
+            </div>
+        </div>
     );
 }
