@@ -32,6 +32,17 @@ app.add_middleware(
 current_data = {"df": None}
 jobs = {}
 
+from technical_reports.database import db_manager as tech_reports_db
+from datetime import datetime
+
+@app.on_event("startup")
+async def startup_event():
+    reports = tech_reports_db.get_all()
+    print(f"===== Application Startup at {datetime.now()} =====")
+    print(f"[TechReports DB] Loaded {len(reports)} reports")
+    for report in reports:
+        print(f"  - {report.get('id')}: {report.get('header', {}).get('cs')}")
+
 # Create API Router with prefix
 api_router = APIRouter(prefix="/api")
 

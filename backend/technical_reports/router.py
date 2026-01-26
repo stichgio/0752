@@ -52,6 +52,7 @@ async def import_csv(file: UploadFile = File(...)):
         return {
             "success": True,
             "imported_count": len(imported),
+            "created_ids": [r.id for r in imported],
             "reports": [r.dict() for r in report_items],
             "errors": errors
         }
