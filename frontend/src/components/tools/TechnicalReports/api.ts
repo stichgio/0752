@@ -1,5 +1,3 @@
-// Cliente API para informes técnicos
-
 import axios from 'axios';
 import { TechnicalReport } from './types';
 
@@ -13,7 +11,7 @@ const getApiBase = (): string => {
     }
     // En desarrollo local
     else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        baseUrl = 'http://localhost:7860';
+        baseUrl = 'http://localhost:7860'; // Default port based on previous context
     }
     // En producción (HuggingFace Spaces), el backend está en el mismo origen
     else {
@@ -25,126 +23,76 @@ const getApiBase = (): string => {
 };
 
 const API_BASE = getApiBase();
-const API_PREFIX = '/technical-reports';
 
 export const technicalReportsApi = {
-    // Importar CSV
-    importCSV: async (file: File) => {
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const response = await axios.post(
-            `${API_BASE}/api${API_PREFIX}/import-csv`,
-            formData,
-            {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            }
-        );
-
-        return response.data;
-    },
-
-    // Obtener todos los reportes
-    getReports: async (filters?: {
-        cs?: string;
-        contratista?: string;
-        status?: string;
-    }): Promise<{ reports: TechnicalReport[]; total: number }> => {
+    getAllReports: async (filters?: { cs?: string; contratista?: string; status?: string }) => {
         const params = new URLSearchParams();
         if (filters?.cs) params.append('cs', filters.cs);
         if (filters?.contratista) params.append('contratista', filters.contratista);
         if (filters?.status) params.append('status', filters.status);
-
-        const queryString = params.toString();
-        const url = queryString
-            ? `${API_BASE}/api${API_PREFIX}/reports?${queryString}`
-            : `${API_BASE}/api${API_PREFIX}/reports`;
-
-        const response = await axios.get(url);
-
+        const response = await axios.get(`${API_BASE}/api/technical-reports/reports?${params}`);
         return response.data;
     },
 
-    // Obtener un reporte
-    getReport: async (reportId: string): Promise<TechnicalReport> => {
-        const response = await axios.get(
-            `${API_BASE}/api${API_PREFIX}/reports/${reportId}`
-        );
-
+    getReport: async (reportId: string) => {
+        const response = await axios.get(`${API_BASE}/api/technical-reports/reports/${reportId}`);
         return response.data;
     },
 
-    // Crear reporte
     createReport: async (report: TechnicalReport) => {
-        const response = await axios.post(
-            `${API_BASE}/api${API_PREFIX}/reports`,
-            report
-        );
-
+        const response = await axios.post(`${API_BASE}/api/technical-reports/reports`, report);
         return response.data;
     },
 
-    // Actualizar reporte
     updateReport: async (reportId: string, report: TechnicalReport) => {
-        const response = await axios.put(
-            `${API_BASE}/api${API_PREFIX}/reports/${reportId}`,
-            report
-        );
-
+        const response = await axios.put(`${API_BASE}/api/technical-reports/reports/${reportId}`, report);
         return response.data;
     },
 
-    // Eliminar reporte
     deleteReport: async (reportId: string) => {
-        const response = await axios.delete(
-            `${API_BASE}/api${API_PREFIX}/reports/${reportId}`
-        );
-
+        const response = await axios.delete(`${API_BASE}/api/technical-reports/reports/${reportId}`);
         return response.data;
     },
 
-    // Generar PDF
-    downloadPDF: async (reportId: string) => {
-        const response = await axios.post(
-            `${API_BASE}/api${API_PREFIX}/reports/${reportId}/generate-pdf`,
-            null,
-            { responseType: 'blob' }
-        );
-
-        // Descargar automáticamente
-        const url = window.URL.createObjectURL(new Blob([response.data]));
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', `informe_${reportId}.pdf`);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(url);
+    importCSV: async (file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await axios.post(`${API_BASE}/api/technical-reports/import-csv`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data;
     },
 
-    // Autocompletado
-    autocomplete: {
-        cs: async (): Promise<string[]> => {
-            const response = await axios.get(
-                `${API_BASE}/api${API_PREFIX}/autocomplete/cs`
-            );
-            return response.data.options;
-        },
+    generatePDF: async (report: TechnicalReport, images: File[] = []) => {
+        const formData = new FormData();
 
-        contratista: async (cs?: string): Promise<string[]> => {
-            const params = cs ? `?cs=${encodeURIComponent(cs)}` : '';
-            const response = await axios.get(
-                `${API_BASE}/api${API_PREFIX}/autocomplete/contratista${params}`
-            );
-            return response.data.options;
-        },
+        // Se envía el reporte como JSON en el campo 'data'
+        // El backend detecta que NO es una lista, por lo que asocia todos los 'files' a este único reporte
+        formData.append('data', JSON.stringify(report));
 
-        tipo: async (): Promise<string[]> => {
-            const response = await axios.get(
-                `${API_BASE}/api${API_PREFIX}/autocomplete/tipo`
-            );
-            return response.data.options;
-        }
+        // Se adjuntan las imágenes seleccionadas
+        images.forEach((file) => {
+            formData.append('files', file);
+        });
+
+        // Se especifica el nombre del template para que el backend lo cargue correctamente
+        formData.append('templateName', 'informe_tecnico.html');
+
+        const response = await axios.post(`${API_BASE}/api/generate-pdf`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+            responseType: 'blob'
+        });
+        return response.data;
+    },
+
+    getCSOptions: async () => {
+        const response = await axios.get(`${API_BASE}/api/technical-reports/autocomplete/cs`);
+        return response.data.options;
+    },
+
+    getContratistaOptions: async (cs?: string) => {
+        const params = cs ? `?cs=${cs}` : '';
+        const response = await axios.get(`${API_BASE}/api/technical-reports/autocomplete/contratista${params}`);
+        return response.data.options;
     }
 };
-

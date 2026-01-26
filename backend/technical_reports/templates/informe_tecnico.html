@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Informe Técnico {{ report.metadata.informe_id }}</title>
+    <title>Informe Técnico SEDAPAL</title>
     <style>
         @page {
             size: A4;
@@ -22,378 +22,798 @@
             line-height: 1.2;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            padding: 5mm;
+            background: white;
+            page-break-after: always;
         }
 
-        td,
-        th {
-            border: 1px solid #000;
-            padding: 2mm;
-            vertical-align: middle;
+        .page:last-child {
+            page-break-after: avoid;
         }
 
-        .header-table {
+        /* Header con logos */
+        .header {
+            display: grid;
+            grid-template-columns: 150px 1fr 150px;
+            border: 2px solid #000;
             margin-bottom: 3mm;
         }
 
-        .logo-cell {
-            width: 80px;
+        .header-left {
+            padding: 5px;
+            border-right: 1px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-center {
+            padding: 5px;
             text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-right: 1px solid #000;
+        }
+
+        .header-right {
+            padding: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .header-title {
             font-weight: bold;
+            font-size: 11pt;
+            text-transform: uppercase;
+        }
+
+        /* Metadata box (top right) */
+        .metadata-box {
+            position: absolute;
+            top: 15mm;
+            right: 15mm;
+            border: 2px solid #FF0000;
+            width: 80px;
+        }
+
+        .metadata-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border-bottom: 1px solid #FF0000;
+        }
+
+        .metadata-row:last-child {
+            border-bottom: none;
+        }
+
+        .metadata-label {
+            background: #FFF;
+            padding: 2px 4px;
+            font-weight: bold;
+            font-size: 8pt;
+            border-right: 1px solid #FF0000;
+        }
+
+        .metadata-value {
+            background: #FFF;
+            padding: 2px 4px;
+            font-size: 8pt;
+            text-align: center;
+        }
+
+        /* Main info section */
+        .info-section {
+            border: 2px solid #000;
+            margin-bottom: 3mm;
+        }
+
+        .info-row {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            border-bottom: 1px solid #000;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            background: #FFF;
+            padding: 3px 5px;
+            font-weight: bold;
+            border-right: 1px solid #000;
             font-size: 8pt;
         }
 
-        .title-cell {
+        .info-value {
+            padding: 3px 5px;
+            border: 2px solid #FF0000;
+            margin: 2px;
+            font-size: 8pt;
+        }
+
+        .info-row-dual {
+            display: grid;
+            grid-template-columns: 120px 1fr 80px 120px;
+            border-bottom: 1px solid #000;
+        }
+
+        /* Inspection table */
+        .inspection-table {
+            border: 2px solid #000;
+            margin-bottom: 3mm;
+            width: 100%;
+        }
+
+        .inspection-header {
+            background: #FFF;
+            padding: 3px;
+            font-weight: bold;
+            border-bottom: 1px solid #000;
             text-align: center;
+            font-size: 8pt;
+        }
+
+        .inspection-columns {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 2fr 2fr;
+            border-bottom: 1px solid #000;
+            font-weight: bold;
+            font-size: 7pt;
+            text-align: center;
+        }
+
+        .inspection-columns>div {
+            padding: 3px;
+            border-right: 1px solid #000;
+        }
+
+        .inspection-columns>div:last-child {
+            border-right: none;
+        }
+
+        .inspection-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 2fr 2fr;
+            border-bottom: 1px solid #000;
+            font-size: 7pt;
+        }
+
+        .inspection-row:last-child {
+            border-bottom: none;
+        }
+
+        .inspection-row>div {
+            padding: 3px;
+            border-right: 1px solid #000;
+            text-align: center;
+        }
+
+        .inspection-row>div:first-child {
+            text-align: left;
+            padding-left: 5px;
+        }
+
+        .inspection-row>div:last-child {
+            border-right: none;
+        }
+
+        .inspection-nested {
+            display: grid;
+            grid-template-columns: 100px 1fr 1fr 2fr 2fr;
+            border-bottom: 1px solid #000;
+            font-size: 7pt;
+        }
+
+        .inspection-nested:last-child {
+            border-bottom: none;
+        }
+
+        .inspection-nested>div {
+            padding: 3px;
+            border-right: 1px solid #000;
+            text-align: center;
+        }
+
+        .inspection-nested>div:first-child {
+            padding-left: 20px;
+            text-align: left;
+        }
+
+        /* Equipment table */
+        .equipment-table {
+            border: 2px solid #000;
+            margin-bottom: 3mm;
+            width: 100%;
+        }
+
+        .equipment-header {
+            background: #FFF;
+            padding: 3px;
+            font-weight: bold;
+            border-bottom: 1px solid #000;
+            text-align: center;
+            font-size: 8pt;
+        }
+
+        .equipment-diameters {
+            display: grid;
+            grid-template-columns: 100px repeat(7, 1fr) 60px 60px 1.5fr 1.5fr;
+            border-bottom: 1px solid #000;
+            font-weight: bold;
+            font-size: 7pt;
+            text-align: center;
+        }
+
+        .equipment-diameters>div {
+            padding: 2px;
+            border-right: 1px solid #000;
+        }
+
+        .equipment-diameters>div:last-child {
+            border-right: none;
+        }
+
+        .equipment-row {
+            display: grid;
+            grid-template-columns: 100px repeat(7, 1fr) 60px 60px 1.5fr 1.5fr;
+            border-bottom: 1px solid #000;
+            font-size: 7pt;
+        }
+
+        .equipment-row:last-child {
+            border-bottom: none;
+        }
+
+        .equipment-row>div {
+            padding: 3px;
+            border-right: 1px solid #000;
+            text-align: center;
+        }
+
+        .equipment-row>div:first-child {
+            text-align: left;
+            padding-left: 5px;
+            font-weight: bold;
+        }
+
+        .equipment-row>div:last-child {
+            border-right: none;
+        }
+
+        /* Red borders */
+        .red-border {
+            border: 2px solid #FF0000 !important;
+        }
+
+        /* Medidas */
+        .medidas-table {
+            border: 2px solid #000;
+            margin-bottom: 3mm;
+            width: 100%;
+        }
+
+        .medidas-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            border-bottom: 1px solid #000;
+            font-size: 7pt;
+        }
+
+        .medidas-row:last-child {
+            border-bottom: none;
+        }
+
+        .medidas-row>div {
+            padding: 3px 5px;
+            border-right: 1px solid #000;
+        }
+
+        .medidas-row>div:last-child {
+            border-right: none;
+            text-align: center;
+        }
+
+        /* Activities */
+        .activities-table {
+            border: 2px solid #000;
+            margin-bottom: 3mm;
+            width: 100%;
+        }
+
+        .activity-header {
+            background: #FFF;
+            padding: 3px;
+            font-weight: bold;
+            border-bottom: 1px solid #000;
+            text-align: center;
+            font-size: 8pt;
+        }
+
+        .activity-row {
+            display: grid;
+            grid-template-columns: 30px 1fr;
+            border-bottom: 1px solid #000;
+            font-size: 7pt;
+        }
+
+        .activity-row:last-child {
+            border-bottom: none;
+        }
+
+        .activity-row>div {
+            padding: 3px 5px;
+            border-right: 1px solid #000;
+        }
+
+        .activity-row>div:first-child {
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .activity-row>div:last-child {
+            border-right: none;
+        }
+
+        .check {
             font-weight: bold;
             font-size: 10pt;
-        }
-
-        .page-cell {
-            width: 60px;
-            text-align: center;
-        }
-
-        .info-box {
-            background: #f5f5f5;
-            padding: 2mm;
-            text-align: right;
-            font-size: 8pt;
-        }
-
-        .section-title {
-            background: #e0e0e0;
-            font-weight: bold;
-            text-align: center;
-            padding: 2mm;
-            margin-top: 2mm;
-            border: 1px solid #000;
-        }
-
-        .label-cell {
-            background: #f9f9f9;
-            font-weight: bold;
-            width: 35%;
-        }
-
-        .inspection-table {
-            margin-top: 2mm;
-        }
-
-        .inspection-table th {
-            background: #d0d0d0;
-            font-weight: bold;
-            text-align: center;
-            font-size: 8pt;
-        }
-
-        .check-mark {
-            text-align: center;
-            font-weight: bold;
-        }
-
-        .check-normal {
-            color: #000;
-        }
-
-        .check-critico {
-            color: #c00;
-        }
-
-        .valves-table th,
-        .valves-table td {
-            text-align: center;
-            font-size: 8pt;
-            padding: 1mm;
-        }
-
-        .valves-table th {
-            background: #d0d0d0;
         }
     </style>
 </head>
 
 <body>
-    <!-- HEADER -->
-    <table class="header-table">
-        <tr>
-            <td class="logo-cell" rowspan="2">
-                {% if logo_left %}
-                <img src="{{ logo_left }}" style="max-width: 70px; max-height: 35px;">
-                {% else %}
-                HIDRO<br>SERVICIOS<br>E.I.R.L
-                {% endif %}
-            </td>
-            <td class="title-cell">
-                INFORME TÉCNICO DE LIMPIEZA Y DESINFECCIÓN<br>
-                DE RESERVORIOS Y CISTERNAS
-            </td>
-            <td class="page-cell">
-                Página<br>
-                <strong>{{ report.metadata.pagina }}</strong>
-            </td>
-        </tr>
-        <tr>
-            <td colspan="2" class="info-box">
-                <strong>INFORME:</strong> {{ report.metadata.informe_id }}<br>
-                <strong>DÍA:</strong> {{ report.metadata.dia }} |
-                <strong>MES:</strong> {{ report.metadata.mes }} |
-                <strong>AÑO:</strong> {{ report.metadata.anio }}
-            </td>
-        </tr>
-    </table>
+    {% for item in reports %}
+    {% set report = item.data %}
+    <div class="page">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-left">
+                <div style="text-align: center; font-weight: bold; font-size: 10pt;">SEDAPAL</div>
+            </div>
+            <div class="header-center">
+                <div class="header-title">INFORME TÉCNICO DE LIMPIEZA Y DESINFECCIÓN DE RESERVORIOS Y CISTERNAS</div>
+            </div>
+            <div class="header-right">
+                <div style="text-align: center; font-weight: bold; font-size: 9pt;">HIDROSERVICIOS<br />E.I.R.L</div>
+            </div>
+        </div>
 
-    <!-- INFO BÁSICA -->
-    <table>
-        <tr>
-            <td class="label-cell">C-S:</td>
-            <td colspan="3">{{ report.header.cs }}</td>
-        </tr>
-        <tr>
-            <td class="label-cell">CONTRATISTA:</td>
-            <td colspan="3">{{ report.header.contratista }}</td>
-        </tr>
-        <tr>
-            <td class="label-cell">CÓDIGO DE INFRAESTRUCTURA:</td>
-            <td colspan="3">{{ report.header.codigo_infraestructura }}</td>
-        </tr>
-        <tr>
-            <td class="label-cell">UBICACIÓN:</td>
-            <td>{{ report.header.ubicacion }}</td>
-            <td class="label-cell">TIPO:</td>
-            <td>{{ report.header.tipo }}</td>
-        </tr>
-        <tr>
-            <td class="label-cell">SUMINISTRO:</td>
-            <td>{{ report.header.suministro }}</td>
-            <td class="label-cell">VOLUMEN:</td>
-            <td>{{ report.header.volumen }}</td>
-        </tr>
-    </table>
+        <!-- Metadata box -->
+        <div class="metadata-box">
+            <div class="metadata-row">
+                <div class="metadata-label">INFORME</div>
+                <div class="metadata-value">{{ report.metadata.informe_id }}</div>
+            </div>
+            <div class="metadata-row">
+                <div class="metadata-label">DÍA</div>
+                <div class="metadata-value">{{ report.metadata.dia }}</div>
+            </div>
+            <div class="metadata-row">
+                <div class="metadata-label">MES</div>
+                <div class="metadata-value">{{ report.metadata.mes }}</div>
+            </div>
+            <div class="metadata-row">
+                <div class="metadata-label">AÑO</div>
+                <div class="metadata-value">{{ report.metadata.anio }}</div>
+            </div>
+        </div>
 
-    <!-- INSPECCIÓN -->
-    <div class="section-title">DESCRIPCIÓN</div>
-    <table class="inspection-table">
-        <thead>
-            <tr>
-                <th style="width: 25%;">DESCRIPCIÓN</th>
-                <th style="width: 15%;">UBICACIÓN</th>
-                <th style="width: 12%;">NORMAL</th>
-                <th style="width: 12%;">CRÍTICO</th>
-                <th style="width: 18%;">OBSERVACIONES</th>
-                <th style="width: 18%;">SUGERENCIAS</th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- CAJA DE REGISTRO -->
-            <tr>
-                <td>CAJA DE REGISTRO</td>
-                <td style="text-align: center;"></td>
-                <td class="check-mark">{% if report.inspeccion.caja_registro == 'normal' %}<span
-                        class="check-normal">X</span>{% endif %}</td>
-                <td class="check-mark">{% if report.inspeccion.caja_registro == 'critico' %}<span
-                        class="check-critico">X</span>{% endif %}</td>
-                <td>{{ report.observaciones }}</td>
-                <td>{{ report.sugerencias }}</td>
-            </tr>
-            <!-- MARCO Y TAPA -->
-            <tr>
-                <td>MARCO Y TAPA SANITARIA</td>
-                <td style="text-align: center;"></td>
-                <td class="check-mark">{% if report.inspeccion.marco_tapa == 'normal' %}<span
-                        class="check-normal">X</span>{% endif %}</td>
-                <td class="check-mark">{% if report.inspeccion.marco_tapa == 'critico' %}<span
-                        class="check-critico">X</span>{% endif %}</td>
-                <td></td>
-                <td></td>
-            </tr>
-            <!-- ESCALERA INTERIOR -->
-            <tr>
-                <td>ESCALERA</td>
-                <td style="text-align: center;">INTERIOR</td>
-                <td class="check-mark">{% if report.inspeccion.escalera_interior == 'normal' %}<span
-                        class="check-normal">X</span>{% endif %}</td>
-                <td class="check-mark">{% if report.inspeccion.escalera_interior == 'critico' %}<span
-                        class="check-critico">X</span>{% endif %}</td>
-                <td></td>
-                <td></td>
-            </tr>
-            <!-- ESCALERA EXTERIOR -->
-            <tr>
-                <td></td>
-                <td style="text-align: center;">EXTERIOR</td>
-                <td class="check-mark">{% if report.inspeccion.escalera_exterior == 'normal' %}<span
-                        class="check-normal">X</span>{% endif %}</td>
-                <td class="check-mark">{% if report.inspeccion.escalera_exterior == 'critico' %}<span
-                        class="check-critico">X</span>{% endif %}</td>
-                <td></td>
-                <td></td>
-            </tr>
-            <!-- CUBA INTERIOR -->
-            <tr>
-                <td>CUBA</td>
-                <td style="text-align: center;">INTERIOR</td>
-                <td class="check-mark">{% if report.inspeccion.cuba_interior == 'normal' %}<span
-                        class="check-normal">X</span>{% endif %}</td>
-                <td class="check-mark">{% if report.inspeccion.cuba_interior == 'critico' %}<span
-                        class="check-critico">X</span>{% endif %}</td>
-                <td></td>
-                <td></td>
-            </tr>
-            <!-- CUBA EXTERIOR -->
-            <tr>
-                <td></td>
-                <td style="text-align: center;">EXTERIOR</td>
-                <td class="check-mark">{% if report.inspeccion.cuba_exterior == 'normal' %}<span
-                        class="check-normal">X</span>{% endif %}</td>
-                <td class="check-mark">{% if report.inspeccion.cuba_exterior == 'critico' %}<span
-                        class="check-critico">X</span>{% endif %}</td>
-                <td></td>
-                <td></td>
-            </tr>
-            <!-- LOZA DE FONDO -->
-            <tr>
-                <td>LOZA DE FONDO</td>
-                <td style="text-align: center;"></td>
-                <td class="check-mark">{% if report.inspeccion.loza_fondo == 'normal' %}<span
-                        class="check-normal">X</span>{% endif %}</td>
-                <td class="check-mark">{% if report.inspeccion.loza_fondo == 'critico' %}<span
-                        class="check-critico">X</span>{% endif %}</td>
-                <td></td>
-                <td></td>
-            </tr>
-            <!-- LOZA DE TECHO INTERIOR -->
-            <tr>
-                <td>LOZA DE TECHO</td>
-                <td style="text-align: center;">INTERIOR</td>
-                <td class="check-mark">{% if report.inspeccion.loza_techo_interior == 'normal' %}<span
-                        class="check-normal">X</span>{% endif %}</td>
-                <td class="check-mark">{% if report.inspeccion.loza_techo_interior == 'critico' %}<span
-                        class="check-critico">X</span>{% endif %}</td>
-                <td></td>
-                <td></td>
-            </tr>
-            <!-- LOZA DE TECHO EXTERIOR -->
-            <tr>
-                <td></td>
-                <td style="text-align: center;">EXTERIOR</td>
-                <td class="check-mark">{% if report.inspeccion.loza_techo_exterior == 'normal' %}<span
-                        class="check-normal">X</span>{% endif %}</td>
-                <td class="check-mark">{% if report.inspeccion.loza_techo_exterior == 'critico' %}<span
-                        class="check-critico">X</span>{% endif %}</td>
-                <td></td>
-                <td></td>
-            </tr>
-            <!-- DUCTO DE VENTILACIÓN -->
-            <tr>
-                <td>DUCTO DE VENTILACIÓN</td>
-                <td style="text-align: center;"></td>
-                <td class="check-mark">{% if report.inspeccion.ducto_ventilacion == 'normal' %}<span
-                        class="check-normal">X</span>{% endif %}</td>
-                <td class="check-mark">{% if report.inspeccion.ducto_ventilacion == 'critico' %}<span
-                        class="check-critico">X</span>{% endif %}</td>
-                <td></td>
-                <td></td>
-            </tr>
-            <!-- CERCO PERIMÉTRICO -->
-            <tr>
-                <td>CERCO PERIMÉTRICO</td>
-                <td style="text-align: center;"></td>
-                <td class="check-mark">{% if report.inspeccion.cerco_perimetrico == 'normal' %}<span
-                        class="check-normal">X</span>{% endif %}</td>
-                <td class="check-mark">{% if report.inspeccion.cerco_perimetrico == 'critico' %}<span
-                        class="check-critico">X</span>{% endif %}</td>
-                <td></td>
-                <td></td>
-            </tr>
-            <!-- DESCARGA -->
-            <tr>
-                <td>DESCARGA</td>
-                <td style="text-align: center;"></td>
-                <td class="check-mark">{% if report.inspeccion.descarga == 'normal' %}<span
-                        class="check-normal">X</span>{% endif %}</td>
-                <td class="check-mark">{% if report.inspeccion.descarga == 'critico' %}<span
-                        class="check-critico">X</span>{% endif %}</td>
-                <td></td>
-                <td></td>
-            </tr>
-        </tbody>
-    </table>
+        <!-- Info Section -->
+        <div class="info-section">
+            <div class="info-row">
+                <div class="info-label">C.S :</div>
+                <div class="info-value">{{ report.header.cs }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">CONTRATISTA :</div>
+                <div class="info-value">{{ report.header.contratista }}</div>
+            </div>
+            <div class="info-row">
+                <div class="info-label">CÓDIGO DE INFRAESTRUCTURA:</div>
+                <div class="info-value">{{ report.header.codigo_infraestructura }}</div>
+            </div>
+            <div class="info-row-dual">
+                <div class="info-label">UBICACIÓN :</div>
+                <div class="info-value">{{ report.header.ubicacion }}</div>
+                <div class="info-label">TIPO :</div>
+                <div class="info-value">{{ report.header.tipo }}</div>
+            </div>
+            <div class="info-row-dual">
+                <div class="info-label">SUMINISTRO :</div>
+                <div class="info-value">{{ report.header.suministro }}</div>
+                <div class="info-label">VOLUMEN:</div>
+                <div class="info-value">{{ report.header.volumen }}</div>
+            </div>
+        </div>
 
-    <!-- VÁLVULAS -->
-    <div class="section-title">DIÁMETRO DE VÁLVULAS</div>
-    <table class="valves-table">
-        <thead>
-            <tr>
-                <th>VÁLVULAS</th>
-                <th>2"</th>
-                <th>3"</th>
-                <th>4"</th>
-                <th>6"</th>
-                <th>8"</th>
-                <th>10"</th>
-                <th>12"</th>
-                <th>OPER.</th>
-                <th>NO OP.</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td style="font-weight: bold;">TOTAL</td>
-                <td>{% if report.valvulas.diametros['2'] > 0 %}{{ report.valvulas.diametros['2'] }}{% endif %}</td>
-                <td>{% if report.valvulas.diametros['3'] > 0 %}{{ report.valvulas.diametros['3'] }}{% endif %}</td>
-                <td>{% if report.valvulas.diametros['4'] > 0 %}{{ report.valvulas.diametros['4'] }}{% endif %}</td>
-                <td>{% if report.valvulas.diametros['6'] > 0 %}{{ report.valvulas.diametros['6'] }}{% endif %}</td>
-                <td>{% if report.valvulas.diametros['8'] > 0 %}{{ report.valvulas.diametros['8'] }}{% endif %}</td>
-                <td>{% if report.valvulas.diametros['10'] > 0 %}{{ report.valvulas.diametros['10'] }}{% endif %}</td>
-                <td>{% if report.valvulas.diametros['12'] > 0 %}{{ report.valvulas.diametros['12'] }}{% endif %}</td>
-                <td>{{ report.valvulas.operativas }}</td>
-                <td>{{ report.valvulas.no_operativas }}</td>
-            </tr>
-        </tbody>
-    </table>
+        <!-- Inspection Table -->
+        <div class="inspection-table">
+            <div class="inspection-header">ESTADO</div>
+            <div class="inspection-columns">
+                <div>DESCRIPCIÓN</div>
+                <div>NORMAL</div>
+                <div>CRÍTICO</div>
+                <div>OBSERVACIONES</div>
+                <div>SUGERENCIAS</div>
+            </div>
 
-    <!-- CANASTILLAS -->
-    <div class="section-title">DIÁMETRO DE CANASTILLA</div>
-    <table class="valves-table">
-        <thead>
-            <tr>
-                <th>CANASTILLA</th>
-                <th>2"</th>
-                <th>3"</th>
-                <th>4"</th>
-                <th>6"</th>
-                <th>8"</th>
-                <th>10"</th>
-                <th>12"</th>
-                <th>OPER.</th>
-                <th>NO OP.</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td style="font-weight: bold;">TOTAL</td>
-                <td>{% if report.canastillas.diametros['2'] > 0 %}{{ report.canastillas.diametros['2'] }}{% endif %}
-                </td>
-                <td>{% if report.canastillas.diametros['3'] > 0 %}{{ report.canastillas.diametros['3'] }}{% endif %}
-                </td>
-                <td>{% if report.canastillas.diametros['4'] > 0 %}{{ report.canastillas.diametros['4'] }}{% endif %}
-                </td>
-                <td>{% if report.canastillas.diametros['6'] > 0 %}{{ report.canastillas.diametros['6'] }}{% endif %}
-                </td>
-                <td>{% if report.canastillas.diametros['8'] > 0 %}{{ report.canastillas.diametros['8'] }}{% endif %}
-                </td>
-                <td>{% if report.canastillas.diametros['10'] > 0 %}{{ report.canastillas.diametros['10'] }}{% endif %}
-                </td>
-                <td>{% if report.canastillas.diametros['12'] > 0 %}{{ report.canastillas.diametros['12'] }}{% endif %}
-                </td>
-                <td>{{ report.canastillas.operativas }}</td>
-                <td>{{ report.canastillas.no_operativas }}</td>
-            </tr>
-        </tbody>
-    </table>
+            <div class="inspection-row">
+                <div>CAJA DE REGISTRO</div>
+                <div>{% if report.inspeccion.caja_registro == 'normal' %}<span class="check">X</span>{% endif %}</div>
+                <div>{% if report.inspeccion.caja_registro == 'critico' %}<span class="check"
+                        style="color: red;">X</span>{% endif %}</div>
+                <div class="{% if report.inspeccion.caja_registro == 'critico' %}red-border{% endif %}">{{
+                    report.observaciones if report.inspeccion.caja_registro == 'critico' }}</div>
+                <div>{{ report.sugerencias if report.inspeccion.caja_registro == 'critico' }}</div>
+            </div>
+
+            <div class="inspection-row">
+                <div>MARCO Y TAPA SANITARIA</div>
+                <div>{% if report.inspeccion.marco_tapa == 'normal' %}<span class="check">X</span>{% endif %}</div>
+                <div>{% if report.inspeccion.marco_tapa == 'critico' %}<span class="check"
+                        style="color: red;">X</span>{% endif %}</div>
+                <div class="{% if report.inspeccion.marco_tapa == 'critico' %}red-border{% endif %}"></div>
+                <div></div>
+            </div>
+
+            <div class="inspection-row">
+                <div>ESCALERA</div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div class="inspection-nested">
+                <div>INTERIOR</div>
+                <div>{% if report.inspeccion.escalera_interior == 'normal' %}<span class="check">X</span>{% endif %}
+                </div>
+                <div>{% if report.inspeccion.escalera_interior == 'critico' %}<span class="check"
+                        style="color: red;">X</span>{% endif %}</div>
+                <div class="{% if report.inspeccion.escalera_interior == 'critico' %}red-border{% endif %}"></div>
+                <div></div>
+            </div>
+            <div class="inspection-nested">
+                <div>EXTERIOR</div>
+                <div>{% if report.inspeccion.escalera_exterior == 'normal' %}<span class="check">X</span>{% endif %}
+                </div>
+                <div>{% if report.inspeccion.escalera_exterior == 'critico' %}<span class="check"
+                        style="color: red;">X</span>{% endif %}</div>
+                <div class="{% if report.inspeccion.escalera_exterior == 'critico' %}red-border{% endif %}"></div>
+                <div></div>
+            </div>
+
+            <div class="inspection-row">
+                <div>CUBA</div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div class="inspection-nested">
+                <div>INTERIOR</div>
+                <div>{% if report.inspeccion.cuba_interior == 'normal' %}<span class="check">X</span>{% endif %}</div>
+                <div>{% if report.inspeccion.cuba_interior == 'critico' %}<span class="check"
+                        style="color: red;">X</span>{% endif %}</div>
+                <div class="{% if report.inspeccion.cuba_interior == 'critico' %}red-border{% endif %}"></div>
+                <div></div>
+            </div>
+            <div class="inspection-nested">
+                <div>EXTERIOR</div>
+                <div>{% if report.inspeccion.cuba_exterior == 'normal' %}<span class="check">X</span>{% endif %}</div>
+                <div>{% if report.inspeccion.cuba_exterior == 'critico' %}<span class="check"
+                        style="color: red;">X</span>{% endif %}</div>
+                <div class="{% if report.inspeccion.cuba_exterior == 'critico' %}red-border{% endif %}"></div>
+                <div></div>
+            </div>
+
+            <div class="inspection-row">
+                <div>LOZA DE FONDO</div>
+                <div>{% if report.inspeccion.loza_fondo == 'normal' %}<span class="check">X</span>{% endif %}</div>
+                <div>{% if report.inspeccion.loza_fondo == 'critico' %}<span class="check"
+                        style="color: red;">X</span>{% endif %}</div>
+                <div class="{% if report.inspeccion.loza_fondo == 'critico' %}red-border{% endif %}"></div>
+                <div></div>
+            </div>
+
+            <div class="inspection-row">
+                <div>LOZA DE TECHO</div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div class="inspection-nested">
+                <div>INTERIOR</div>
+                <div>{% if report.inspeccion.loza_techo_interior == 'normal' %}<span class="check">X</span>{% endif %}
+                </div>
+                <div>{% if report.inspeccion.loza_techo_interior == 'critico' %}<span class="check"
+                        style="color: red;">X</span>{% endif %}</div>
+                <div class="{% if report.inspeccion.loza_techo_interior == 'critico' %}red-border{% endif %}"></div>
+                <div></div>
+            </div>
+            <div class="inspection-nested">
+                <div>EXTERIOR</div>
+                <div>{% if report.inspeccion.loza_techo_exterior == 'normal' %}<span class="check">X</span>{% endif %}
+                </div>
+                <div>{% if report.inspeccion.loza_techo_exterior == 'critico' %}<span class="check"
+                        style="color: red;">X</span>{% endif %}</div>
+                <div class="{% if report.inspeccion.loza_techo_exterior == 'critico' %}red-border{% endif %}"></div>
+                <div></div>
+            </div>
+
+            <div class="inspection-row">
+                <div>DUCTO DE VENTILACIÓN</div>
+                <div>{% if report.inspeccion.ducto_ventilacion == 'normal' %}<span class="check">X</span>{% endif %}
+                </div>
+                <div>{% if report.inspeccion.ducto_ventilacion == 'critico' %}<span class="check"
+                        style="color: red;">X</span>{% endif %}</div>
+                <div class="{% if report.inspeccion.ducto_ventilacion == 'critico' %}red-border{% endif %}"></div>
+                <div></div>
+            </div>
+
+            <div class="inspection-row">
+                <div>CERCO PERIMÉTRICO</div>
+                <div>{% if report.inspeccion.cerco_perimetrico == 'normal' %}<span class="check">X</span>{% endif %}
+                </div>
+                <div>{% if report.inspeccion.cerco_perimetrico == 'critico' %}<span class="check"
+                        style="color: red;">X</span>{% endif %}</div>
+                <div class="{% if report.inspeccion.cerco_perimetrico == 'critico' %}red-border{% endif %}"></div>
+                <div></div>
+            </div>
+
+            <div class="inspection-row">
+                <div>DESCARGA</div>
+                <div>{% if report.inspeccion.descarga == 'normal' %}<span class="check">X</span>{% endif %}</div>
+                <div>{% if report.inspeccion.descarga == 'critico' %}<span class="check" style="color: red;">X</span>{%
+                    endif %}</div>
+                <div class="{% if report.inspeccion.descarga == 'critico' %}red-border{% endif %}"></div>
+                <div></div>
+            </div>
+        </div>
+
+        <!-- Válvulas -->
+        <div class="equipment-table">
+            <div class="equipment-header">DIÁMETRO DE VÁLVULAS</div>
+            <div class="equipment-diameters">
+                <div>VÁLVULAS</div>
+                <div>2"</div>
+                <div>3"</div>
+                <div>4"</div>
+                <div>6"</div>
+                <div>8"</div>
+                <div>10"</div>
+                <div>12"</div>
+                <div>OPER.</div>
+                <div>NO OP.</div>
+                <div>OBSERVACIONES</div>
+                <div>SUGERENCIAS</div>
+            </div>
+            <div class="equipment-row">
+                <div>CONDUCCIÓN</div>
+                <div>{{ report.valvulas.diametros['2'] if report.valvulas.diametros['2'] else '' }}</div>
+                <div>{{ report.valvulas.diametros['3'] if report.valvulas.diametros['3'] else '' }}</div>
+                <div>{{ report.valvulas.diametros['4'] if report.valvulas.diametros['4'] else '' }}</div>
+                <div>{{ report.valvulas.diametros['6'] if report.valvulas.diametros['6'] else '' }}</div>
+                <div>{{ report.valvulas.diametros['8'] if report.valvulas.diametros['8'] else '' }}</div>
+                <div>{{ report.valvulas.diametros['10'] if report.valvulas.diametros['10'] else '' }}</div>
+                <div>{{ report.valvulas.diametros['12'] if report.valvulas.diametros['12'] else '' }}</div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div class="equipment-row">
+                <div>ADUCCIÓN</div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div class="equipment-row">
+                <div>BY PASS</div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div class="equipment-row">
+                <div>DESAGÜE</div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+            </div>
+            <div class="equipment-row">
+                <div>TOTAL</div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div>{{ report.valvulas.operativas }}</div>
+                <div>{{ report.valvulas.no_operativas }}</div>
+                <div></div>
+                <div></div>
+            </div>
+        </div>
+
+        <!-- Canastillas -->
+        <div class="equipment-table">
+            <div class="equipment-header">DIÁMETRO DE CANASTILLA</div>
+            <div class="equipment-diameters">
+                <div>CANASTILLA</div>
+                <div>2"</div>
+                <div>3"</div>
+                <div>4"</div>
+                <div>6"</div>
+                <div>8"</div>
+                <div>10"</div>
+                <div>12"</div>
+                <div>OPER.</div>
+                <div>NO OP.</div>
+                <div>OBSERVACIONES</div>
+                <div>SUGERENCIAS</div>
+            </div>
+            <div class="equipment-row">
+                <div>ADUCCION</div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div class="red-border"></div>
+                <div></div>
+            </div>
+            <div class="equipment-row">
+                <div>TOTAL</div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div></div>
+                <div>{{ report.canastillas.operativas }}</div>
+                <div>{{ report.canastillas.no_operativas }}</div>
+                <div></div>
+                <div></div>
+            </div>
+        </div>
+
+        <!-- Medidas -->
+        <div class="medidas-table">
+            <div class="equipment-header">MEDIDAS</div>
+            <div class="medidas-row">
+                <div></div>
+                <div style="font-weight: bold; text-align: center;">U/M</div>
+                <div style="font-weight: bold; text-align: center;">CANTIDAD</div>
+            </div>
+            <div class="medidas-row">
+                <div>DIAMETRO</div>
+                <div>M</div>
+                <div>9.78</div>
+            </div>
+            <div class="medidas-row">
+                <div>DIAMETRO INTERNO</div>
+                <div>M</div>
+                <div>1.90</div>
+            </div>
+            <div class="medidas-row">
+                <div>ALTURA UTIL</div>
+                <div>M</div>
+                <div>5.00</div>
+            </div>
+            <div class="medidas-row">
+                <div>ALTURA TOTAL</div>
+                <div>M</div>
+                <div>5.18</div>
+            </div>
+        </div>
+
+        <!-- Activities -->
+        <div class="activities-table">
+            <div class="activity-header">ACTIVIDADES EJECUTADAS</div>
+            <div class="activity-row">
+                <div>1</div>
+                <div>SEÑALIZACION DE LA ZONA DE TRABAJO</div>
+            </div>
+            <div class="activity-row">
+                <div>2</div>
+                <div>LLENADO DE FORMATOS: ATS, ALTURA.</div>
+            </div>
+            <div class="activity-row">
+                <div>3</div>
+                <div>DESCARGA DE HERRAMIENTAS, EQUIPOS E INSUMOS DEL VEHICULO</div>
+            </div>
+            <div class="activity-row">
+                <div>4</div>
+                <div>VENTILACION DE LA ESTRUCTURA DE ALMACENAMIENTO DE AGUA</div>
+            </div>
+            <div class="activity-row">
+                <div>5</div>
+                <div>INSTALACION DEL SISTEMA DE ILUMINACION</div>
+            </div>
+            <div class="activity-row">
+                <div>6</div>
+                <div>TRASLADO E INGRESO DE HERRAMIENTAS NECESARIOS PARA INICIAR LA LIMPIEZA</div>
+            </div>
+            <div class="activity-row">
+                <div>7</div>
+                <div>RASQUETEO DE LAS PAREDES, PISO Y TECHO CON AYUDA DE HERRAMIENTAS Y EL AGUA</div>
+            </div>
+            <div class="activity-row">
+                <div>8</div>
+                <div>ENJUAGUE Y DESCARGA DEL AGUA DE LIMPIEZA</div>
+            </div>
+            <div class="activity-row">
+                <div>9</div>
+                <div>PREPARACION DE LA SOLUCION DE HIPOCLORITO DE CALCIO</div>
+            </div>
+            <div class="activity-row">
+                <div>10</div>
+                <div>DESINFECCION CON AYUDA DE LA BOMBA DE ALTA PRESION</div>
+            </div>
+            <div class="activity-row">
+                <div>11</div>
+                <div>SE PROCEDE A CARGAR LAS HERRAMIENTAS, EQUIPOS Y SEÑALIZACION AL VEHICULO.</div>
+            </div>
+        </div>
+
+        {% if item.images %}
+        <!-- PANEL FOTOGRÁFICO -->
+        <div style="page-break-before: always;">
+            <div class="header">
+                <div class="header-center" style="border:none">
+                    <div class="header-title">PANEL FOTOGRÁFICO</div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10mm; margin-top: 10mm;">
+                {% for img in item.images %}
+                <div style="text-align: center;">
+                    <img src="{{ img.path }}"
+                        style="width: 100%; height: 200px; object-fit: contain; border: 1px solid #ccc;" />
+                    <div style="font-size: 8pt; margin-top: 5px;">{{ img.name }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
 </body>
 
 </html>

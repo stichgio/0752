@@ -4,9 +4,10 @@ import { useState } from 'react';
 import { Calculator, FileText, ClipboardList } from 'lucide-react';
 import Calculadora from '@/components/tools/Calculator';
 import PDFTools from '@/components/tools/PDFTools';
+import TechnicalReports from '@/components/tools/TechnicalReports';
 
 export default function Tools() {
-    const [activeTool, setActiveTool] = useState<'calculator' | 'pdf' | null>(null);
+    const [activeTool, setActiveTool] = useState<'calculator' | 'pdf' | 'technical-reports' | null>(null);
 
     return (
         <div className="min-h-screen bg-gray-900 text-white">
@@ -44,17 +45,15 @@ export default function Tools() {
                         </button>
 
                         {/* Informes Técnicos */}
-                        <a
-                            href="/technical-reports.html"
-                            target="_blank"
-                            rel="noopener noreferrer"
+                        <button
+                            onClick={() => setActiveTool('technical-reports')}
                             className="bg-gray-800 hover:bg-gray-700 rounded-lg p-6 text-left transition-colors block"
                         >
                             <div className="flex items-center gap-3">
                                 <ClipboardList size={24} />
                                 <span className="text-lg font-medium">Informes Técnicos</span>
                             </div>
-                        </a>
+                        </button>
                     </div>
                 </div>
             ) : (
@@ -71,6 +70,7 @@ export default function Tools() {
                     {/* Renderizar tool seleccionada */}
                     {activeTool === 'calculator' && <Calculadora />}
                     {activeTool === 'pdf' && <PDFTools />}
+                    {activeTool === 'technical-reports' && <TechnicalReports />}
                 </div>
             )}
         </div>
