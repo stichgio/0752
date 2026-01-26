@@ -633,7 +633,7 @@ def run_batch_generation(df_records, folder_path, id_column, output_path):
     """Legacy batch generation"""
     from concurrent.futures import ProcessPoolExecutor
     
-    service = ReportService(templates_dir=os.path.join(os.getcwd(), "backend", "templates"))
+    service = ReportService()
     results = []
     
     with ProcessPoolExecutor() as executor:
