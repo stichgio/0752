@@ -14,6 +14,9 @@ export default function TechnicalReports() {
     const [selectedImages, setSelectedImages] = useState<File[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
+    const [logoLeft, setLogoLeft] = useState<File | null>(null);
+    const [logoRight, setLogoRight] = useState<File | null>(null);
+
     useEffect(() => { loadReports(); }, []);
 
     const loadReports = async () => {
@@ -81,7 +84,7 @@ export default function TechnicalReports() {
         if (!selectedReportId || !formData) return;
         setIsLoading(true);
         try {
-            const blob = await technicalReportsApi.generatePDF(formData, selectedImages);
+            const blob = await technicalReportsApi.generatePDF(formData, selectedImages, logoLeft, logoRight);
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
@@ -134,7 +137,7 @@ export default function TechnicalReports() {
 
             <div className="grid grid-cols-[300px_1fr_400px] gap-6 p-6 h-[calc(100vh-80px)]">
                 <DatabasePanel reports={reports} selectedReportId={selectedReportId} onReportSelect={handleReportSelect} onImportCSV={handleImportCSV} onReload={loadReports} />
-                <PreviewPanel reportData={formData} zoom={100} />
+                <PreviewPanel reportData={formData} zoom={100} logoLeft={logoLeft} logoRight={logoRight} />
                 <FormPanel
                     reportData={formData}
                     onChange={handleFormChange}
@@ -142,6 +145,10 @@ export default function TechnicalReports() {
                     hasUnsavedChanges={hasUnsavedChanges}
                     selectedImages={selectedImages}
                     onImageSelect={setSelectedImages}
+                    logoLeft={logoLeft}
+                    logoRight={logoRight}
+                    onLogoLeftChange={setLogoLeft}
+                    onLogoRightChange={setLogoRight}
                 />
             </div>
 

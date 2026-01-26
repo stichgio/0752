@@ -63,7 +63,7 @@ export const technicalReportsApi = {
         return response.data;
     },
 
-    generatePDF: async (report: TechnicalReport, images: File[] = []) => {
+    generatePDF: async (report: TechnicalReport, images: File[] = [], logoLeft?: File | null, logoRight?: File | null) => {
         const formData = new FormData();
 
         // Se envía el reporte como JSON en el campo 'data'
@@ -74,6 +74,10 @@ export const technicalReportsApi = {
         images.forEach((file) => {
             formData.append('files', file);
         });
+
+        // Adjuntar logos si existen
+        if (logoLeft) formData.append('logoLeft', logoLeft);
+        if (logoRight) formData.append('logoRight', logoRight);
 
         // Se especifica el nombre del template para que el backend lo cargue correctamente
         formData.append('templateName', 'informe_tecnico.html');
