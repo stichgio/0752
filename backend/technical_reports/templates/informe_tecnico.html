@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Informe Técnico SEDAPAL</title>
+    <title>Informe Técnico SEDAPAL - Limpieza y Desinfección</title>
     <style>
         @page {
             size: A4;
@@ -18,238 +18,299 @@
         }
 
         body {
-            font-family: Calibri, Arial, sans-serif;
-            font-size: 9pt;
-            line-height: 1.2;
+            font-family: 'Segoe UI', Calibri, Arial, sans-serif;
+            font-size: 7.5pt;
+            line-height: 1.15;
             background: #fff;
-            padding: 10px;
+            padding: 0;
+            color: #333;
         }
 
-        .container {
-            max-width: 900px;
+        .page-container {
+            max-width: 100%;
             margin: 0 auto;
-            position: relative;
+            background: #fff;
+            padding: 8px;
             page-break-after: always;
         }
 
-        .container:last-child {
+        .page-container:last-child {
             page-break-after: avoid;
         }
 
         /* ==================== HEADER ==================== */
-        .header-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 0;
+        .header {
+            display: grid;
+            grid-template-columns: 120px 1fr 120px;
+            gap: 8px;
+            align-items: center;
+            padding: 8px 10px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 2px solid #0066a1;
+            border-radius: 6px;
+            margin-bottom: 6px;
         }
 
-        .header-table td {
-            border: 1px solid #000;
-            vertical-align: middle;
-            padding: 8px;
-        }
-
-        .header-logo-left {
-            width: 15%;
-            text-align: center;
-        }
-
-        .header-title {
-            width: 55%;
-            text-align: center;
-            font-weight: bold;
-            font-size: 11pt;
-            padding: 10px;
-        }
-
-        .header-logo-right {
-            width: 30%;
-            text-align: center;
-            position: relative;
-        }
-
-        /* Logo SEDAPAL */
-        .sedapal-logo {
+        .logo-left,
+        .logo-right {
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
+            height: 50px;
+        }
+
+        .logo-img {
+            max-width: 100%;
+            max-height: 45px;
+            object-fit: contain;
         }
 
         .sedapal-text {
-            font-size: 24pt;
+            font-size: 18pt;
             font-weight: bold;
-            color: #0072BC;
-            font-family: Arial, sans-serif;
+            color: #0066a1;
+            font-family: 'Arial Black', Arial, sans-serif;
             letter-spacing: -1px;
-        }
-
-        .sedapal-lines {
-            width: 100%;
-            margin-top: 3px;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
         }
 
         .sedapal-line1 {
-            height: 4px;
-            background: #0072BC;
-            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, #0066a1, #0088cc);
+            border-radius: 2px;
         }
 
         .sedapal-line2 {
             height: 2px;
-            background: #87CEEB;
+            background: linear-gradient(90deg, #66b3d9, #99cce6);
             margin-top: 2px;
-            width: 100%;
+            border-radius: 1px;
         }
 
-        /* Logo HIDROSERVICIOS */
-        .hidro-logo {
-            font-family: Arial, sans-serif;
-            text-align: center;
-        }
-
-        .hidro-top {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-        }
-
-        .hidro-icon {
-            width: 25px;
-            height: 25px;
-        }
-
-        .hidro-text {
-            font-size: 10pt;
+        .header-title h1 {
+            font-size: 11pt;
             font-weight: bold;
-            color: #000;
+            color: #0066a1;
+            text-transform: uppercase;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .hidro-name {
+            font-size: 8pt;
+            font-weight: bold;
+            color: #333;
         }
 
         .hidro-aa {
-            font-size: 14pt;
+            font-size: 12pt;
             font-weight: bold;
-            color: #B8860B;
+            color: #d4a017;
         }
 
-        .hidro-eirl {
-            font-size: 8pt;
-            font-weight: bold;
-            color: #000;
+        /* ==================== METADATA & INFO ==================== */
+        .metadata-box {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 6px;
         }
 
-        /* ==================== METADATA BOX ==================== */
         .metadata-table {
             border-collapse: collapse;
-            font-size: 8pt;
+            border: 1px solid #ccc;
+            font-size: 7pt;
         }
 
         .metadata-table td {
-            border: 1px solid #000;
-            padding: 2px 5px;
-            height: 16px;
+            padding: 3px 6px;
+            border: 1px solid #ccc;
         }
 
-        .metadata-label {
+        .meta-label {
+            background: #0066a1;
+            color: #fff;
             font-weight: bold;
-            background: #fff;
-            width: 50px;
         }
 
-        .metadata-value {
-            width: 50px;
-            text-align: center;
+        .info-section {
+            border: 1px solid #999;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 6px;
         }
 
-        /* ==================== INFO SECTION ==================== */
-        .info-table {
-            width: 100%;
-            border-collapse: collapse;
+        .info-row {
+            display: grid;
+            border-bottom: 1px solid #ccc;
         }
 
-        .info-table td {
-            border: 1px solid #000;
-            padding: 3px 8px;
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-row.two-cols {
+            grid-template-columns: 100px 1fr;
+        }
+
+        .info-row.four-cols {
+            grid-template-columns: 100px 1fr 80px 100px;
+        }
+
+        .info-row.codigo {
+            grid-template-columns: 180px 1fr;
         }
 
         .info-label {
             font-weight: bold;
-            width: 15%;
+            padding: 3px 8px;
+            background: #e9ecef;
+            border-right: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            font-size: 7pt;
         }
 
-        .info-colon {
-            width: 2%;
-            text-align: center;
+        .info-value {
+            padding: 3px 8px;
+            border-right: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            font-size: 7pt;
         }
 
-        .info-value-box {
-            border: 2px solid #FF0000 !important;
-            text-align: center;
-            font-weight: bold;
+        .info-value:last-child {
+            border-right: none;
         }
 
-        /* ==================== INSPECTION TABLE ==================== */
-        .inspection-table {
+        /* ==================== TABLES COMMON ==================== */
+        .section-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 8pt;
+            margin-bottom: 4px;
+            font-size: 7pt;
+            table-layout: fixed;
         }
 
-        .inspection-table th,
-        .inspection-table td {
-            border: 1px solid #000;
+        .section-table th,
+        .section-table td {
+            border: 1px solid #999;
             padding: 2px 4px;
             vertical-align: middle;
         }
 
-        .inspection-table th {
-            background: #fff;
+        .section-table thead th {
+            background: #0066a1;
+            color: #fff;
+            text-transform: uppercase;
+            font-size: 6.5pt;
+            padding: 3px 4px;
+        }
+
+        /* Anchos compartidos para alineación vertical */
+        .col-main-label {
+            width: 11%;
+        }
+
+        .col-obs {
+            width: 17%;
+        }
+
+        .col-sug {
+            width: 18%;
+        }
+
+        .section-table .center {
+            text-align: center;
+        }
+
+        .row-label {
+            background: #e9ecef !important;
             font-weight: bold;
-            text-align: center;
         }
 
-        .check-mark {
+        .check-normal {
+            color: #000;
             font-weight: bold;
-            font-size: 10pt;
-            text-align: center;
         }
 
-        .text-red {
-            color: #FF0000;
+        .check-critico {
+            color: #c00;
+            font-weight: bold;
         }
 
-        /* ==================== VALVULAS TABLE ==================== */
-        .valvulas-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 7.5pt;
+        /* ==================== ACTIVIDADES ESPECÍFICO ==================== */
+        .actividades-table .num-col {
+            text-align: left;
+            padding-left: 8px;
         }
 
-        .valvulas-table th,
-        .valvulas-table td {
-            border: 1px solid #000;
-            padding: 2px;
-            text-align: center;
+        .actividades-table .act-col {
+            text-align: left;
+            padding-left: 10px;
+        }
+
+        /* ==================== INSPECCIÓN ESPECÍFICO ==================== */
+        .inspection-table .sub-label {
+            font-weight: 600;
+            padding-left: 12px;
+            background: #f8f9fa !important;
         }
 
         /* ==================== PANEL FOTOGRAFICO ==================== */
+        .photo-section {
+            page-break-before: always;
+            border: 2px solid #0066a1;
+            border-radius: 6px;
+            padding: 10px;
+        }
+
+        .photo-title {
+            text-align: center;
+            font-size: 11pt;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #0066a1;
+            border-bottom: 2px solid #0066a1;
+            padding-bottom: 6px;
+        }
+
         .photo-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 10mm;
-            margin-top: 5mm;
+            gap: 12px;
         }
 
         .photo-item {
             text-align: center;
-            break-inside: avoid;
         }
 
         .photo-img {
             width: 100%;
-            height: 200px;
+            height: 180px;
             object-fit: contain;
-            border: 1px solid #ccc;
-            margin-bottom: 5px;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            margin-bottom: 4px;
+            background: #fafafa;
+        }
+
+        .photo-caption {
+            font-size: 7pt;
+            font-weight: bold;
+            color: #333;
+        }
+
+        @media print {
+            body {
+                background: #fff;
+                padding: 0;
+            }
+
+            .page-container {
+                box-shadow: none;
+                padding: 0;
+            }
         }
     </style>
 </head>
@@ -257,326 +318,241 @@
 <body>
     {% for item in reports %}
     {% set report = item.data %}
-    <div class="container">
-        <!-- ==================== HEADER ==================== -->
-        <table class="header-table">
-            <tr>
-                <td class="header-logo-left">
-                    <div class="sedapal-logo">
-                        <div class="sedapal-text">sedapal</div>
-                        <div class="sedapal-lines">
-                            <div class="sedapal-line1"></div>
-                            <div class="sedapal-line2"></div>
-                        </div>
-                    </div>
-                </td>
-                <td class="header-title">
-                    INFORME TÉCNICO DE LIMPIEZA Y DESINFECCIÓN DE RESERVORIOS Y CISTERNAS
-                </td>
-                <td class="header-logo-right">
-                    <div class="hidro-logo" style="margin-bottom: 5px;">
-                        <div class="hidro-top">
-                            <span class="hidro-text">HIDROSERVICIOS</span>
-                            <span class="hidro-aa">AA</span>
-                        </div>
-                        <div class="hidro-eirl">E.I.R.L.</div>
-                    </div>
-                    <!-- METADATA BOX -->
-                    <table class="metadata-table" style="position: absolute; top: 5px; right: 5px;">
-                        <tr>
-                            <td class="metadata-label">INFORME</td>
-                            <td class="metadata-value">{{ report.metadata.informe_id }}</td>
-                        </tr>
-                        <tr>
-                            <td class="metadata-label">DÍA</td>
-                            <td class="metadata-value">{{ report.metadata.dia }}</td>
-                        </tr>
-                        <tr>
-                            <td class="metadata-label">MES</td>
-                            <td class="metadata-value">{{ report.metadata.mes }}</td>
-                        </tr>
-                        <tr>
-                            <td class="metadata-label">AÑO</td>
-                            <td class="metadata-value">{{ report.metadata.anio }}</td>
-                        </tr>
-                    </table>
-                </td>
-            </tr>
-        </table>
+    <div class="page-container">
 
-        <!-- ==================== INFO SECTION ==================== -->
-        <table class="info-table" style="border-top: none;">
-            <tr>
-                <td class="info-label" style="border-top: none;">C.S</td>
-                <td class="info-colon" style="border-top: none;">:</td>
-                <td class="info-value-box" style="border-top: none;">{{ report.header.cs }}</td>
-            </tr>
-            <tr>
-                <td class="info-label">CONTRATISTA</td>
-                <td class="info-colon">:</td>
-                <td class="info-value-box">{{ report.header.contratista }}</td>
-            </tr>
-        </table>
+        <!-- HEADER -->
+        <div class="header">
+            <div class="logo-left">
+                {% if logo_left %}
+                <img src="{{ logo_left }}" class="logo-img" />
+                {% else %}
+                <div class="sedapal-text">sedapal</div>
+                <div style="width: 80px; margin-top: 3px;">
+                    <div class="sedapal-line1"></div>
+                    <div class="sedapal-line2"></div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="header-title">
+                <h1>Informe Técnico de Limpieza y<br>Desinfección de Reservorios y Cisternas</h1>
+            </div>
+            <div class="logo-right">
+                {% if logo_right %}
+                <img src="{{ logo_right }}" class="logo-img" />
+                {% else %}
+                <div class="hidro-name">HIDROSERVICI<span style="color:#d4a017">✪</span>S <span
+                        class="hidro-aa">AA</span></div>
+                <div style="font-size: 7pt; font-weight: bold; color: #666; text-align:center;">E.I.R.L.</div>
+                {% endif %}
+            </div>
+        </div>
 
-        <table class="info-table" style="margin-top: -1px;">
-            <tr>
-                <td class="info-label" style="width: 25%;">CÓDIGO DE INFRAESTRUCTURA:</td>
-                <td class="info-value-box" style="font-size: 11pt;">{{ report.header.codigo_infraestructura }}</td>
-            </tr>
-        </table>
+        <!-- METADATA -->
+        <div class="metadata-box">
+            <table class="metadata-table">
+                <tr>
+                    <td class="meta-label">INFORME</td>
+                    <td style="width:50px; text-align:center;">{{ report.metadata.informe_id }}</td>
+                    <td class="meta-label">DÍA</td>
+                    <td style="width:35px; text-align:center;">{{ report.metadata.dia }}</td>
+                    <td class="meta-label">MES</td>
+                    <td style="width:50px; text-align:center;">{{ report.metadata.mes }}</td>
+                    <td class="meta-label">AÑO</td>
+                    <td style="width:45px; text-align:center;">{{ report.metadata.anio }}</td>
+                </tr>
+            </table>
+        </div>
 
-        <table class="info-table" style="margin-top: -1px;">
-            <tr>
-                <td class="info-label" style="width: 12%;">UBICACIÓN</td>
-                <td class="info-colon">:</td>
-                <td class="info-value-box" style="width: 38%;">{{ report.header.ubicacion }}</td>
-                <td style="width: 10%; border: none;"></td>
-                <td class="info-label" style="width: 8%;">TIPO</td>
-                <td class="info-colon">:</td>
-                <td class="info-value-box" style="width: 15%;">{{ report.header.tipo }}</td>
-            </tr>
-            <tr>
-                <td class="info-label">SUMINISTRO</td>
-                <td class="info-colon">:</td>
-                <td class="info-value-box">{{ report.header.suministro }}</td>
-                <td style="border: none;"></td>
-                <td class="info-label">VOLUMEN:</td>
-                <td class="info-colon">:</td>
-                <td class="info-value-box">{{ report.header.volumen }}</td>
-            </tr>
-        </table>
+        <!-- INFO SECTION -->
+        <div class="info-section">
+            <div class="info-row two-cols">
+                <div class="info-label">C.S :</div>
+                <div class="info-value">{{ report.header.cs }}</div>
+            </div>
+            <div class="info-row two-cols">
+                <div class="info-label">CONTRATISTA :</div>
+                <div class="info-value">{{ report.header.contratista }}</div>
+            </div>
+            <div class="info-row codigo">
+                <div class="info-label">CÓDIGO DE INFRAESTRUCTURA :</div>
+                <div class="info-value"
+                    style="font-weight:bold; color:#0066a1; text-align:center; justify-content:center;">{{
+                    report.header.codigo_infraestructura }}</div>
+            </div>
+            <div class="info-row four-cols">
+                <div class="info-label">UBICACIÓN :</div>
+                <div class="info-value">{{ report.header.ubicacion }}</div>
+                <div class="info-label">TIPO :</div>
+                <div class="info-value" style="justify-content: center;">{{ report.header.tipo }}</div>
+            </div>
+            <div class="info-row four-cols">
+                <div class="info-label">SUMINISTRO :</div>
+                <div class="info-value">{{ report.header.suministro }}</div>
+                <div class="info-label">VOLUMEN :</div>
+                <div class="info-value" style="justify-content: center;">{{ report.header.volumen }}</div>
+            </div>
+        </div>
 
-        <!-- ==================== INSPECTION TABLE ==================== -->
-        <table class="inspection-table" style="margin-top: -1px;">
+        <!-- INSPECCIÓN TABLE -->
+        <table class="section-table inspection-table">
             <thead>
                 <tr>
-                    <th rowspan="2" style="width: 20%;">DESCRIPCIÓN</th>
-                    <th rowspan="2" style="width: 10%;"></th>
-                    <th colspan="2" style="width: 12%;">ESTADO</th>
-                    <th rowspan="2" style="width: 29%;">OBSERVACIONES</th>
-                    <th rowspan="2" style="width: 29%;">SUGERENCIAS</th>
+                    <th colspan="2" style="width:31.5%">Descripción</th>
+                    <th colspan="2">Estado</th>
+                    <th rowspan="2" class="col-obs">Observaciones</th>
+                    <th rowspan="2" class="col-sug">Sugerencias</th>
                 </tr>
                 <tr>
-                    <th style="width: 6%;">NORMAL</th>
-                    <th style="width: 6%;">CRÍTICO</th>
+                    <th colspan="2"></th>
+                    <th style="width:7.5%">Normal</th>
+                    <th style="width:7.5%">Crítico</th>
                 </tr>
             </thead>
             <tbody>
-                <!-- Caja Registro -->
                 <tr>
-                    <td class="font-bold" colspan="2">CAJA DE REGISTRO</td>
-                    <td class="text-center">{% if report.inspeccion.caja_registro == 'normal' %}X{% endif %}</td>
-                    <td class="text-center text-red">{% if report.inspeccion.caja_registro == 'critico' %}X{% endif %}
-                    </td>
-                    <td class="text-center {% if report.inspeccion.caja_registro == 'critico' %}text-red{% endif %}">{{
-                        report.observaciones if report.inspeccion.caja_registro == 'critico' }}</td>
-                    <td class="text-center {% if report.inspeccion.caja_registro == 'critico' %}text-red{% endif %}">{{
-                        report.sugerencias if report.inspeccion.caja_registro == 'critico' }}</td>
-                </tr>
-                <!-- Marco y Tapa -->
-                <tr>
-                    <td class="font-bold" colspan="2">MARCO Y TAPA SANITARIA</td>
-                    <td class="text-center">{% if report.inspeccion.marco_tapa == 'normal' %}X{% endif %}</td>
-                    <td class="text-center text-red">{% if report.inspeccion.marco_tapa == 'critico' %}X{% endif %}</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <!-- Escalera -->
-                <tr>
-                    <td class="font-bold" rowspan="2" style="text-align: center;">ESCALERA</td>
-                    <td class="font-bold">INTERIOR</td>
-                    <td class="text-center">{% if report.inspeccion.escalera_interior == 'normal' %}X{% endif %}</td>
-                    <td class="text-center text-red">{% if report.inspeccion.escalera_interior == 'critico' %}X{% endif
-                        %}</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td class="font-bold">EXTERIOR</td>
-                    <td class="text-center">{% if report.inspeccion.escalera_exterior == 'normal' %}X{% endif %}</td>
-                    <td class="text-center text-red">{% if report.inspeccion.escalera_exterior == 'critico' %}X{% endif
-                        %}</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <!-- Cuba -->
-                <tr>
-                    <td class="font-bold" rowspan="2" style="text-align: center;">CUBA</td>
-                    <td class="font-bold">INTERIOR</td>
-                    <td class="text-center">{% if report.inspeccion.cuba_interior == 'normal' %}X{% endif %}</td>
-                    <td class="text-center text-red">{% if report.inspeccion.cuba_interior == 'critico' %}X{% endif %}
-                    </td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td class="font-bold">EXTERIOR</td>
-                    <td class="text-center">{% if report.inspeccion.cuba_exterior == 'normal' %}X{% endif %}</td>
-                    <td class="text-center text-red">{% if report.inspeccion.cuba_exterior == 'critico' %}X{% endif %}
-                    </td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <!-- Loza Fondo -->
-                <tr>
-                    <td class="font-bold" colspan="2">LOZA DE FONDO</td>
-                    <td class="text-center">{% if report.inspeccion.loza_fondo == 'normal' %}X{% endif %}</td>
-                    <td class="text-center text-red">{% if report.inspeccion.loza_fondo == 'critico' %}X{% endif %}</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <!-- Loza Techo -->
-                <tr>
-                    <td class="font-bold" rowspan="2" style="text-align: center;">LOZA DE TECHO</td>
-                    <td class="font-bold">INTERIOR</td>
-                    <td class="text-center">{% if report.inspeccion.loza_techo_interior == 'normal' %}X{% endif %}</td>
-                    <td class="text-center text-red">{% if report.inspeccion.loza_techo_interior == 'critico' %}X{%
+                    <td colspan="2" class="row-label">CAJA DE REGISTRO</td>
+                    <td class="center">{% if report.inspeccion.caja_registro == 'normal' %}<span
+                            class="check-normal">X</span>{% endif %}</td>
+                    <td class="center">{% if report.inspeccion.caja_registro == 'critico' %}<span
+                            class="check-critico">X</span>{% endif %}</td>
+                    <td class="center">{% if report.inspeccion.caja_registro == 'critico' %}{{ report.observaciones }}{%
                         endif %}</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td class="font-bold">EXTERIOR</td>
-                    <td class="text-center">{% if report.inspeccion.loza_techo_exterior == 'normal' %}X{% endif %}</td>
-                    <td class="text-center text-red">{% if report.inspeccion.loza_techo_exterior == 'critico' %}X{%
+                    <td class="center">{% if report.inspeccion.caja_registro == 'critico' %}{{ report.sugerencias }}{%
                         endif %}</td>
+                </tr>
+                <tr>
+                    <td colspan="2" class="row-label">MARCO Y TAPA SANITARIA</td>
+                    <td class="center">{% if report.inspeccion.marco_tapa == 'normal' %}<span
+                            class="check-normal">X</span>{% endif %}</td>
+                    <td class="center">{% if report.inspeccion.marco_tapa == 'critico' %}<span
+                            class="check-critico">X</span>{% endif %}</td>
+                    <td class="center">{% if report.inspeccion.marco_tapa == 'critico' %}{{ report.observaciones }}{%
+                        endif %}</td>
+                    <td class="center">{% if report.inspeccion.marco_tapa == 'critico' %}{{ report.sugerencias }}{%
+                        endif %}</td>
+                </tr>
+                <tr>
+                    <td rowspan="2" class="row-label center" style="width:11%">ESCALERA</td>
+                    <td class="sub-label">INTERIOR</td>
+                    <td class="center">{% if report.inspeccion.escalera_interior == 'normal' %}<span
+                            class="check-normal">X</span>{% endif %}</td>
+                    <td class="center">{% if report.inspeccion.escalera_interior == 'critico' %}<span
+                            class="check-critico">X</span>{% endif %}</td>
+                    <td class="center">{% if report.inspeccion.escalera_interior == 'critico' %}{{ report.observaciones
+                        }}{% endif %}</td>
+                    <td class="center">{% if report.inspeccion.escalera_interior == 'critico' %}{{ report.sugerencias
+                        }}{% endif %}</td>
+                </tr>
+                <tr>
+                    <td class="sub-label">EXTERIOR</td>
+                    <td class="center">{% if report.inspeccion.escalera_exterior == 'normal' %}<span
+                            class="check-normal">X</span>{% endif %}</td>
+                    <td class="center">{% if report.inspeccion.escalera_exterior == 'critico' %}<span
+                            class="check-critico">X</span>{% endif %}</td>
                     <td></td>
                     <td></td>
                 </tr>
-                <!-- Ducto -->
                 <tr>
-                    <td class="font-bold" colspan="2">DUCTO DE VENTILACIÓN</td>
-                    <td class="text-center">{% if report.inspeccion.ducto_ventilacion == 'normal' %}X{% endif %}</td>
-                    <td class="text-center text-red">{% if report.inspeccion.ducto_ventilacion == 'critico' %}X{% endif
-                        %}</td>
+                    <td rowspan="2" class="row-label center">CUBA</td>
+                    <td class="sub-label">INTERIOR</td>
+                    <td class="center">{% if report.inspeccion.cuba_interior == 'normal' %}<span
+                            class="check-normal">X</span>{% endif %}</td>
+                    <td class="center">{% if report.inspeccion.cuba_interior == 'critico' %}<span
+                            class="check-critico">X</span>{% endif %}</td>
+                    <td class="center">{% if report.inspeccion.cuba_interior == 'critico' %}{{ report.observaciones }}{%
+                        endif %}</td>
+                    <td class="center">{% if report.inspeccion.cuba_interior == 'critico' %}{{ report.sugerencias }}{%
+                        endif %}</td>
+                </tr>
+                <tr>
+                    <td class="sub-label">EXTERIOR</td>
+                    <td class="center">{% if report.inspeccion.cuba_exterior == 'normal' %}<span
+                            class="check-normal">X</span>{% endif %}</td>
+                    <td class="center">{% if report.inspeccion.cuba_exterior == 'critico' %}<span
+                            class="check-critico">X</span>{% endif %}</td>
                     <td></td>
                     <td></td>
                 </tr>
-                <!-- Cerco -->
                 <tr>
-                    <td class="font-bold" colspan="2">CERCO PERIMÉTRICO</td>
-                    <td class="text-center">{% if report.inspeccion.cerco_perimetrico == 'normal' %}X{% endif %}</td>
-                    <td class="text-center text-red">{% if report.inspeccion.cerco_perimetrico == 'critico' %}X{% endif
-                        %}</td>
+                    <td colspan="2" class="row-label">LOZA DE FONDO</td>
+                    <td class="center">{% if report.inspeccion.loza_fondo == 'normal' %}<span
+                            class="check-normal">X</span>{% endif %}</td>
+                    <td class="center">{% if report.inspeccion.loza_fondo == 'critico' %}<span
+                            class="check-critico">X</span>{% endif %}</td>
                     <td></td>
                     <td></td>
                 </tr>
-                <!-- Descarga -->
                 <tr>
-                    <td class="font-bold" colspan="2">DESCARGA</td>
-                    <td class="text-center">{% if report.inspeccion.descarga == 'normal' %}X{% endif %}</td>
-                    <td class="text-center text-red">{% if report.inspeccion.descarga == 'critico' %}X{% endif %}</td>
+                    <td rowspan="2" class="row-label center">LOZA DE TECHO</td>
+                    <td class="sub-label">INTERIOR</td>
+                    <td class="center">{% if report.inspeccion.loza_techo_interior == 'normal' %}<span
+                            class="check-normal">X</span>{% endif %}</td>
+                    <td class="center">{% if report.inspeccion.loza_techo_interior == 'critico' %}<span
+                            class="check-critico">X</span>{% endif %}</td>
+                    <td class="center">{% if report.inspeccion.loza_techo_interior == 'critico' %}{{
+                        report.observaciones }}{% endif %}</td>
+                    <td class="center">{% if report.inspeccion.loza_techo_interior == 'critico' %}{{ report.sugerencias
+                        }}{% endif %}</td>
+                </tr>
+                <tr>
+                    <td class="sub-label">EXTERIOR</td>
+                    <td class="center">{% if report.inspeccion.loza_techo_exterior == 'normal' %}<span
+                            class="check-normal">X</span>{% endif %}</td>
+                    <td class="center">{% if report.inspeccion.loza_techo_exterior == 'critico' %}<span
+                            class="check-critico">X</span>{% endif %}</td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td colspan="2" class="row-label">DUCTO DE VENTILACIÓN</td>
+                    <td class="center">{% if report.inspeccion.ducto_ventilacion == 'normal' %}<span
+                            class="check-normal">X</span>{% endif %}</td>
+                    <td class="center">{% if report.inspeccion.ducto_ventilacion == 'critico' %}<span
+                            class="check-critico">X</span>{% endif %}</td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td colspan="2" class="row-label">CERCO PERIMÉTRICO</td>
+                    <td class="center">{% if report.inspeccion.cerco_perimetrico == 'normal' %}<span
+                            class="check-normal">X</span>{% endif %}</td>
+                    <td class="center">{% if report.inspeccion.cerco_perimetrico == 'critico' %}<span
+                            class="check-critico">X</span>{% endif %}</td>
+                    <td class="center">{% if report.inspeccion.cerco_perimetrico == 'critico' %}{{ report.observaciones
+                        }}{% endif %}</td>
+                    <td class="center">{% if report.inspeccion.cerco_perimetrico == 'critico' %}{{ report.sugerencias
+                        }}{% endif %}</td>
+                </tr>
+                <tr>
+                    <td colspan="2" class="row-label">DESCARGA</td>
+                    <td class="center">{% if report.inspeccion.descarga == 'normal' %}<span
+                            class="check-normal">X</span>{% endif %}</td>
+                    <td class="center">{% if report.inspeccion.descarga == 'critico' %}<span
+                            class="check-critico">X</span>{% endif %}</td>
                     <td></td>
                     <td></td>
                 </tr>
             </tbody>
         </table>
 
-        <!-- ==================== VALVULAS TABLE ==================== -->
-        <table class="valvulas-table" style="margin-top: -1px;">
+        <!-- VÁLVULAS TABLE -->
+        <table class="section-table valvulas-table">
+            <colgroup>
+                <col class="col-main-label">
+                <col span="7">
+                <col style="width:5%">
+                <col style="width:5%">
+                <col class="col-obs">
+                <col class="col-sug">
+            </colgroup>
             <thead>
                 <tr>
-                    <th rowspan="2" style="width: 12%;">VÁLVULAS</th>
-                    <th colspan="7">DIÁMETRO DE VÁLVULAS</th>
-                    <th rowspan="2" style="width: 5%;">OPER.</th>
-                    <th rowspan="2" style="width: 5%;">NO OP.</th>
-                    <th rowspan="2" style="width: 18%;">OBSERVACIONES</th>
-                    <th rowspan="2" style="width: 18%;">SUGERENCIAS</th>
-                </tr>
-                <tr>
-                    <th style="width: 5%;">2''</th>
-                    <th style="width: 5%;">3''</th>
-                    <th style="width: 5%;">4''</th>
-                    <th style="width: 5%;">6''</th>
-                    <th style="width: 5%;">8''</th>
-                    <th style="width: 5%;">10''</th>
-                    <th style="width: 5%;">12''</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td class="font-bold text-left">CONDUCCIÓN</td>
-                    <td>{{ report.valvulas.diametros['2'] if report.valvulas.diametros['2'] }}</td>
-                    <td>{{ report.valvulas.diametros['3'] if report.valvulas.diametros['3'] }}</td>
-                    <td>{{ report.valvulas.diametros['4'] if report.valvulas.diametros['4'] }}</td>
-                    <td>{{ report.valvulas.diametros['6'] if report.valvulas.diametros['6'] }}</td>
-                    <td>{{ report.valvulas.diametros['8'] if report.valvulas.diametros['8'] }}</td>
-                    <td>{{ report.valvulas.diametros['10'] if report.valvulas.diametros['10'] }}</td>
-                    <td>{{ report.valvulas.diametros['12'] if report.valvulas.diametros['12'] }}</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td class="font-bold text-left">ADUCCIÓN</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td class="font-bold text-left">BY PASS</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td class="font-bold text-left">DESAGÜE</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                </tr>
-                <tr>
-                    <td class="font-bold text-left">TOTAL</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td>{{ report.valvulas.operativas }}</td>
-                    <td>{{ report.valvulas.no_operativas }}</td>
-                    <td></td>
-                    <td></td>
-                </tr>
-            </tbody>
-        </table>
-
-        <!-- ==================== CANASTILLA TABLE ==================== -->
-        <table class="valvulas-table" style="margin-top: -1px;">
-            <thead>
-                <tr>
-                    <th rowspan="2" style="width: 12%;">CANASTILLA</th>
-                    <th colspan="7">DIÁMETRO DE CANASTILLA</th>
-                    <th rowspan="2" style="width: 5%;">OPER.</th>
-                    <th rowspan="2" style="width: 5%;">NO OP.</th>
-                    <th rowspan="2" style="width: 18%;">OBSERVACIONES</th>
-                    <th rowspan="2" style="width: 18%;">SUGERENCIAS</th>
+                    <th rowspan="2">Válvulas</th>
+                    <th colspan="7">Diámetro de Válvulas</th>
+                    <th rowspan="2">Oper.</th>
+                    <th rowspan="2">No Op.</th>
+                    <th rowspan="2">Observaciones</th>
+                    <th rowspan="2">Sugerencias</th>
                 </tr>
                 <tr>
                     <th>2''</th>
@@ -590,22 +566,28 @@
             </thead>
             <tbody>
                 <tr>
-                    <td class="font-bold text-left">ADUCCION</td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td class="text-red font-bold">{% if report.canastillas.no_operativas > 0 %}NO TIENE 8"{% endif %}
+                    <td class="row-label">CONDUCCIÓN</td>
+                    <td class="center">{{ report.valvulas.diametros['2'] if report.valvulas.diametros['2'] else '' }}
                     </td>
-                    <td class="text-red font-bold">{% if report.canastillas.no_operativas > 0 %}INSTALAR{% endif %}</td>
+                    <td class="center">{{ report.valvulas.diametros['3'] if report.valvulas.diametros['3'] else '' }}
+                    </td>
+                    <td class="center">{{ report.valvulas.diametros['4'] if report.valvulas.diametros['4'] else '' }}
+                    </td>
+                    <td class="center">{{ report.valvulas.diametros['6'] if report.valvulas.diametros['6'] else '' }}
+                    </td>
+                    <td class="center">{{ report.valvulas.diametros['8'] if report.valvulas.diametros['8'] else '' }}
+                    </td>
+                    <td class="center">{{ report.valvulas.diametros['10'] if report.valvulas.diametros['10'] else '' }}
+                    </td>
+                    <td class="center">{{ report.valvulas.diametros['12'] if report.valvulas.diametros['12'] else '' }}
+                    </td>
+                    <td class="center"></td>
+                    <td class="center"></td>
+                    <td></td>
+                    <td></td>
                 </tr>
                 <tr>
-                    <td class="font-bold text-left">TOTAL</td>
+                    <td class="row-label">ADUCCIÓN</td>
                     <td></td>
                     <td></td>
                     <td></td>
@@ -613,117 +595,241 @@
                     <td></td>
                     <td></td>
                     <td></td>
-                    <td>{{ report.canastillas.operativas }}</td>
-                    <td>{{ report.canastillas.no_operativas }}</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td class="row-label">BY PASS</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr>
+                    <td class="row-label">DESAGÜE</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <tr style="background:#d4d8dd">
+                    <td class="row-label">TOTAL</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td class="center" style="font-weight:bold;">{{ report.valvulas.operativas }}</td>
+                    <td class="center" style="font-weight:bold;">{{ report.valvulas.no_operativas }}</td>
                     <td></td>
                     <td></td>
                 </tr>
             </tbody>
         </table>
 
-        <!-- ==================== MEDIDAS TABLE ==================== -->
-        <table class="inspection-table" style="margin-top: -1px;">
+        <!-- CANASTILLA TABLE -->
+        <table class="section-table valvulas-table">
+            <colgroup>
+                <col class="col-main-label">
+                <col span="7">
+                <col style="width:5%">
+                <col style="width:5%">
+                <col class="col-obs">
+                <col class="col-sug">
+            </colgroup>
             <thead>
                 <tr>
-                    <th style="width: 70%;">MEDIDAS</th>
-                    <th style="width: 10%;">U/M</th>
-                    <th style="width: 20%;">CANTIDAD</th>
+                    <th rowspan="2">Canastilla</th>
+                    <th colspan="7">Diámetro de Canastilla</th>
+                    <th rowspan="2">Oper.</th>
+                    <th rowspan="2">No Op.</th>
+                    <th rowspan="2">Observaciones</th>
+                    <th rowspan="2">Sugerencias</th>
+                </tr>
+                <tr>
+                    <th>2''</th>
+                    <th>3''</th>
+                    <th>4''</th>
+                    <th>6''</th>
+                    <th>8''</th>
+                    <th>10''</th>
+                    <th>12''</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td class="font-bold">DIAMETRO</td>
-                    <td class="text-center">M</td>
-                    <td class="text-center">9.78</td>
+                    <td class="row-label">ADUCCION</td>
+                    <td class="center">{{ report.canastillas.diametros['2'] if report.canastillas.diametros['2'] else ''
+                        }}</td>
+                    <td class="center">{{ report.canastillas.diametros['3'] if report.canastillas.diametros['3'] else ''
+                        }}</td>
+                    <td class="center">{{ report.canastillas.diametros['4'] if report.canastillas.diametros['4'] else ''
+                        }}</td>
+                    <td class="center">{{ report.canastillas.diametros['6'] if report.canastillas.diametros['6'] else ''
+                        }}</td>
+                    <td class="center">{{ report.canastillas.diametros['8'] if report.canastillas.diametros['8'] else ''
+                        }}</td>
+                    <td class="center">{{ report.canastillas.diametros['10'] if report.canastillas.diametros['10'] else
+                        '' }}</td>
+                    <td class="center">{{ report.canastillas.diametros['12'] if report.canastillas.diametros['12'] else
+                        '' }}</td>
+                    <td class="center"></td>
+                    <td class="center"></td>
+                    <td class="center check-critico">{% if report.canastillas.no_operativas > 0 %}NO TIENE{% endif %}
+                    </td>
+                    <td class="center check-critico">{% if report.canastillas.no_operativas > 0 %}INSTALAR{% endif %}
+                    </td>
                 </tr>
-                <tr>
-                    <td class="font-bold">DIAMETRO INTERNO</td>
-                    <td class="text-center">M</td>
-                    <td class="text-center">1.90</td>
-                </tr>
-                <tr>
-                    <td class="font-bold">ALTURA UTIL</td>
-                    <td class="text-center">M</td>
-                    <td class="text-center">5.00</td>
-                </tr>
-                <tr>
-                    <td class="font-bold">ALTURA TOTAL</td>
-                    <td class="text-center">M</td>
-                    <td class="text-center">5.18</td>
+                <tr style="background:#d4d8dd">
+                    <td class="row-label">TOTAL</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td class="center" style="font-weight:bold;">{{ report.canastillas.operativas }}</td>
+                    <td class="center" style="font-weight:bold;">{{ report.canastillas.no_operativas }}</td>
+                    <td></td>
+                    <td></td>
                 </tr>
             </tbody>
         </table>
 
-        <!-- ==================== ACTIVIDADES TABLE ==================== -->
-        <table class="inspection-table" style="margin-top: -1px;">
+        <!-- MEDIDAS TABLE -->
+        <table class="section-table medidas-table">
+            <colgroup>
+                <col style="width: 65%;">
+                <col class="col-obs">
+                <col class="col-sug">
+            </colgroup>
             <thead>
                 <tr>
-                    <th colspan="2">ACTIVIDADES EJECUTADAS</th>
+                    <th>Medidas</th>
+                    <th class="center">U/M</th>
+                    <th class="center">Cantidad</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td style="width: 5%; text-align: center; font-weight: bold;">1</td>
-                    <td>SEÑALIZACION DE LA ZONA DE TRABAJO</td>
+                    <td class="row-label">DIAMETRO</td>
+                    <td class="center">M</td>
+                    <td class="center"></td>
                 </tr>
                 <tr>
-                    <td style="width: 5%; text-align: center; font-weight: bold;">2</td>
-                    <td>LLENADO DE FORMATOS: ATS, ALTURA.</td>
+                    <td class="row-label">DIAMETRO INTERNO</td>
+                    <td class="center">M</td>
+                    <td class="center"></td>
                 </tr>
                 <tr>
-                    <td style="width: 5%; text-align: center; font-weight: bold;">3</td>
-                    <td>DESCARGA DE HERRAMIENTAS, EQUIPOS E INSUMOS DEL VEHICULO</td>
+                    <td class="row-label">ALTURA UTIL</td>
+                    <td class="center">M</td>
+                    <td class="center"></td>
                 </tr>
                 <tr>
-                    <td style="width: 5%; text-align: center; font-weight: bold;">4</td>
-                    <td>VENTILACION DE LA ESTRUCTURA DE ALMACENAMIENTO DE AGUA</td>
-                </tr>
-                <tr>
-                    <td style="width: 5%; text-align: center; font-weight: bold;">5</td>
-                    <td>INSTALACION DEL SISTEMA DE ILUMINACION</td>
-                </tr>
-                <tr>
-                    <td style="width: 5%; text-align: center; font-weight: bold;">6</td>
-                    <td>TRASLADO E INGRESO DE HERRAMIENTAS NECESARIOS PARA INICIAR LA LIMPIEZA</td>
-                </tr>
-                <tr>
-                    <td style="width: 5%; text-align: center; font-weight: bold;">7</td>
-                    <td>RASQUETEO DE LAS PAREDES, PISO Y TECHO CON AYUDA DE HERRAMIENTAS Y EL AGUA</td>
-                </tr>
-                <tr>
-                    <td style="width: 5%; text-align: center; font-weight: bold;">8</td>
-                    <td>ENJUAGUE Y DESCARGA DEL AGUA DE LIMPIEZA</td>
-                </tr>
-                <tr>
-                    <td style="width: 5%; text-align: center; font-weight: bold;">9</td>
-                    <td>PREPARACION DE LA SOLUCION DE HIPOCLORITO DE CALCIO</td>
-                </tr>
-                <tr>
-                    <td style="width: 5%; text-align: center; font-weight: bold;">10</td>
-                    <td>DESINFECCION CON AYUDA DE LA BOMBA DE ALTA PRESION</td>
-                </tr>
-                <tr>
-                    <td style="width: 5%; text-align: center; font-weight: bold;">11</td>
-                    <td>SE PROCEDE A CARGAR LAS HERRAMIENTAS, EQUIPOS Y SEÑALIZACION AL VEHICULO.</td>
+                    <td class="row-label">ALTURA TOTAL</td>
+                    <td class="center">M</td>
+                    <td class="center"></td>
                 </tr>
             </tbody>
         </table>
 
-        <!-- PANEL FOTOGRAFICO -->
-        {% if item.images %}
-        <div style="page-break-before: always; border: 1px solid #000; padding: 10px;">
-            <h2 style="text-align: center; margin-bottom: 20px; font-size: 14pt;">PANEL FOTOGRÁFICO</h2>
+        <!-- ACTIVIDADES EJECUTADAS TABLE -->
+        <table class="section-table actividades-table">
+            <colgroup>
+                <col class="col-main-label">
+                <col>
+            </colgroup>
+            <thead>
+                <tr>
+                    <th colspan="2">Actividades Ejecutadas</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="num-col row-label">1</td>
+                    <td class="act-col">SEÑALIZACION DE LA ZONA DE TRABAJO</td>
+                </tr>
+                <tr>
+                    <td class="num-col row-label">2</td>
+                    <td class="act-col">LLENADO DE FORMATOS: ATS, ALTURA.</td>
+                </tr>
+                <tr>
+                    <td class="num-col row-label">3</td>
+                    <td class="act-col">DESCARGA DE HERRAMIENTAS, EQUIPOS E INSUMOS DEL VEHICULO</td>
+                </tr>
+                <tr>
+                    <td class="num-col row-label">4</td>
+                    <td class="act-col">VENTILACION DE LA ESTRUCTURA DE ALMACENAMIENTO DE AGUA</td>
+                </tr>
+                <tr>
+                    <td class="num-col row-label">5</td>
+                    <td class="act-col">INSTALACION DEL SISTEMA DE ILUMINACION</td>
+                </tr>
+                <tr>
+                    <td class="num-col row-label">6</td>
+                    <td class="act-col">TRASLADO E INGRESO DE HERRAMIENTAS NECESARIOS PARA INICIAR LA LIMPIEZA</td>
+                </tr>
+                <tr>
+                    <td class="num-col row-label">7</td>
+                    <td class="act-col">RASQUETEO DE LAS PAREDES, PISO Y TECHO CON AYUDA DE HERRAMIENTAS Y EL AGUA</td>
+                </tr>
+                <tr>
+                    <td class="num-col row-label">8</td>
+                    <td class="act-col">ENJUAGUE Y DESCARGA DEL AGUA DE LIMPIEZA</td>
+                </tr>
+                <tr>
+                    <td class="num-col row-label">9</td>
+                    <td class="act-col">PREPARACION DE LA SOLUCION DE HIPOCLORITO DE CALCIO</td>
+                </tr>
+                <tr>
+                    <td class="num-col row-label">10</td>
+                    <td class="act-col">DESINFECCION CON AYUDA DE LA BOMBA DE ALTA PRESION</td>
+                </tr>
+                <tr>
+                    <td class="num-col row-label">11</td>
+                    <td class="act-col">SE PROCEDE A CARGAR LAS HERRAMIENTAS, EQUIPOS Y SEÑALIZACION AL VEHICULO.</td>
+                </tr>
+            </tbody>
+        </table>
+
+    </div>
+
+    <!-- PANEL FOTOGRAFICO -->
+    {% if item.images %}
+    <div class="page-container">
+        <div class="photo-section">
+            <h2 class="photo-title">PANEL FOTOGRÁFICO</h2>
             <div class="photo-grid">
                 {% for img in item.images %}
                 <div class="photo-item">
                     <img src="{{ img.path }}" class="photo-img" />
-                    <div style="font-size: 9pt; font-weight: bold;">{{ img.name }}</div>
+                    <div class="photo-caption">{{ img.name }}</div>
                 </div>
                 {% endfor %}
             </div>
         </div>
-        {% endif %}
     </div>
+    {% endif %}
     {% endfor %}
 </body>
 
