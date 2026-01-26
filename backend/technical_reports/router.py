@@ -2,10 +2,11 @@
 Router FastAPI para endpoints de informes técnicos
 Prefijo: /api/technical-reports
 """
-from fastapi import APIRouter, UploadFile, HTTPException, Query
+from fastapi import APIRouter, UploadFile, HTTPException, Query, File
 from fastapi.responses import Response
 from typing import Optional, List
 import os
+import tempfile
 from .models import TechnicalReport, ReportListItem
 from .database import db_manager
 from .service import service
@@ -16,13 +17,15 @@ router = APIRouter(
 )
 
 @router.post("/import-csv")
-async def import_csv(file: UploadFile):
+async def import_csv(file: UploadFile = File(...)):
     """Importar informes desde CSV"""
-    if not file.filename.endswith(('.csv', '.CSV')):
+    if not file.filename or not file.filename.lower().endswith('.csv'):
         raise HTTPException(400, "El archivo debe ser CSV")
     
-    # Guardar temporalmente
-    temp_path = f"/tmp/tech_reports_{file.filename}"
+    # Guardar temporalmente - usar tempfile para compatibilidad cross-platform
+    temp_dir = tempfile.gettempdir()
+    temp_path = os.path.join(temp_dir, f"tech_reports_{file.filename}")
+    
     try:
         content = await file.read()
         with open(temp_path, 'wb') as f:
@@ -32,17 +35,19 @@ async def import_csv(file: UploadFile):
         imported, errors = db_manager.import_from_csv(temp_path)
         
         # Convertir a lista simple
-        report_items = [
-            ReportListItem(
-                id=r.id,
-                informe_id=r.metadata.informe_id,
-                cs=r.header.cs,
-                codigo_infraestructura=r.header.codigo_infraestructura,
-                status=r.status,
-                last_modified=r.last_modified
-            )
-            for r in imported
-        ]
+        report_items = []
+        for r in imported:
+            try:
+                report_items.append(ReportListItem(
+                    id=r.id,
+                    informe_id=r.metadata.informe_id,
+                    cs=r.header.cs,
+                    codigo_infraestructura=r.header.codigo_infraestructura,
+                    status=r.status,
+                    last_modified=r.last_modified
+                ))
+            except Exception as e:
+                print(f"Error creating ReportListItem: {e}")
         
         return {
             "success": True,
@@ -52,11 +57,16 @@ async def import_csv(file: UploadFile):
         }
     
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(500, f"Error importando CSV: {str(e)}")
     
     finally:
         if os.path.exists(temp_path):
-            os.remove(temp_path)
+            try:
+                os.remove(temp_path)
+            except:
+                pass
 
 @router.get("/reports")
 async def get_reports(
@@ -97,6 +107,8 @@ async def create_report(report: TechnicalReport):
         created = db_manager.create(report)
         return {"success": True, "report": created}
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(500, f"Error creando reporte: {str(e)}")
 
 @router.put("/reports/{report_id}")
@@ -108,6 +120,8 @@ async def update_report(report_id: str, report: TechnicalReport):
     except ValueError as e:
         raise HTTPException(404, str(e))
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(500, f"Error actualizando: {str(e)}")
 
 @router.delete("/reports/{report_id}")
@@ -144,6 +158,8 @@ async def generate_pdf(report_id: str):
         )
     
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(500, f"Error generando PDF: {str(e)}")
 
 @router.get("/autocomplete/cs")
@@ -158,7 +174,7 @@ async def autocomplete_contratista(cs: Optional[str] = Query(None)):
     if cs:
         # Filtrar por CS
         reports = db_manager.get_all({'cs': cs})
-        contratistas = list(set(r['header']['contratista'] for r in reports))
+        contratistas = list(set(r.get('header', {}).get('contratista', '') for r in reports if r.get('header', {}).get('contratista')))
     else:
         contratistas = db_manager.get_unique_values('contratista')
     

@@ -1,9 +1,25 @@
 // Cliente API para informes técnicos
 
 import axios from 'axios';
-import { TechnicalReport, ReportListItem } from './types';
+import { TechnicalReport } from './types';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+// Detectar URL del backend automáticamente
+const getApiBase = (): string => {
+    // Si hay variable de entorno definida, usarla
+    if (import.meta.env.VITE_API_URL) {
+        return import.meta.env.VITE_API_URL;
+    }
+
+    // En desarrollo local
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return 'http://localhost:7860';
+    }
+
+    // En producción (HuggingFace Spaces), el backend está en el mismo origen
+    return window.location.origin;
+};
+
+const API_BASE = getApiBase();
 const API_PREFIX = '/api/technical-reports';
 
 export const technicalReportsApi = {
@@ -34,9 +50,12 @@ export const technicalReportsApi = {
         if (filters?.contratista) params.append('contratista', filters.contratista);
         if (filters?.status) params.append('status', filters.status);
 
-        const response = await axios.get(
-            `${API_BASE}${API_PREFIX}/reports?${params.toString()}`
-        );
+        const queryString = params.toString();
+        const url = queryString
+            ? `${API_BASE}${API_PREFIX}/reports?${queryString}`
+            : `${API_BASE}${API_PREFIX}/reports`;
+
+        const response = await axios.get(url);
 
         return response.data;
     },
@@ -108,7 +127,7 @@ export const technicalReportsApi = {
         },
 
         contratista: async (cs?: string): Promise<string[]> => {
-            const params = cs ? `?cs=${cs}` : '';
+            const params = cs ? `?cs=${encodeURIComponent(cs)}` : '';
             const response = await axios.get(
                 `${API_BASE}${API_PREFIX}/autocomplete/contratista${params}`
             );

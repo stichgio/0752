@@ -1,13 +1,12 @@
 // frontend/src/pages/Tools.tsx
 
 import { useState } from 'react';
-import { Calculator, FileText, ClipboardList } from 'lucide-react'; // ← Agregar ClipboardList
+import { Calculator, FileText, ClipboardList } from 'lucide-react';
 import Calculadora from '@/components/tools/Calculator';
 import PDFTools from '@/components/tools/PDFTools';
-import TechnicalReports from '@/components/tools/TechnicalReports'; // ← NUEVO IMPORT
 
 export default function Tools() {
-    const [activeTool, setActiveTool] = useState<'calculator' | 'pdf' | 'technical' | null>(null);
+    const [activeTool, setActiveTool] = useState<'calculator' | 'pdf' | null>(null);
 
     return (
         <div className="min-h-screen bg-gray-900 text-white">
@@ -44,16 +43,18 @@ export default function Tools() {
                             </div>
                         </button>
 
-                        {/* ✨ NUEVO: Informes Técnicos */}
-                        <button
-                            onClick={() => setActiveTool('technical')}
-                            className="bg-gray-800 hover:bg-gray-700 rounded-lg p-6 text-left transition-colors"
+                        {/* Informes Técnicos */}
+                        <a
+                            href="/technical-reports.html"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="bg-gray-800 hover:bg-gray-700 rounded-lg p-6 text-left transition-colors block"
                         >
                             <div className="flex items-center gap-3">
                                 <ClipboardList size={24} />
                                 <span className="text-lg font-medium">Informes Técnicos</span>
                             </div>
-                        </button>
+                        </a>
                     </div>
                 </div>
             ) : (
@@ -70,7 +71,6 @@ export default function Tools() {
                     {/* Renderizar tool seleccionada */}
                     {activeTool === 'calculator' && <Calculadora />}
                     {activeTool === 'pdf' && <PDFTools />}
-                    {activeTool === 'technical' && <TechnicalReports />} {/* ✨ NUEVO */}
                 </div>
             )}
         </div>

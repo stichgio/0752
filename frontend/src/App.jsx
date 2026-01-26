@@ -2,15 +2,17 @@ import React, { useState, useRef, useMemo, memo } from 'react';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import html2canvas from 'html2canvas';
-import { FileSpreadsheet, Image as ImageIcon, Printer, Settings, FileCode, CheckCircle, AlertCircle, RotateCcw, Music, Calculator, FileText, Timer, Play, Pause, Coffee, Brain } from 'lucide-react';
+import { FileSpreadsheet, Image as ImageIcon, Printer, Settings, FileCode, CheckCircle, AlertCircle, RotateCcw, Music, Calculator, FileText, Timer, Play, Pause, Coffee, Brain, ClipboardList } from 'lucide-react';
 import PreviewPanel from './components/PreviewPanel';
 import PomodoroTimer from './components/PomodoroTimer';
+
 import { REPORT_FIELDS } from './constants';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 export default function App() {
     const panelRef = useRef(null);
+
 
     // Data State
     const [data, setData] = useState([]);
@@ -907,6 +909,13 @@ export default function App() {
                                 <FileText size={14} className="text-white" />
                                 PDF Tools
                             </a>
+                            <a
+                                href="/technical-reports.html"
+                                className="flex items-center justify-center gap-2 bg-neutral-800 hover:bg-neutral-700 text-white p-2 rounded transition-colors text-[10px] w-full cursor-pointer mt-2"
+                            >
+                                <ClipboardList size={14} className="text-white" />
+                                Informes Técnicos
+                            </a>
                         </div>
                     </div>
 
@@ -914,7 +923,7 @@ export default function App() {
             </aside >
 
             {/* Main Preview */}
-            < main className="flex-1 flex flex-col h-full overflow-hidden relative" >
+            <main className="flex-1 flex flex-col h-full overflow-hidden relative">
                 <PreviewPanel
                     ref={panelRef}
                     data={data[selectedIndex]}
@@ -925,7 +934,7 @@ export default function App() {
                     customTemplate={customTemplate}
                     customColumns={customColumns}
                 />
-            </main >
+            </main>
 
             {/* Custom Column Modal */}
             {

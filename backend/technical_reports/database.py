@@ -4,14 +4,30 @@ Usa almacenamiento JSON propio, no interfiere con otras funcionalidades
 """
 import os
 import json
+import tempfile
 import pandas as pd
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from datetime import datetime
 from .models import (
-    TechnicalReport, ReportListItem, CheckState,
+    TechnicalReport, ReportListItem,
     ReportMetadata, ReportHeader, InspeccionDescripcion,
     ValvulasCanastillas
 )
+
+def safe_int(value, default=0) -> int:
+    """Convierte valor a int de forma segura"""
+    if pd.isna(value) or value == '' or value is None:
+        return default
+    try:
+        return int(float(value))
+    except (ValueError, TypeError):
+        return default
+
+def safe_str(value, default='') -> str:
+    """Convierte valor a str de forma segura"""
+    if pd.isna(value) or value is None:
+        return default
+    return str(value).strip()
 
 class DatabaseManager:
     def __init__(self, storage_dir: str = None):
@@ -51,19 +67,25 @@ class DatabaseManager:
         except Exception as e:
             print(f"[TechReports DB] Error saving: {e}")
     
-    def import_from_csv(self, csv_path: str) -> tuple[List[TechnicalReport], List[str]]:
+    def import_from_csv(self, csv_path: str) -> Tuple[List[TechnicalReport], List[str]]:
         """Importar informes desde CSV"""
         imported_reports = []
         errors = []
         
         try:
-            df = pd.read_csv(csv_path)
-            print(f"[TechReports DB] CSV has {len(df)} rows")
+            # Intentar diferentes encodings
+            try:
+                df = pd.read_csv(csv_path, encoding='utf-8')
+            except UnicodeDecodeError:
+                df = pd.read_csv(csv_path, encoding='latin-1')
             
-            required_columns = [
-                'INFORME_ID', 'DIA', 'MES', 'AÑO', 'C_S', 'CONTRATISTA',
-                'CODIGO_INFRAESTRUCTURA', 'UBICACION', 'SUMINISTRO', 'TIPO', 'VOLUMEN'
-            ]
+            print(f"[TechReports DB] CSV has {len(df)} rows, columns: {list(df.columns)}")
+            
+            # Columnas requeridas mínimas
+            required_columns = ['INFORME_ID']
+            
+            # Normalizar nombres de columnas (quitar espacios, uppercase)
+            df.columns = [col.strip().upper() for col in df.columns]
             
             missing_cols = [col for col in required_columns if col not in df.columns]
             if missing_cols:
@@ -72,109 +94,117 @@ class DatabaseManager:
             
             for idx, row in df.iterrows():
                 try:
-                    report = self._csv_row_to_report(row)
+                    report = self._csv_row_to_report(row, idx)
                     self.reports[report.id] = report.dict()
                     imported_reports.append(report)
                 except Exception as e:
                     errors.append(f"Fila {idx + 2}: {str(e)}")
+                    import traceback
+                    traceback.print_exc()
             
             self.save_database()
             print(f"[TechReports DB] Imported {len(imported_reports)} reports")
             
         except Exception as e:
             errors.append(f"Error general: {str(e)}")
+            import traceback
+            traceback.print_exc()
         
         return imported_reports, errors
     
-    def _csv_row_to_report(self, row: pd.Series) -> TechnicalReport:
+    def _csv_row_to_report(self, row: pd.Series, idx: int) -> TechnicalReport:
         """Convertir fila CSV a TechnicalReport"""
-        report_id = f"RPT-{int(row['INFORME_ID']):04d}"
+        informe_id = safe_int(row.get('INFORME_ID', idx + 1), idx + 1)
+        report_id = f"RPT-{informe_id:04d}"
         
         return TechnicalReport(
             id=report_id,
             metadata=ReportMetadata(
-                informe_id=int(row['INFORME_ID']),
-                dia=int(row['DIA']),
-                mes=str(row['MES']),
-                anio=int(row['AÑO']),
+                informe_id=informe_id,
+                dia=safe_int(row.get('DIA', 1), 1),
+                mes=safe_str(row.get('MES', '')),
+                anio=safe_int(row.get('AÑO', row.get('ANO', 2024)), 2024),
                 pagina="1 de 2"
             ),
             header=ReportHeader(
-                cs=str(row['C_S']),
-                contratista=str(row['CONTRATISTA']),
-                codigo_infraestructura=str(row['CODIGO_INFRAESTRUCTURA']),
-                ubicacion=str(row['UBICACION']),
-                suministro=str(row['SUMINISTRO']),
-                tipo=str(row['TIPO']),
-                volumen=int(row['VOLUMEN'])
+                cs=safe_str(row.get('C_S', row.get('CS', ''))),
+                contratista=safe_str(row.get('CONTRATISTA', '')),
+                codigo_infraestructura=safe_str(row.get('CODIGO_INFRAESTRUCTURA', row.get('CODIGO', ''))),
+                ubicacion=safe_str(row.get('UBICACION', '')),
+                suministro=safe_str(row.get('SUMINISTRO', '')),
+                tipo=safe_str(row.get('TIPO', 'ELEVADO')),
+                volumen=safe_int(row.get('VOLUMEN', 0))
             ),
             inspeccion=InspeccionDescripcion(
                 caja_registro=self._parse_check(row.get('CAJA_REGISTRO')),
                 marco_tapa=self._parse_check(row.get('MARCO_TAPA')),
-                escalera_interior=self._parse_check(row.get('ESCALERA_INT')),
-                escalera_exterior=self._parse_check(row.get('ESCALERA_EXT')),
-                cuba_interior=self._parse_check(row.get('CUBA_INT')),
-                cuba_exterior=self._parse_check(row.get('CUBA_EXT')),
+                escalera_interior=self._parse_check(row.get('ESCALERA_INT', row.get('ESCALERA_INTERIOR'))),
+                escalera_exterior=self._parse_check(row.get('ESCALERA_EXT', row.get('ESCALERA_EXTERIOR'))),
+                cuba_interior=self._parse_check(row.get('CUBA_INT', row.get('CUBA_INTERIOR'))),
+                cuba_exterior=self._parse_check(row.get('CUBA_EXT', row.get('CUBA_EXTERIOR'))),
                 loza_fondo=self._parse_check(row.get('LOZA_FONDO')),
-                loza_techo_interior=self._parse_check(row.get('LOZA_TECHO_INT')),
-                loza_techo_exterior=self._parse_check(row.get('LOZA_TECHO_EXT')),
+                loza_techo_interior=self._parse_check(row.get('LOZA_TECHO_INT', row.get('LOZA_TECHO_INTERIOR'))),
+                loza_techo_exterior=self._parse_check(row.get('LOZA_TECHO_EXT', row.get('LOZA_TECHO_EXTERIOR'))),
                 ducto_ventilacion=self._parse_check(row.get('DUCTO_VENTILACION')),
                 cerco_perimetrico=self._parse_check(row.get('CERCO_PERIMETRICO')),
                 descarga=self._parse_check(row.get('DESCARGA'))
             ),
             valvulas=ValvulasCanastillas(
                 diametros={
-                    "2": int(row.get('VALVULAS_2', 0)),
-                    "3": int(row.get('VALVULAS_3', 0)),
-                    "4": int(row.get('VALVULAS_4', 0)),
-                    "6": int(row.get('VALVULAS_6', 0)),
-                    "8": int(row.get('VALVULAS_8', 0)),
-                    "10": int(row.get('VALVULAS_10', 0)),
-                    "12": int(row.get('VALVULAS_12', 0)),
+                    "2": safe_int(row.get('VALVULAS_2')),
+                    "3": safe_int(row.get('VALVULAS_3')),
+                    "4": safe_int(row.get('VALVULAS_4')),
+                    "6": safe_int(row.get('VALVULAS_6')),
+                    "8": safe_int(row.get('VALVULAS_8')),
+                    "10": safe_int(row.get('VALVULAS_10')),
+                    "12": safe_int(row.get('VALVULAS_12')),
                 },
-                operativas=int(row.get('VALVULAS_OPER', 0)),
-                no_operativas=int(row.get('VALVULAS_NO_OPER', 0))
+                operativas=safe_int(row.get('VALVULAS_OPER')),
+                no_operativas=safe_int(row.get('VALVULAS_NO_OPER'))
             ),
             canastillas=ValvulasCanastillas(
                 diametros={
-                    "2": int(row.get('CANASTILLA_2', 0)),
-                    "3": int(row.get('CANASTILLA_3', 0)),
-                    "4": int(row.get('CANASTILLA_4', 0)),
-                    "6": int(row.get('CANASTILLA_6', 0)),
-                    "8": int(row.get('CANASTILLA_8', 0)),
-                    "10": int(row.get('CANASTILLA_10', 0)),
-                    "12": int(row.get('CANASTILLA_12', 0)),
+                    "2": safe_int(row.get('CANASTILLA_2')),
+                    "3": safe_int(row.get('CANASTILLA_3')),
+                    "4": safe_int(row.get('CANASTILLA_4')),
+                    "6": safe_int(row.get('CANASTILLA_6')),
+                    "8": safe_int(row.get('CANASTILLA_8')),
+                    "10": safe_int(row.get('CANASTILLA_10')),
+                    "12": safe_int(row.get('CANASTILLA_12')),
                 },
-                operativas=int(row.get('CANASTILLA_OPER', 0)),
-                no_operativas=int(row.get('CANASTILLA_NO_OPER', 0))
+                operativas=safe_int(row.get('CANASTILLA_OPER')),
+                no_operativas=safe_int(row.get('CANASTILLA_NO_OPER'))
             ),
-            observaciones=str(row.get('OBSERVACIONES', '')),
-            sugerencias=str(row.get('SUGERENCIAS', '')),
+            observaciones=safe_str(row.get('OBSERVACIONES', '')),
+            sugerencias=safe_str(row.get('SUGERENCIAS', '')),
             status="draft",
             last_modified=datetime.now()
         )
     
     @staticmethod
-    def _parse_check(value) -> CheckState:
+    def _parse_check(value) -> str:
         """Convertir valor CSV a CheckState"""
-        if pd.isna(value) or value == '':
+        if pd.isna(value) or value == '' or value is None:
             return "unchecked"
-        elif str(value).upper() == 'X':
+        val_str = str(value).strip().upper()
+        if val_str == 'X' or val_str == 'CRITICO':
             return "critico"
-        else:
+        elif val_str == 'N' or val_str == 'NORMAL' or val_str == 'OK':
             return "normal"
+        else:
+            return "unchecked"
     
     def get_all(self, filters: dict = None) -> List[dict]:
         """Obtener todos los reportes con filtros opcionales"""
         reports = list(self.reports.values())
         
         if filters:
-            if 'cs' in filters:
-                reports = [r for r in reports if r['header']['cs'] == filters['cs']]
-            if 'contratista' in filters:
-                reports = [r for r in reports if r['header']['contratista'] == filters['contratista']]
-            if 'status' in filters:
-                reports = [r for r in reports if r['status'] == filters['status']]
+            if 'cs' in filters and filters['cs']:
+                reports = [r for r in reports if r.get('header', {}).get('cs') == filters['cs']]
+            if 'contratista' in filters and filters['contratista']:
+                reports = [r for r in reports if r.get('header', {}).get('contratista') == filters['contratista']]
+            if 'status' in filters and filters['status']:
+                reports = [r for r in reports if r.get('status') == filters['status']]
         
         return reports
     
@@ -210,15 +240,17 @@ class DatabaseManager:
         values = set()
         
         field_map = {
-            'cs': lambda r: r['header']['cs'],
-            'contratista': lambda r: r['header']['contratista'],
-            'tipo': lambda r: r['header']['tipo']
+            'cs': lambda r: r.get('header', {}).get('cs', ''),
+            'contratista': lambda r: r.get('header', {}).get('contratista', ''),
+            'tipo': lambda r: r.get('header', {}).get('tipo', '')
         }
         
         if field in field_map:
             for report in self.reports.values():
                 try:
-                    values.add(field_map[field](report))
+                    val = field_map[field](report)
+                    if val:
+                        values.add(val)
                 except:
                     pass
         
