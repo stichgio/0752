@@ -12,6 +12,7 @@ import tempfile
 from typing import List, Optional
 from report_service import run_batch_generation, ReportService
 from pdf_tools import merge_pdfs_interleaved, split_pdf, split_pdf_by_ranges
+from technical_report_service import router as technical_reports_router
 import zipfile
 
 
@@ -355,8 +356,10 @@ async def tool_split_pdf(
         raise HTTPException(status_code=500, detail=str(e))
 
 # Include the API router
-# Include the API router
 app.include_router(api_router)
+
+# Include Technical Reports Router
+app.include_router(technical_reports_router)
 
 if __name__ == "__main__":
     import uvicorn

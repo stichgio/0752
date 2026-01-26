@@ -1,0 +1,7 @@
+# Ignorar archivos de datos generados (pero incluir ejemplo)
+*.json
+!ejemplo_informes.csv
+
+# Archivos temporales
+*.tmp
+*.temp
