@@ -1,13 +1,14 @@
-# --- Stage 1: Build Frontend ---
-FROM node:18 as frontend-builder
-
-WORKDIR /app/frontend
-COPY frontend/package.json frontend/package-lock.json ./
-RUN npm ci
-COPY frontend ./
+# Stage 1: Build Frontend
+FROM node:18-alpine as build-frontend
+WORKDIR /app
+COPY frontend/package.json ./
+# Install dependencies
+RUN npm install
+# Copy source and build
+COPY frontend/ .
 RUN npm run build
 
-# --- Stage 2: Setup Python Backend ---
+# Stage 2: Setup Python Backend - EXTREME OPTIMIZATION
 FROM python:3.11-slim
 
 # Install system dependencies
@@ -17,19 +18,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     python3-cffi \
     python3-brotli \
+    # Cairo y Pango (WeasyPrint + CairoCFFI)
     libcairo2-dev \
     libpango-1.0-0 \
     libpangocairo-1.0-0 \
     libpangoft2-1.0-0 \
     libgdk-pixbuf-2.0-0 \
     libharfbuzz-subset0 \
+    # Imagen processing
     libjpeg-dev \
     libopenjp2-7-dev \
     zlib1g-dev \
     libffi-dev \
+    # Ghostscript para compresión de PDFs
     ghostscript \
+    # Fonts
     fonts-liberation \
     fontconfig \
+    # Cleanup to keep image small
     && rm -rf /var/lib/apt/lists/*
 
 # Create a non-root user for security (required by HF Spaces)
@@ -44,8 +50,8 @@ WORKDIR $HOME/app
 # Copy the backend code
 COPY --chown=user backend $HOME/app
 
-# Copy the built frontend to backend/static
-COPY --from=frontend-builder --chown=user /app/frontend/dist $HOME/app/static
+# Copy Frontend Build from Stage 1
+COPY --from=build-frontend --chown=user /app/dist $HOME/app/static
 
 # Create output folder for PDFs and Jinja2 cache
 RUN mkdir -p $HOME/app/output && chmod 777 $HOME/app/output

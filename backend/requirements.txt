@@ -13,3 +13,4 @@ httpx[http2]>=0.25.0
 cairocffi>=1.6.0
 # Pillow con optimizaciones SIMD (fallback a Pillow estándar si no disponible)
 Pillow>=10.0.0
+aiofiles
