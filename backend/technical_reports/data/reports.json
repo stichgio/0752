@@ -9,27 +9,27 @@
       "pagina": "1 de 2"
     },
     "header": {
-      "cs": "GIO LABS",
-      "contratista": "HIDROSERVICIOS AA",
-      "codigo_infraestructura": "LAMP R12",
-      "ubicacion": "ALAMEDA LOS HORIZONTES 224",
+      "cs": "LIMA NORTE",
+      "contratista": "HIDRO SERVICIOS",
+      "codigo_infraestructura": "LN-RES-001",
+      "ubicacion": "Av. Test 123",
       "suministro": "SUB-001",
-      "tipo": "ENTERRADO",
-      "volumen": 100
+      "tipo": "ELEVADO",
+      "volumen": 500
     },
     "inspeccion": {
       "caja_registro": "normal",
       "marco_tapa": "critico",
       "escalera_interior": "normal",
       "escalera_exterior": "critico",
-      "cuba_interior": "normal",
-      "cuba_exterior": "critico",
+      "cuba_interior": "unchecked",
+      "cuba_exterior": "normal",
       "loza_fondo": "critico",
       "loza_techo_interior": "normal",
-      "loza_techo_exterior": "critico",
+      "loza_techo_exterior": "unchecked",
       "ducto_ventilacion": "critico",
-      "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked"
+      "cerco_perimetrico": "normal",
+      "descarga": "critico"
     },
     "valvulas": {
       "diametros": {
@@ -57,10 +57,10 @@
       "operativas": 0,
       "no_operativas": 0
     },
-    "observaciones": "Observaciones actualizadas via API",
-    "sugerencias": "Sugerencias actualizadas via API",
+    "observaciones": "",
+    "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-25 22:01:39.356976"
+    "last_modified": "2026-01-26 09:50:06.814769"
   },
   "RPT-0002": {
     "id": "RPT-0002",
@@ -81,18 +81,18 @@
       "volumen": 300
     },
     "inspeccion": {
-      "caja_registro": "critico",
+      "caja_registro": "normal",
       "marco_tapa": "normal",
       "escalera_interior": "critico",
-      "escalera_exterior": "normal",
-      "cuba_interior": "unchecked",
+      "escalera_exterior": "critico",
+      "cuba_interior": "normal",
       "cuba_exterior": "critico",
       "loza_fondo": "normal",
       "loza_techo_interior": "critico",
-      "loza_techo_exterior": "unchecked",
-      "ducto_ventilacion": "unchecked",
-      "cerco_perimetrico": "unchecked",
-      "descarga": "normal"
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "critico",
+      "cerco_perimetrico": "critico",
+      "descarga": "critico"
     },
     "valvulas": {
       "diametros": {
@@ -120,9 +120,9 @@
       "operativas": 0,
       "no_operativas": 0
     },
-    "observaciones": "DESPRENDIMIENTO DE TECHO",
-    "sugerencias": "CAMBIAR",
+    "observaciones": "",
+    "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-25 21:59:36.017725"
+    "last_modified": "2026-01-26 09:46:54.916565"
   }
 }

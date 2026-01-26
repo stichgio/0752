@@ -1,8 +1,8 @@
 from fastapi import FastAPI, UploadFile, File, Form, BackgroundTasks, HTTPException, APIRouter
+from fastapi.staticfiles import StaticFiles
 import base64
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, FileResponse
-from fastapi.staticfiles import StaticFiles
 import pandas as pd
 import io # Keep io as it's used in /upload
 import shutil
@@ -353,28 +353,32 @@ async def tool_split_pdf(
         raise HTTPException(status_code=500, detail=str(e))
 
 # Include the API router
-# Include the API router
-# Include the API router
 app.include_router(api_router)
 app.include_router(technical_reports_router)
 
-# Serve Static Files (Frontend) if they exist
-static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
-if os.path.exists(static_dir):
-    # Mount assets
-    app.mount("/assets", StaticFiles(directory=os.path.join(static_dir, "assets")), name="assets")
-    
-    @app.get("/")
-    async def serve_index():
-        return FileResponse(os.path.join(static_dir, "index.html"))
+# SERVING FRONTEND (React) - For Hugging Face Spaces / Docker
+# If 'static' folder exists (created by Dockerfile), serve it.
+if os.path.exists("static"):
+    app.mount("/assets", StaticFiles(directory="static/assets"), name="assets")
 
     @app.get("/technical-reports")
-    async def serve_technical_reports():
-        return FileResponse(os.path.join(static_dir, "technical-reports.html"))
-else:
-    @app.get("/")
-    def read_root():
-        return {"message": "¡El backend está vivo y funcionando! (Frontend estático no encontrado)", "status": "ok"}
+    async def serve_page_technical():
+        return FileResponse("static/technical-reports.html")
+
+    # Catch-all for SPA (must be last)
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        # Allow API calls to pass through (just in case)
+        if full_path.startswith("api/"):
+             raise HTTPException(status_code=404, detail="Not Found")
+
+        # Check if file exists in static (e.g. favicon.ico, public assets)
+        path = os.path.join("static", full_path)
+        if os.path.exists(path) and os.path.isfile(path):
+            return FileResponse(path)
+        
+        # Fallback to index.html for React Router
+        return FileResponse("static/index.html")
 
 if __name__ == "__main__":
     import uvicorn
