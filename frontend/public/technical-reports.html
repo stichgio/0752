@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Informe Técnico - Vista Previa</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 10mm;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 9pt;
+            line-height: 1.2;
+        }
+
+        /* --- CONFIGURATION PANEL (Hidden on Print) --- */
+        .config-panel {
+            background-color: #f0f0f0;
+            border-bottom: 1px solid #ccc;
+            padding: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .config-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .config-item label {
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        @media print {
+            .config-panel {
+                display: none !important;
+            }
+        }
+
+        /* --- FLEXBOX HEADER --- */
+        .report-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #000;
+            padding: 5px;
+            margin-bottom: 10px;
+            min-height: 80px;
+        }
+
+        .header-logo {
+            flex: 0 0 100px;
+            /* Fixed width for logo containers */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 80px;
+            overflow: hidden;
+            /* border: 1px dashed #ccc; Optional visual guide */
+        }
+
+        .header-logo img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .header-title-section {
+            flex: 1;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 0 10px;
+        }
+
+        .main-title {
+            font-weight: bold;
+            font-size: 11pt;
+            margin-bottom: 5px;
+        }
+
+        .page-info {
+            font-size: 8pt;
+            text-align: right;
+            border-left: 1px solid #000;
+            padding-left: 10px;
+            margin-left: 10px;
+            width: 80px;
+        }
+
+        /* --- REST OF STYLES --- */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+
+        td,
+        th {
+            border: 1px solid #000;
+            padding: 2mm;
+            vertical-align: middle;
+        }
+
+        .info-box {
+            background: #f5f5f5;
+            padding: 2mm;
+            text-align: right;
+            font-size: 8pt;
+            border: 1px solid #000;
+            margin-bottom: 15px;
+        }
+
+        .label-cell {
+            background: #f9f9f9;
+            font-weight: bold;
+            width: 25%;
+        }
+
+        .section-title {
+            background: #e0e0e0;
+            font-weight: bold;
+            text-align: center;
+            padding: 2mm;
+            margin-top: 2mm;
+            border: 1px solid #000;
+        }
+
+        .check-mark {
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .valves-table th {
+            background: #d0d0d0;
+            text-align: center;
+            font-size: 8pt;
+        }
+
+        .valves-table td {
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- CONFIGURATION SECTION -->
+    <div class="config-panel">
+        <div class="config-item">
+            <label for="logoLeftInput">Logo Izquierdo</label>
+            <input type="file" id="logoLeftInput" accept="image/*">
+        </div>
+        <div class="config-item">
+            <label for="logoRightInput">Logo Derecho</label>
+            <input type="file" id="logoRightInput" accept="image/*">
+        </div>
+        <div style="font-size: 11px; color: #666; max-width: 200px;">
+            * Los logotipos se ajustarán automáticamente. Esta barra se ocultará al imprimir.
+        </div>
+    </div>
+
+    <!-- MAIN REPORT HEADER (Flexbox) -->
+    <div class="report-header">
+        <!-- Logo Left -->
+        <div class="header-logo" id="logoLeftContainer">
+            <!-- Default Placeholder or Empty -->
+            <span style="font-size: 10px; color: #999; text-align: center;">Logo Izq</span>
+        </div>
+
+        <!-- Title Center -->
+        <div class="header-title-section">
+            <div class="main-title">
+                INFORME TÉCNICO DE LIMPIEZA Y DESINFECCIÓN<br>
+                DE RESERVORIOS Y CISTERNAS
+            </div>
+            <div style="font-size: 9pt;">
+                <strong>INFORME:</strong> 0001-2025 | <strong>FECHA:</strong> 26/01/2025
+            </div>
+        </div>
+
+        <!-- Logo Right -->
+        <div class="header-logo" id="logoRightContainer">
+            <!-- Default Placeholder or Empty -->
+            <span style="font-size: 10px; color: #999; text-align: center;">Logo Der</span>
+        </div>
+
+        <!-- Page Info (Optional, integrated in flex or separate) -->
+        <div class="page-info">
+            Página<br><strong>1 de 1</strong>
+        </div>
+    </div>
+
+    <!-- INFO BOX (Recreated from original) -->
+    <div class="info-box">
+        <strong>INFORME:</strong> 0001-2025<br>
+        <strong>DÍA:</strong> 26 | <strong>MES:</strong> ENERO | <strong>AÑO:</strong> 2025
+    </div>
+
+    <!-- INFO BÁSICA (Static Sample Data) -->
+    <table>
+        <tr>
+            <td class="label-cell">C-S:</td>
+            <td colspan="3">LIMA NORTE</td>
+        </tr>
+        <tr>
+            <td class="label-cell">CONTRATISTA:</td>
+            <td colspan="3">CONTRATISTA GENERAL S.A.C.</td>
+        </tr>
+        <tr>
+            <td class="label-cell">CÓDIGO DE INFRAESTRUCTURA:</td>
+            <td colspan="3">LN-RES-001</td>
+        </tr>
+        <tr>
+            <td class="label-cell">UBICACIÓN:</td>
+            <td>Av. Los Próceres 123</td>
+            <td class="label-cell">TIPO:</td>
+            <td>ELEVADO</td>
+        </tr>
+        <tr>
+            <td class="label-cell">SUMINISTRO:</td>
+            <td>1234567</td>
+            <td class="label-cell">VOLUMEN:</td>
+            <td>500 m³</td>
+        </tr>
+    </table>
+
+    <div class="section-title">DESCRIPCIÓN DEL ESTADO</div>
+    <!-- Simplified Table for Preview -->
+    <table>
+        <thead>
+            <tr style="background: #d0d0d0;">
+                <th>DESCRIPCIÓN</th>
+                <th style="width: 10%;">NORMAL</th>
+                <th style="width: 10%;">CRÍTICO</th>
+                <th>OBSERVACIONES</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Caja de Registro</td>
+                <td class="check-mark">X</td>
+                <td class="check-mark"></td>
+                <td>Operativa</td>
+            </tr>
+            <tr>
+                <td>Marco y Tapa</td>
+                <td class="check-mark"></td>
+                <td class="check-mark">X</td>
+                <td>Oxidada, requiere cambio</td>
+            </tr>
+            <tr>
+                <td>Escalera Interior</td>
+                <td class="check-mark">X</td>
+                <td class="check-mark"></td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script>
+        // Function to handle image upload and preview
+        function setupLogoUploader(inputId, containerId) {
+            const input = document.getElementById(inputId);
+            const container = document.getElementById(containerId);
+
+            input.addEventListener('change', function (e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+
+                    reader.onload = function (e) {
+                        // Create or update img tag
+                        container.innerHTML = ''; // Clear placeholder
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        container.appendChild(img);
+                    }
+
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        // Initialize listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            setupLogoUploader('logoLeftInput', 'logoLeftContainer');
+            setupLogoUploader('logoRightInput', 'logoRightContainer');
+        });
+    </script>
+</body>
+
+</html>

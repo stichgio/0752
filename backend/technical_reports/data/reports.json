@@ -1,0 +1,128 @@
+{
+  "RPT-0001": {
+    "id": "RPT-0001",
+    "metadata": {
+      "informe_id": 1,
+      "dia": 15,
+      "mes": "ENERO",
+      "anio": 2025,
+      "pagina": "1 de 2"
+    },
+    "header": {
+      "cs": "LIMA NORTE",
+      "contratista": "HIDRO SERVICIOS",
+      "codigo_infraestructura": "LN-RES-001",
+      "ubicacion": "Av. Test 123",
+      "suministro": "SUB-001",
+      "tipo": "ELEVADO",
+      "volumen": 500
+    },
+    "inspeccion": {
+      "caja_registro": "normal",
+      "marco_tapa": "critico",
+      "escalera_interior": "normal",
+      "escalera_exterior": "critico",
+      "cuba_interior": "unchecked",
+      "cuba_exterior": "normal",
+      "loza_fondo": "critico",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "unchecked",
+      "ducto_ventilacion": "critico",
+      "cerco_perimetrico": "normal",
+      "descarga": "critico"
+    },
+    "valvulas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 0,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 0,
+      "no_operativas": 0
+    },
+    "canastillas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 0,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 0,
+      "no_operativas": 0
+    },
+    "observaciones": "",
+    "sugerencias": "",
+    "status": "draft",
+    "last_modified": "2026-01-26 09:50:06.814769"
+  },
+  "RPT-0002": {
+    "id": "RPT-0002",
+    "metadata": {
+      "informe_id": 2,
+      "dia": 16,
+      "mes": "ENERO",
+      "anio": 2025,
+      "pagina": "1 de 2"
+    },
+    "header": {
+      "cs": "LIMA SUR",
+      "contratista": "AQUA TECH",
+      "codigo_infraestructura": "LS-RES-002",
+      "ubicacion": "Jr. Test 456",
+      "suministro": "SUB-002",
+      "tipo": "ENTERRADO",
+      "volumen": 300
+    },
+    "inspeccion": {
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "critico",
+      "escalera_exterior": "critico",
+      "cuba_interior": "normal",
+      "cuba_exterior": "critico",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "critico",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "critico",
+      "cerco_perimetrico": "critico",
+      "descarga": "critico"
+    },
+    "valvulas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 0,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 0,
+      "no_operativas": 0
+    },
+    "canastillas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 0,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 0,
+      "no_operativas": 0
+    },
+    "observaciones": "",
+    "sugerencias": "",
+    "status": "draft",
+    "last_modified": "2026-01-26 09:46:54.916565"
+  }
+}
