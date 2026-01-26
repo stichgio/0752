@@ -911,6 +911,8 @@ export default function App() {
                             </a>
                             <a
                                 href="/technical-reports.html"
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="flex items-center justify-center gap-2 bg-neutral-800 hover:bg-neutral-700 text-white p-2 rounded transition-colors text-[10px] w-full cursor-pointer mt-2"
                             >
                                 <ClipboardList size={14} className="text-white" />
