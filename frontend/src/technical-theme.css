@@ -151,3 +151,22 @@ body.technical-theme {
     text-transform: uppercase;
     letter-spacing: 1px;
 }
+
+/* Scrollbar personalizado para lista de reportes */
+.technical-theme .overflow-y-auto::-webkit-scrollbar {
+    width: 6px;
+}
+
+.technical-theme .overflow-y-auto::-webkit-scrollbar-track {
+    background: #111;
+    border-radius: 3px;
+}
+
+.technical-theme .overflow-y-auto::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 3px;
+}
+
+.technical-theme .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
