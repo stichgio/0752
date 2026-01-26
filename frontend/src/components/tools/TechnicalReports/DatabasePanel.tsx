@@ -31,7 +31,9 @@ export default function DatabasePanel({
 
     return (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 overflow-auto">
-            <h2 className="text-lg font-bold mb-4">Base de Datos</h2>
+            <h2 className="text-lg font-bold mb-4">
+                Base de Datos ({reports.length} {reports.length === 1 ? 'informe' : 'informes'})
+            </h2>
 
             {/* Botones de acción */}
             <div className="flex gap-2 mb-4">
@@ -61,7 +63,7 @@ export default function DatabasePanel({
             />
 
             {/* Lista de reportes */}
-            <div className="space-y-2">
+            <div className="space-y-2 max-h-[calc(100vh-250px)] overflow-y-auto pr-2">
                 {reports.length === 0 ? (
                     <p className="text-gray-500 text-sm text-center py-8">
                         No hay informes. Importa un CSV para comenzar.
@@ -72,33 +74,31 @@ export default function DatabasePanel({
                             key={report.id}
                             onClick={() => onReportSelect(report.id)}
                             className={`
-                w-full text-left p-3 rounded-lg border transition-colors
-                ${selectedReportId === report.id
+                        w-full text-left p-2.5 rounded-lg border transition-colors
+                        ${selectedReportId === report.id
                                     ? 'bg-blue-50 border-blue-500'
                                     : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
                                 }
-              `}
+                    `}
                         >
                             <div className="flex items-start gap-2">
-                                <FileText size={16} className="mt-1 flex-shrink-0" />
+                                <FileText size={14} className="mt-0.5 flex-shrink-0" />
                                 <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-sm truncate">
+                                    <p className="font-medium text-xs truncate">
                                         #{report.metadata.informe_id} - {report.header.cs}
                                     </p>
-                                    <p className="text-xs text-gray-600 truncate">
+                                    <p className="text-[10px] text-gray-600 truncate">
                                         {report.header.codigo_infraestructura}
                                     </p>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <span className={`
-                      text-xs px-2 py-0.5 rounded-full
-                      ${report.status === 'completed'
-                                                ? 'bg-green-100 text-green-800'
-                                                : 'bg-yellow-100 text-yellow-800'
-                                            }
-                    `}>
-                                            {report.status === 'completed' ? 'Completado' : 'Borrador'}
-                                        </span>
-                                    </div>
+                                    <span className={`
+                                inline-block text-[9px] px-1.5 py-0.5 rounded-full mt-1
+                                ${report.status === 'completed'
+                                            ? 'bg-green-100 text-green-800'
+                                            : 'bg-yellow-100 text-yellow-800'
+                                        }
+                            `}>
+                                        {report.status === 'completed' ? 'Completado' : 'Borrador'}
+                                    </span>
                                 </div>
                             </div>
                         </button>
