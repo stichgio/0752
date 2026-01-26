@@ -105,28 +105,14 @@
         }
 
         /* Metadata Box (Floating) */
-        .metadata-container {
-            position: absolute;
-            top: 28mm;
-            /* Ajustado para estar debajo del header principal visualmente o al lado si se quiere float */
-            right: 0;
-            width: 25%;
-            z-index: 10;
-        }
-
-        /* El usuario pidió absolute top 15mm right 15mm, pero eso podría solapar el header principal si es muy ancho. 
-           Viendo la referencia típica, suele estar alineado con la info section o encima. 
-           Lo pondré relativo dentro del flujo si es posible, o absolute si se insiste. 
-           El usuario DIJO: "Metadata en esquina superior derecha (fuera del header)"
-           Voy a usar un contenedor flex o grid para la parte superior si es posible, pero con position absolute funciona bien.
-        */
         .box-metadata {
-            width: 60mm;
             position: absolute;
-            top: 0;
-            right: 0;
-            border: 1px solid #000;
+            top: 15mm;
+            right: 15mm;
+            width: 55mm;
+            border: 2px solid #000;
             background: #fff;
+            z-index: 20;
         }
 
         .box-metadata table {
@@ -135,19 +121,17 @@
 
         .box-metadata td {
             border: 1px solid #000;
-            padding: 2px;
+            padding: 1px 4px;
         }
 
         .meta-label {
             font-weight: bold;
             width: 40%;
-            background: #fff;
         }
 
         .meta-value {
             text-align: center;
             width: 60%;
-            background: #fff;
         }
 
         /* Estilo específico para la metadata pedida: Box rojo con datos */
@@ -339,26 +323,24 @@
             </tr>
         </table>
 
-        <!-- METADATA (Floating Top Right relative to page content start) -->
-        <!-- La imagen de referencia muestra la metadata alineada a la derecha, debajo del header o en paralelo -->
-        <div style="width: 100%; display: flex; justify-content: flex-end; margin-bottom: 2mm;">
-            <table style="width: 60mm; border: 2px solid #000; margin: 0;">
+        <!-- METADATA (Absolute Positioned) -->
+        <div class="box-metadata">
+            <table>
                 <tr>
-                    <td style="width: 40%; font-weight: bold; border-bottom: 1px solid #000;">INFORME</td>
-                    <td style="width: 60%; text-align: center; border-bottom: 1px solid #000;">{{
-                        report.metadata.informe_id }}</td>
+                    <td class="meta-label">INFORME</td>
+                    <td class="meta-value">{{ report.metadata.informe_id }}</td>
                 </tr>
                 <tr>
-                    <td style="font-weight: bold; border-bottom: 1px solid #000;">DÍA</td>
-                    <td style="text-align: center; border-bottom: 1px solid #000;">{{ report.metadata.dia }}</td>
+                    <td class="meta-label">DÍA</td>
+                    <td class="meta-value">{{ report.metadata.dia }}</td>
                 </tr>
                 <tr>
-                    <td style="font-weight: bold; border-bottom: 1px solid #000;">MES</td>
-                    <td style="text-align: center; border-bottom: 1px solid #000;">{{ report.metadata.mes }}</td>
+                    <td class="meta-label">MES</td>
+                    <td class="meta-value">{{ report.metadata.mes }}</td>
                 </tr>
                 <tr>
-                    <td style="font-weight: bold;">AÑO</td>
-                    <td style="text-align: center;">{{ report.metadata.anio }}</td>
+                    <td class="meta-label">AÑO</td>
+                    <td class="meta-value">{{ report.metadata.anio }}</td>
                 </tr>
             </table>
         </div>
