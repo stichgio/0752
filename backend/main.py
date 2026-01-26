@@ -2,6 +2,7 @@ from fastapi import FastAPI, UploadFile, File, Form, BackgroundTasks, HTTPExcept
 import base64
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, FileResponse
+from fastapi.staticfiles import StaticFiles
 import pandas as pd
 import io # Keep io as it's used in /upload
 import shutil
@@ -17,10 +18,6 @@ from technical_reports import router as technical_reports_router
 
 
 app = FastAPI()
-
-@app.get("/")
-def read_root():
-    return {"message": "¡El backend está vivo y funcionando!", "status": "ok"}
 
 # Enable CORS for frontend (separate deployment on Vercel)
 app.add_middleware(
@@ -357,8 +354,27 @@ async def tool_split_pdf(
 
 # Include the API router
 # Include the API router
+# Include the API router
 app.include_router(api_router)
 app.include_router(technical_reports_router)
+
+# Serve Static Files (Frontend) if they exist
+static_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static")
+if os.path.exists(static_dir):
+    # Mount assets
+    app.mount("/assets", StaticFiles(directory=os.path.join(static_dir, "assets")), name="assets")
+    
+    @app.get("/")
+    async def serve_index():
+        return FileResponse(os.path.join(static_dir, "index.html"))
+
+    @app.get("/technical-reports")
+    async def serve_technical_reports():
+        return FileResponse(os.path.join(static_dir, "technical-reports.html"))
+else:
+    @app.get("/")
+    def read_root():
+        return {"message": "¡El backend está vivo y funcionando! (Frontend estático no encontrado)", "status": "ok"}
 
 if __name__ == "__main__":
     import uvicorn
