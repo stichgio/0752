@@ -105,20 +105,81 @@ class TechnicalReportsDB:
                         "loza_techo_exterior": self._parse_check(row.get('loza_techo_exterior')),
                         "ducto_ventilacion": self._parse_check(row.get('ducto_ventilacion')),
                         "cerco_perimetrico": self._parse_check(row.get('cerco_perimetrico')),
-                        "descarga": self._parse_check(row.get('descarga'))
+                        "descarga": self._parse_check(row.get('descarga')),
+                        # Per-row observaciones/sugerencias for inspeccion
+                        "observaciones_caja_registro": str(row.get('obs_caja_registro', '')),
+                        "sugerencias_caja_registro": str(row.get('sug_caja_registro', '')),
+                        "observaciones_marco_tapa": str(row.get('obs_marco_tapa', '')),
+                        "sugerencias_marco_tapa": str(row.get('sug_marco_tapa', '')),
+                        "observaciones_escalera_int": str(row.get('obs_escalera_int', '')),
+                        "sugerencias_escalera_int": str(row.get('sug_escalera_int', '')),
+                        "observaciones_escalera_ext": str(row.get('obs_escalera_ext', '')),
+                        "sugerencias_escalera_ext": str(row.get('sug_escalera_ext', '')),
+                        "observaciones_cuba_int": str(row.get('obs_cuba_int', '')),
+                        "sugerencias_cuba_int": str(row.get('sug_cuba_int', '')),
+                        "observaciones_cuba_ext": str(row.get('obs_cuba_ext', '')),
+                        "sugerencias_cuba_ext": str(row.get('sug_cuba_ext', '')),
+                        "observaciones_loza_fondo": str(row.get('obs_loza_fondo', '')),
+                        "sugerencias_loza_fondo": str(row.get('sug_loza_fondo', '')),
+                        "observaciones_loza_techo_int": str(row.get('obs_loza_techo_int', '')),
+                        "sugerencias_loza_techo_int": str(row.get('sug_loza_techo_int', '')),
+                        "observaciones_loza_techo_ext": str(row.get('obs_loza_techo_ext', '')),
+                        "sugerencias_loza_techo_ext": str(row.get('sug_loza_techo_ext', '')),
+                        "observaciones_ducto": str(row.get('obs_ducto', '')),
+                        "sugerencias_ducto": str(row.get('sug_ducto', '')),
+                        "observaciones_cerco": str(row.get('obs_cerco', '')),
+                        "sugerencias_cerco": str(row.get('sug_cerco', '')),
+                        "observaciones_descarga": str(row.get('obs_descarga', '')),
+                        "sugerencias_descarga": str(row.get('sug_descarga', ''))
                     },
                     valvulas={
                         "diametros": {
-                            '2': int(row.get('valvulas_2', 0)),
-                            '3': int(row.get('valvulas_3', 0)),
-                            '4': int(row.get('valvulas_4', 0)),
-                            '6': int(row.get('valvulas_6', 0)),
-                            '8': int(row.get('valvulas_8', 0)),
-                            '10': int(row.get('valvulas_10', 0)),
-                            '12': int(row.get('valvulas_12', 0))
+                            '2': int(row.get('valvulas_2', 0) or 0),
+                            '3': int(row.get('valvulas_3', 0) or 0),
+                            '4': int(row.get('valvulas_4', 0) or 0),
+                            '6': int(row.get('valvulas_6', 0) or 0),
+                            '8': int(row.get('valvulas_8', 0) or 0),
+                            '10': int(row.get('valvulas_10', 0) or 0),
+                            '12': int(row.get('valvulas_12', 0) or 0)
                         },
-                        "operativas": int(row.get('valvulas_operativas', 0)),
-                        "no_operativas": int(row.get('valvulas_no_operativas', 0))
+                        "aduccion": {
+                            '2': int(row.get('valvulas_aduccion_2', 0) or 0),
+                            '3': int(row.get('valvulas_aduccion_3', 0) or 0),
+                            '4': int(row.get('valvulas_aduccion_4', 0) or 0),
+                            '6': int(row.get('valvulas_aduccion_6', 0) or 0),
+                            '8': int(row.get('valvulas_aduccion_8', 0) or 0),
+                            '10': int(row.get('valvulas_aduccion_10', 0) or 0),
+                            '12': int(row.get('valvulas_aduccion_12', 0) or 0)
+                        },
+                        "bypass": {
+                            '2': int(row.get('valvulas_bypass_2', 0) or 0),
+                            '3': int(row.get('valvulas_bypass_3', 0) or 0),
+                            '4': int(row.get('valvulas_bypass_4', 0) or 0),
+                            '6': int(row.get('valvulas_bypass_6', 0) or 0),
+                            '8': int(row.get('valvulas_bypass_8', 0) or 0),
+                            '10': int(row.get('valvulas_bypass_10', 0) or 0),
+                            '12': int(row.get('valvulas_bypass_12', 0) or 0)
+                        },
+                        "desague": {
+                            '2': int(row.get('valvulas_desague_2', 0) or 0),
+                            '3': int(row.get('valvulas_desague_3', 0) or 0),
+                            '4': int(row.get('valvulas_desague_4', 0) or 0),
+                            '6': int(row.get('valvulas_desague_6', 0) or 0),
+                            '8': int(row.get('valvulas_desague_8', 0) or 0),
+                            '10': int(row.get('valvulas_desague_10', 0) or 0),
+                            '12': int(row.get('valvulas_desague_12', 0) or 0)
+                        },
+                        "operativas": int(row.get('valvulas_operativas', 0) or 0),
+                        "no_operativas": int(row.get('valvulas_no_operativas', 0) or 0),
+                        # Per-row observaciones/sugerencias for valvulas
+                        "observaciones_conduccion": str(row.get('obs_valvulas_conduccion', '')),
+                        "sugerencias_conduccion": str(row.get('sug_valvulas_conduccion', '')),
+                        "observaciones_aduccion": str(row.get('obs_valvulas_aduccion', '')),
+                        "sugerencias_aduccion": str(row.get('sug_valvulas_aduccion', '')),
+                        "observaciones_bypass": str(row.get('obs_valvulas_bypass', '')),
+                        "sugerencias_bypass": str(row.get('sug_valvulas_bypass', '')),
+                        "observaciones_desague": str(row.get('obs_valvulas_desague', '')),
+                        "sugerencias_desague": str(row.get('sug_valvulas_desague', ''))
                     },
                     canastillas={
                         "diametros": {
@@ -131,7 +192,24 @@ class TechnicalReportsDB:
                             '12': int(row.get('canastillas_12', 0))
                         },
                         "operativas": int(row.get('canastillas_operativas', 0)),
-                        "no_operativas": int(row.get('canastillas_no_operativas', 0))
+                        "no_operativas": int(row.get('canastillas_no_operativas', 0)),
+                        # Per-row observaciones/sugerencias for canastillas
+                        "observaciones_aduccion": str(row.get('obs_canastillas_aduccion', '')),
+                        "sugerencias_aduccion": str(row.get('sug_canastillas_aduccion', ''))
+                    },
+                    medidas={
+                        "diametro": str(row.get('medidas_diametro', '')),
+                        "diametro_interno": str(row.get('medidas_diametro_interno', '')),
+                        "altura_util": str(row.get('medidas_altura_util', '')),
+                        "altura_total": str(row.get('medidas_altura_total', '')),
+                        "observaciones_diametro": str(row.get('obs_medidas_diametro', '')),
+                        "sugerencias_diametro": str(row.get('sug_medidas_diametro', '')),
+                        "observaciones_diametro_interno": str(row.get('obs_medidas_diametro_interno', '')),
+                        "sugerencias_diametro_interno": str(row.get('sug_medidas_diametro_interno', '')),
+                        "observaciones_altura_util": str(row.get('obs_medidas_altura_util', '')),
+                        "sugerencias_altura_util": str(row.get('sug_medidas_altura_util', '')),
+                        "observaciones_altura_total": str(row.get('obs_medidas_altura_total', '')),
+                        "sugerencias_altura_total": str(row.get('sug_medidas_altura_total', ''))
                     },
                     observaciones=str(row.get('observaciones', '')),
                     sugerencias=str(row.get('sugerencias', '')),
