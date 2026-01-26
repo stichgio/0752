@@ -56,6 +56,7 @@ COPY --from=build-frontend --chown=user /app/dist $HOME/app/static
 # Create output folder for PDFs and Jinja2 cache
 RUN mkdir -p $HOME/app/output && chmod 777 $HOME/app/output
 RUN mkdir -p /tmp/jinja2_cache && chmod 777 /tmp/jinja2_cache
+RUN mkdir -p $HOME/app/technical_reports/data && chmod -R 777 $HOME/app/technical_reports/data
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
