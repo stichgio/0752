@@ -69,6 +69,7 @@
             text-align: center;
             padding: 2mm;
             margin-top: 2mm;
+            border: 1px solid #000;
         }
 
         .label-cell {
@@ -99,6 +100,17 @@
 
         .check-critico {
             color: #c00;
+        }
+
+        .valves-table th,
+        .valves-table td {
+            text-align: center;
+            font-size: 8pt;
+            padding: 1mm;
+        }
+
+        .valves-table th {
+            background: #d0d0d0;
         }
     </style>
 </head>
@@ -168,47 +180,151 @@
             <tr>
                 <th style="width: 25%;">DESCRIPCIÓN</th>
                 <th style="width: 15%;">UBICACIÓN</th>
-                <th style="width: 10%;">ESTADO NORMAL/CRÍTICO</th>
-                <th style="width: 10%;">ESTADO CRÍTICO</th>
-                <th style="width: 20%;">OBSERVACIONES</th>
-                <th style="width: 20%;">SUGERENCIAS</th>
+                <th style="width: 12%;">NORMAL</th>
+                <th style="width: 12%;">CRÍTICO</th>
+                <th style="width: 18%;">OBSERVACIONES</th>
+                <th style="width: 18%;">SUGERENCIAS</th>
             </tr>
         </thead>
         <tbody>
-            {% macro check_row(label, ubicacion, state, obs, sug) %}
+            <!-- CAJA DE REGISTRO -->
             <tr>
-                <td>{{ label }}</td>
-                <td style="text-align: center;">{{ ubicacion }}</td>
-                <td class="check-mark">
-                    {% if state == 'normal' %}<span class="check-normal">X</span>{% endif %}
-                </td>
-                <td class="check-mark">
-                    {% if state == 'critico' %}<span class="check-critico">X</span>{% endif %}
-                </td>
-                <td>{{ obs }}</td>
-                <td>{{ sug }}</td>
+                <td>CAJA DE REGISTRO</td>
+                <td style="text-align: center;"></td>
+                <td class="check-mark">{% if report.inspeccion.caja_registro == 'normal' %}<span
+                        class="check-normal">X</span>{% endif %}</td>
+                <td class="check-mark">{% if report.inspeccion.caja_registro == 'critico' %}<span
+                        class="check-critico">X</span>{% endif %}</td>
+                <td>{{ report.observaciones }}</td>
+                <td>{{ report.sugerencias }}</td>
             </tr>
-            {% endmacro %}
-
-            {{ check_row('CAJA DE REGISTRO', '', report.inspeccion.caja_registro, report.observaciones,
-            report.sugerencias) }}
-            {{ check_row('MARCO Y TAPA SANITARIA', '', report.inspeccion.marco_tapa, '', '') }}
-            {{ check_row('ESCALERA', 'INTERIOR', report.inspeccion.escalera_interior, '', '') }}
-            {{ check_row('', 'EXTERIOR', report.inspeccion.escalera_exterior, '', '') }}
-            {{ check_row('CUBA', 'INTERIOR', report.inspeccion.cuba_interior, '', '') }}
-            {{ check_row('', 'EXTERIOR', report.inspeccion.cuba_exterior, '', '') }}
-            {{ check_row('LOZA DE FONDO', '', report.inspeccion.loza_fondo, '', '') }}
-            {{ check_row('LOZA DE TECHO', 'INTERIOR', report.inspeccion.loza_techo_interior, '', '') }}
-            {{ check_row('', 'EXTERIOR', report.inspeccion.loza_techo_exterior, '', '') }}
-            {{ check_row('DUCTO DE VENTILACIÓN', '', report.inspeccion.ducto_ventilacion, '', '') }}
-            {{ check_row('CERCO PERIMETRICO', '', report.inspeccion.cerco_perimetrico, '', '') }}
-            {{ check_row('DESCARGA', '', report.inspeccion.descarga, '', '') }}
+            <!-- MARCO Y TAPA -->
+            <tr>
+                <td>MARCO Y TAPA SANITARIA</td>
+                <td style="text-align: center;"></td>
+                <td class="check-mark">{% if report.inspeccion.marco_tapa == 'normal' %}<span
+                        class="check-normal">X</span>{% endif %}</td>
+                <td class="check-mark">{% if report.inspeccion.marco_tapa == 'critico' %}<span
+                        class="check-critico">X</span>{% endif %}</td>
+                <td></td>
+                <td></td>
+            </tr>
+            <!-- ESCALERA INTERIOR -->
+            <tr>
+                <td>ESCALERA</td>
+                <td style="text-align: center;">INTERIOR</td>
+                <td class="check-mark">{% if report.inspeccion.escalera_interior == 'normal' %}<span
+                        class="check-normal">X</span>{% endif %}</td>
+                <td class="check-mark">{% if report.inspeccion.escalera_interior == 'critico' %}<span
+                        class="check-critico">X</span>{% endif %}</td>
+                <td></td>
+                <td></td>
+            </tr>
+            <!-- ESCALERA EXTERIOR -->
+            <tr>
+                <td></td>
+                <td style="text-align: center;">EXTERIOR</td>
+                <td class="check-mark">{% if report.inspeccion.escalera_exterior == 'normal' %}<span
+                        class="check-normal">X</span>{% endif %}</td>
+                <td class="check-mark">{% if report.inspeccion.escalera_exterior == 'critico' %}<span
+                        class="check-critico">X</span>{% endif %}</td>
+                <td></td>
+                <td></td>
+            </tr>
+            <!-- CUBA INTERIOR -->
+            <tr>
+                <td>CUBA</td>
+                <td style="text-align: center;">INTERIOR</td>
+                <td class="check-mark">{% if report.inspeccion.cuba_interior == 'normal' %}<span
+                        class="check-normal">X</span>{% endif %}</td>
+                <td class="check-mark">{% if report.inspeccion.cuba_interior == 'critico' %}<span
+                        class="check-critico">X</span>{% endif %}</td>
+                <td></td>
+                <td></td>
+            </tr>
+            <!-- CUBA EXTERIOR -->
+            <tr>
+                <td></td>
+                <td style="text-align: center;">EXTERIOR</td>
+                <td class="check-mark">{% if report.inspeccion.cuba_exterior == 'normal' %}<span
+                        class="check-normal">X</span>{% endif %}</td>
+                <td class="check-mark">{% if report.inspeccion.cuba_exterior == 'critico' %}<span
+                        class="check-critico">X</span>{% endif %}</td>
+                <td></td>
+                <td></td>
+            </tr>
+            <!-- LOZA DE FONDO -->
+            <tr>
+                <td>LOZA DE FONDO</td>
+                <td style="text-align: center;"></td>
+                <td class="check-mark">{% if report.inspeccion.loza_fondo == 'normal' %}<span
+                        class="check-normal">X</span>{% endif %}</td>
+                <td class="check-mark">{% if report.inspeccion.loza_fondo == 'critico' %}<span
+                        class="check-critico">X</span>{% endif %}</td>
+                <td></td>
+                <td></td>
+            </tr>
+            <!-- LOZA DE TECHO INTERIOR -->
+            <tr>
+                <td>LOZA DE TECHO</td>
+                <td style="text-align: center;">INTERIOR</td>
+                <td class="check-mark">{% if report.inspeccion.loza_techo_interior == 'normal' %}<span
+                        class="check-normal">X</span>{% endif %}</td>
+                <td class="check-mark">{% if report.inspeccion.loza_techo_interior == 'critico' %}<span
+                        class="check-critico">X</span>{% endif %}</td>
+                <td></td>
+                <td></td>
+            </tr>
+            <!-- LOZA DE TECHO EXTERIOR -->
+            <tr>
+                <td></td>
+                <td style="text-align: center;">EXTERIOR</td>
+                <td class="check-mark">{% if report.inspeccion.loza_techo_exterior == 'normal' %}<span
+                        class="check-normal">X</span>{% endif %}</td>
+                <td class="check-mark">{% if report.inspeccion.loza_techo_exterior == 'critico' %}<span
+                        class="check-critico">X</span>{% endif %}</td>
+                <td></td>
+                <td></td>
+            </tr>
+            <!-- DUCTO DE VENTILACIÓN -->
+            <tr>
+                <td>DUCTO DE VENTILACIÓN</td>
+                <td style="text-align: center;"></td>
+                <td class="check-mark">{% if report.inspeccion.ducto_ventilacion == 'normal' %}<span
+                        class="check-normal">X</span>{% endif %}</td>
+                <td class="check-mark">{% if report.inspeccion.ducto_ventilacion == 'critico' %}<span
+                        class="check-critico">X</span>{% endif %}</td>
+                <td></td>
+                <td></td>
+            </tr>
+            <!-- CERCO PERIMÉTRICO -->
+            <tr>
+                <td>CERCO PERIMÉTRICO</td>
+                <td style="text-align: center;"></td>
+                <td class="check-mark">{% if report.inspeccion.cerco_perimetrico == 'normal' %}<span
+                        class="check-normal">X</span>{% endif %}</td>
+                <td class="check-mark">{% if report.inspeccion.cerco_perimetrico == 'critico' %}<span
+                        class="check-critico">X</span>{% endif %}</td>
+                <td></td>
+                <td></td>
+            </tr>
+            <!-- DESCARGA -->
+            <tr>
+                <td>DESCARGA</td>
+                <td style="text-align: center;"></td>
+                <td class="check-mark">{% if report.inspeccion.descarga == 'normal' %}<span
+                        class="check-normal">X</span>{% endif %}</td>
+                <td class="check-mark">{% if report.inspeccion.descarga == 'critico' %}<span
+                        class="check-critico">X</span>{% endif %}</td>
+                <td></td>
+                <td></td>
+            </tr>
         </tbody>
     </table>
 
     <!-- VÁLVULAS -->
     <div class="section-title">DIÁMETRO DE VÁLVULAS</div>
-    <table>
+    <table class="valves-table">
         <thead>
             <tr>
                 <th>VÁLVULAS</th>
@@ -221,38 +337,27 @@
                 <th>12"</th>
                 <th>OPER.</th>
                 <th>NO OP.</th>
-                <th>OBSERVACIONES</th>
-                <th>SUGERENCIAS</th>
             </tr>
         </thead>
         <tbody>
             <tr>
                 <td style="font-weight: bold;">TOTAL</td>
-                <td style="text-align: center;">{{ report.valvulas.diametros['2'] if report.valvulas.diametros['2'] > 0
-                    else '' }}</td>
-                <td style="text-align: center;">{{ report.valvulas.diametros['3'] if report.valvulas.diametros['3'] > 0
-                    else '' }}</td>
-                <td style="text-align: center;">{{ report.valvulas.diametros['4'] if report.valvulas.diametros['4'] > 0
-                    else '' }}</td>
-                <td style="text-align: center;">{{ report.valvulas.diametros['6'] if report.valvulas.diametros['6'] > 0
-                    else '' }}</td>
-                <td style="text-align: center;">{{ report.valvulas.diametros['8'] if report.valvulas.diametros['8'] > 0
-                    else '' }}</td>
-                <td style="text-align: center;">{{ report.valvulas.diametros['10'] if report.valvulas.diametros['10'] >
-                    0 else '' }}</td>
-                <td style="text-align: center;">{{ report.valvulas.diametros['12'] if report.valvulas.diametros['12'] >
-                    0 else '' }}</td>
-                <td style="text-align: center;">{{ report.valvulas.operativas }}</td>
-                <td style="text-align: center;">{{ report.valvulas.no_operativas }}</td>
-                <td></td>
-                <td></td>
+                <td>{% if report.valvulas.diametros['2'] > 0 %}{{ report.valvulas.diametros['2'] }}{% endif %}</td>
+                <td>{% if report.valvulas.diametros['3'] > 0 %}{{ report.valvulas.diametros['3'] }}{% endif %}</td>
+                <td>{% if report.valvulas.diametros['4'] > 0 %}{{ report.valvulas.diametros['4'] }}{% endif %}</td>
+                <td>{% if report.valvulas.diametros['6'] > 0 %}{{ report.valvulas.diametros['6'] }}{% endif %}</td>
+                <td>{% if report.valvulas.diametros['8'] > 0 %}{{ report.valvulas.diametros['8'] }}{% endif %}</td>
+                <td>{% if report.valvulas.diametros['10'] > 0 %}{{ report.valvulas.diametros['10'] }}{% endif %}</td>
+                <td>{% if report.valvulas.diametros['12'] > 0 %}{{ report.valvulas.diametros['12'] }}{% endif %}</td>
+                <td>{{ report.valvulas.operativas }}</td>
+                <td>{{ report.valvulas.no_operativas }}</td>
             </tr>
         </tbody>
     </table>
 
     <!-- CANASTILLAS -->
     <div class="section-title">DIÁMETRO DE CANASTILLA</div>
-    <table>
+    <table class="valves-table">
         <thead>
             <tr>
                 <th>CANASTILLA</th>
@@ -265,31 +370,27 @@
                 <th>12"</th>
                 <th>OPER.</th>
                 <th>NO OP.</th>
-                <th>OBSERVACIONES</th>
-                <th>SUGERENCIAS</th>
             </tr>
         </thead>
         <tbody>
             <tr>
                 <td style="font-weight: bold;">TOTAL</td>
-                <td style="text-align: center;">{{ report.canastillas.diametros['2'] if
-                    report.canastillas.diametros['2'] > 0 else '' }}</td>
-                <td style="text-align: center;">{{ report.canastillas.diametros['3'] if
-                    report.canastillas.diametros['3'] > 0 else '' }}</td>
-                <td style="text-align: center;">{{ report.canastillas.diametros['4'] if
-                    report.canastillas.diametros['4'] > 0 else '' }}</td>
-                <td style="text-align: center;">{{ report.canastillas.diametros['6'] if
-                    report.canastillas.diametros['6'] > 0 else '' }}</td>
-                <td style="text-align: center;">{{ report.canastillas.diametros['8'] if
-                    report.canastillas.diametros['8'] > 0 else '' }}</td>
-                <td style="text-align: center;">{{ report.canastillas.diametros['10'] if
-                    report.canastillas.diametros['10'] > 0 else '' }}</td>
-                <td style="text-align: center;">{{ report.canastillas.diametros['12'] if
-                    report.canastillas.diametros['12'] > 0 else '' }}</td>
-                <td style="text-align: center;">{{ report.canastillas.operativas }}</td>
-                <td style="text-align: center;">{{ report.canastillas.no_operativas }}</td>
-                <td></td>
-                <td></td>
+                <td>{% if report.canastillas.diametros['2'] > 0 %}{{ report.canastillas.diametros['2'] }}{% endif %}
+                </td>
+                <td>{% if report.canastillas.diametros['3'] > 0 %}{{ report.canastillas.diametros['3'] }}{% endif %}
+                </td>
+                <td>{% if report.canastillas.diametros['4'] > 0 %}{{ report.canastillas.diametros['4'] }}{% endif %}
+                </td>
+                <td>{% if report.canastillas.diametros['6'] > 0 %}{{ report.canastillas.diametros['6'] }}{% endif %}
+                </td>
+                <td>{% if report.canastillas.diametros['8'] > 0 %}{{ report.canastillas.diametros['8'] }}{% endif %}
+                </td>
+                <td>{% if report.canastillas.diametros['10'] > 0 %}{{ report.canastillas.diametros['10'] }}{% endif %}
+                </td>
+                <td>{% if report.canastillas.diametros['12'] > 0 %}{{ report.canastillas.diametros['12'] }}{% endif %}
+                </td>
+                <td>{{ report.canastillas.operativas }}</td>
+                <td>{{ report.canastillas.no_operativas }}</td>
             </tr>
         </tbody>
     </table>

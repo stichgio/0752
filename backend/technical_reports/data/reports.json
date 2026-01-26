@@ -1,0 +1,128 @@
+{
+  "RPT-0001": {
+    "id": "RPT-0001",
+    "metadata": {
+      "informe_id": 1,
+      "dia": 15,
+      "mes": "ENERO",
+      "anio": 2025,
+      "pagina": "1 de 2"
+    },
+    "header": {
+      "cs": "GIO LABS",
+      "contratista": "HIDROSERVICIOS AA",
+      "codigo_infraestructura": "LAMP R12",
+      "ubicacion": "ALAMEDA LOS HORIZONTES 224",
+      "suministro": "SUB-001",
+      "tipo": "ENTERRADO",
+      "volumen": 100
+    },
+    "inspeccion": {
+      "caja_registro": "normal",
+      "marco_tapa": "critico",
+      "escalera_interior": "normal",
+      "escalera_exterior": "critico",
+      "cuba_interior": "normal",
+      "cuba_exterior": "critico",
+      "loza_fondo": "critico",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "critico",
+      "ducto_ventilacion": "critico",
+      "cerco_perimetrico": "unchecked",
+      "descarga": "unchecked"
+    },
+    "valvulas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 0,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 0,
+      "no_operativas": 0
+    },
+    "canastillas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 0,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 0,
+      "no_operativas": 0
+    },
+    "observaciones": "Observaciones actualizadas via API",
+    "sugerencias": "Sugerencias actualizadas via API",
+    "status": "draft",
+    "last_modified": "2026-01-25 22:01:39.356976"
+  },
+  "RPT-0002": {
+    "id": "RPT-0002",
+    "metadata": {
+      "informe_id": 2,
+      "dia": 16,
+      "mes": "ENERO",
+      "anio": 2025,
+      "pagina": "1 de 2"
+    },
+    "header": {
+      "cs": "LIMA SUR",
+      "contratista": "AQUA TECH",
+      "codigo_infraestructura": "LS-RES-002",
+      "ubicacion": "Jr. Test 456",
+      "suministro": "SUB-002",
+      "tipo": "ENTERRADO",
+      "volumen": 300
+    },
+    "inspeccion": {
+      "caja_registro": "critico",
+      "marco_tapa": "normal",
+      "escalera_interior": "critico",
+      "escalera_exterior": "normal",
+      "cuba_interior": "unchecked",
+      "cuba_exterior": "critico",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "critico",
+      "loza_techo_exterior": "unchecked",
+      "ducto_ventilacion": "unchecked",
+      "cerco_perimetrico": "unchecked",
+      "descarga": "normal"
+    },
+    "valvulas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 0,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 0,
+      "no_operativas": 0
+    },
+    "canastillas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 0,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 0,
+      "no_operativas": 0
+    },
+    "observaciones": "DESPRENDIMIENTO DE TECHO",
+    "sugerencias": "CAMBIAR",
+    "status": "draft",
+    "last_modified": "2026-01-25 21:59:36.017725"
+  }
+}

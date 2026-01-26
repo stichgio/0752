@@ -2,29 +2,28 @@
 Modelos Pydantic para informes técnicos
 Completamente aislados de otros modelos
 """
-from pydantic import BaseModel, Field
-from typing import Dict, Literal
+from pydantic import BaseModel, Field, validator
+from typing import Dict, Literal, Optional, Any
 from datetime import datetime
 
 # Tipos custom
 CheckState = Literal["normal", "critico", "unchecked"]
-TipoReservorio = Literal["ELEVADO", "ENTERRADO", "SEMIENTERRADO"]
 
 class ReportMetadata(BaseModel):
     informe_id: int
-    dia: int = Field(ge=1, le=31)
-    mes: str
-    anio: int = Field(ge=2000, le=2100)
+    dia: int = Field(ge=1, le=31, default=1)
+    mes: str = ""
+    anio: int = Field(ge=2000, le=2100, default=2024)
     pagina: str = "1 de 2"
 
 class ReportHeader(BaseModel):
-    cs: str
-    contratista: str
-    codigo_infraestructura: str
-    ubicacion: str
-    suministro: str
-    tipo: TipoReservorio
-    volumen: int = Field(ge=0)
+    cs: str = ""
+    contratista: str = ""
+    codigo_infraestructura: str = ""
+    ubicacion: str = ""
+    suministro: str = ""
+    tipo: str = "ELEVADO"  # Flexible, no Literal para evitar errores de validación
+    volumen: int = Field(ge=0, default=0)
 
 class InspeccionDescripcion(BaseModel):
     caja_registro: CheckState = "unchecked"
@@ -54,9 +53,9 @@ class TechnicalReport(BaseModel):
     id: str
     metadata: ReportMetadata
     header: ReportHeader
-    inspeccion: InspeccionDescripcion
-    valvulas: ValvulasCanastillas
-    canastillas: ValvulasCanastillas
+    inspeccion: InspeccionDescripcion = Field(default_factory=InspeccionDescripcion)
+    valvulas: ValvulasCanastillas = Field(default_factory=ValvulasCanastillas)
+    canastillas: ValvulasCanastillas = Field(default_factory=ValvulasCanastillas)
     observaciones: str = ""
     sugerencias: str = ""
     status: Literal["draft", "completed"] = "draft"
