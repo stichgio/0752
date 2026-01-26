@@ -7,8 +7,7 @@ interface Props {
     onChange: (data: Partial<TechnicalReport>) => void;
     onSave: () => void;
     hasUnsavedChanges: boolean;
-    onImageSelect: (files: File[]) => void;
-    selectedImages: File[];
+    onDownloadImage: () => void;
     logoLeft: File | null;
     logoRight: File | null;
     onLogoLeftChange: (file: File | null) => void;
@@ -20,8 +19,7 @@ export default function FormPanel({
     onChange,
     onSave,
     hasUnsavedChanges,
-    onImageSelect,
-    selectedImages,
+    onDownloadImage,
     logoLeft,
     logoRight,
     onLogoLeftChange,
@@ -176,41 +174,16 @@ export default function FormPanel({
                 </div>
 
                 <div>
-                    <h3 className="font-semibold mb-2 text-sm text-[#888] uppercase tracking-wider">Fotografías (Para PDF)</h3>
+                    <h3 className="font-semibold mb-2 text-sm text-[#888] uppercase tracking-wider">Exportar como Imagen</h3>
                     <div className="space-y-3">
-                        <label className="btn-secondary w-full flex items-center justify-center gap-2 cursor-pointer text-sm p-2 border border-dashed border-[#666] hover:border-[#aaa]">
-                            <span>📷 Seleccionar Imágenes</span>
-                            <input
-                                type="file"
-                                multiple
-                                accept="image/*"
-                                onChange={(e) => {
-                                    if (e.target.files) {
-                                        onImageSelect(Array.from(e.target.files));
-                                    }
-                                }}
-                                className="hidden"
-                            />
-                        </label>
-
-                        {selectedImages.length > 0 && (
-                            <div className="grid grid-cols-3 gap-2">
-                                {selectedImages.map((file, idx) => (
-                                    <div key={idx} className="relative aspect-square bg-[#000] rounded overflow-hidden border border-[#333]">
-                                        <img
-                                            src={URL.createObjectURL(file)}
-                                            alt="preview"
-                                            className="w-full h-full object-cover opacity-80"
-                                        />
-                                        <div className="absolute bottom-0 inset-x-0 bg-black/70 text-[9px] p-1 truncate text-center text-white">
-                                            {file.name}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                        <button
+                            onClick={onDownloadImage}
+                            className="btn-secondary w-full flex items-center justify-center gap-2 cursor-pointer text-sm p-2 border border-dashed border-[#666] hover:border-[#aaa] hover:bg-[#222] transition-colors"
+                        >
+                            <span>📷 Descargar como Imagen</span>
+                        </button>
                         <p className="text-[10px] text-[#666]">
-                            * Estas imágenes se añadirán al final del reporte PDF.
+                            * Descarga una captura de alta calidad del reporte actual.
                         </p>
                     </div>
                 </div>
