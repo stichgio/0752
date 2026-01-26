@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Informe Técnico {{ report.metadata.informe_id }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 10mm;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 9pt;
+            line-height: 1.2;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        td,
+        th {
+            border: 1px solid #000;
+            padding: 2mm;
+            vertical-align: middle;
+        }
+
+        .header-table {
+            margin-bottom: 3mm;
+        }
+
+        .logo-cell {
+            width: 80px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 8pt;
+        }
+
+        .title-cell {
+            text-align: center;
+            font-weight: bold;
+            font-size: 10pt;
+        }
+
+        .page-cell {
+            width: 60px;
+            text-align: center;
+        }
+
+        .info-box {
+            background: #f5f5f5;
+            padding: 2mm;
+            text-align: right;
+            font-size: 8pt;
+        }
+
+        .section-title {
+            background: #e0e0e0;
+            font-weight: bold;
+            text-align: center;
+            padding: 2mm;
+            margin-top: 2mm;
+        }
+
+        .label-cell {
+            background: #f9f9f9;
+            font-weight: bold;
+            width: 35%;
+        }
+
+        .inspection-table {
+            margin-top: 2mm;
+        }
+
+        .inspection-table th {
+            background: #d0d0d0;
+            font-weight: bold;
+            text-align: center;
+            font-size: 8pt;
+        }
+
+        .check-mark {
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .check-normal {
+            color: #000;
+        }
+
+        .check-critico {
+            color: #c00;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- HEADER -->
+    <table class="header-table">
+        <tr>
+            <td class="logo-cell" rowspan="2">
+                {% if logo_left %}
+                <img src="{{ logo_left }}" style="max-width: 70px; max-height: 35px;">
+                {% else %}
+                HIDRO<br>SERVICIOS<br>E.I.R.L
+                {% endif %}
+            </td>
+            <td class="title-cell">
+                INFORME TÉCNICO DE LIMPIEZA Y DESINFECCIÓN<br>
+                DE RESERVORIOS Y CISTERNAS
+            </td>
+            <td class="page-cell">
+                Página<br>
+                <strong>{{ report.metadata.pagina }}</strong>
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2" class="info-box">
+                <strong>INFORME:</strong> {{ report.metadata.informe_id }}<br>
+                <strong>DÍA:</strong> {{ report.metadata.dia }} |
+                <strong>MES:</strong> {{ report.metadata.mes }} |
+                <strong>AÑO:</strong> {{ report.metadata.anio }}
+            </td>
+        </tr>
+    </table>
+
+    <!-- INFO BÁSICA -->
+    <table>
+        <tr>
+            <td class="label-cell">C-S:</td>
+            <td colspan="3">{{ report.header.cs }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">CONTRATISTA:</td>
+            <td colspan="3">{{ report.header.contratista }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">CÓDIGO DE INFRAESTRUCTURA:</td>
+            <td colspan="3">{{ report.header.codigo_infraestructura }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">UBICACIÓN:</td>
+            <td>{{ report.header.ubicacion }}</td>
+            <td class="label-cell">TIPO:</td>
+            <td>{{ report.header.tipo }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">SUMINISTRO:</td>
+            <td>{{ report.header.suministro }}</td>
+            <td class="label-cell">VOLUMEN:</td>
+            <td>{{ report.header.volumen }}</td>
+        </tr>
+    </table>
+
+    <!-- INSPECCIÓN -->
+    <div class="section-title">DESCRIPCIÓN</div>
+    <table class="inspection-table">
+        <thead>
+            <tr>
+                <th style="width: 25%;">DESCRIPCIÓN</th>
+                <th style="width: 15%;">UBICACIÓN</th>
+                <th style="width: 10%;">ESTADO NORMAL/CRÍTICO</th>
+                <th style="width: 10%;">ESTADO CRÍTICO</th>
+                <th style="width: 20%;">OBSERVACIONES</th>
+                <th style="width: 20%;">SUGERENCIAS</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% macro check_row(label, ubicacion, state, obs, sug) %}
+            <tr>
+                <td>{{ label }}</td>
+                <td style="text-align: center;">{{ ubicacion }}</td>
+                <td class="check-mark">
+                    {% if state == 'normal' %}<span class="check-normal">X</span>{% endif %}
+                </td>
+                <td class="check-mark">
+                    {% if state == 'critico' %}<span class="check-critico">X</span>{% endif %}
+                </td>
+                <td>{{ obs }}</td>
+                <td>{{ sug }}</td>
+            </tr>
+            {% endmacro %}
+
+            {{ check_row('CAJA DE REGISTRO', '', report.inspeccion.caja_registro, report.observaciones,
+            report.sugerencias) }}
+            {{ check_row('MARCO Y TAPA SANITARIA', '', report.inspeccion.marco_tapa, '', '') }}
+            {{ check_row('ESCALERA', 'INTERIOR', report.inspeccion.escalera_interior, '', '') }}
+            {{ check_row('', 'EXTERIOR', report.inspeccion.escalera_exterior, '', '') }}
+            {{ check_row('CUBA', 'INTERIOR', report.inspeccion.cuba_interior, '', '') }}
+            {{ check_row('', 'EXTERIOR', report.inspeccion.cuba_exterior, '', '') }}
+            {{ check_row('LOZA DE FONDO', '', report.inspeccion.loza_fondo, '', '') }}
+            {{ check_row('LOZA DE TECHO', 'INTERIOR', report.inspeccion.loza_techo_interior, '', '') }}
+            {{ check_row('', 'EXTERIOR', report.inspeccion.loza_techo_exterior, '', '') }}
+            {{ check_row('DUCTO DE VENTILACIÓN', '', report.inspeccion.ducto_ventilacion, '', '') }}
+            {{ check_row('CERCO PERIMETRICO', '', report.inspeccion.cerco_perimetrico, '', '') }}
+            {{ check_row('DESCARGA', '', report.inspeccion.descarga, '', '') }}
+        </tbody>
+    </table>
+
+    <!-- VÁLVULAS -->
+    <div class="section-title">DIÁMETRO DE VÁLVULAS</div>
+    <table>
+        <thead>
+            <tr>
+                <th>VÁLVULAS</th>
+                <th>2"</th>
+                <th>3"</th>
+                <th>4"</th>
+                <th>6"</th>
+                <th>8"</th>
+                <th>10"</th>
+                <th>12"</th>
+                <th>OPER.</th>
+                <th>NO OP.</th>
+                <th>OBSERVACIONES</th>
+                <th>SUGERENCIAS</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="font-weight: bold;">TOTAL</td>
+                <td style="text-align: center;">{{ report.valvulas.diametros['2'] if report.valvulas.diametros['2'] > 0
+                    else '' }}</td>
+                <td style="text-align: center;">{{ report.valvulas.diametros['3'] if report.valvulas.diametros['3'] > 0
+                    else '' }}</td>
+                <td style="text-align: center;">{{ report.valvulas.diametros['4'] if report.valvulas.diametros['4'] > 0
+                    else '' }}</td>
+                <td style="text-align: center;">{{ report.valvulas.diametros['6'] if report.valvulas.diametros['6'] > 0
+                    else '' }}</td>
+                <td style="text-align: center;">{{ report.valvulas.diametros['8'] if report.valvulas.diametros['8'] > 0
+                    else '' }}</td>
+                <td style="text-align: center;">{{ report.valvulas.diametros['10'] if report.valvulas.diametros['10'] >
+                    0 else '' }}</td>
+                <td style="text-align: center;">{{ report.valvulas.diametros['12'] if report.valvulas.diametros['12'] >
+                    0 else '' }}</td>
+                <td style="text-align: center;">{{ report.valvulas.operativas }}</td>
+                <td style="text-align: center;">{{ report.valvulas.no_operativas }}</td>
+                <td></td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- CANASTILLAS -->
+    <div class="section-title">DIÁMETRO DE CANASTILLA</div>
+    <table>
+        <thead>
+            <tr>
+                <th>CANASTILLA</th>
+                <th>2"</th>
+                <th>3"</th>
+                <th>4"</th>
+                <th>6"</th>
+                <th>8"</th>
+                <th>10"</th>
+                <th>12"</th>
+                <th>OPER.</th>
+                <th>NO OP.</th>
+                <th>OBSERVACIONES</th>
+                <th>SUGERENCIAS</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td style="font-weight: bold;">TOTAL</td>
+                <td style="text-align: center;">{{ report.canastillas.diametros['2'] if
+                    report.canastillas.diametros['2'] > 0 else '' }}</td>
+                <td style="text-align: center;">{{ report.canastillas.diametros['3'] if
+                    report.canastillas.diametros['3'] > 0 else '' }}</td>
+                <td style="text-align: center;">{{ report.canastillas.diametros['4'] if
+                    report.canastillas.diametros['4'] > 0 else '' }}</td>
+                <td style="text-align: center;">{{ report.canastillas.diametros['6'] if
+                    report.canastillas.diametros['6'] > 0 else '' }}</td>
+                <td style="text-align: center;">{{ report.canastillas.diametros['8'] if
+                    report.canastillas.diametros['8'] > 0 else '' }}</td>
+                <td style="text-align: center;">{{ report.canastillas.diametros['10'] if
+                    report.canastillas.diametros['10'] > 0 else '' }}</td>
+                <td style="text-align: center;">{{ report.canastillas.diametros['12'] if
+                    report.canastillas.diametros['12'] > 0 else '' }}</td>
+                <td style="text-align: center;">{{ report.canastillas.operativas }}</td>
+                <td style="text-align: center;">{{ report.canastillas.no_operativas }}</td>
+                <td></td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+
+</html>
