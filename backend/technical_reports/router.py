@@ -68,25 +68,13 @@ async def delete_report(report_id: str):
 
 @router.post("/import-csv")
 async def import_csv(file: UploadFile = File(...)):
-    """Importar informes desde archivo CSV o Excel"""
-    filename = file.filename.lower()
-    if not filename.endswith(('.csv', '.xlsx', '.xls')):
-        raise HTTPException(status_code=400, detail="El archivo debe ser CSV o Excel (.xlsx, .xls)")
+    """Importar informes desde archivo CSV"""
+    if not file.filename.endswith(('.csv', '.CSV')):
+        raise HTTPException(status_code=400, detail="El archivo debe ser CSV")
     
     try:
         content = await file.read()
-        if filename.endswith('.csv'):
-            # Intentar diferentes codificaciones para CSV
-            try:
-                df = pd.read_csv(io.StringIO(content.decode('utf-8')))
-            except UnicodeDecodeError:
-                df = pd.read_csv(io.StringIO(content.decode('latin-1')))
-        else:
-            # Excel
-            df = pd.read_excel(io.BytesIO(content))
-        
-        # Reemplazar NaN por valores por defecto según el tipo
-        df = df.fillna('')
+        df = pd.read_csv(io.StringIO(content.decode('utf-8')))
         csv_data = df.to_dict('records')
         imported_reports = db.import_from_csv(csv_data)
         
@@ -96,9 +84,7 @@ async def import_csv(file: UploadFile = File(...)):
             "reports": [r.dict() for r in imported_reports]
         }
     except Exception as e:
-        import traceback
-        print(f"Error importando archivo: {traceback.format_exc()}")
-        raise HTTPException(status_code=500, detail=f"Error importando archivo: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error importando CSV: {str(e)}")
 
 @router.post("/reports/{report_id}/generate-pdf")
 async def generate_pdf(report_id: str):

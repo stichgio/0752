@@ -37,8 +37,8 @@ export default function DatabasePanel({ reports, selectedReportId, onReportSelec
                 <div className="space-y-2">
                     <label className="btn-primary w-full flex items-center justify-center gap-2 cursor-pointer text-sm">
                         <Upload size={16} />
-                        Importar CSV / Excel
-                        <input type="file" accept=".csv,.xlsx,.xls" onChange={(e) => e.target.files?.[0] && onImportCSV(e.target.files[0])} className="hidden" />
+                        Importar CSV
+                        <input type="file" accept=".csv" onChange={(e) => e.target.files?.[0] && onImportCSV(e.target.files[0])} className="hidden" />
                     </label>
                     <button onClick={onReload} className="btn-secondary w-full flex items-center justify-center gap-2 text-sm p-2">
                         <RefreshCw size={16} />

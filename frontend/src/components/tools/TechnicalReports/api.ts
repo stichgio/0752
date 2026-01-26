@@ -80,7 +80,7 @@ export const technicalReportsApi = {
         if (logoRight) formData.append('logoRight', logoRight);
 
         // Se especifica el nombre del template para que el backend lo cargue correctamente
-        formData.append('templateName', 'technical-reports.html');
+        formData.append('templateName', 'informe_tecnico.html');
 
         const response = await axios.post(`${API_BASE}/api/generate-pdf`, formData, {
             headers: { 'Content-Type': 'multipart/form-data' },

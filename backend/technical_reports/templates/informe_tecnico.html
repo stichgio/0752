@@ -163,7 +163,7 @@
 
         .info-label {
             font-weight: bold;
-            padding: 6px 8px;
+            padding: 5px 8px;
             background: #e9ecef;
             border-right: 1px solid #ccc;
             display: flex;
@@ -172,7 +172,7 @@
         }
 
         .info-value {
-            padding: 6px 8px;
+            padding: 5px 8px;
             border-right: 1px solid #ccc;
             display: flex;
             align-items: center;
@@ -187,7 +187,7 @@
         .section-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             font-size: 7pt;
             table-layout: fixed;
         }
@@ -195,7 +195,7 @@
         .section-table th,
         .section-table td {
             border: 1px solid #999;
-            padding: 5px 4px;
+            padding: 4px 5px;
             vertical-align: middle;
         }
 
@@ -204,7 +204,7 @@
             color: #fff;
             text-transform: uppercase;
             font-size: 6.5pt;
-            padding: 5px 4px;
+            padding: 4px 5px;
         }
 
         /* Anchos compartidos para alineación vertical */
@@ -814,22 +814,6 @@
 
     </div>
 
-    <!-- PANEL FOTOGRAFICO -->
-    {% if item.images %}
-    <div class="page-container">
-        <div class="photo-section">
-            <h2 class="photo-title">PANEL FOTOGRÁFICO</h2>
-            <div class="photo-grid">
-                {% for img in item.images %}
-                <div class="photo-item">
-                    <img src="{{ img.path }}" class="photo-img" />
-                    <div class="photo-caption">{{ img.name }}</div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
-    </div>
-    {% endif %}
     {% endfor %}
 </body>
 

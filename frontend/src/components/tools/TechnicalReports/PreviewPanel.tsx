@@ -4,8 +4,8 @@ import { TechnicalReport } from './types';
 interface Props {
     reportData: TechnicalReport | null;
     zoom: number;
-    logoLeft?: string | null;
-    logoRight?: string | null;
+    logoLeft?: File | null;
+    logoRight?: File | null;
 }
 
 export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: Props) {
@@ -27,8 +27,8 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
         return null;
     };
 
-    const logoLeftUrl = logoLeft;
-    const logoRightUrl = logoRight;
+    const logoLeftUrl = logoLeft ? URL.createObjectURL(logoLeft) : null;
+    const logoRightUrl = logoRight ? URL.createObjectURL(logoRight) : null;
 
     // Styles matching the HTML template exactly
     const styles = {
@@ -105,7 +105,7 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
         },
         infoLabel: {
             fontWeight: 'bold',
-            padding: '6px 8px',
+            padding: '5px 8px',
             background: '#e9ecef',
             borderRight: '1px solid #ccc',
             display: 'flex',
@@ -113,7 +113,7 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
             fontSize: '7pt',
         },
         infoValue: {
-            padding: '6px 8px',
+            padding: '5px 8px',
             borderRight: '1px solid #ccc',
             display: 'flex',
             alignItems: 'center',
@@ -122,13 +122,13 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
         table: {
             width: '100%',
             borderCollapse: 'collapse' as const,
-            marginBottom: '4px',
+            marginBottom: '8px',
             fontSize: '7pt',
             tableLayout: 'fixed' as const,
         },
         th: {
             border: '1px solid #999',
-            padding: '5px 4px',
+            padding: '4px 5px',
             verticalAlign: 'middle',
             background: '#0066a1',
             color: '#fff',
@@ -138,7 +138,7 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
         },
         td: {
             border: '1px solid #999',
-            padding: '5px 4px',
+            padding: '4px 5px',
             verticalAlign: 'middle',
             background: '#fff',
         },
