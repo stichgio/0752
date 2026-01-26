@@ -5,14 +5,14 @@ import PreviewPanel from './PreviewPanel';
 import FormPanel from './FormPanel';
 import { TechnicalReport } from './types';
 import { technicalReportsApi } from './api';
+import html2canvas from 'html2canvas';
 
 export default function TechnicalReports() {
     const [reports, setReports] = useState<TechnicalReport[]>([]);
     const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
     const [formData, setFormData] = useState<TechnicalReport | null>(null);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-    const [selectedImages, setSelectedImages] = useState<File[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(false); // Removed selectedImages
 
     const [logoLeft, setLogoLeft] = useState<File | null>(null);
     const [logoRight, setLogoRight] = useState<File | null>(null);
@@ -84,7 +84,8 @@ export default function TechnicalReports() {
         if (!selectedReportId || !formData) return;
         setIsLoading(true);
         try {
-            const blob = await technicalReportsApi.generatePDF(formData, selectedImages, logoLeft, logoRight);
+            // Pass empty array for images as per new requirement
+            const blob = await technicalReportsApi.generatePDF(formData, [], logoLeft, logoRight);
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
@@ -95,6 +96,34 @@ export default function TechnicalReports() {
         } catch (error) {
             console.error('Error:', error);
             alert('Error generando PDF');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleDownloadImage = async () => {
+        const element = document.getElementById('technical-report-preview');
+        if (!element || !selectedReportId) return;
+
+        setIsLoading(true);
+        try {
+            // Capture at slightly higher scale for better quality
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                backgroundColor: '#ffffff',
+                useCORS: true // Important for external images/logos
+            });
+
+            const dataUrl = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = `informe_${selectedReportId}.png`;
+            link.href = dataUrl;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error('Error creating image:', error);
+            alert('Error descargando imagen');
         } finally {
             setIsLoading(false);
         }
@@ -143,8 +172,7 @@ export default function TechnicalReports() {
                     onChange={handleFormChange}
                     onSave={handleSaveChanges}
                     hasUnsavedChanges={hasUnsavedChanges}
-                    selectedImages={selectedImages}
-                    onImageSelect={setSelectedImages}
+                    onDownloadImage={handleDownloadImage}
                     logoLeft={logoLeft}
                     logoRight={logoRight}
                     onLogoLeftChange={setLogoLeft}

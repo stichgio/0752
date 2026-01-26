@@ -156,6 +156,7 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
     return (
         <div className="h-full overflow-auto bg-gray-900 p-8 rounded-lg border border-gray-800">
             <div
+                id="technical-report-preview"
                 className="mx-auto !bg-white !text-black shadow-lg"
                 style={{
                     ...styles.page,
