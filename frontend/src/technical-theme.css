@@ -99,7 +99,7 @@ body.technical-theme {
 
 .technical-theme .btn-primary:hover:not(:disabled),
 .technical-theme .hover\:bg-blue-700:hover {
-    background-color: #b01015 !important;
+    background-color: #b6acad !important;
 }
 
 /* Specific component fixes */
