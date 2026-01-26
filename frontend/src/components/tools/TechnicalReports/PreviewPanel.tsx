@@ -27,7 +27,7 @@ export default function PreviewPanel({ reportData, isLoading }: Props) {
     return (
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 overflow-auto">
             <div className="max-w-[210mm] mx-auto bg-white shadow-lg p-8" style={{ minHeight: '297mm' }}>
-                {/* Header */}
+                {/* Header con bordes */}
                 <div className="border-2 border-black p-4 mb-4">
                     <div className="text-center">
                         <h1 className="text-lg font-bold">INFORME TÉCNICO DE LIMPIEZA Y DESINFECCIÓN</h1>
@@ -41,7 +41,7 @@ export default function PreviewPanel({ reportData, isLoading }: Props) {
                     </div>
                 </div>
 
-                {/* Info básica */}
+                {/* Tabla info básica */}
                 <div className="border border-black mb-4">
                     <div className="grid grid-cols-4 border-b border-black">
                         <div className="col-span-1 bg-gray-100 p-2 border-r border-black font-bold text-xs">C-S:</div>
@@ -63,10 +63,36 @@ export default function PreviewPanel({ reportData, isLoading }: Props) {
                     </div>
                 </div>
 
-                {/* Resto del preview... (simplificado por espacio) */}
-                <p className="text-xs text-gray-600 mt-4">
-                    Vista previa simplificada. Descarga el PDF para ver el formato completo.
-                </p>
+                {/* Tabla de inspección con checkboxes */}
+                <div className="border border-black mb-4">
+                    <div className="bg-gray-100 p-2 border-b border-black font-bold text-xs text-center">
+                        DESCRIPCIÓN DEL ESTADO DE LA INFRAESTRUCTURA
+                    </div>
+                    {Object.entries(reportData.inspeccion).map(([key, value]) => (
+                        <div key={key} className="grid grid-cols-4 border-b border-black last:border-b-0">
+                            <div className="col-span-2 p-2 border-r border-black text-xs capitalize">
+                                {key.replace(/_/g, ' ')}
+                            </div>
+                            <div className="text-center p-2 border-r border-black text-xs">
+                                {value === 'normal' ? '✓' : ''}
+                            </div>
+                            <div className="text-center p-2 text-xs">
+                                {value === 'critico' ? '✓' : ''}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Observaciones y sugerencias */}
+                <div className="border border-black mb-4 p-3">
+                    <div className="font-bold text-xs mb-2">OBSERVACIONES:</div>
+                    <div className="text-xs">{reportData.observaciones || '-'}</div>
+                </div>
+
+                <div className="border border-black p-3">
+                    <div className="font-bold text-xs mb-2">SUGERENCIAS:</div>
+                    <div className="text-xs">{reportData.sugerencias || '-'}</div>
+                </div>
             </div>
         </div>
     );
