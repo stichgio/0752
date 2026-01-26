@@ -1,260 +1,158 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, Save, FileDown, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
-import { TechnicalReport } from './types';
-import { technicalReportsApi } from './api';
+import { ChevronLeft, ChevronRight, FileDown } from 'lucide-react';
 import DatabasePanel from './DatabasePanel';
 import PreviewPanel from './PreviewPanel';
 import FormPanel from './FormPanel';
-import '../../../technical-theme.css';
+import { TechnicalReport } from './types';
+import { technicalReportsApi } from './api';
 
 export default function TechnicalReports() {
     const [reports, setReports] = useState<TechnicalReport[]>([]);
     const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
     const [formData, setFormData] = useState<TechnicalReport | null>(null);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const [selectedImages, setSelectedImages] = useState<File[]>([]);
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
 
-    // Cargar reportes al montar
-    useEffect(() => {
-        loadReports();
-    }, []);
+    useEffect(() => { loadReports(); }, []);
 
     const loadReports = async () => {
         setIsLoading(true);
-        setError(null);
-
         try {
-            const data = await technicalReportsApi.getReports();
+            const data = await technicalReportsApi.getAllReports();
             setReports(data.reports);
-        } catch (err) {
-            setError('Error cargando reportes');
-            console.error(err);
+        } catch (error) {
+            console.error('Error:', error);
+            // alert('Error cargando informes'); // Removed alert to avoid spam on initial load if empty
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleReportSelect = async (reportId: string) => {
-        // Guardar cambios del reporte actual si hay
-        if (hasUnsavedChanges && selectedReportId) {
-            const shouldSave = window.confirm('¿Guardar cambios antes de cambiar de reporte?');
-            if (shouldSave) {
-                await handleSaveChanges();
-            }
-        }
+        if (hasUnsavedChanges && !window.confirm('¿Guardar cambios?')) return;
+        if (hasUnsavedChanges) await handleSaveChanges();
 
-        // Cargar nuevo reporte
-        setIsLoading(true);
         try {
             const report = await technicalReportsApi.getReport(reportId);
             setFormData(report);
             setSelectedReportId(reportId);
             setHasUnsavedChanges(false);
-        } catch (err) {
-            setError('Error cargando reporte');
-            console.error(err);
-        } finally {
-            setIsLoading(false);
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error cargando informe');
         }
     };
 
-    const handleFormChange = (updatedData: Partial<TechnicalReport>) => {
+    const handleFormChange = (data: Partial<TechnicalReport>) => {
         if (formData) {
-            setFormData({ ...formData, ...updatedData });
+            setFormData({ ...formData, ...data });
             setHasUnsavedChanges(true);
         }
     };
 
     const handleSaveChanges = async () => {
         if (!formData || !selectedReportId) return;
-
-        setIsLoading(true);
         try {
             await technicalReportsApi.updateReport(selectedReportId, formData);
             setHasUnsavedChanges(false);
             await loadReports();
-        } catch (err) {
-            setError('Error guardando cambios');
-            console.error(err);
-        } finally {
-            setIsLoading(false);
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error guardando');
         }
     };
 
     const handleImportCSV = async (file: File) => {
         setIsLoading(true);
-        setError(null);
-
         try {
             const result = await technicalReportsApi.importCSV(file);
-            console.log('Import result:', result);
-
-            if (result.errors && result.errors.length > 0) {
-                setError(`Importado con ${result.errors.length} errores`);
-                console.error('Import errors:', result.errors);
-            } else {
-                alert(`✅ ${result.imported_count} informes importados exitosamente`);
-            }
-
-            // 2. Reload reports strictly AFTER import is done
             await loadReports();
-
-            // Si se importó al menos 1, seleccionar el primero automáticamente
-            if (result.created_ids && result.created_ids.length > 0) {
-                await handleReportSelect(result.created_ids[0]);
-            }
-        } catch (err: any) {
-            const errorMsg = err.response?.data?.detail || err.message || 'Error desconocido';
-            setError('Error importando CSV: ' + errorMsg);
-            console.error('Import error:', err);
+            alert(`✅ ${result.imported_count} informes importados`);
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error importando CSV');
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleDownloadPDF = async () => {
-        if (!selectedReportId) return;
-
+        if (!selectedReportId || !formData) return;
         setIsLoading(true);
         try {
-            await technicalReportsApi.downloadPDF(selectedReportId);
-        } catch (err) {
-            setError('Error generando PDF');
-            console.error(err);
+            const blob = await technicalReportsApi.generatePDF(formData, selectedImages);
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `informe_${selectedReportId}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error generando PDF');
         } finally {
             setIsLoading(false);
         }
     };
 
-    // Navegación
     const currentIndex = reports.findIndex(r => r.id === selectedReportId);
-    const canGoPrevious = currentIndex > 0;
-    const canGoNext = currentIndex < reports.length - 1;
-
-    const handlePrevious = () => {
-        if (canGoPrevious) {
-            handleReportSelect(reports[currentIndex - 1].id);
-        }
-    };
-
-    const handleNext = () => {
-        if (canGoNext) {
-            handleReportSelect(reports[currentIndex + 1].id);
-        }
-    };
-
-
+    const canPrev = currentIndex > 0;
+    const canNext = currentIndex < reports.length - 1;
 
     return (
-        <div className="min-h-screen bg-gray-50 technical-theme">
-            {/* Header */}
-            <div className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10">
+        <div className="min-h-screen bg-[#0d0d0d] text-[#eee] technical-theme">
+            <div className="bg-[#0d0d0d] border-b border-[#333] px-6 py-4">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <a
-                            href="/"
-                            className="text-gray-500 hover:text-gray-900 transition-colors"
-                            title="Volver a Inicio"
-                        >
+                        <a href="/" className="text-[#888] hover:text-[#eee] transition-colors">
                             <ChevronLeft size={24} />
                         </a>
-                        <h1 className="text-2xl font-bold text-gray-900">
+                        <h1 className="text-2xl font-bold font-mono tracking-wide text-[#eee] uppercase">
                             Generador de Informes Técnicos
                         </h1>
                     </div>
 
-                    {/* Navigation */}
                     <div className="flex items-center gap-4">
-                        <button
-                            onClick={handlePrevious}
-                            disabled={!canGoPrevious || isLoading}
-                            className="btn-secondary flex items-center gap-2 disabled:opacity-50"
-                        >
-                            <ChevronLeft size={20} />
+                        <button onClick={() => canPrev && handleReportSelect(reports[currentIndex - 1].id)} disabled={!canPrev} className="btn-secondary flex items-center gap-2 disabled:opacity-50">
+                            <ChevronLeft size={16} />
                             Anterior
                         </button>
-
-                        <span className="text-sm text-gray-600 min-w-[80px] text-center">
-                            {selectedReportId ? `${currentIndex + 1} de ${reports.length}` : '-'}
-                        </span>
-
-                        <button
-                            onClick={handleNext}
-                            disabled={!canGoNext || isLoading}
-                            className="btn-secondary flex items-center gap-2 disabled:opacity-50"
-                        >
+                        <span className="text-sm text-[#888] font-mono min-w-[80px] text-center">{selectedReportId ? `${currentIndex + 1} de ${reports.length}` : '-'}</span>
+                        <button onClick={() => canNext && handleReportSelect(reports[currentIndex + 1].id)} disabled={!canNext} className="btn-secondary flex items-center gap-2 disabled:opacity-50">
                             Siguiente
-                            <ChevronRight size={20} />
+                            <ChevronRight size={16} />
                         </button>
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-2">
-                        {hasUnsavedChanges && (
-                            <button
-                                onClick={handleSaveChanges}
-                                disabled={isLoading}
-                                className="btn-primary flex items-center gap-2"
-                            >
-                                <Save size={20} />
-                                Guardar Cambios
-                            </button>
-                        )}
-
-                        <button
-                            onClick={handleDownloadPDF}
-                            disabled={!selectedReportId || isLoading}
-                            className="btn-secondary flex items-center gap-2"
-                        >
-                            <FileDown size={20} />
+                        <button onClick={handleDownloadPDF} disabled={!selectedReportId} className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <FileDown size={16} />
                             Descargar PDF
                         </button>
                     </div>
                 </div>
-
-                {/* Error Banner */}
-                {error && (
-                    <div className="mt-3 bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2">
-                        <AlertCircle className="text-red-600" size={20} />
-                        <span className="text-red-800 text-sm">{error}</span>
-                        <button
-                            onClick={() => setError(null)}
-                            className="ml-auto text-red-600 hover:text-red-800"
-                        >
-                            ✕
-                        </button>
-                    </div>
-                )}
             </div>
 
-            {/* Main Layout: 3 Columns */}
-            <div className="grid grid-cols-[320px_1fr_400px] gap-6 p-6 h-[calc(100vh-100px)]">
-                {/* Left Panel */}
-                <DatabasePanel
-                    reports={reports}
-                    selectedReportId={selectedReportId}
-                    onReportSelect={handleReportSelect}
-                    onImportCSV={handleImportCSV}
-                    onReload={loadReports}
-                    isLoading={isLoading}
-                />
-
-                {/* Center Panel */}
-                <PreviewPanel
-                    reportData={formData}
-                    isLoading={isLoading}
-                />
-
-                {/* Right Panel */}
+            <div className="grid grid-cols-[300px_1fr_400px] gap-6 p-6 h-[calc(100vh-80px)]">
+                <DatabasePanel reports={reports} selectedReportId={selectedReportId} onReportSelect={handleReportSelect} onImportCSV={handleImportCSV} onReload={loadReports} />
+                <PreviewPanel reportData={formData} zoom={100} />
                 <FormPanel
                     reportData={formData}
                     onChange={handleFormChange}
                     onSave={handleSaveChanges}
                     hasUnsavedChanges={hasUnsavedChanges}
-                    isLoading={isLoading}
+                    selectedImages={selectedImages}
+                    onImageSelect={setSelectedImages}
                 />
             </div>
+
+            {isLoading && (
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+                    <div className="bg-[#111] border border-[#333] rounded-lg p-6 flex flex-col items-center">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D71921] mx-auto"></div>
+                        <p className="mt-4 text-[#eee] font-mono">Procesando...</p>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

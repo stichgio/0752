@@ -1,187 +1,144 @@
 """
-Router FastAPI para endpoints de informes técnicos
-Prefijo: /api/technical-reports
+Endpoints API REST para Informes Técnicos
 """
-from fastapi import APIRouter, UploadFile, HTTPException, Query, File
+from fastapi import APIRouter, UploadFile, File, HTTPException
 from fastapi.responses import Response
-from typing import Optional, List
-import os
-import tempfile
-from .models import TechnicalReport, ReportListItem
-from .database import db_manager
-from .service import service
+from typing import Optional
+import pandas as pd
+import io
+from datetime import datetime
 
-router = APIRouter(
-    prefix="/api/technical-reports",
-    tags=["technical-reports"]
-)
+from .database import db
+from .models import TechnicalReport
 
-@router.post("/import-csv")
-async def import_csv(file: UploadFile = File(...)):
-    """Importar informes desde CSV"""
-    if not file.filename or not file.filename.lower().endswith('.csv'):
-        raise HTTPException(400, "El archivo debe ser CSV")
-    
-    # Guardar temporalmente - usar tempfile para compatibilidad cross-platform
-    temp_dir = tempfile.gettempdir()
-    temp_path = os.path.join(temp_dir, f"tech_reports_{file.filename}")
-    
-    try:
-        content = await file.read()
-        with open(temp_path, 'wb') as f:
-            f.write(content)
-        
-        # Importar
-        imported, errors = db_manager.import_from_csv(temp_path)
-        
-        # Convertir a lista simple
-        report_items = []
-        for r in imported:
-            try:
-                report_items.append(ReportListItem(
-                    id=r.id,
-                    informe_id=r.metadata.informe_id,
-                    cs=r.header.cs,
-                    codigo_infraestructura=r.header.codigo_infraestructura,
-                    status=r.status,
-                    last_modified=r.last_modified
-                ))
-            except Exception as e:
-                print(f"Error creating ReportListItem: {e}")
-        
-        return {
-            "success": True,
-            "imported_count": len(imported),
-            "created_ids": [r.id for r in imported],
-            "reports": [r.dict() for r in report_items],
-            "errors": errors
-        }
-    
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(500, f"Error importando CSV: {str(e)}")
-    
-    finally:
-        if os.path.exists(temp_path):
-            try:
-                os.remove(temp_path)
-            except:
-                pass
+router = APIRouter(prefix="/api/technical-reports", tags=["technical-reports"])
 
 @router.get("/reports")
-async def get_reports(
-    cs: Optional[str] = Query(None),
-    contratista: Optional[str] = Query(None),
-    status: Optional[str] = Query(None)
+async def get_all_reports(
+    cs: Optional[str] = None,
+    contratista: Optional[str] = None,
+    status: Optional[str] = None
 ):
-    """Obtener todos los reportes con filtros opcionales"""
-    filters = {}
+    """Obtener todos los informes con filtros opcionales"""
+    reports = db.get_all_reports()
+    
     if cs:
-        filters['cs'] = cs
+        reports = [r for r in reports if r.header.cs == cs]
     if contratista:
-        filters['contratista'] = contratista
+        reports = [r for r in reports if r.header.contratista == contratista]
     if status:
-        filters['status'] = status
+        reports = [r for r in reports if r.status == status]
     
-    reports = db_manager.get_all(filters)
-    
-    return {
-        "reports": reports,
-        "total": len(reports)
-    }
+    return {"reports": [r.dict() for r in reports], "total": len(reports)}
 
 @router.get("/reports/{report_id}")
 async def get_report(report_id: str):
-    """Obtener un reporte específico"""
-    report = db_manager.get_by_id(report_id)
-    
+    """Obtener un informe específico"""
+    report = db.get_report(report_id)
     if not report:
-        raise HTTPException(404, "Reporte no encontrado")
-    
-    return report
+        raise HTTPException(status_code=404, detail="Informe no encontrado")
+    return report.dict()
 
 @router.post("/reports")
 async def create_report(report: TechnicalReport):
-    """Crear nuevo reporte"""
-    try:
-        created = db_manager.create(report)
-        return {"success": True, "report": created}
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(500, f"Error creando reporte: {str(e)}")
+    """Crear nuevo informe"""
+    if db.get_report(report.id):
+        raise HTTPException(status_code=400, detail="Informe ya existe")
+    
+    report.last_modified = datetime.now().isoformat()
+    created = db.create_report(report)
+    return {"success": True, "report": created.dict()}
 
 @router.put("/reports/{report_id}")
 async def update_report(report_id: str, report: TechnicalReport):
-    """Actualizar reporte"""
-    try:
-        updated = db_manager.update(report_id, report)
-        return {"success": True, "report": updated}
-    except ValueError as e:
-        raise HTTPException(404, str(e))
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(500, f"Error actualizando: {str(e)}")
+    """Actualizar informe existente"""
+    if not db.get_report(report_id):
+        raise HTTPException(status_code=404, detail="Informe no encontrado")
+    
+    report.last_modified = datetime.now().isoformat()
+    updated = db.update_report(report_id, report)
+    return {"success": True, "report": updated.dict()}
 
 @router.delete("/reports/{report_id}")
 async def delete_report(report_id: str):
-    """Eliminar reporte"""
-    report = db_manager.get_by_id(report_id)
-    if not report:
-        raise HTTPException(404, "Reporte no encontrado")
-    
-    db_manager.delete(report_id)
+    """Eliminar informe"""
+    if not db.delete_report(report_id):
+        raise HTTPException(status_code=404, detail="Informe no encontrado")
     return {"success": True, "deleted_id": report_id}
+
+@router.post("/import-csv")
+async def import_csv(file: UploadFile = File(...)):
+    """Importar informes desde archivo CSV"""
+    if not file.filename.endswith(('.csv', '.CSV')):
+        raise HTTPException(status_code=400, detail="El archivo debe ser CSV")
+    
+    try:
+        content = await file.read()
+        df = pd.read_csv(io.StringIO(content.decode('utf-8')))
+        csv_data = df.to_dict('records')
+        imported_reports = db.import_from_csv(csv_data)
+        
+        return {
+            "success": True,
+            "imported_count": len(imported_reports),
+            "reports": [r.dict() for r in imported_reports]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error importando CSV: {str(e)}")
 
 @router.post("/reports/{report_id}/generate-pdf")
 async def generate_pdf(report_id: str):
-    """Generar PDF del reporte"""
-    report_data = db_manager.get_by_id(report_id)
-    
-    if not report_data:
-        raise HTTPException(404, "Reporte no encontrado")
+    """Generar PDF del informe"""
+    report = db.get_report(report_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="Informe no encontrado")
     
     try:
-        # Convertir dict a modelo
-        report = TechnicalReport(**report_data)
+        import os
+        from report_service import ReportService
         
-        # Generar PDF
-        pdf_bytes = service.generate_pdf(report)
+        # Localizar el directorio de templates específico para informes técnicos
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        templates_dir = os.path.join(current_dir, "templates")
+        
+        service = ReportService(templates_dir=templates_dir)
+        template = service.get_template("informe_tecnico.html")
+        
+        # Renderizar HTML con los datos del informe
+        html_content = template.render(report=report.dict())
+        
+        # Generar PDF usando WeasyPrint (vía report_service context)
+        from weasyprint import HTML as WeasyHTML
+        pdf_bytes = WeasyHTML(string=html_content).write_pdf()
         
         return Response(
             content=pdf_bytes,
             media_type="application/pdf",
-            headers={
-                "Content-Disposition": f"attachment; filename=informe_{report_id}.pdf"
-            }
+            headers={"Content-Disposition": f"attachment; filename=informe_{report_id}.pdf"}
         )
-    
     except Exception as e:
         import traceback
-        traceback.print_exc()
-        raise HTTPException(500, f"Error generando PDF: {str(e)}")
+        error_detail = traceback.format_exc()
+        print(f"Error generando PDF para {report_id}:\n{error_detail}")
+        raise HTTPException(status_code=500, detail=f"Error generando PDF: {str(e)}")
 
 @router.get("/autocomplete/cs")
 async def autocomplete_cs():
-    """Autocompletado: Centros de Servicio"""
-    options = db_manager.get_unique_values('cs')
-    return {"options": options}
+    """Obtener lista única de Centros de Servicio"""
+    reports = db.get_all_reports()
+    cs_list = list(set(r.header.cs for r in reports if r.header.cs))
+    return {"options": sorted(cs_list)}
 
 @router.get("/autocomplete/contratista")
-async def autocomplete_contratista(cs: Optional[str] = Query(None)):
-    """Autocompletado: Contratistas"""
+async def autocomplete_contratista(cs: Optional[str] = None):
+    """Obtener lista de contratistas"""
+    reports = db.get_all_reports()
     if cs:
-        # Filtrar por CS
-        reports = db_manager.get_all({'cs': cs})
-        contratistas = list(set(r.get('header', {}).get('contratista', '') for r in reports if r.get('header', {}).get('contratista')))
-    else:
-        contratistas = db_manager.get_unique_values('contratista')
-    
+        reports = [r for r in reports if r.header.cs == cs]
+    contratistas = list(set(r.header.contratista for r in reports if r.header.contratista))
     return {"options": sorted(contratistas)}
 
-@router.get("/autocomplete/tipo")
-async def autocomplete_tipo():
-    """Autocompletado: Tipos de reservorio"""
-    return {"options": ["ELEVADO", "ENTERRADO", "SEMIENTERRADO"]}
+@router.get("/templates")
+async def list_templates():
+    """Listar templates disponibles"""
+    return {"templates": [{"id": "informe_tecnico", "name": "Informe Técnico SEDAPAL"}]}

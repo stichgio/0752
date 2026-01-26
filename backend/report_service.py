@@ -391,7 +391,7 @@ class ReportService:
             
         return processed_images, layout_mode, img_count, temp_files
 
-    async def generate_batch_pdf(self, reports_list, output_path=None, logo_left=None, logo_right=None, custom_template_str=None):
+    async def generate_batch_pdf(self, reports_list, output_path=None, logo_left=None, logo_right=None, custom_template_str=None, template_name=None):
         """
         Pipeline optimizado ESTABLE para generación de PDFs
         """
@@ -410,6 +410,19 @@ class ReportService:
         if custom_template_str:
             from jinja2 import Template
             template = Template(custom_template_str)
+        elif template_name:
+            # Check if it's in the technical reports templates
+            tech_tpl_path = os.path.join(os.path.dirname(__file__), "technical_reports", "templates", template_name)
+            if os.path.exists(tech_tpl_path):
+                 # Load from file directly using a new environment for this specific path to avoid loader issues
+                 tech_env = Environment(loader=FileSystemLoader(os.path.dirname(tech_tpl_path)))
+                 template = tech_env.get_template(os.path.basename(tech_tpl_path))
+            else:
+                 try:
+                    template = self.get_template(template_name)
+                 except:
+                    print(f"Template {template_name} not found, falling back to default")
+                    template = self.template
         else:
             template = self.template
 

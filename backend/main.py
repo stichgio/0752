@@ -14,8 +14,7 @@ from typing import List, Optional
 from report_service import run_batch_generation, ReportService
 from pdf_tools import merge_pdfs_interleaved, split_pdf, split_pdf_by_ranges
 import zipfile
-from technical_reports import router as technical_reports_router
-
+from technical_reports.router import router as technical_reports_router
 
 app = FastAPI()
 
@@ -32,19 +31,22 @@ app.add_middleware(
 current_data = {"df": None}
 jobs = {}
 
-from technical_reports.database import db_manager as tech_reports_db
+from technical_reports.database import db as tech_reports_db
 from datetime import datetime
 
 @app.on_event("startup")
 async def startup_event():
-    reports = tech_reports_db.get_all()
+    reports = tech_reports_db.get_all_reports()
     print(f"===== Application Startup at {datetime.now()} =====")
     print(f"[TechReports DB] Loaded {len(reports)} reports")
     for report in reports:
-        print(f"  - {report.get('id')}: {report.get('header', {}).get('cs')}")
+        print(f"  - {report.id}: {report.header.cs}")
 
 # Create API Router with prefix
 api_router = APIRouter(prefix="/api")
+
+# Include the technical reports router
+app.include_router(technical_reports_router)
 
 @api_router.get("/templates")
 async def list_templates():
@@ -79,9 +81,10 @@ async def generate_single_pdf(
     files: List[UploadFile] = File(default=[]),
     logoLeft: Optional[UploadFile] = File(None),
     logoRight: Optional[UploadFile] = File(None),
-    customTemplate: Optional[str] = Form(None)
+    customTemplate: Optional[str] = Form(None),
+    templateName: Optional[str] = Form(None)
 ):
-    print(f"Received request: data len={len(data)}, files={len(files)}, customTemplate={'yes' if customTemplate else 'no'}")
+    print(f"Received request: data len={len(data)}, files={len(files)}, customTemplate={'yes' if customTemplate else 'no'}, templateName={templateName}")
     try:
         # Parse JSON data
         row_data = json.loads(data)
@@ -148,7 +151,8 @@ async def generate_single_pdf(
                     output_path=output_path,
                     logo_left=logo_left_b64,
                     logo_right=logo_right_b64,
-                    custom_template_str=customTemplate
+                    custom_template_str=customTemplate,
+                    template_name=templateName
                 )
             except Exception:
                 # If generation fails, ensure we clean up the file immediately

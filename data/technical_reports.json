@@ -1,0 +1,1262 @@
+{
+  "RPT-0001": {
+    "id": "RPT-0001",
+    "metadata": {
+      "informe_id": 1,
+      "dia": 15,
+      "mes": "ENERO",
+      "anio": 2025,
+      "pagina": "1 de 2"
+    },
+    "header": {
+      "cs": "LIMA NORTE",
+      "contratista": "HIDRO SERVICIOS",
+      "codigo_infraestructura": "LN-RES-001",
+      "ubicacion": "Av. Túpac Amaru 1234",
+      "suministro": "SUB-001",
+      "tipo": "ELEVADO",
+      "volumen": 500
+    },
+    "inspeccion": {
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "unchecked",
+      "escalera_exterior": "critico",
+      "cuba_interior": "normal",
+      "cuba_exterior": "critico",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "critico",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal"
+    },
+    "valvulas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 3,
+        "10": 0,
+        "12": 1
+      },
+      "operativas": 3,
+      "no_operativas": 1
+    },
+    "canastillas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 1,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 1,
+      "no_operativas": 0
+    },
+    "observaciones": "CORROIDO",
+    "sugerencias": "CAMBIAR ESCALERA",
+    "status": "draft",
+    "last_modified": "2026-01-26T13:54:53.289375"
+  },
+  "RPT-0002": {
+    "id": "RPT-0002",
+    "metadata": {
+      "informe_id": 2,
+      "dia": 16,
+      "mes": "ENERO",
+      "anio": 2025,
+      "pagina": "1 de 2"
+    },
+    "header": {
+      "cs": "LIMA SUR",
+      "contratista": "AQUA TECH",
+      "codigo_infraestructura": "LS-RES-002",
+      "ubicacion": "Jr. Test 456 - Surquillo",
+      "suministro": "SUB-002",
+      "tipo": "ENTERRADO",
+      "volumen": 300
+    },
+    "inspeccion": {
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal"
+    },
+    "valvulas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 1,
+        "8": 2,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 3,
+      "no_operativas": 0
+    },
+    "canastillas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 1,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 1,
+      "no_operativas": 0
+    },
+    "observaciones": "ESTADO ACEPTABLE",
+    "sugerencias": "SIN OBSERVACIONES",
+    "status": "draft",
+    "last_modified": "2026-01-26T13:54:22.663731"
+  },
+  "RPT-0003": {
+    "id": "RPT-0003",
+    "metadata": {
+      "informe_id": 3,
+      "dia": 17,
+      "mes": "ENERO",
+      "anio": 2025,
+      "pagina": "1 de 2"
+    },
+    "header": {
+      "cs": "SURQUILLO",
+      "contratista": "CONSORCIO SOL",
+      "codigo_infraestructura": "R-248",
+      "ubicacion": "Conjunto Habitacional Dammert Muelle",
+      "suministro": "2809003",
+      "tipo": "ELEVADO",
+      "volumen": 400
+    },
+    "inspeccion": {
+      "caja_registro": "critico",
+      "marco_tapa": "normal",
+      "escalera_interior": "critico",
+      "escalera_exterior": "critico",
+      "cuba_interior": "normal",
+      "cuba_exterior": "critico",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "critico",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "critico",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal"
+    },
+    "valvulas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 3,
+        "10": 0,
+        "12": 1
+      },
+      "operativas": 1,
+      "no_operativas": 0
+    },
+    "canastillas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 0,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 0,
+      "no_operativas": 0
+    },
+    "observaciones": "MAL ESTADO GENERAL",
+    "sugerencias": "MANTENIMIENTO URGENTE",
+    "status": "draft",
+    "last_modified": "2026-01-26T13:54:22.663731"
+  },
+  "RPT-0004": {
+    "id": "RPT-0004",
+    "metadata": {
+      "informe_id": 4,
+      "dia": 18,
+      "mes": "ENERO",
+      "anio": 2025,
+      "pagina": "1 de 2"
+    },
+    "header": {
+      "cs": "MIRAFLORES",
+      "contratista": "CONSORCIO ABC",
+      "codigo_infraestructura": "R-150",
+      "ubicacion": "Av. Larco 750 - Miraflores",
+      "suministro": "2805120",
+      "tipo": "SEMIENTERRADO",
+      "volumen": 350
+    },
+    "inspeccion": {
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal"
+    },
+    "valvulas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 1,
+        "6": 0,
+        "8": 2,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 3,
+      "no_operativas": 0
+    },
+    "canastillas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 2,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 2,
+      "no_operativas": 0
+    },
+    "observaciones": "EN BUEN ESTADO",
+    "sugerencias": "CONTINUAR MANTENIMIENTO",
+    "status": "draft",
+    "last_modified": "2026-01-26T13:54:22.663731"
+  },
+  "RPT-0005": {
+    "id": "RPT-0005",
+    "metadata": {
+      "informe_id": 5,
+      "dia": 19,
+      "mes": "ENERO",
+      "anio": 2025,
+      "pagina": "1 de 2"
+    },
+    "header": {
+      "cs": "ATE VITARTE",
+      "contratista": "HIDROSERVICIOS AA EIRL",
+      "codigo_infraestructura": "RB-6",
+      "ubicacion": "1178 - RB-6 Huaycan Zona Z (CR-282)",
+      "suministro": "5629480",
+      "tipo": "ELEVADO",
+      "volumen": 150
+    },
+    "inspeccion": {
+      "caja_registro": "critico",
+      "marco_tapa": "normal",
+      "escalera_interior": "critico",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "critico",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "critico",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "critico",
+      "descarga": "normal"
+    },
+    "valvulas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 1,
+        "10": 0,
+        "12": 1
+      },
+      "operativas": 1,
+      "no_operativas": 1
+    },
+    "canastillas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 0,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 0,
+      "no_operativas": 0
+    },
+    "observaciones": "CORROIDO",
+    "sugerencias": "CAMBIO",
+    "status": "draft",
+    "last_modified": "2026-01-26T13:54:22.663731"
+  },
+  "RPT-0006": {
+    "id": "RPT-0006",
+    "metadata": {
+      "informe_id": 6,
+      "dia": 20,
+      "mes": "ENERO",
+      "anio": 2025,
+      "pagina": "1 de 2"
+    },
+    "header": {
+      "cs": "LIMA NORTE",
+      "contratista": "HIDRO SERVICIOS",
+      "codigo_infraestructura": "LN-RES-006",
+      "ubicacion": "Av. Universitaria 2800",
+      "suministro": "SUB-006",
+      "tipo": "ELEVADO",
+      "volumen": 600
+    },
+    "inspeccion": {
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal"
+    },
+    "valvulas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 2,
+        "8": 4,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 6,
+      "no_operativas": 0
+    },
+    "canastillas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 2,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 2,
+      "no_operativas": 0
+    },
+    "observaciones": "OPERATIVO",
+    "sugerencias": "NINGUNA",
+    "status": "draft",
+    "last_modified": "2026-01-26T13:54:22.663731"
+  },
+  "RPT-0007": {
+    "id": "RPT-0007",
+    "metadata": {
+      "informe_id": 7,
+      "dia": 21,
+      "mes": "ENERO",
+      "anio": 2025,
+      "pagina": "1 de 2"
+    },
+    "header": {
+      "cs": "LIMA SUR",
+      "contratista": "AQUA TECH",
+      "codigo_infraestructura": "LS-RES-007",
+      "ubicacion": "Jr. Los Sauces 890 - Villa El Salvador",
+      "suministro": "SUB-007",
+      "tipo": "ENTERRADO",
+      "volumen": 450
+    },
+    "inspeccion": {
+      "caja_registro": "normal",
+      "marco_tapa": "critico",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal"
+    },
+    "valvulas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 1,
+        "8": 2,
+        "10": 1,
+        "12": 0
+      },
+      "operativas": 4,
+      "no_operativas": 0
+    },
+    "canastillas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 1,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 1,
+      "no_operativas": 0
+    },
+    "observaciones": "MARCO OXIDADO",
+    "sugerencias": "PINTURA ANTICORROSIVA",
+    "status": "draft",
+    "last_modified": "2026-01-26T13:54:22.663731"
+  },
+  "RPT-0008": {
+    "id": "RPT-0008",
+    "metadata": {
+      "informe_id": 8,
+      "dia": 22,
+      "mes": "ENERO",
+      "anio": 2025,
+      "pagina": "1 de 2"
+    },
+    "header": {
+      "cs": "CALLAO",
+      "contratista": "SERVICIOS GENERALES",
+      "codigo_infraestructura": "CLL-RES-001",
+      "ubicacion": "Av. Argentina 3456 - Callao",
+      "suministro": "SUB-008",
+      "tipo": "ELEVADO",
+      "volumen": 550
+    },
+    "inspeccion": {
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal"
+    },
+    "valvulas": {
+      "diametros": {
+        "2": 0,
+        "3": 1,
+        "4": 0,
+        "6": 0,
+        "8": 3,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 4,
+      "no_operativas": 0
+    },
+    "canastillas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 1,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 1,
+      "no_operativas": 0
+    },
+    "observaciones": "FUNCIONAL",
+    "sugerencias": "LIMPIEZA PERIODICA",
+    "status": "draft",
+    "last_modified": "2026-01-26T13:54:22.663731"
+  },
+  "RPT-0009": {
+    "id": "RPT-0009",
+    "metadata": {
+      "informe_id": 9,
+      "dia": 23,
+      "mes": "ENERO",
+      "anio": 2025,
+      "pagina": "1 de 2"
+    },
+    "header": {
+      "cs": "SAN JUAN DE LURIGANCHO",
+      "contratista": "CONSORCIO SOL",
+      "codigo_infraestructura": "SJL-RES-009",
+      "ubicacion": "Av. Próceres 1250",
+      "suministro": "SUB-009",
+      "tipo": "SEMIENTERRADO",
+      "volumen": 380
+    },
+    "inspeccion": {
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal"
+    },
+    "valvulas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 1,
+        "8": 2,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 3,
+      "no_operativas": 0
+    },
+    "canastillas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 2,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 2,
+      "no_operativas": 0
+    },
+    "observaciones": "BUEN ESTADO",
+    "sugerencias": "MANTENIMIENTO PREVENTIVO",
+    "status": "draft",
+    "last_modified": "2026-01-26T13:54:22.664730"
+  },
+  "RPT-0010": {
+    "id": "RPT-0010",
+    "metadata": {
+      "informe_id": 10,
+      "dia": 24,
+      "mes": "ENERO",
+      "anio": 2025,
+      "pagina": "1 de 2"
+    },
+    "header": {
+      "cs": "VILLA MARÍA DEL TRIUNFO",
+      "contratista": "AQUA TECH",
+      "codigo_infraestructura": "VMT-RES-010",
+      "ubicacion": "Jr. Micaela Bastidas 567",
+      "suministro": "SUB-010",
+      "tipo": "ELEVADO",
+      "volumen": 420
+    },
+    "inspeccion": {
+      "caja_registro": "critico",
+      "marco_tapa": "critico",
+      "escalera_interior": "critico",
+      "escalera_exterior": "normal",
+      "cuba_interior": "critico",
+      "cuba_exterior": "normal",
+      "loza_fondo": "critico",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal"
+    },
+    "valvulas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 2,
+        "10": 0,
+        "12": 1
+      },
+      "operativas": 2,
+      "no_operativas": 1
+    },
+    "canastillas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 1,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 0,
+      "no_operativas": 1
+    },
+    "observaciones": "DETERIORO AVANZADO",
+    "sugerencias": "REPARACIÓN INTEGRAL",
+    "status": "draft",
+    "last_modified": "2026-01-26T13:54:22.664730"
+  },
+  "RPT-0011": {
+    "id": "RPT-0011",
+    "metadata": {
+      "informe_id": 11,
+      "dia": 25,
+      "mes": "ENERO",
+      "anio": 2025,
+      "pagina": "1 de 2"
+    },
+    "header": {
+      "cs": "CHORRILLOS",
+      "contratista": "HIDRO SERVICIOS",
+      "codigo_infraestructura": "CHO-RES-011",
+      "ubicacion": "Av. Huaylas 890 - Chorrillos",
+      "suministro": "SUB-011",
+      "tipo": "ENTERRADO",
+      "volumen": 320
+    },
+    "inspeccion": {
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal"
+    },
+    "valvulas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 2,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 2,
+      "no_operativas": 0
+    },
+    "canastillas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 1,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 1,
+      "no_operativas": 0
+    },
+    "observaciones": "OPERATIVO",
+    "sugerencias": "NINGUNA",
+    "status": "draft",
+    "last_modified": "2026-01-26T13:54:22.664730"
+  },
+  "RPT-0012": {
+    "id": "RPT-0012",
+    "metadata": {
+      "informe_id": 12,
+      "dia": 26,
+      "mes": "ENERO",
+      "anio": 2025,
+      "pagina": "1 de 2"
+    },
+    "header": {
+      "cs": "BARRANCO",
+      "contratista": "CONSORCIO ABC",
+      "codigo_infraestructura": "BAR-RES-012",
+      "ubicacion": "Av. San Martin 345 - Barranco",
+      "suministro": "SUB-012",
+      "tipo": "ELEVADO",
+      "volumen": 280
+    },
+    "inspeccion": {
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal"
+    },
+    "valvulas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 1,
+        "8": 1,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 2,
+      "no_operativas": 0
+    },
+    "canastillas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 1,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 1,
+      "no_operativas": 0
+    },
+    "observaciones": "BUEN ESTADO",
+    "sugerencias": "CONTINUAR MONITOREO",
+    "status": "draft",
+    "last_modified": "2026-01-26T13:54:22.664730"
+  },
+  "RPT-0013": {
+    "id": "RPT-0013",
+    "metadata": {
+      "informe_id": 13,
+      "dia": 27,
+      "mes": "ENERO",
+      "anio": 2025,
+      "pagina": "1 de 2"
+    },
+    "header": {
+      "cs": "LA MOLINA",
+      "contratista": "SERVICIOS GENERALES",
+      "codigo_infraestructura": "LM-RES-013",
+      "ubicacion": "Av. La Molina 2300",
+      "suministro": "SUB-013",
+      "tipo": "SEMIENTERRADO",
+      "volumen": 500
+    },
+    "inspeccion": {
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal"
+    },
+    "valvulas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 1,
+        "6": 1,
+        "8": 3,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 5,
+      "no_operativas": 0
+    },
+    "canastillas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 2,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 2,
+      "no_operativas": 0
+    },
+    "observaciones": "OPERATIVO",
+    "sugerencias": "LIMPIEZA SEMESTRAL",
+    "status": "draft",
+    "last_modified": "2026-01-26T13:54:22.664730"
+  },
+  "RPT-0014": {
+    "id": "RPT-0014",
+    "metadata": {
+      "informe_id": 14,
+      "dia": 28,
+      "mes": "ENERO",
+      "anio": 2025,
+      "pagina": "1 de 2"
+    },
+    "header": {
+      "cs": "SURCO",
+      "contratista": "CONSORCIO SOL",
+      "codigo_infraestructura": "SUR-RES-014",
+      "ubicacion": "Av. Benavides 1890 - Surco",
+      "suministro": "SUB-014",
+      "tipo": "ELEVADO",
+      "volumen": 480
+    },
+    "inspeccion": {
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "critico",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal"
+    },
+    "valvulas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 3,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 3,
+      "no_operativas": 0
+    },
+    "canastillas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 1,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 1,
+      "no_operativas": 0
+    },
+    "observaciones": "ESCALERA CON OXIDO",
+    "sugerencias": "REPARAR ESCALERA",
+    "status": "draft",
+    "last_modified": "2026-01-26T13:54:22.664730"
+  },
+  "RPT-0015": {
+    "id": "RPT-0015",
+    "metadata": {
+      "informe_id": 15,
+      "dia": 29,
+      "mes": "ENERO",
+      "anio": 2025,
+      "pagina": "1 de 2"
+    },
+    "header": {
+      "cs": "PUEBLO LIBRE",
+      "contratista": "AQUA TECH",
+      "codigo_infraestructura": "PL-RES-015",
+      "ubicacion": "Av. La Marina 1670",
+      "suministro": "SUB-015",
+      "tipo": "ENTERRADO",
+      "volumen": 360
+    },
+    "inspeccion": {
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal"
+    },
+    "valvulas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 1,
+        "8": 2,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 3,
+      "no_operativas": 0
+    },
+    "canastillas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 1,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 1,
+      "no_operativas": 0
+    },
+    "observaciones": "FUNCIONAL",
+    "sugerencias": "MANTENIMIENTO REGULAR",
+    "status": "draft",
+    "last_modified": "2026-01-26T13:54:22.664730"
+  },
+  "RPT-0016": {
+    "id": "RPT-0016",
+    "metadata": {
+      "informe_id": 16,
+      "dia": 30,
+      "mes": "ENERO",
+      "anio": 2025,
+      "pagina": "1 de 2"
+    },
+    "header": {
+      "cs": "JESÚS MARÍA",
+      "contratista": "HIDRO SERVICIOS",
+      "codigo_infraestructura": "JM-RES-016",
+      "ubicacion": "Av. Brasil 450 - Jesús María",
+      "suministro": "SUB-016",
+      "tipo": "ELEVADO",
+      "volumen": 410
+    },
+    "inspeccion": {
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal"
+    },
+    "valvulas": {
+      "diametros": {
+        "2": 0,
+        "3": 1,
+        "4": 0,
+        "6": 0,
+        "8": 2,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 3,
+      "no_operativas": 0
+    },
+    "canastillas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 1,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 1,
+      "no_operativas": 0
+    },
+    "observaciones": "BUEN ESTADO",
+    "sugerencias": "NINGUNA",
+    "status": "draft",
+    "last_modified": "2026-01-26T13:54:22.664730"
+  },
+  "RPT-0017": {
+    "id": "RPT-0017",
+    "metadata": {
+      "informe_id": 17,
+      "dia": 31,
+      "mes": "ENERO",
+      "anio": 2025,
+      "pagina": "1 de 2"
+    },
+    "header": {
+      "cs": "LINCE",
+      "contratista": "CONSORCIO ABC",
+      "codigo_infraestructura": "LIN-RES-017",
+      "ubicacion": "Av. Petit Thouars 890",
+      "suministro": "SUB-017",
+      "tipo": "SEMIENTERRADO",
+      "volumen": 340
+    },
+    "inspeccion": {
+      "caja_registro": "normal",
+      "marco_tapa": "critico",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal"
+    },
+    "valvulas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 1,
+        "8": 1,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 2,
+      "no_operativas": 0
+    },
+    "canastillas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 1,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 1,
+      "no_operativas": 0
+    },
+    "observaciones": "TAPA DESGASTADA",
+    "sugerencias": "CAMBIAR TAPA",
+    "status": "draft",
+    "last_modified": "2026-01-26T13:54:22.664730"
+  },
+  "RPT-0018": {
+    "id": "RPT-0018",
+    "metadata": {
+      "informe_id": 18,
+      "dia": 1,
+      "mes": "FEBRERO",
+      "anio": 2025,
+      "pagina": "1 de 2"
+    },
+    "header": {
+      "cs": "SAN MIGUEL",
+      "contratista": "SERVICIOS GENERALES",
+      "codigo_infraestructura": "SM-RES-018",
+      "ubicacion": "Av. La Marina 2800",
+      "suministro": "SUB-018",
+      "tipo": "ELEVADO",
+      "volumen": 520
+    },
+    "inspeccion": {
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal"
+    },
+    "valvulas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 2,
+        "8": 3,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 5,
+      "no_operativas": 0
+    },
+    "canastillas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 2,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 2,
+      "no_operativas": 0
+    },
+    "observaciones": "OPERATIVO",
+    "sugerencias": "LIMPIEZA TRIMESTRAL",
+    "status": "draft",
+    "last_modified": "2026-01-26T13:54:22.664730"
+  },
+  "RPT-0019": {
+    "id": "RPT-0019",
+    "metadata": {
+      "informe_id": 19,
+      "dia": 2,
+      "mes": "FEBRERO",
+      "anio": 2025,
+      "pagina": "1 de 2"
+    },
+    "header": {
+      "cs": "MAGDALENA",
+      "contratista": "AQUA TECH",
+      "codigo_infraestructura": "MAG-RES-019",
+      "ubicacion": "Av. Brasil 1250 - Magdalena",
+      "suministro": "SUB-019",
+      "tipo": "ENTERRADO",
+      "volumen": 390
+    },
+    "inspeccion": {
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal"
+    },
+    "valvulas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 2,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 2,
+      "no_operativas": 0
+    },
+    "canastillas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 1,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 1,
+      "no_operativas": 0
+    },
+    "observaciones": "FUNCIONAL",
+    "sugerencias": "MANTENIMIENTO PREVENTIVO",
+    "status": "draft",
+    "last_modified": "2026-01-26T13:54:22.665730"
+  },
+  "RPT-0020": {
+    "id": "RPT-0020",
+    "metadata": {
+      "informe_id": 20,
+      "dia": 3,
+      "mes": "FEBRERO",
+      "anio": 2025,
+      "pagina": "1 de 2"
+    },
+    "header": {
+      "cs": "SAN ISIDRO",
+      "contratista": "CONSORCIO SOL",
+      "codigo_infraestructura": "SI-RES-020",
+      "ubicacion": "Av. Javier Prado 890",
+      "suministro": "SUB-020",
+      "tipo": "ELEVADO",
+      "volumen": 460
+    },
+    "inspeccion": {
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal"
+    },
+    "valvulas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 1,
+        "6": 1,
+        "8": 2,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 4,
+      "no_operativas": 0
+    },
+    "canastillas": {
+      "diametros": {
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "6": 0,
+        "8": 2,
+        "10": 0,
+        "12": 0
+      },
+      "operativas": 2,
+      "no_operativas": 0
+    },
+    "observaciones": "EXCELENTE ESTADO",
+    "sugerencias": "CONTINUAR MONITOREO",
+    "status": "draft",
+    "last_modified": "2026-01-26T13:54:22.665730"
+  }
+}
