@@ -105,7 +105,7 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
         },
         infoLabel: {
             fontWeight: 'bold',
-            padding: '3px 8px',
+            padding: '6px 8px',
             background: '#e9ecef',
             borderRight: '1px solid #ccc',
             display: 'flex',
@@ -113,7 +113,7 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
             fontSize: '7pt',
         },
         infoValue: {
-            padding: '3px 8px',
+            padding: '6px 8px',
             borderRight: '1px solid #ccc',
             display: 'flex',
             alignItems: 'center',
@@ -128,7 +128,7 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
         },
         th: {
             border: '1px solid #999',
-            padding: '2px 4px',
+            padding: '5px 4px',
             verticalAlign: 'middle',
             background: '#0066a1',
             color: '#fff',
@@ -138,7 +138,7 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
         },
         td: {
             border: '1px solid #999',
-            padding: '2px 4px',
+            padding: '5px 4px',
             verticalAlign: 'middle',
             background: '#fff',
         },
