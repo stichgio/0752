@@ -60,7 +60,7 @@
     "observaciones": "ESCALERA INTERIOR CORROIDA",
     "sugerencias": "CAMBIAR ESCALERA",
     "status": "draft",
-    "last_modified": "2026-01-26T16:58:03.923041"
+    "last_modified": "2026-01-26T17:19:30.481279"
   },
   "RPT-0002": {
     "id": "RPT-0002",
@@ -123,7 +123,7 @@
     "observaciones": "ESTADO ACEPTABLE",
     "sugerencias": "SIN OBSERVACIONES",
     "status": "draft",
-    "last_modified": "2026-01-26T16:58:03.923041"
+    "last_modified": "2026-01-26T17:19:30.481279"
   },
   "RPT-0003": {
     "id": "RPT-0003",
@@ -186,7 +186,7 @@
     "observaciones": "MAL ESTADO GENERAL",
     "sugerencias": "MANTENIMIENTO URGENTE",
     "status": "draft",
-    "last_modified": "2026-01-26T16:58:03.923041"
+    "last_modified": "2026-01-26T17:19:30.481789"
   },
   "RPT-0004": {
     "id": "RPT-0004",
@@ -208,11 +208,11 @@
     },
     "inspeccion": {
       "caja_registro": "normal",
-      "marco_tapa": "normal",
-      "escalera_interior": "normal",
+      "marco_tapa": "critico",
+      "escalera_interior": "critico",
       "escalera_exterior": "normal",
       "cuba_interior": "normal",
-      "cuba_exterior": "normal",
+      "cuba_exterior": "critico",
       "loza_fondo": "normal",
       "loza_techo_interior": "normal",
       "loza_techo_exterior": "normal",
@@ -249,7 +249,7 @@
     "observaciones": "EN BUEN ESTADO",
     "sugerencias": "CONTINUAR MANTENIMIENTO",
     "status": "draft",
-    "last_modified": "2026-01-26T16:58:03.923041"
+    "last_modified": "2026-01-26T17:27:23.270152"
   },
   "RPT-0005": {
     "id": "RPT-0005",
@@ -312,7 +312,7 @@
     "observaciones": "CORROIDO",
     "sugerencias": "CAMBIO",
     "status": "draft",
-    "last_modified": "2026-01-26T16:58:03.923041"
+    "last_modified": "2026-01-26T17:19:30.481789"
   },
   "RPT-0006": {
     "id": "RPT-0006",
@@ -375,7 +375,7 @@
     "observaciones": "OPERATIVO",
     "sugerencias": "NINGUNA",
     "status": "draft",
-    "last_modified": "2026-01-26T16:58:03.923041"
+    "last_modified": "2026-01-26T17:19:30.481789"
   },
   "RPT-0007": {
     "id": "RPT-0007",
@@ -438,7 +438,7 @@
     "observaciones": "MARCO OXIDADO",
     "sugerencias": "PINTURA ANTICORROSIVA",
     "status": "draft",
-    "last_modified": "2026-01-26T16:58:03.923553"
+    "last_modified": "2026-01-26T17:19:30.481789"
   },
   "RPT-0008": {
     "id": "RPT-0008",
@@ -501,7 +501,7 @@
     "observaciones": "FUNCIONAL",
     "sugerencias": "LIMPIEZA PERIODICA",
     "status": "draft",
-    "last_modified": "2026-01-26T16:58:03.923553"
+    "last_modified": "2026-01-26T17:19:30.481789"
   },
   "RPT-0009": {
     "id": "RPT-0009",
@@ -564,7 +564,7 @@
     "observaciones": "BUEN ESTADO",
     "sugerencias": "MANTENIMIENTO PREVENTIVO",
     "status": "draft",
-    "last_modified": "2026-01-26T16:58:03.923553"
+    "last_modified": "2026-01-26T17:19:30.481789"
   },
   "RPT-0010": {
     "id": "RPT-0010",
@@ -627,7 +627,7 @@
     "observaciones": "DETERIORO AVANZADO",
     "sugerencias": "REPARACIÓN INTEGRAL",
     "status": "draft",
-    "last_modified": "2026-01-26T16:58:03.923553"
+    "last_modified": "2026-01-26T17:19:30.481789"
   },
   "RPT-0011": {
     "id": "RPT-0011",
@@ -690,7 +690,7 @@
     "observaciones": "OPERATIVO",
     "sugerencias": "NINGUNA",
     "status": "draft",
-    "last_modified": "2026-01-26T16:58:03.923553"
+    "last_modified": "2026-01-26T17:19:30.481789"
   },
   "RPT-0012": {
     "id": "RPT-0012",
@@ -753,7 +753,7 @@
     "observaciones": "BUEN ESTADO",
     "sugerencias": "CONTINUAR MONITOREO",
     "status": "draft",
-    "last_modified": "2026-01-26T16:58:03.923553"
+    "last_modified": "2026-01-26T17:19:30.481789"
   },
   "RPT-0013": {
     "id": "RPT-0013",
@@ -816,7 +816,7 @@
     "observaciones": "OPERATIVO",
     "sugerencias": "LIMPIEZA SEMESTRAL",
     "status": "draft",
-    "last_modified": "2026-01-26T16:58:03.923553"
+    "last_modified": "2026-01-26T17:19:30.481789"
   },
   "RPT-0014": {
     "id": "RPT-0014",
@@ -879,7 +879,7 @@
     "observaciones": "ESCALERA CON OXIDO",
     "sugerencias": "REPARAR ESCALERA",
     "status": "draft",
-    "last_modified": "2026-01-26T16:58:03.923553"
+    "last_modified": "2026-01-26T17:19:30.481789"
   },
   "RPT-0015": {
     "id": "RPT-0015",
@@ -942,7 +942,7 @@
     "observaciones": "FUNCIONAL",
     "sugerencias": "MANTENIMIENTO REGULAR",
     "status": "draft",
-    "last_modified": "2026-01-26T16:58:03.924061"
+    "last_modified": "2026-01-26T17:19:30.481789"
   },
   "RPT-0016": {
     "id": "RPT-0016",
@@ -1005,7 +1005,7 @@
     "observaciones": "BUEN ESTADO",
     "sugerencias": "NINGUNA",
     "status": "draft",
-    "last_modified": "2026-01-26T16:58:03.924061"
+    "last_modified": "2026-01-26T17:19:30.481789"
   },
   "RPT-0017": {
     "id": "RPT-0017",
@@ -1068,7 +1068,7 @@
     "observaciones": "TAPA DESGASTADA",
     "sugerencias": "CAMBIAR TAPA",
     "status": "draft",
-    "last_modified": "2026-01-26T16:58:03.924061"
+    "last_modified": "2026-01-26T17:19:30.481789"
   },
   "RPT-0018": {
     "id": "RPT-0018",
@@ -1131,7 +1131,7 @@
     "observaciones": "OPERATIVO",
     "sugerencias": "LIMPIEZA TRIMESTRAL",
     "status": "draft",
-    "last_modified": "2026-01-26T16:58:03.924061"
+    "last_modified": "2026-01-26T17:19:30.481789"
   },
   "RPT-0019": {
     "id": "RPT-0019",
@@ -1194,7 +1194,7 @@
     "observaciones": "FUNCIONAL",
     "sugerencias": "MANTENIMIENTO PREVENTIVO",
     "status": "draft",
-    "last_modified": "2026-01-26T16:58:03.924061"
+    "last_modified": "2026-01-26T17:19:30.481789"
   },
   "RPT-0020": {
     "id": "RPT-0020",
@@ -1257,6 +1257,6 @@
     "observaciones": "EXCELENTE ESTADO",
     "sugerencias": "CONTINUAR MONITOREO",
     "status": "draft",
-    "last_modified": "2026-01-26T16:58:03.924061"
+    "last_modified": "2026-01-26T17:19:30.481789"
   }
 }

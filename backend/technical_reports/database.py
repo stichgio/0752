@@ -68,20 +68,37 @@ class TechnicalReportsDB:
         return False
     
     def import_from_csv(self, csv_data: List[Dict]) -> List[TechnicalReport]:
-        """Importar informes desde datos CSV"""
+        """Importar informes desde datos CSV/Excel"""
         imported = []
         
+        def safe_int(val, default=0):
+            try:
+                if val == '' or val is None: return default
+                return int(float(val))
+            except: return default
+
         for row in csv_data:
             try:
-                report_id = f"RPT-{str(row.get('informe_id', 0)).zfill(4)}"
+                # Normalizar claves a minúsculas
+                row = {k.lower(): v for k, v in row.items()}
                 
+                informe_id = safe_int(row.get('informe_id'))
+                if informe_id == 0: continue # Saltar filas vacías
+                
+                report_id = f"RPT-{str(informe_id).zfill(4)}"
+                
+                # Validar tipo de reservorio
+                tipo_raw = str(row.get('tipo', 'ELEVADO')).upper().strip()
+                if tipo_raw not in ['ELEVADO', 'ENTERRADO', 'SEMIENTERRADO']:
+                    tipo_raw = 'ELEVADO'
+
                 report = TechnicalReport(
                     id=report_id,
                     metadata={
-                        "informe_id": int(row.get('informe_id', 0)),
-                        "dia": int(row.get('dia', 1)),
+                        "informe_id": informe_id,
+                        "dia": safe_int(row.get('dia', 1)),
                         "mes": str(row.get('mes', 'ENERO')).upper(),
-                        "anio": int(row.get('anio', 2025)),
+                        "anio": safe_int(row.get('anio', 2025)),
                         "pagina": "1 de 2"
                     },
                     header={
@@ -90,8 +107,8 @@ class TechnicalReportsDB:
                         "codigo_infraestructura": str(row.get('codigo_infraestructura', '')),
                         "ubicacion": str(row.get('ubicacion', '')),
                         "suministro": str(row.get('suministro', '')),
-                        "tipo": str(row.get('tipo', 'ELEVADO')),
-                        "volumen": int(row.get('volumen', 0))
+                        "tipo": tipo_raw,
+                        "volumen": safe_int(row.get('volumen', 0))
                     },
                     inspeccion={
                         "caja_registro": self._parse_check(row.get('caja_registro')),
@@ -109,29 +126,29 @@ class TechnicalReportsDB:
                     },
                     valvulas={
                         "diametros": {
-                            '2': int(row.get('valvulas_2', 0)),
-                            '3': int(row.get('valvulas_3', 0)),
-                            '4': int(row.get('valvulas_4', 0)),
-                            '6': int(row.get('valvulas_6', 0)),
-                            '8': int(row.get('valvulas_8', 0)),
-                            '10': int(row.get('valvulas_10', 0)),
-                            '12': int(row.get('valvulas_12', 0))
+                            '2': safe_int(row.get('valvulas_2', 0)),
+                            '3': safe_int(row.get('valvulas_3', 0)),
+                            '4': safe_int(row.get('valvulas_4', 0)),
+                            '6': safe_int(row.get('valvulas_6', 0)),
+                            '8': safe_int(row.get('valvulas_8', 0)),
+                            '10': safe_int(row.get('valvulas_10', 0)),
+                            '12': safe_int(row.get('valvulas_12', 0))
                         },
-                        "operativas": int(row.get('valvulas_operativas', 0)),
-                        "no_operativas": int(row.get('valvulas_no_operativas', 0))
+                        "operativas": safe_int(row.get('valvulas_operativas', 0)),
+                        "no_operativas": safe_int(row.get('valvulas_no_operativas', 0))
                     },
                     canastillas={
                         "diametros": {
-                            '2': int(row.get('canastillas_2', 0)),
-                            '3': int(row.get('canastillas_3', 0)),
-                            '4': int(row.get('canastillas_4', 0)),
-                            '6': int(row.get('canastillas_6', 0)),
-                            '8': int(row.get('canastillas_8', 0)),
-                            '10': int(row.get('canastillas_10', 0)),
-                            '12': int(row.get('canastillas_12', 0))
+                            '2': safe_int(row.get('canastillas_2', 0)),
+                            '3': safe_int(row.get('canastillas_3', 0)),
+                            '4': safe_int(row.get('canastillas_4', 0)),
+                            '6': safe_int(row.get('canastillas_6', 0)),
+                            '8': safe_int(row.get('canastillas_8', 0)),
+                            '10': safe_int(row.get('canastillas_10', 0)),
+                            '12': safe_int(row.get('canastillas_12', 0))
                         },
-                        "operativas": int(row.get('canastillas_operativas', 0)),
-                        "no_operativas": int(row.get('canastillas_no_operativas', 0))
+                        "operativas": safe_int(row.get('canastillas_operativas', 0)),
+                        "no_operativas": safe_int(row.get('canastillas_no_operativas', 0))
                     },
                     observaciones=str(row.get('observaciones', '')),
                     sugerencias=str(row.get('sugerencias', '')),
@@ -147,7 +164,6 @@ class TechnicalReportsDB:
                 continue
         
         self.save()
-        print(f"Imported {len(imported)} reports")
         return imported
     
     @staticmethod

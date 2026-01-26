@@ -4,8 +4,8 @@ import { TechnicalReport } from './types';
 interface Props {
     reportData: TechnicalReport | null;
     zoom: number;
-    logoLeft?: File | null;
-    logoRight?: File | null;
+    logoLeft?: string | null;
+    logoRight?: string | null;
 }
 
 export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: Props) {
@@ -27,8 +27,8 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
         return null;
     };
 
-    const logoLeftUrl = logoLeft ? URL.createObjectURL(logoLeft) : null;
-    const logoRightUrl = logoRight ? URL.createObjectURL(logoRight) : null;
+    const logoLeftUrl = logoLeft;
+    const logoRightUrl = logoRight;
 
     // Styles matching the HTML template exactly
     const styles = {

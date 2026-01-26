@@ -14,8 +14,31 @@ export default function TechnicalReports() {
     const [selectedImages, setSelectedImages] = useState<File[]>([]);
     const [isLoading, setIsLoading] = useState(false);
 
-    const [logoLeft, setLogoLeft] = useState<File | null>(null);
-    const [logoRight, setLogoRight] = useState<File | null>(null);
+    const [logoLeft, setLogoLeft] = useState<string | null>(localStorage.getItem('tech_report_logo_left'));
+    const [logoRight, setLogoRight] = useState<string | null>(localStorage.getItem('tech_report_logo_right'));
+
+    useEffect(() => {
+        if (logoLeft) localStorage.setItem('tech_report_logo_left', logoLeft);
+        else localStorage.removeItem('tech_report_logo_left');
+    }, [logoLeft]);
+
+    useEffect(() => {
+        if (logoRight) localStorage.setItem('tech_report_logo_right', logoRight);
+        else localStorage.removeItem('tech_report_logo_right');
+    }, [logoRight]);
+
+    const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>, isLeft: boolean) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64String = reader.result as string;
+                if (isLeft) setLogoLeft(base64String);
+                else setLogoRight(base64String);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
 
     useEffect(() => { loadReports(); }, []);
 
@@ -84,7 +107,31 @@ export default function TechnicalReports() {
         if (!selectedReportId || !formData) return;
         setIsLoading(true);
         try {
-            const blob = await technicalReportsApi.generatePDF(formData, selectedImages, logoLeft, logoRight);
+            // Convert base64 logos back to files or let the API handle base64 if it supports it
+            // Current API in main.py handles logoLeft/logoRight as UploadFile (multipart)
+            // We need to convert base64 strings back to Blobs to send via FormData
+
+            const base64ToBlob = (base64: string) => {
+                const parts = base64.split(';base64,');
+                const contentType = parts[0].split(':')[1];
+                const raw = window.atob(parts[1]);
+                const rawLength = raw.length;
+                const uInt8Array = new Uint8Array(rawLength);
+                for (let i = 0; i < rawLength; ++i) {
+                    uInt8Array[i] = raw.charCodeAt(i);
+                }
+                return new Blob([uInt8Array], { type: contentType });
+            };
+
+            const logoLeftBlob = logoLeft ? base64ToBlob(logoLeft) : null;
+            const logoRightBlob = logoRight ? base64ToBlob(logoRight) : null;
+
+            const blob = await technicalReportsApi.generatePDF(
+                formData,
+                selectedImages,
+                logoLeftBlob as any,
+                logoRightBlob as any
+            );
             const url = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = url;
@@ -138,18 +185,74 @@ export default function TechnicalReports() {
             <div className="grid grid-cols-[300px_1fr_400px] gap-6 p-6 h-[calc(100vh-80px)]">
                 <DatabasePanel reports={reports} selectedReportId={selectedReportId} onReportSelect={handleReportSelect} onImportCSV={handleImportCSV} onReload={loadReports} />
                 <PreviewPanel reportData={formData} zoom={100} logoLeft={logoLeft} logoRight={logoRight} />
-                <FormPanel
-                    reportData={formData}
-                    onChange={handleFormChange}
-                    onSave={handleSaveChanges}
-                    hasUnsavedChanges={hasUnsavedChanges}
-                    selectedImages={selectedImages}
-                    onImageSelect={setSelectedImages}
-                    logoLeft={logoLeft}
-                    logoRight={logoRight}
-                    onLogoLeftChange={setLogoLeft}
-                    onLogoRightChange={setLogoRight}
-                />
+
+                <div className="flex flex-col gap-6 overflow-hidden">
+                    {/* LOGOS CONFIGURATION - ALWAYS VISIBLE AT TOP OF RIGHT PANEL */}
+                    <div className="bg-[#111] rounded-lg shadow border border-[#333] p-4">
+                        <div className="flex items-center gap-2 mb-4 text-sm font-semibold text-[#eee] uppercase tracking-wider">
+                            <span className="text-[#D71921]">●</span> Configuración de Logos
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            {/* Logo Left */}
+                            <div className="flex flex-col gap-2">
+                                <span className="text-[10px] text-[#888] uppercase font-bold">Logo Izquierda</span>
+                                <label className="relative aspect-[4/3] border border-dashed border-[#444] rounded-md flex flex-col items-center justify-center cursor-pointer hover:border-[#D71921] hover:bg-[#1a1a1a] transition-all group overflow-hidden">
+                                    {logoLeft ? (
+                                        <>
+                                            <img src={logoLeft} className="w-full h-full object-contain p-2" />
+                                            <button
+                                                onClick={(e) => { e.preventDefault(); setLogoLeft(null); }}
+                                                className="absolute top-1 right-1 bg-black/50 hover:bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                ×
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <div className="text-center p-2">
+                                            <div className="text-[#444] group-hover:text-[#D71921] mb-1">↑</div>
+                                            <span className="text-[9px] text-[#666]">SUBIR</span>
+                                        </div>
+                                    )}
+                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleLogoUpload(e, true)} />
+                                </label>
+                            </div>
+                            {/* Logo Right */}
+                            <div className="flex flex-col gap-2">
+                                <span className="text-[10px] text-[#888] uppercase font-bold">Logo Derecha</span>
+                                <label className="relative aspect-[4/3] border border-dashed border-[#444] rounded-md flex flex-col items-center justify-center cursor-pointer hover:border-[#D71921] hover:bg-[#1a1a1a] transition-all group overflow-hidden">
+                                    {logoRight ? (
+                                        <>
+                                            <img src={logoRight} className="w-full h-full object-contain p-2" />
+                                            <button
+                                                onClick={(e) => { e.preventDefault(); setLogoRight(null); }}
+                                                className="absolute top-1 right-1 bg-black/50 hover:bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                ×
+                                            </button>
+                                        </>
+                                    ) : (
+                                        <div className="text-center p-2">
+                                            <div className="text-[#444] group-hover:text-[#D71921] mb-1">↑</div>
+                                            <span className="text-[9px] text-[#666]">SUBIR</span>
+                                        </div>
+                                    )}
+                                    <input type="file" accept="image/*" className="hidden" onChange={(e) => handleLogoUpload(e, false)} />
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 overflow-hidden">
+                        <FormPanel
+                            reportData={formData}
+                            onChange={handleFormChange}
+                            onSave={handleSaveChanges}
+                            hasUnsavedChanges={hasUnsavedChanges}
+                            selectedImages={selectedImages}
+                            onImageSelect={setSelectedImages}
+                        />
+                    </div>
+                </div>
             </div>
 
             {isLoading && (
