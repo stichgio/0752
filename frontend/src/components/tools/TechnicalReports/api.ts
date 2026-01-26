@@ -5,22 +5,27 @@ import { TechnicalReport } from './types';
 
 // Detectar URL del backend automáticamente
 const getApiBase = (): string => {
+    let baseUrl = '';
+
     // Si hay variable de entorno definida, usarla
     if (import.meta.env.VITE_API_URL) {
-        return import.meta.env.VITE_API_URL;
+        baseUrl = import.meta.env.VITE_API_URL;
     }
-
     // En desarrollo local
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        return 'http://localhost:7860';
+    else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        baseUrl = 'http://localhost:7860';
+    }
+    // En producción (HuggingFace Spaces), el backend está en el mismo origen
+    else {
+        baseUrl = window.location.origin;
     }
 
-    // En producción (HuggingFace Spaces), el backend está en el mismo origen
-    return window.location.origin;
+    // Asegurarse de quitar /api al final si existe para evitar duplicación
+    return baseUrl.replace(/\/api\/?$/, '');
 };
 
 const API_BASE = getApiBase();
-const API_PREFIX = '/api/technical-reports';
+const API_PREFIX = '/technical-reports';
 
 export const technicalReportsApi = {
     // Importar CSV
@@ -29,7 +34,7 @@ export const technicalReportsApi = {
         formData.append('file', file);
 
         const response = await axios.post(
-            `${API_BASE}${API_PREFIX}/import-csv`,
+            `${API_BASE}/api${API_PREFIX}/import-csv`,
             formData,
             {
                 headers: { 'Content-Type': 'multipart/form-data' }
@@ -52,8 +57,8 @@ export const technicalReportsApi = {
 
         const queryString = params.toString();
         const url = queryString
-            ? `${API_BASE}${API_PREFIX}/reports?${queryString}`
-            : `${API_BASE}${API_PREFIX}/reports`;
+            ? `${API_BASE}/api${API_PREFIX}/reports?${queryString}`
+            : `${API_BASE}/api${API_PREFIX}/reports`;
 
         const response = await axios.get(url);
 
@@ -63,7 +68,7 @@ export const technicalReportsApi = {
     // Obtener un reporte
     getReport: async (reportId: string): Promise<TechnicalReport> => {
         const response = await axios.get(
-            `${API_BASE}${API_PREFIX}/reports/${reportId}`
+            `${API_BASE}/api${API_PREFIX}/reports/${reportId}`
         );
 
         return response.data;
@@ -72,7 +77,7 @@ export const technicalReportsApi = {
     // Crear reporte
     createReport: async (report: TechnicalReport) => {
         const response = await axios.post(
-            `${API_BASE}${API_PREFIX}/reports`,
+            `${API_BASE}/api${API_PREFIX}/reports`,
             report
         );
 
@@ -82,7 +87,7 @@ export const technicalReportsApi = {
     // Actualizar reporte
     updateReport: async (reportId: string, report: TechnicalReport) => {
         const response = await axios.put(
-            `${API_BASE}${API_PREFIX}/reports/${reportId}`,
+            `${API_BASE}/api${API_PREFIX}/reports/${reportId}`,
             report
         );
 
@@ -92,7 +97,7 @@ export const technicalReportsApi = {
     // Eliminar reporte
     deleteReport: async (reportId: string) => {
         const response = await axios.delete(
-            `${API_BASE}${API_PREFIX}/reports/${reportId}`
+            `${API_BASE}/api${API_PREFIX}/reports/${reportId}`
         );
 
         return response.data;
@@ -101,7 +106,7 @@ export const technicalReportsApi = {
     // Generar PDF
     downloadPDF: async (reportId: string) => {
         const response = await axios.post(
-            `${API_BASE}${API_PREFIX}/reports/${reportId}/generate-pdf`,
+            `${API_BASE}/api${API_PREFIX}/reports/${reportId}/generate-pdf`,
             null,
             { responseType: 'blob' }
         );
@@ -121,7 +126,7 @@ export const technicalReportsApi = {
     autocomplete: {
         cs: async (): Promise<string[]> => {
             const response = await axios.get(
-                `${API_BASE}${API_PREFIX}/autocomplete/cs`
+                `${API_BASE}/api${API_PREFIX}/autocomplete/cs`
             );
             return response.data.options;
         },
@@ -129,16 +134,17 @@ export const technicalReportsApi = {
         contratista: async (cs?: string): Promise<string[]> => {
             const params = cs ? `?cs=${encodeURIComponent(cs)}` : '';
             const response = await axios.get(
-                `${API_BASE}${API_PREFIX}/autocomplete/contratista${params}`
+                `${API_BASE}/api${API_PREFIX}/autocomplete/contratista${params}`
             );
             return response.data.options;
         },
 
         tipo: async (): Promise<string[]> => {
             const response = await axios.get(
-                `${API_BASE}${API_PREFIX}/autocomplete/tipo`
+                `${API_BASE}/api${API_PREFIX}/autocomplete/tipo`
             );
             return response.data.options;
         }
     }
 };
+
