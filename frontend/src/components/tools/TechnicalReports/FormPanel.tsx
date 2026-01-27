@@ -73,33 +73,33 @@ export default function FormPanel({
             <div className="flex-1 overflow-y-auto p-4 space-y-6">
 
                 {/* LOGOS SECTION */}
-                <div className="bg-[#1a1a1a] p-3 rounded border border-[#333]">
-                    <div className="flex items-center gap-2 mb-3 text-sm font-semibold text-[#eee]">
-                        <div className="bg-[#eee] text-[#000] rounded-full w-5 h-5 flex items-center justify-center text-xs font-bold">0</div>
-                        <Settings size={14} />
+                <div className="bg-[#1a1a1a] p-2 rounded border border-[#333]">
+                    <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-[#eee]">
+                        <div className="bg-[#eee] text-[#000] rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold">0</div>
+                        <Settings size={12} />
                         LOGOS Y CABECERA
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-2 gap-2">
                         {/* Logo Left */}
-                        <div className="flex flex-col items-center gap-2">
-                            <span className="text-xs text-[#888]">Logo Izq</span>
-                            <label className="w-full aspect-[3/2] border border-dashed border-[#444] rounded flex flex-col items-center justify-center cursor-pointer hover:border-[#666] hover:bg-[#222] transition-colors relative overflow-hidden">
+                        <div className="flex flex-col items-center gap-1">
+                            <span className="text-[10px] text-[#888]">Logo Izq</span>
+                            <label className="w-full h-12 border border-dashed border-[#444] rounded flex flex-col items-center justify-center cursor-pointer hover:border-[#666] hover:bg-[#222] transition-colors relative overflow-hidden">
                                 {logoLeft ? (
                                     <img src={URL.createObjectURL(logoLeft)} className="w-full h-full object-contain p-1" />
                                 ) : (
-                                    <span className="text-[10px] text-[#666]">Subir Logo</span>
+                                    <span className="text-[9px] text-[#666]">Subir</span>
                                 )}
                                 <input type="file" accept="image/*" className="hidden" onChange={(e) => handleLogoUpload(e, true)} />
                             </label>
                         </div>
                         {/* Logo Right */}
-                        <div className="flex flex-col items-center gap-2">
-                            <span className="text-xs text-[#888]">Logo Der</span>
-                            <label className="w-full aspect-[3/2] border border-dashed border-[#444] rounded flex flex-col items-center justify-center cursor-pointer hover:border-[#666] hover:bg-[#222] transition-colors relative overflow-hidden">
+                        <div className="flex flex-col items-center gap-1">
+                            <span className="text-[10px] text-[#888]">Logo Der</span>
+                            <label className="w-full h-12 border border-dashed border-[#444] rounded flex flex-col items-center justify-center cursor-pointer hover:border-[#666] hover:bg-[#222] transition-colors relative overflow-hidden">
                                 {logoRight ? (
                                     <img src={URL.createObjectURL(logoRight)} className="w-full h-full object-contain p-1" />
                                 ) : (
-                                    <span className="text-[10px] text-[#666]">Subir Logo</span>
+                                    <span className="text-[9px] text-[#666]">Subir</span>
                                 )}
                                 <input type="file" accept="image/*" className="hidden" onChange={(e) => handleLogoUpload(e, false)} />
                             </label>
@@ -146,20 +146,22 @@ export default function FormPanel({
                 <div>
                     <h3 className="font-semibold mb-2 text-sm text-[#888] uppercase tracking-wider">Estado de Inspección</h3>
                     <div className="space-y-2">
-                        {Object.entries(reportData.inspeccion).map(([key, value]) => (
-                            <div key={key} className="flex items-center justify-between p-2 bg-[#1a1a1a] border border-[#333] rounded">
-                                <span className="text-xs uppercase text-[#ccc]">{key.replace(/_/g, ' ')}</span>
-                                <button
-                                    onClick={() => updateInspeccion(key, cycleCheck(value))}
-                                    className={`px-3 py-1 rounded text-xs font-medium min-w-[80px] ${value === 'normal' ? 'bg-green-900/50 text-green-200 border border-green-800' :
-                                        value === 'critico' ? 'bg-red-900/50 text-red-200 border border-red-800' :
-                                            'bg-[#333] text-[#888] border border-[#444]'
-                                        }`}
-                                >
-                                    {value === 'normal' ? '✓ Normal' : value === 'critico' ? '✗ Crítico' : '---'}
-                                </button>
-                            </div>
-                        ))}
+                        {Object.entries(reportData.inspeccion)
+                            .filter(([key]) => !key.startsWith('observaciones_') && !key.startsWith('sugerencias_'))
+                            .map(([key, value]) => (
+                                <div key={key} className="flex items-center justify-between p-2 bg-[#1a1a1a] border border-[#333] rounded">
+                                    <span className="text-xs uppercase text-[#ccc]">{key.replace(/_/g, ' ')}</span>
+                                    <button
+                                        onClick={() => updateInspeccion(key, cycleCheck(value as string))}
+                                        className={`px-3 py-1 rounded text-xs font-medium min-w-[80px] ${value === 'normal' ? 'bg-green-900/50 text-green-200 border border-green-800' :
+                                            value === 'critico' ? 'bg-red-900/50 text-red-200 border border-red-800' :
+                                                'bg-[#333] text-[#888] border border-[#444]'
+                                            }`}
+                                    >
+                                        {value === 'normal' ? '✓ Normal' : value === 'critico' ? '✗ Crítico' : '---'}
+                                    </button>
+                                </div>
+                            ))}
                     </div>
                 </div>
 
