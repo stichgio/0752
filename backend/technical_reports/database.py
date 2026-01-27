@@ -1,9 +1,9 @@
 """
-Gestor de Base de Datos en JSON
+Gestor de Base de Datos en JSON para Informes Técnicos
 """
 import json
 import os
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 from datetime import datetime
 from .models import TechnicalReport
 
@@ -85,33 +85,64 @@ class TechnicalReportsDB:
             return True
         return False
     
-    def import_from_csv(self, csv_data: List[Dict]) -> List[TechnicalReport]:
-        """Importar informes desde datos CSV"""
-        self.load() # Ensure we have latest data before importing
+    def clear_all_reports(self) -> int:
+        """Eliminar TODOS los informes de la base de datos"""
+        count = len(self.reports)
+        self.reports = {}
+        self.save()
+        print(f"[TechReports] Cleared {count} reports")
+        return count
+    
+    def import_from_csv(self, csv_data: List[Dict], clear_existing: bool = True) -> List[TechnicalReport]:
+        """
+        Importar informes desde datos CSV/XLSX parseados.
+        
+        Args:
+            csv_data: Lista de diccionarios con los datos de cada fila
+            clear_existing: Si es True, elimina todos los registros existentes antes de importar
+        """
+        self.load()  # Ensure we have latest data before importing
+        
+        # PASO 1: Find max existing ID before clearing (for auto-increment reference)
+        max_existing_id = 0
+        if not clear_existing:
+            for report_data in self.reports.values():
+                try:
+                    metadata = report_data.get('metadata', {})
+                    existing_id = int(metadata.get('informe_id', 0))
+                    max_existing_id = max(max_existing_id, existing_id)
+                except (ValueError, TypeError):
+                    pass
+        
+        # PASO 2: Eliminar todos los registros existentes si se solicita
+        deleted_count = 0
+        if clear_existing:
+            deleted_count = len(self.reports)
+            self.reports = {}
+            print(f"[TechReports] Cleared {deleted_count} existing reports")
+        
         imported = []
         
-        # Calculate max_id for auto-increment
-        max_id = 0
-        for r in self.reports.values():
-            try:
-                # Handle both dict and object if necessary, but self.reports stores dicts
-                if isinstance(r, dict):
-                    mid = int(r.get('metadata', {}).get('informe_id', 0))
-                else:
-                    mid = int(r.metadata.informe_id)
-                if mid > max_id:
-                    max_id = mid
-            except Exception:
-                pass
-        
-        print(f"[TechReports] Starting import of {len(csv_data)} rows. Current Max ID: {max_id}")
+        print(f"[TechReports] Starting import of {len(csv_data)} rows")
+        print(f"[TechReports] Max existing ID before import: {max_existing_id}")
         if len(csv_data) > 0:
             print(f"[TechReports] CSV Sample Keys: {list(csv_data[0].keys())}")
+            # Debug: mostrar valores de la primera fila
+            first_row = csv_data[0]
+            print(f"[TechReports] First row sample values:")
+            print(f"  - informe_id: '{first_row.get('informe_id')}'")
+            print(f"  - cs: '{first_row.get('cs')}'")
+            print(f"  - contratista: '{first_row.get('contratista')}'")
+            print(f"  - codigo_infraestructura: '{first_row.get('codigo_infraestructura')}'")
 
         def safe_int(value, default=0):
             """Convertir valor a int de manera segura, manejando NaN y vacíos"""
-            if value is None or value == '' or (isinstance(value, float) and str(value) == 'nan'):
+            if value is None or value == '' or value == 'None':
                 return default
+            if isinstance(value, float):
+                if str(value) == 'nan':
+                    return default
+                return int(value)
             try:
                 return int(float(value))
             except (ValueError, TypeError):
@@ -119,41 +150,36 @@ class TechnicalReportsDB:
         
         def safe_str(value, default=''):
             """Convertir valor a string de manera segura, manejando NaN"""
-            if value is None or (isinstance(value, float) and str(value) == 'nan'):
+            if value is None or value == 'None':
                 return default
-            return str(value)
+            if isinstance(value, float) and str(value) == 'nan':
+                return default
+            return str(value).strip()
         
-        for row in csv_data:
+        # Track auto-increment counter starting from max existing ID
+        auto_increment_counter = max_existing_id
+        
+        for idx, row in enumerate(csv_data):
             try:
-                # Resolve ID logic
-                raw_id = row.get('informe_id')
+                # Obtener ID del informe - use CSV value if valid, otherwise auto-increment
+                raw_informe_id = safe_int(row.get('informe_id'), 0)
                 
-                # Fallback: search for ID columns if strict 'informe_id' is missing
-                if raw_id is None:
-                    for k in row.keys():
-                        norm_k = k.lower().strip()
-                        if norm_k in ['id', 'item', 'n', 'no', 'numero', 'informe id']:
-                            raw_id = row[k]
-                            break
-
-                final_id = safe_int(raw_id, 0)
-                
-                # If ID is invalid (0), auto-increment
-                if final_id <= 0:
-                    max_id += 1
-                    final_id = max_id
-                    # print(f"[TechReports] Auto-assigned ID {final_id}")
+                if raw_informe_id > 0:
+                    # Use the ID from CSV
+                    informe_id = raw_informe_id
+                    # Update counter to ensure subsequent auto-increments don't collide
+                    auto_increment_counter = max(auto_increment_counter, informe_id)
                 else:
-                    # Update max_id if the CSV provided a larger ID
-                    if final_id > max_id:
-                        max_id = final_id
-
-                report_id = f"RPT-{str(final_id).zfill(4)}"
+                    # Auto-increment for missing/zero ID
+                    auto_increment_counter += 1
+                    informe_id = auto_increment_counter
+                
+                report_id = f"RPT-{str(informe_id).zfill(4)}"
                 
                 report = TechnicalReport(
                     id=report_id,
                     metadata={
-                        "informe_id": final_id,
+                        "informe_id": informe_id,
                         "dia": safe_int(row.get('dia', 1), 1),
                         "mes": safe_str(row.get('mes', 'ENERO'), 'ENERO').upper(),
                         "anio": safe_int(row.get('anio', 2025), 2025),
@@ -286,19 +312,19 @@ class TechnicalReportsDB:
                 imported.append(report)
                 
             except Exception as e:
-                print(f"Error importing row {row.get('informe_id', '?')}: {e}")
+                print(f"Error importing row {idx + 1}: {e}")
                 import traceback
                 traceback.print_exc()
                 continue
         
         self.save()
-        print(f"Imported {len(imported)} reports")
+        print(f"[TechReports] Imported {len(imported)} reports (deleted {deleted_count} old records)")
         return imported
     
     @staticmethod
     def _parse_check(value) -> str:
         """Convertir valor CSV a estado de checkbox"""
-        if not value or str(value).strip() == '':
+        if not value or str(value).strip() == '' or str(value) == 'None':
             return 'unchecked'
         val_upper = str(value).upper().strip()
         if val_upper == 'X' or val_upper == 'NORMAL':
