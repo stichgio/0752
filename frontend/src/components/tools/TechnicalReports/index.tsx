@@ -60,10 +60,10 @@ export default function TechnicalReports() {
         setIsLoading(true);
         try {
             const data = await technicalReportsApi.getAllReports();
-            setReports(data.reports);
+            console.log('[TechReports] Loaded reports:', data.reports?.length, 'total:', data.total);
+            setReports(data.reports || []);
         } catch (error) {
-            console.error('Error:', error);
-            // alert('Error cargando informes'); // Removed alert to avoid spam on initial load if empty
+            console.error('Error loading reports:', error);
         } finally {
             setIsLoading(false);
         }
@@ -107,10 +107,16 @@ export default function TechnicalReports() {
         setIsLoading(true);
         try {
             const result = await technicalReportsApi.importCSV(file);
-            await loadReports();
+            console.log('[TechReports] Import result:', result);
+
+            // Reload reports from server to get fresh data
+            const freshData = await technicalReportsApi.getAllReports();
+            console.log('[TechReports] Fresh reports count:', freshData.reports?.length);
+            setReports(freshData.reports || []);
+
             alert(`✅ ${result.imported_count} informes importados`);
         } catch (error) {
-            console.error('Error:', error);
+            console.error('Error importing CSV:', error);
             alert('Error importando CSV');
         } finally {
             setIsLoading(false);
