@@ -11,7 +11,7 @@ const getApiBase = (): string => {
     }
     // En desarrollo local
     else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        baseUrl = 'http://localhost:7860'; // Default port based on previous context
+        baseUrl = 'http://localhost:8000'; // Default port based on previous context
     }
     // En producción (HuggingFace Spaces), el backend está en el mismo origen
     else {
