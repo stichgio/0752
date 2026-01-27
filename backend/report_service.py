@@ -215,8 +215,13 @@ class ReportService:
         
         return sorted(images, key=lambda x: x["order"])
 
-    def _write_logo_to_disk(self, logo_data, side):
-        """Cache de logos en disco"""
+    def _convert_to_base64_uri(self, image_bytes, mime_type="image/jpeg"):
+        """Convert image bytes to base64 data URI"""
+        b64_data = base64.b64encode(image_bytes).decode('utf-8')
+        return f"data:{mime_type};base64,{b64_data}"
+
+    def _process_logo(self, logo_data, side):
+        """Process logo and return base64 data URI"""
         if logo_data is None:
             return None
             
@@ -225,31 +230,34 @@ class ReportService:
             return self._logo_cache[cache_key]
         
         try:
-            if logo_data.startswith("data:"):
-                header, b64_data = logo_data.split(",", 1)
-                logo_bytes = base64.b64decode(b64_data)
+            # If already a data URI, return as-is
+            if isinstance(logo_data, str) and logo_data.startswith("data:"):
+                self._logo_cache[cache_key] = logo_data
+                return logo_data
+            
+            # Convert bytes to data URI
+            if isinstance(logo_data, bytes):
+                logo_bytes = logo_data
+            elif isinstance(logo_data, str):
+                logo_bytes = logo_data.encode()
             else:
-                logo_bytes = logo_data.encode() if isinstance(logo_data, str) else logo_data
+                return logo_data
             
-            temp_path = os.path.join(TEMP_DIR, f"logo_{side}_{uuid4().hex[:8]}.png")
-            with open(temp_path, "wb") as f:
-                f.write(logo_bytes)
-            
-            file_uri = pathlib.Path(temp_path).as_uri()
-            self._logo_cache[cache_key] = file_uri
-            return file_uri
+            # Detect mime type (assume PNG for logos)
+            data_uri = self._convert_to_base64_uri(logo_bytes, "image/png")
+            self._logo_cache[cache_key] = data_uri
+            return data_uri
         except Exception as e:
-            print(f"Error writing logo to disk: {e}")
+            print(f"Error processing logo: {e}")
             return logo_data
 
     async def _process_files_serial(self, files, max_size=MAX_IMAGE_SIZE, quality=JPEG_QUALITY):
-        """Procesamiento de imágenes con cache"""
+        """Procesamiento de imágenes con base64 inline (sin archivos temporales)"""
         processed_images = []
         orientations = []
-        temp_files = []
         
         if not files:
-            return processed_images, "grid", 0, temp_files
+            return processed_images, "grid", 0
         
         try:
             loop = asyncio.get_running_loop()
@@ -297,6 +305,7 @@ class ReportService:
                     
                     if file_hash in self._image_cache:
                         cached_result = self._image_cache[file_hash].copy()
+                        cached_result['data'] = cached_result['data'].copy()
                         cached_result['data']['order'] = file_obj.get("order", idx) if isinstance(file_obj, dict) else idx
                         return cached_result
 
@@ -333,29 +342,23 @@ class ReportService:
                         except Exception:
                             is_landscape = True
 
-                    # Write to temp file
-                    temp_img_path = os.path.join(TEMP_DIR, f"img_{uuid4().hex}.jpg")
-                    with open(temp_img_path, "wb") as f:
-                        f.write(optimized_bytes)
+                    # Convert to base64 data URI (no temp files needed)
+                    image_data_uri = self._convert_to_base64_uri(optimized_bytes, "image/jpeg")
                     
                     del optimized_bytes
                     
-                    file_uri = pathlib.Path(temp_img_path).as_uri()
-                    
                     result = {
                         "data": {
-                            "path": file_uri,
+                            "path": image_data_uri,
                             "name": f_name,
                             "order": file_obj.get("order", idx) if isinstance(file_obj, dict) else idx,
                             "date": metadata.get("date", "N/A"),
                             "coords": metadata.get("coords", "N/A"),
                             "is_landscape": is_landscape,
                             "width": width,
-                            "height": height,
-                            "_temp_file": temp_img_path
+                            "height": height
                         },
-                        "orientation": is_landscape,
-                        "temp_path": temp_img_path
+                        "orientation": is_landscape
                     }
                     
                     self._image_cache[file_hash] = result
@@ -375,7 +378,6 @@ class ReportService:
             if res:
                 processed_images.append(res["data"])
                 orientations.append(res["orientation"])
-                temp_files.append(res["temp_path"])
 
         processed_images.sort(key=lambda x: x["order"])
 
@@ -389,7 +391,7 @@ class ReportService:
         else:
             layout_mode = "grid"
             
-        return processed_images, layout_mode, img_count, temp_files
+        return processed_images, layout_mode, img_count
 
     async def generate_batch_pdf(self, reports_list, output_path=None, logo_left=None, logo_right=None, custom_template_str=None, template_name=None):
         """
@@ -436,8 +438,8 @@ class ReportService:
                     row_data = report.get("data", {})
                     files = report.get("files", [])
                     
-                    # Procesar imágenes
-                    images, layout_mode, img_count, temp_files = await self._process_files_serial(
+                    # Procesar imágenes (ahora retorna solo 3 valores, sin temp_files)
+                    images, layout_mode, img_count = await self._process_files_serial(
                         files, 
                         max_size=MAX_IMAGE_SIZE, 
                         quality=JPEG_QUALITY
@@ -460,7 +462,6 @@ class ReportService:
                     
                     await processed_queue.put({
                         'html': html_out,
-                        'temp_images': temp_files,
                         'index': i
                     })
                     
@@ -500,13 +501,7 @@ class ReportService:
                         if pdf_path:
                             temp_pdf_paths.append(pdf_path)
                         
-                        # Cleanup inmediato
-                        for img_path in item['temp_images']:
-                            try:
-                                if os.path.exists(img_path):
-                                    os.remove(img_path)
-                            except:
-                                pass
+                        # No cleanup needed - images are inline base64
                     
                     except Exception as e:
                         print(f"[PDF] Error generating PDF: {e}")
@@ -550,15 +545,7 @@ class ReportService:
         
         final_writer.close()
         
-        # Cleanup
-        for key, uri in list(self._logo_cache.items()):
-            try:
-                if uri.startswith("file://"):
-                    path = uri.replace("file://", "")
-                    if os.path.exists(path):
-                        os.remove(path)
-            except Exception:
-                pass
+        # Cleanup caches (no temp files to delete - all inline base64)
         self._logo_cache.clear()
         self._image_cache.clear()
         
