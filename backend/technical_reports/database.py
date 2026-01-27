@@ -185,7 +185,15 @@ class TechnicalReportsDB:
                             '12': safe_int(row.get('valvulas_desague_12', 0))
                         },
                         "operativas": safe_int(row.get('valvulas_operativas', 0)),
-                        "no_operativas": safe_int(row.get('valvulas_no_operativas', 0))
+                        "no_operativas": safe_int(row.get('valvulas_no_operativas', 0)),
+                        "observaciones_conduccion": safe_str(row.get('obs_valvulas_conduccion', '')),
+                        "sugerencias_conduccion": safe_str(row.get('sug_valvulas_conduccion', '')),
+                        "observaciones_aduccion": safe_str(row.get('obs_valvulas_aduccion', '')),
+                        "sugerencias_aduccion": safe_str(row.get('sug_valvulas_aduccion', '')),
+                        "observaciones_bypass": safe_str(row.get('obs_valvulas_bypass', '')),
+                        "sugerencias_bypass": safe_str(row.get('sug_valvulas_bypass', '')),
+                        "observaciones_desague": safe_str(row.get('obs_valvulas_desague', '')),
+                        "sugerencias_desague": safe_str(row.get('sug_valvulas_desague', ''))
                     },
                     canastillas={
                         "diametros": {
@@ -198,7 +206,9 @@ class TechnicalReportsDB:
                             '12': safe_int(row.get('canastillas_12', 0))
                         },
                         "operativas": safe_int(row.get('canastillas_operativas', 0)),
-                        "no_operativas": safe_int(row.get('canastillas_no_operativas', 0))
+                        "no_operativas": safe_int(row.get('canastillas_no_operativas', 0)),
+                        "observaciones_aduccion": safe_str(row.get('obs_canastillas_aduccion', '')),
+                        "sugerencias_aduccion": safe_str(row.get('sug_canastillas_aduccion', ''))
                     },
                     medidas={
                         "diametro": safe_str(row.get('medidas_diametro', '')),
