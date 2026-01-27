@@ -71,6 +71,21 @@ class TechnicalReportsDB:
         """Importar informes desde datos CSV"""
         imported = []
         
+        def safe_int(value, default=0):
+            """Convertir valor a int de manera segura, manejando NaN y vacíos"""
+            if value is None or value == '' or (isinstance(value, float) and str(value) == 'nan'):
+                return default
+            try:
+                return int(float(value))
+            except (ValueError, TypeError):
+                return default
+        
+        def safe_str(value, default=''):
+            """Convertir valor a string de manera segura, manejando NaN"""
+            if value is None or (isinstance(value, float) and str(value) == 'nan'):
+                return default
+            return str(value)
+        
         for row in csv_data:
             try:
                 report_id = f"RPT-{str(row.get('informe_id', 0)).zfill(4)}"
@@ -78,20 +93,20 @@ class TechnicalReportsDB:
                 report = TechnicalReport(
                     id=report_id,
                     metadata={
-                        "informe_id": int(row.get('informe_id', 0)),
-                        "dia": int(row.get('dia', 1)),
-                        "mes": str(row.get('mes', 'ENERO')).upper(),
-                        "anio": int(row.get('anio', 2025)),
+                        "informe_id": safe_int(row.get('informe_id', 0)),
+                        "dia": safe_int(row.get('dia', 1), 1),
+                        "mes": safe_str(row.get('mes', 'ENERO'), 'ENERO').upper(),
+                        "anio": safe_int(row.get('anio', 2025), 2025),
                         "pagina": "1 de 2"
                     },
                     header={
-                        "cs": str(row.get('cs', '')),
-                        "contratista": str(row.get('contratista', '')),
-                        "codigo_infraestructura": str(row.get('codigo_infraestructura', '')),
-                        "ubicacion": str(row.get('ubicacion', '')),
-                        "suministro": str(row.get('suministro', '')),
-                        "tipo": str(row.get('tipo', 'ELEVADO')),
-                        "volumen": int(row.get('volumen', 0))
+                        "cs": safe_str(row.get('cs', '')),
+                        "contratista": safe_str(row.get('contratista', '')),
+                        "codigo_infraestructura": safe_str(row.get('codigo_infraestructura', '')),
+                        "ubicacion": safe_str(row.get('ubicacion', '')),
+                        "suministro": safe_str(row.get('suministro', '')),
+                        "tipo": safe_str(row.get('tipo', 'ELEVADO'), 'ELEVADO'),
+                        "volumen": safe_int(row.get('volumen', 0))
                     },
                     inspeccion={
                         "caja_registro": self._parse_check(row.get('caja_registro')),
@@ -107,112 +122,92 @@ class TechnicalReportsDB:
                         "cerco_perimetrico": self._parse_check(row.get('cerco_perimetrico')),
                         "descarga": self._parse_check(row.get('descarga')),
                         # Per-row observaciones/sugerencias for inspeccion
-                        "observaciones_caja_registro": str(row.get('obs_caja_registro', '')),
-                        "sugerencias_caja_registro": str(row.get('sug_caja_registro', '')),
-                        "observaciones_marco_tapa": str(row.get('obs_marco_tapa', '')),
-                        "sugerencias_marco_tapa": str(row.get('sug_marco_tapa', '')),
-                        "observaciones_escalera_int": str(row.get('obs_escalera_int', '')),
-                        "sugerencias_escalera_int": str(row.get('sug_escalera_int', '')),
-                        "observaciones_escalera_ext": str(row.get('obs_escalera_ext', '')),
-                        "sugerencias_escalera_ext": str(row.get('sug_escalera_ext', '')),
-                        "observaciones_cuba_int": str(row.get('obs_cuba_int', '')),
-                        "sugerencias_cuba_int": str(row.get('sug_cuba_int', '')),
-                        "observaciones_cuba_ext": str(row.get('obs_cuba_ext', '')),
-                        "sugerencias_cuba_ext": str(row.get('sug_cuba_ext', '')),
-                        "observaciones_loza_fondo": str(row.get('obs_loza_fondo', '')),
-                        "sugerencias_loza_fondo": str(row.get('sug_loza_fondo', '')),
-                        "observaciones_loza_techo_int": str(row.get('obs_loza_techo_int', '')),
-                        "sugerencias_loza_techo_int": str(row.get('sug_loza_techo_int', '')),
-                        "observaciones_loza_techo_ext": str(row.get('obs_loza_techo_ext', '')),
-                        "sugerencias_loza_techo_ext": str(row.get('sug_loza_techo_ext', '')),
-                        "observaciones_ducto": str(row.get('obs_ducto', '')),
-                        "sugerencias_ducto": str(row.get('sug_ducto', '')),
-                        "observaciones_cerco": str(row.get('obs_cerco', '')),
-                        "sugerencias_cerco": str(row.get('sug_cerco', '')),
-                        "observaciones_descarga": str(row.get('obs_descarga', '')),
-                        "sugerencias_descarga": str(row.get('sug_descarga', ''))
+                        "observaciones_caja_registro": safe_str(row.get('obs_caja_registro', '')),
+                        "sugerencias_caja_registro": safe_str(row.get('sug_caja_registro', '')),
+                        "observaciones_marco_tapa": safe_str(row.get('obs_marco_tapa', '')),
+                        "sugerencias_marco_tapa": safe_str(row.get('sug_marco_tapa', '')),
+                        "observaciones_escalera_int": safe_str(row.get('obs_escalera_int', '')),
+                        "sugerencias_escalera_int": safe_str(row.get('sug_escalera_int', '')),
+                        "observaciones_escalera_ext": safe_str(row.get('obs_escalera_ext', '')),
+                        "sugerencias_escalera_ext": safe_str(row.get('sug_escalera_ext', '')),
+                        "observaciones_cuba_int": safe_str(row.get('obs_cuba_int', '')),
+                        "sugerencias_cuba_int": safe_str(row.get('sug_cuba_int', '')),
+                        "observaciones_cuba_ext": safe_str(row.get('obs_cuba_ext', '')),
+                        "sugerencias_cuba_ext": safe_str(row.get('sug_cuba_ext', '')),
+                        "observaciones_loza_fondo": safe_str(row.get('obs_loza_fondo', '')),
+                        "sugerencias_loza_fondo": safe_str(row.get('sug_loza_fondo', '')),
+                        "observaciones_loza_techo_int": safe_str(row.get('obs_loza_techo_int', '')),
+                        "sugerencias_loza_techo_int": safe_str(row.get('sug_loza_techo_int', '')),
+                        "observaciones_loza_techo_ext": safe_str(row.get('obs_loza_techo_ext', '')),
+                        "sugerencias_loza_techo_ext": safe_str(row.get('sug_loza_techo_ext', '')),
+                        "observaciones_ducto": safe_str(row.get('obs_ducto', '')),
+                        "sugerencias_ducto": safe_str(row.get('sug_ducto', '')),
+                        "observaciones_cerco": safe_str(row.get('obs_cerco', '')),
+                        "sugerencias_cerco": safe_str(row.get('sug_cerco', '')),
+                        "observaciones_descarga": safe_str(row.get('obs_descarga', '')),
+                        "sugerencias_descarga": safe_str(row.get('sug_descarga', ''))
                     },
                     valvulas={
                         "diametros": {
-                            '2': int(row.get('valvulas_2', 0) or 0),
-                            '3': int(row.get('valvulas_3', 0) or 0),
-                            '4': int(row.get('valvulas_4', 0) or 0),
-                            '6': int(row.get('valvulas_6', 0) or 0),
-                            '8': int(row.get('valvulas_8', 0) or 0),
-                            '10': int(row.get('valvulas_10', 0) or 0),
-                            '12': int(row.get('valvulas_12', 0) or 0)
+                            '2': safe_int(row.get('valvulas_2', 0)),
+                            '3': safe_int(row.get('valvulas_3', 0)),
+                            '4': safe_int(row.get('valvulas_4', 0)),
+                            '6': safe_int(row.get('valvulas_6', 0)),
+                            '8': safe_int(row.get('valvulas_8', 0)),
+                            '10': safe_int(row.get('valvulas_10', 0)),
+                            '12': safe_int(row.get('valvulas_12', 0))
                         },
                         "aduccion": {
-                            '2': int(row.get('valvulas_aduccion_2', 0) or 0),
-                            '3': int(row.get('valvulas_aduccion_3', 0) or 0),
-                            '4': int(row.get('valvulas_aduccion_4', 0) or 0),
-                            '6': int(row.get('valvulas_aduccion_6', 0) or 0),
-                            '8': int(row.get('valvulas_aduccion_8', 0) or 0),
-                            '10': int(row.get('valvulas_aduccion_10', 0) or 0),
-                            '12': int(row.get('valvulas_aduccion_12', 0) or 0)
+                            '2': safe_int(row.get('valvulas_aduccion_2', 0)),
+                            '3': safe_int(row.get('valvulas_aduccion_3', 0)),
+                            '4': safe_int(row.get('valvulas_aduccion_4', 0)),
+                            '6': safe_int(row.get('valvulas_aduccion_6', 0)),
+                            '8': safe_int(row.get('valvulas_aduccion_8', 0)),
+                            '10': safe_int(row.get('valvulas_aduccion_10', 0)),
+                            '12': safe_int(row.get('valvulas_aduccion_12', 0))
                         },
                         "bypass": {
-                            '2': int(row.get('valvulas_bypass_2', 0) or 0),
-                            '3': int(row.get('valvulas_bypass_3', 0) or 0),
-                            '4': int(row.get('valvulas_bypass_4', 0) or 0),
-                            '6': int(row.get('valvulas_bypass_6', 0) or 0),
-                            '8': int(row.get('valvulas_bypass_8', 0) or 0),
-                            '10': int(row.get('valvulas_bypass_10', 0) or 0),
-                            '12': int(row.get('valvulas_bypass_12', 0) or 0)
+                            '2': safe_int(row.get('valvulas_bypass_2', 0)),
+                            '3': safe_int(row.get('valvulas_bypass_3', 0)),
+                            '4': safe_int(row.get('valvulas_bypass_4', 0)),
+                            '6': safe_int(row.get('valvulas_bypass_6', 0)),
+                            '8': safe_int(row.get('valvulas_bypass_8', 0)),
+                            '10': safe_int(row.get('valvulas_bypass_10', 0)),
+                            '12': safe_int(row.get('valvulas_bypass_12', 0))
                         },
                         "desague": {
-                            '2': int(row.get('valvulas_desague_2', 0) or 0),
-                            '3': int(row.get('valvulas_desague_3', 0) or 0),
-                            '4': int(row.get('valvulas_desague_4', 0) or 0),
-                            '6': int(row.get('valvulas_desague_6', 0) or 0),
-                            '8': int(row.get('valvulas_desague_8', 0) or 0),
-                            '10': int(row.get('valvulas_desague_10', 0) or 0),
-                            '12': int(row.get('valvulas_desague_12', 0) or 0)
+                            '2': safe_int(row.get('valvulas_desague_2', 0)),
+                            '3': safe_int(row.get('valvulas_desague_3', 0)),
+                            '4': safe_int(row.get('valvulas_desague_4', 0)),
+                            '6': safe_int(row.get('valvulas_desague_6', 0)),
+                            '8': safe_int(row.get('valvulas_desague_8', 0)),
+                            '10': safe_int(row.get('valvulas_desague_10', 0)),
+                            '12': safe_int(row.get('valvulas_desague_12', 0))
                         },
-                        "operativas": int(row.get('valvulas_operativas', 0) or 0),
-                        "no_operativas": int(row.get('valvulas_no_operativas', 0) or 0),
-                        # Per-row observaciones/sugerencias for valvulas
-                        "observaciones_conduccion": str(row.get('obs_valvulas_conduccion', '')),
-                        "sugerencias_conduccion": str(row.get('sug_valvulas_conduccion', '')),
-                        "observaciones_aduccion": str(row.get('obs_valvulas_aduccion', '')),
-                        "sugerencias_aduccion": str(row.get('sug_valvulas_aduccion', '')),
-                        "observaciones_bypass": str(row.get('obs_valvulas_bypass', '')),
-                        "sugerencias_bypass": str(row.get('sug_valvulas_bypass', '')),
-                        "observaciones_desague": str(row.get('obs_valvulas_desague', '')),
-                        "sugerencias_desague": str(row.get('sug_valvulas_desague', ''))
+                        "operativas": safe_int(row.get('valvulas_operativas', 0)),
+                        "no_operativas": safe_int(row.get('valvulas_no_operativas', 0))
                     },
                     canastillas={
                         "diametros": {
-                            '2': int(row.get('canastillas_2', 0)),
-                            '3': int(row.get('canastillas_3', 0)),
-                            '4': int(row.get('canastillas_4', 0)),
-                            '6': int(row.get('canastillas_6', 0)),
-                            '8': int(row.get('canastillas_8', 0)),
-                            '10': int(row.get('canastillas_10', 0)),
-                            '12': int(row.get('canastillas_12', 0))
+                            '2': safe_int(row.get('canastillas_2', 0)),
+                            '3': safe_int(row.get('canastillas_3', 0)),
+                            '4': safe_int(row.get('canastillas_4', 0)),
+                            '6': safe_int(row.get('canastillas_6', 0)),
+                            '8': safe_int(row.get('canastillas_8', 0)),
+                            '10': safe_int(row.get('canastillas_10', 0)),
+                            '12': safe_int(row.get('canastillas_12', 0))
                         },
-                        "operativas": int(row.get('canastillas_operativas', 0)),
-                        "no_operativas": int(row.get('canastillas_no_operativas', 0)),
-                        # Per-row observaciones/sugerencias for canastillas
-                        "observaciones_aduccion": str(row.get('obs_canastillas_aduccion', '')),
-                        "sugerencias_aduccion": str(row.get('sug_canastillas_aduccion', ''))
+                        "operativas": safe_int(row.get('canastillas_operativas', 0)),
+                        "no_operativas": safe_int(row.get('canastillas_no_operativas', 0))
                     },
                     medidas={
-                        "diametro": str(row.get('medidas_diametro', '')),
-                        "diametro_interno": str(row.get('medidas_diametro_interno', '')),
-                        "altura_util": str(row.get('medidas_altura_util', '')),
-                        "altura_total": str(row.get('medidas_altura_total', '')),
-                        "observaciones_diametro": str(row.get('obs_medidas_diametro', '')),
-                        "sugerencias_diametro": str(row.get('sug_medidas_diametro', '')),
-                        "observaciones_diametro_interno": str(row.get('obs_medidas_diametro_interno', '')),
-                        "sugerencias_diametro_interno": str(row.get('sug_medidas_diametro_interno', '')),
-                        "observaciones_altura_util": str(row.get('obs_medidas_altura_util', '')),
-                        "sugerencias_altura_util": str(row.get('sug_medidas_altura_util', '')),
-                        "observaciones_altura_total": str(row.get('obs_medidas_altura_total', '')),
-                        "sugerencias_altura_total": str(row.get('sug_medidas_altura_total', ''))
+                        "diametro": safe_str(row.get('medidas_diametro', '')),
+                        "diametro_interno": safe_str(row.get('medidas_diametro_interno', '')),
+                        "altura_util": safe_str(row.get('medidas_altura_util', '')),
+                        "altura_total": safe_str(row.get('medidas_altura_total', ''))
                     },
-                    observaciones=str(row.get('observaciones', '')),
-                    sugerencias=str(row.get('sugerencias', '')),
+                    observaciones=safe_str(row.get('observaciones', '')),
+                    sugerencias=safe_str(row.get('sugerencias', '')),
                     status='draft',
                     last_modified=datetime.now().isoformat()
                 )
@@ -222,6 +217,8 @@ class TechnicalReportsDB:
                 
             except Exception as e:
                 print(f"Error importing row {row.get('informe_id', '?')}: {e}")
+                import traceback
+                traceback.print_exc()
                 continue
         
         self.save()

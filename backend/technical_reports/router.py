@@ -74,7 +74,23 @@ async def import_csv(file: UploadFile = File(...)):
     
     try:
         content = await file.read()
-        df = pd.read_csv(io.StringIO(content.decode('utf-8')))
+        
+        # Try different encodings and error handling
+        for encoding in ['utf-8', 'latin-1', 'cp1252']:
+            try:
+                df = pd.read_csv(
+                    io.StringIO(content.decode(encoding)),
+                    on_bad_lines='warn'  # Skip malformed lines
+                )
+                break
+            except UnicodeDecodeError:
+                continue
+            except Exception as e:
+                print(f"Error with encoding {encoding}: {e}")
+                continue
+        else:
+            raise HTTPException(status_code=400, detail="No se pudo decodificar el archivo CSV")
+        
         csv_data = df.to_dict('records')
         imported_reports = db.import_from_csv(csv_data)
         
@@ -83,7 +99,11 @@ async def import_csv(file: UploadFile = File(...)):
             "imported_count": len(imported_reports),
             "reports": [r.dict() for r in imported_reports]
         }
+    except HTTPException:
+        raise
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error importando CSV: {str(e)}")
 
 @router.post("/reports/{report_id}/generate-pdf")
