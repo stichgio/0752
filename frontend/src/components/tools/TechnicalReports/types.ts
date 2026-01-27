@@ -60,18 +60,27 @@ export interface InspeccionDescripcion {
 }
 
 export interface ValvulasCanastillas {
-    diametros: { '2': number; '3': number; '4': number; '6': number; '8': number; '10': number; '12': number; };
+    diametros: { '2': number; '3': number; '4': number; '6': number; '8': number; '10': number; '12': number; '14': number; };
+    aduccion?: { [key: string]: number };
+    impulsion?: { [key: string]: number };
+    bypass?: { [key: string]: number };
+    desague?: { [key: string]: number };
+    succion?: { [key: string]: number };
     operativas: number;
     no_operativas: number;
     // Per-row observaciones/sugerencias for valvulas
     observaciones_conduccion?: string;
     sugerencias_conduccion?: string;
+    observaciones_impulsion?: string;
+    sugerencias_impulsion?: string;
     observaciones_aduccion?: string;
     sugerencias_aduccion?: string;
     observaciones_bypass?: string;
     sugerencias_bypass?: string;
     observaciones_desague?: string;
     sugerencias_desague?: string;
+    observaciones_succion?: string;
+    sugerencias_succion?: string;
     [key: string]: any; // Allow string indexing
 }
 

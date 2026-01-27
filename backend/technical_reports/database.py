@@ -235,13 +235,22 @@ class TechnicalReportsDB:
                     },
                     valvulas={
                         "diametros": {
-                            '2': safe_int(row.get('valvulas_2', 0)),
-                            '3': safe_int(row.get('valvulas_3', 0)),
-                            '4': safe_int(row.get('valvulas_4', 0)),
-                            '6': safe_int(row.get('valvulas_6', 0)),
-                            '8': safe_int(row.get('valvulas_8', 0)),
-                            '10': safe_int(row.get('valvulas_10', 0)),
-                            '12': safe_int(row.get('valvulas_12', 0))
+                            '2': safe_int(row.get('valvulas_conduccion_2', 0)),
+                            '3': safe_int(row.get('valvulas_conduccion_3', 0)),
+                            '4': safe_int(row.get('valvulas_conduccion_4', 0)),
+                            '6': safe_int(row.get('valvulas_conduccion_6', 0)),
+                            '8': safe_int(row.get('valvulas_conduccion_8', 0)),
+                            '10': safe_int(row.get('valvulas_conduccion_10', 0)),
+                            '12': safe_int(row.get('valvulas_conduccion_12', 0))
+                        },
+                        "impulsion": {
+                            '2': safe_int(row.get('valvulas_impulsion_2', 0)),
+                            '3': safe_int(row.get('valvulas_impulsion_3', 0)),
+                            '4': safe_int(row.get('valvulas_impulsion_4', 0)),
+                            '6': safe_int(row.get('valvulas_impulsion_6', 0)),
+                            '8': safe_int(row.get('valvulas_impulsion_8', 0)),
+                            '10': safe_int(row.get('valvulas_impulsion_10', 0)),
+                            '12': safe_int(row.get('valvulas_impulsion_12', 0))
                         },
                         "aduccion": {
                             '2': safe_int(row.get('valvulas_aduccion_2', 0)),
@@ -274,6 +283,8 @@ class TechnicalReportsDB:
                         "no_operativas": safe_int(row.get('valvulas_no_operativas', 0)),
                         "observaciones_conduccion": safe_str(row.get('obs_valvulas_conduccion', '')),
                         "sugerencias_conduccion": safe_str(row.get('sug_valvulas_conduccion', '')),
+                        "observaciones_impulsion": safe_str(row.get('obs_valvulas_impulsion', '')),
+                        "sugerencias_impulsion": safe_str(row.get('sug_valvulas_impulsion', '')),
                         "observaciones_aduccion": safe_str(row.get('obs_valvulas_aduccion', '')),
                         "sugerencias_aduccion": safe_str(row.get('sug_valvulas_aduccion', '')),
                         "observaciones_bypass": safe_str(row.get('obs_valvulas_bypass', '')),
@@ -289,12 +300,43 @@ class TechnicalReportsDB:
                             '6': safe_int(row.get('canastillas_6', 0)),
                             '8': safe_int(row.get('canastillas_8', 0)),
                             '10': safe_int(row.get('canastillas_10', 0)),
-                            '12': safe_int(row.get('canastillas_12', 0))
+                            '14': safe_int(row.get('canastillas_14', 0))
+                        },
+                        "aduccion": {
+                            '2': safe_int(row.get('canastillas_aduccion_2', 0)),
+                            '3': safe_int(row.get('canastillas_aduccion_3', 0)),
+                            '4': safe_int(row.get('canastillas_aduccion_4', 0)),
+                            '6': safe_int(row.get('canastillas_aduccion_6', 0)),
+                            '8': safe_int(row.get('canastillas_aduccion_8', 0)),
+                            '10': safe_int(row.get('canastillas_aduccion_10', 0)),
+                            '14': safe_int(row.get('canastillas_aduccion_14', 0))
+                        },
+                        "succion": {
+                            '2': safe_int(row.get('canastillas_succion_2', 0)),
+                            '3': safe_int(row.get('canastillas_succion_3', 0)),
+                            '4': safe_int(row.get('canastillas_succion_4', 0)),
+                            '6': safe_int(row.get('canastillas_succion_6', 0)),
+                            '8': safe_int(row.get('canastillas_succion_8', 0)),
+                            '10': safe_int(row.get('canastillas_succion_10', 0)),
+                            '14': safe_int(row.get('canastillas_succion_14', 0))
+                        },
+                        "desague": {
+                            '2': safe_int(row.get('canastillas_desague_2', 0)),
+                            '3': safe_int(row.get('canastillas_desague_3', 0)),
+                            '4': safe_int(row.get('canastillas_desague_4', 0)),
+                            '6': safe_int(row.get('canastillas_desague_6', 0)),
+                            '8': safe_int(row.get('canastillas_desague_8', 0)),
+                            '10': safe_int(row.get('canastillas_desague_10', 0)),
+                            '14': safe_int(row.get('canastillas_desague_14', 0))
                         },
                         "operativas": safe_int(row.get('canastillas_operativas', 0)),
                         "no_operativas": safe_int(row.get('canastillas_no_operativas', 0)),
                         "observaciones_aduccion": safe_str(row.get('obs_canastillas_aduccion', '')),
-                        "sugerencias_aduccion": safe_str(row.get('sug_canastillas_aduccion', ''))
+                        "sugerencias_aduccion": safe_str(row.get('sug_canastillas_aduccion', '')),
+                        "observaciones_succion": safe_str(row.get('obs_canastillas_succion', '')),
+                        "sugerencias_succion": safe_str(row.get('sug_canastillas_succion', '')),
+                        "observaciones_desague": safe_str(row.get('obs_canastillas_desague', '')),
+                        "sugerencias_desague": safe_str(row.get('sug_canastillas_desague', ''))
                     },
                     medidas={
                         "diametro": safe_str(row.get('medidas_diametro', '')),
