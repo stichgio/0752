@@ -22,6 +22,7 @@ class ReportHeader(BaseModel):
     volumen: int
 
 class InspeccionDescripcion(BaseModel):
+    # Estados de inspección (12 elementos con estado Normal/Crítico)
     caja_registro: Literal['normal', 'critico', 'unchecked'] = 'unchecked'
     marco_tapa: Literal['normal', 'critico', 'unchecked'] = 'unchecked'
     escalera_interior: Literal['normal', 'critico', 'unchecked'] = 'unchecked'
@@ -34,7 +35,7 @@ class InspeccionDescripcion(BaseModel):
     ducto_ventilacion: Literal['normal', 'critico', 'unchecked'] = 'unchecked'
     cerco_perimetrico: Literal['normal', 'critico', 'unchecked'] = 'unchecked'
     descarga: Literal['normal', 'critico', 'unchecked'] = 'unchecked'
-    # Per-row observaciones/sugerencias
+    # Observaciones/sugerencias por elemento de inspección
     observaciones_caja_registro: str = ""
     sugerencias_caja_registro: str = ""
     observaciones_marco_tapa: str = ""
@@ -60,44 +61,35 @@ class InspeccionDescripcion(BaseModel):
     observaciones_descarga: str = ""
     sugerencias_descarga: str = ""
 
-class ValvulasCanastillas(BaseModel):
+class ValvulasData(BaseModel):
+    """Datos de válvulas - solo diámetros y conteo"""
     diametros: Dict[str, int] = {'2': 0, '3': 0, '4': 0, '6': 0, '8': 0, '10': 0, '12': 0}
     aduccion: Dict[str, int] = {'2': 0, '3': 0, '4': 0, '6': 0, '8': 0, '10': 0, '12': 0}
     bypass: Dict[str, int] = {'2': 0, '3': 0, '4': 0, '6': 0, '8': 0, '10': 0, '12': 0}
     desague: Dict[str, int] = {'2': 0, '3': 0, '4': 0, '6': 0, '8': 0, '10': 0, '12': 0}
     operativas: int = 0
     no_operativas: int = 0
-    # Per-row observaciones/sugerencias for valvulas
-    observaciones_conduccion: str = ""
-    sugerencias_conduccion: str = ""
-    observaciones_aduccion: str = ""
-    sugerencias_aduccion: str = ""
-    observaciones_bypass: str = ""
-    sugerencias_bypass: str = ""
-    observaciones_desague: str = ""
-    sugerencias_desague: str = ""
+
+class CanastillasData(BaseModel):
+    """Datos de canastillas - solo diámetros y conteo"""
+    diametros: Dict[str, int] = {'2': 0, '3': 0, '4': 0, '6': 0, '8': 0, '10': 0, '12': 0}
+    operativas: int = 0
+    no_operativas: int = 0
 
 class MedidasData(BaseModel):
+    """Datos de medidas - solo valores"""
     diametro: str = ""
     diametro_interno: str = ""
     altura_util: str = ""
     altura_total: str = ""
-    observaciones_diametro: str = ""
-    sugerencias_diametro: str = ""
-    observaciones_diametro_interno: str = ""
-    sugerencias_diametro_interno: str = ""
-    observaciones_altura_util: str = ""
-    sugerencias_altura_util: str = ""
-    observaciones_altura_total: str = ""
-    sugerencias_altura_total: str = ""
 
 class TechnicalReport(BaseModel):
     id: str
     metadata: ReportMetadata
     header: ReportHeader
     inspeccion: InspeccionDescripcion
-    valvulas: ValvulasCanastillas
-    canastillas: ValvulasCanastillas
+    valvulas: ValvulasData
+    canastillas: CanastillasData
     medidas: Optional[MedidasData] = None
     observaciones: str = ""
     sugerencias: str = ""
