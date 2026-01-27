@@ -40,29 +40,39 @@ class TechnicalReportsDB:
     def save(self):
         """Guardar base de datos a JSON"""
         try:
+            print(f"[TechReports] Saving to {self.db_file}")
             with open(self.db_file, 'w', encoding='utf-8') as f:
                 json.dump(self.reports, f, ensure_ascii=False, indent=2)
+            print(f"[TechReports] Saved {len(self.reports)} reports successfully")
         except Exception as e:
             print(f"[TechReports] Error saving: {e}")
     
     def get_all_reports(self) -> List[TechnicalReport]:
-        """Obtener todos los informes"""
+        """Obtener todos los informes (Forzando recarga para garantizar consistencia)"""
+        # Reload to ensure we have the latest data from disk (useful if multiple workers or async issues)
+        self.load()
         return [TechnicalReport(**data) for data in self.reports.values()]
     
     def get_report(self, report_id: str) -> Optional[TechnicalReport]:
         """Obtener un informe específico"""
+        # Reload to ensure we have the latest data
+        if report_id not in self.reports:
+            self.load()
+            
         if report_id in self.reports:
             return TechnicalReport(**self.reports[report_id])
         return None
     
     def create_report(self, report: TechnicalReport) -> TechnicalReport:
         """Crear nuevo informe"""
+        self.load() # Ensure fresh state
         self.reports[report.id] = report.dict()
         self.save()
         return report
     
     def update_report(self, report_id: str, report: TechnicalReport) -> TechnicalReport:
         """Actualizar informe existente"""
+        self.load() # Ensure fresh state
         self.reports[report_id] = report.dict()
         self.save()
         return report
@@ -77,8 +87,27 @@ class TechnicalReportsDB:
     
     def import_from_csv(self, csv_data: List[Dict]) -> List[TechnicalReport]:
         """Importar informes desde datos CSV"""
+        self.load() # Ensure we have latest data before importing
         imported = []
         
+        # Calculate max_id for auto-increment
+        max_id = 0
+        for r in self.reports.values():
+            try:
+                # Handle both dict and object if necessary, but self.reports stores dicts
+                if isinstance(r, dict):
+                    mid = int(r.get('metadata', {}).get('informe_id', 0))
+                else:
+                    mid = int(r.metadata.informe_id)
+                if mid > max_id:
+                    max_id = mid
+            except Exception:
+                pass
+        
+        print(f"[TechReports] Starting import of {len(csv_data)} rows. Current Max ID: {max_id}")
+        if len(csv_data) > 0:
+            print(f"[TechReports] CSV Sample Keys: {list(csv_data[0].keys())}")
+
         def safe_int(value, default=0):
             """Convertir valor a int de manera segura, manejando NaN y vacíos"""
             if value is None or value == '' or (isinstance(value, float) and str(value) == 'nan'):
@@ -96,12 +125,35 @@ class TechnicalReportsDB:
         
         for row in csv_data:
             try:
-                report_id = f"RPT-{str(row.get('informe_id', 0)).zfill(4)}"
+                # Resolve ID logic
+                raw_id = row.get('informe_id')
+                
+                # Fallback: search for ID columns if strict 'informe_id' is missing
+                if raw_id is None:
+                    for k in row.keys():
+                        norm_k = k.lower().strip()
+                        if norm_k in ['id', 'item', 'n', 'no', 'numero', 'informe id']:
+                            raw_id = row[k]
+                            break
+
+                final_id = safe_int(raw_id, 0)
+                
+                # If ID is invalid (0), auto-increment
+                if final_id <= 0:
+                    max_id += 1
+                    final_id = max_id
+                    # print(f"[TechReports] Auto-assigned ID {final_id}")
+                else:
+                    # Update max_id if the CSV provided a larger ID
+                    if final_id > max_id:
+                        max_id = final_id
+
+                report_id = f"RPT-{str(final_id).zfill(4)}"
                 
                 report = TechnicalReport(
                     id=report_id,
                     metadata={
-                        "informe_id": safe_int(row.get('informe_id', 0)),
+                        "informe_id": final_id,
                         "dia": safe_int(row.get('dia', 1), 1),
                         "mes": safe_str(row.get('mes', 'ENERO'), 'ENERO').upper(),
                         "anio": safe_int(row.get('anio', 2025), 2025),
