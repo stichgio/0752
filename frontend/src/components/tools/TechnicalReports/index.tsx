@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, FileDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileDown, Trash2 } from 'lucide-react';
 import DatabasePanel from './DatabasePanel';
 import PreviewPanel from './PreviewPanel';
 import FormPanel from './FormPanel';
@@ -7,17 +7,54 @@ import { TechnicalReport } from './types';
 import { technicalReportsApi } from './api';
 import html2canvas from 'html2canvas';
 
+const STORAGE_KEY = 'current_report_draft';
+
 export default function TechnicalReports() {
     const [reports, setReports] = useState<TechnicalReport[]>([]);
     const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
     const [formData, setFormData] = useState<TechnicalReport | null>(null);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-    const [isLoading, setIsLoading] = useState(false); // Removed selectedImages
+    const [isLoading, setIsLoading] = useState(false);
 
     const [logoLeft, setLogoLeft] = useState<File | null>(null);
     const [logoRight, setLogoRight] = useState<File | null>(null);
 
-    useEffect(() => { loadReports(); }, []);
+    // Cargar borrador desde localStorage al iniciar
+    useEffect(() => {
+        loadReports();
+        const savedDraft = localStorage.getItem(STORAGE_KEY);
+        if (savedDraft) {
+            try {
+                const parsed = JSON.parse(savedDraft);
+                setFormData(parsed.formData);
+                setSelectedReportId(parsed.selectedReportId);
+                setHasUnsavedChanges(parsed.hasUnsavedChanges || false);
+            } catch (e) {
+                console.error('Error loading draft:', e);
+            }
+        }
+    }, []);
+
+    // Guardar borrador en localStorage cuando cambia formData
+    useEffect(() => {
+        if (formData) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                formData,
+                selectedReportId,
+                hasUnsavedChanges
+            }));
+        }
+    }, [formData, selectedReportId, hasUnsavedChanges]);
+
+    // Función para limpiar borrador
+    const handleClearDraft = () => {
+        if (window.confirm('¿Limpiar borrador actual? Los cambios no guardados se perderán.')) {
+            localStorage.removeItem(STORAGE_KEY);
+            setFormData(null);
+            setSelectedReportId(null);
+            setHasUnsavedChanges(false);
+        }
+    };
 
     const loadReports = async () => {
         setIsLoading(true);
@@ -159,6 +196,10 @@ export default function TechnicalReports() {
                         <button onClick={handleDownloadPDF} disabled={!selectedReportId} className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                             <FileDown size={16} />
                             Descargar PDF
+                        </button>
+                        <button onClick={handleClearDraft} disabled={!formData} className="btn-secondary flex items-center gap-2 disabled:opacity-50 text-red-400 hover:text-red-300" title="Limpiar borrador actual">
+                            <Trash2 size={16} />
+                            Nuevo
                         </button>
                     </div>
                 </div>
