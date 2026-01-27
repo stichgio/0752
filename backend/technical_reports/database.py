@@ -8,10 +8,18 @@ from datetime import datetime
 from .models import TechnicalReport
 
 class TechnicalReportsDB:
-    def __init__(self, storage_dir="./data"):
+    def __init__(self, storage_dir=None):
+        # Use absolute path relative to the backend directory
+        if storage_dir is None:
+            # Get the backend directory (parent of technical_reports)
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            backend_dir = os.path.dirname(current_dir)
+            storage_dir = os.path.join(backend_dir, "data")
+        
         self.storage_dir = storage_dir
         os.makedirs(storage_dir, exist_ok=True)
         self.db_file = os.path.join(storage_dir, "technical_reports.json")
+        print(f"[TechReports] DB file: {self.db_file}")
         self.reports: Dict[str, dict] = {}
         self.load()
     
