@@ -195,7 +195,7 @@
         .section-table th,
         .section-table td {
             border: 1px solid #999;
-            padding: 4px 5px;
+            padding: 2px 5px;
             vertical-align: middle;
         }
 
@@ -575,6 +575,27 @@
                     <td>{{ report.valvulas.sugerencias_conduccion }}</td>
                 </tr>
                 <tr>
+                    <td class="row-label">IMPULSIÓN</td>
+                    <td class="center">{{ report.valvulas.impulsion['2'] if report.valvulas.impulsion['2'] else '' }}
+                    </td>
+                    <td class="center">{{ report.valvulas.impulsion['3'] if report.valvulas.impulsion['3'] else '' }}
+                    </td>
+                    <td class="center">{{ report.valvulas.impulsion['4'] if report.valvulas.impulsion['4'] else '' }}
+                    </td>
+                    <td class="center">{{ report.valvulas.impulsion['6'] if report.valvulas.impulsion['6'] else '' }}
+                    </td>
+                    <td class="center">{{ report.valvulas.impulsion['8'] if report.valvulas.impulsion['8'] else '' }}
+                    </td>
+                    <td class="center">{{ report.valvulas.impulsion['10'] if report.valvulas.impulsion['10'] else '' }}
+                    </td>
+                    <td class="center">{{ report.valvulas.impulsion['12'] if report.valvulas.impulsion['12'] else '' }}
+                    </td>
+                    <td class="center"></td>
+                    <td class="center"></td>
+                    <td>{{ report.valvulas.observaciones_impulsion }}</td>
+                    <td>{{ report.valvulas.sugerencias_impulsion }}</td>
+                </tr>
+                <tr>
                     <td class="row-label">ADUCCIÓN</td>
                     <td class="center">{{ report.valvulas.aduccion['2'] if report.valvulas.aduccion['2'] else '' }}</td>
                     <td class="center">{{ report.valvulas.aduccion['3'] if report.valvulas.aduccion['3'] else '' }}</td>
@@ -648,7 +669,7 @@
             <thead>
                 <tr>
                     <th rowspan="2">Canastilla</th>
-                    <th colspan="7">Diámetro de Canastilla</th>
+                    <th colspan="8">Diámetro de Canastilla</th>
                     <th rowspan="2">Oper.</th>
                     <th rowspan="2">No Op.</th>
                     <th rowspan="2">Observaciones</th>
@@ -661,30 +682,75 @@
                     <th>6''</th>
                     <th>8''</th>
                     <th>10''</th>
-                    <th>12''</th>
+                    <th>14''</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
                     <td class="row-label">ADUCCION</td>
-                    <td class="center">{{ report.canastillas.diametros['2'] if report.canastillas.diametros['2'] else ''
+                    <td class="center">{{ report.canastillas.aduccion['2'] if report.canastillas.aduccion['2'] else ''
                         }}</td>
-                    <td class="center">{{ report.canastillas.diametros['3'] if report.canastillas.diametros['3'] else ''
+                    <td class="center">{{ report.canastillas.aduccion['3'] if report.canastillas.aduccion['3'] else ''
                         }}</td>
-                    <td class="center">{{ report.canastillas.diametros['4'] if report.canastillas.diametros['4'] else ''
+                    <td class="center">{{ report.canastillas.aduccion['4'] if report.canastillas.aduccion['4'] else ''
                         }}</td>
-                    <td class="center">{{ report.canastillas.diametros['6'] if report.canastillas.diametros['6'] else ''
+                    <td class="center">{{ report.canastillas.aduccion['6'] if report.canastillas.aduccion['6'] else ''
                         }}</td>
-                    <td class="center">{{ report.canastillas.diametros['8'] if report.canastillas.diametros['8'] else ''
+                    <td class="center">{{ report.canastillas.aduccion['8'] if report.canastillas.aduccion['8'] else ''
                         }}</td>
-                    <td class="center">{{ report.canastillas.diametros['10'] if report.canastillas.diametros['10'] else
-                        '' }}</td>
-                    <td class="center">{{ report.canastillas.diametros['12'] if report.canastillas.diametros['12'] else
-                        '' }}</td>
+                    <td class="center">{{ report.canastillas.aduccion['10'] if report.canastillas.aduccion['10'] else ''
+                        }}</td>
+
+                    <td class="center">{{ report.canastillas.aduccion['14'] if report.canastillas.aduccion['14'] else ''
+                        }}</td>
                     <td class="center"></td>
                     <td class="center"></td>
                     <td class="center">{{ report.canastillas.observaciones_aduccion }}</td>
                     <td class="center">{{ report.canastillas.sugerencias_aduccion }}</td>
+                </tr>
+                <tr>
+                    <td class="row-label">SUCCION</td>
+                    <td class="center">{{ report.canastillas.succion['2'] if report.canastillas.succion['2'] else '' }}
+                    </td>
+                    <td class="center">{{ report.canastillas.succion['3'] if report.canastillas.succion['3'] else '' }}
+                    </td>
+                    <td class="center">{{ report.canastillas.succion['4'] if report.canastillas.succion['4'] else '' }}
+                    </td>
+                    <td class="center">{{ report.canastillas.succion['6'] if report.canastillas.succion['6'] else '' }}
+                    </td>
+                    <td class="center">{{ report.canastillas.succion['8'] if report.canastillas.succion['8'] else '' }}
+                    </td>
+                    <td class="center">{{ report.canastillas.succion['10'] if report.canastillas.succion['10'] else ''
+                        }}</td>
+
+                    <td class="center">{{ report.canastillas.succion['14'] if report.canastillas.succion['14'] else ''
+                        }}</td>
+                    <td class="center"></td>
+                    <td class="center"></td>
+                    <td class="center">{{ report.canastillas.observaciones_succion }}</td>
+                    <td class="center">{{ report.canastillas.sugerencias_succion }}</td>
+                </tr>
+                <tr>
+                    <td class="row-label">DESAGUE</td>
+                    <td class="center">{{ report.canastillas.desague['2'] if report.canastillas.desague['2'] else '' }}
+                    </td>
+                    <td class="center">{{ report.canastillas.desague['3'] if report.canastillas.desague['3'] else '' }}
+                    </td>
+                    <td class="center">{{ report.canastillas.desague['4'] if report.canastillas.desague['4'] else '' }}
+                    </td>
+                    <td class="center">{{ report.canastillas.desague['6'] if report.canastillas.desague['6'] else '' }}
+                    </td>
+                    <td class="center">{{ report.canastillas.desague['8'] if report.canastillas.desague['8'] else '' }}
+                    </td>
+                    <td class="center">{{ report.canastillas.desague['10'] if report.canastillas.desague['10'] else ''
+                        }}</td>
+
+                    <td class="center">{{ report.canastillas.desague['14'] if report.canastillas.desague['14'] else ''
+                        }}</td>
+                    <td class="center"></td>
+                    <td class="center"></td>
+                    <td class="center">{{ report.canastillas.observaciones_desague }}</td>
+                    <td class="center">{{ report.canastillas.sugerencias_desague }}</td>
                 </tr>
                 <tr style="background:#d4d8dd">
                     <td class="row-label">TOTAL</td>
@@ -695,7 +761,8 @@
                     <td></td>
                     <td></td>
                     <td></td>
-                    <td class="center" style="font-weight:bold;"> </td>
+                    <td></td>
+                    <td class="center" style="font-weight:bold;">{{ report.canastillas.operativas }}</td>
                     <td class="center" style="font-weight:bold;">{{ report.canastillas.no_operativas }}</td>
                     <td></td>
                     <td></td>

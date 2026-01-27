@@ -127,7 +127,7 @@
     "observaciones": "ESTADO ACEPTABLE",
     "sugerencias": "SIN OBSERVACIONES",
     "status": "draft",
-    "last_modified": "2026-01-27T12:37:22.018162"
+    "last_modified": "2026-01-27T12:55:26.600263"
   },
   "RPT-0026": {
     "id": "RPT-0026",
@@ -144,15 +144,15 @@
       "codigo_infraestructura": "",
       "ubicacion": "",
       "suministro": "4025597",
-      "tipo": "ELEVADO",
-      "volumen": 1000
+      "tipo": "SEMIENTERRADO",
+      "volumen": 840
     },
     "inspeccion": {
       "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
-      "escalera_interior": "unchecked",
+      "marco_tapa": "normal",
+      "escalera_interior": "critico",
       "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
+      "cuba_interior": "normal",
       "cuba_exterior": "unchecked",
       "loza_fondo": "unchecked",
       "loza_techo_interior": "unchecked",
@@ -257,7 +257,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-27T12:37:22.056348"
+    "last_modified": "2026-01-27T17:12:22.877084"
   },
   "RPT-0028": {
     "id": "RPT-0028",
@@ -387,7 +387,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-27T12:37:22.058396"
+    "last_modified": "2026-01-27T12:55:26.644439"
   },
   "RPT-0037": {
     "id": "RPT-0037",
@@ -517,7 +517,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-27T12:37:22.075589"
+    "last_modified": "2026-01-27T12:55:26.660588"
   },
   "RPT-0061": {
     "id": "RPT-0061",
@@ -647,6 +647,6 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-27T12:37:22.103841"
+    "last_modified": "2026-01-27T12:55:26.701345"
   }
 }

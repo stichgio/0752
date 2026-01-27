@@ -128,7 +128,7 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
         },
         th: {
             border: '1px solid #999',
-            padding: '4px 5px',
+            padding: '2px 5px',
             verticalAlign: 'middle',
             background: '#0066a1',
             color: '#fff',
@@ -138,7 +138,7 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
         },
         td: {
             border: '1px solid #999',
-            padding: '4px 5px',
+            padding: '2px 5px',
             verticalAlign: 'middle',
             background: '#fff',
         },
@@ -384,6 +384,17 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
                             <td style={styles.td}>{reportData.valvulas.observaciones_conduccion || ''}</td>
                             <td style={styles.td}>{reportData.valvulas.sugerencias_conduccion || ''}</td>
                         </tr>
+                        <tr>
+                            <td style={{ ...styles.td, ...styles.rowLabel }}>IMPULSIÓN</td>
+                            {['2', '3', '4', '6', '8', '10', '12'].map(d => (
+                                <td key={d} style={{ ...styles.td, textAlign: 'center' }}>
+                                    {reportData.valvulas.impulsion ? (reportData.valvulas.impulsion[d] || '') : ''}
+                                </td>
+                            ))}
+                            <td style={styles.td}></td><td style={styles.td}></td>
+                            <td style={styles.td}>{reportData.valvulas.observaciones_impulsion || ''}</td>
+                            <td style={styles.td}>{reportData.valvulas.sugerencias_impulsion || ''}</td>
+                        </tr>
                         {[
                             { type: 'ADUCCIÓN', obsKey: 'observaciones_aduccion', sugKey: 'sugerencias_aduccion' },
                             { type: 'BY PASS', obsKey: 'observaciones_bypass', sugKey: 'sugerencias_bypass' },
@@ -427,7 +438,7 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
                             <th rowSpan={2} style={styles.th}>Sugerencias</th>
                         </tr>
                         <tr>
-                            {['2\'\'', '3\'\'', '4\'\'', '6\'\'', '8\'\'', '10\'\'', '12\''].map(d => (
+                            {['2\'\'', '3\'\'', '4\'\'', '6\'\'', '8\'\'', '10\'\'', '14\''].map(d => (
                                 <th key={d} style={styles.th}>{d}</th>
                             ))}
                         </tr>
@@ -435,8 +446,10 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
                     <tbody>
                         <tr>
                             <td style={{ ...styles.td, ...styles.rowLabel }}>ADUCCION</td>
-                            {['2', '3', '4', '6', '8', '10', '12'].map(d => (
-                                <td key={d} style={{ ...styles.td, textAlign: 'center' }}>{reportData.canastillas.diametros[d] || ''}</td>
+                            {['2', '3', '4', '6', '8', '10', '14'].map(d => (
+                                <td key={d} style={{ ...styles.td, textAlign: 'center' }}>
+                                    {reportData.canastillas.aduccion ? (reportData.canastillas.aduccion[d] || '') : ''}
+                                </td>
                             ))}
                             <td style={styles.td}></td>
                             <td style={styles.td}></td>
@@ -447,9 +460,41 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
                                 {reportData.canastillas.sugerencias_aduccion || ''}
                             </td>
                         </tr>
+                        <tr>
+                            <td style={{ ...styles.td, ...styles.rowLabel }}>SUCCION</td>
+                            {['2', '3', '4', '6', '8', '10', '14'].map(d => (
+                                <td key={d} style={{ ...styles.td, textAlign: 'center' }}>
+                                    {reportData.canastillas.succion ? (reportData.canastillas.succion[d] || '') : ''}
+                                </td>
+                            ))}
+                            <td style={styles.td}></td>
+                            <td style={styles.td}></td>
+                            <td style={{ ...styles.td, textAlign: 'center' }}>
+                                {reportData.canastillas.observaciones_succion || ''}
+                            </td>
+                            <td style={{ ...styles.td, textAlign: 'center' }}>
+                                {reportData.canastillas.sugerencias_succion || ''}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style={{ ...styles.td, ...styles.rowLabel }}>DESAGUE</td>
+                            {['2', '3', '4', '6', '8', '10', '14'].map(d => (
+                                <td key={d} style={{ ...styles.td, textAlign: 'center' }}>
+                                    {reportData.canastillas.desague ? (reportData.canastillas.desague[d] || '') : ''}
+                                </td>
+                            ))}
+                            <td style={styles.td}></td>
+                            <td style={styles.td}></td>
+                            <td style={{ ...styles.td, textAlign: 'center' }}>
+                                {reportData.canastillas.observaciones_desague || ''}
+                            </td>
+                            <td style={{ ...styles.td, textAlign: 'center' }}>
+                                {reportData.canastillas.sugerencias_desague || ''}
+                            </td>
+                        </tr>
                         <tr style={{ background: '#d4d8dd' }}>
                             <td style={{ ...styles.td, ...styles.rowLabel }}>TOTAL</td>
-                            <td colSpan={7} style={styles.td}></td>
+                            <td colSpan={8} style={styles.td}></td>
                             <td style={{ ...styles.td, textAlign: 'center', fontWeight: 'bold' }}>{reportData.canastillas.operativas}</td>
                             <td style={{ ...styles.td, textAlign: 'center', fontWeight: 'bold' }}>{reportData.canastillas.no_operativas}</td>
                             <td style={styles.td}></td><td style={styles.td}></td>

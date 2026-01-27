@@ -64,6 +64,7 @@ class InspeccionDescripcion(BaseModel):
 class ValvulasData(BaseModel):
     """Datos de válvulas - diámetros, conteo y observaciones"""
     diametros: Dict[str, int] = {'2': 0, '3': 0, '4': 0, '6': 0, '8': 0, '10': 0, '12': 0}
+    impulsion: Dict[str, int] = {'2': 0, '3': 0, '4': 0, '6': 0, '8': 0, '10': 0, '12': 0}
     aduccion: Dict[str, int] = {'2': 0, '3': 0, '4': 0, '6': 0, '8': 0, '10': 0, '12': 0}
     bypass: Dict[str, int] = {'2': 0, '3': 0, '4': 0, '6': 0, '8': 0, '10': 0, '12': 0}
     desague: Dict[str, int] = {'2': 0, '3': 0, '4': 0, '6': 0, '8': 0, '10': 0, '12': 0}
@@ -72,6 +73,8 @@ class ValvulasData(BaseModel):
     # Observaciones y sugerencias por tipo de válvula
     observaciones_conduccion: str = ""
     sugerencias_conduccion: str = ""
+    observaciones_impulsion: str = ""
+    sugerencias_impulsion: str = ""
     observaciones_aduccion: str = ""
     sugerencias_aduccion: str = ""
     observaciones_bypass: str = ""
@@ -81,12 +84,19 @@ class ValvulasData(BaseModel):
 
 class CanastillasData(BaseModel):
     """Datos de canastillas - diámetros, conteo y observaciones"""
-    diametros: Dict[str, int] = {'2': 0, '3': 0, '4': 0, '6': 0, '8': 0, '10': 0, '12': 0}
+    diametros: Dict[str, int] = {'2': 0, '3': 0, '4': 0, '6': 0, '8': 0, '10': 0, '14': 0}
+    aduccion: Dict[str, int] = {'2': 0, '3': 0, '4': 0, '6': 0, '8': 0, '10': 0, '14': 0}
+    succion: Dict[str, int] = {'2': 0, '3': 0, '4': 0, '6': 0, '8': 0, '10': 0, '14': 0}
+    desague: Dict[str, int] = {'2': 0, '3': 0, '4': 0, '6': 0, '8': 0, '10': 0, '14': 0}
     operativas: int = 0
     no_operativas: int = 0
     # Observaciones y sugerencias
     observaciones_aduccion: str = ""
     sugerencias_aduccion: str = ""
+    observaciones_succion: str = ""
+    sugerencias_succion: str = ""
+    observaciones_desague: str = ""
+    sugerencias_desague: str = ""
 
 class MedidasData(BaseModel):
     """Datos de medidas - solo valores"""

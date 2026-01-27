@@ -25,7 +25,6 @@ router = APIRouter(prefix="/api/technical-reports", tags=["technical-reports"])
 def parse_csv_file(content: bytes) -> List[Dict[str, Any]]:
     """
     Parsea archivo CSV con separador punto y coma (;) o coma (,).
-    Importa TODAS las filas que tengan al menos informe_id o suministro.
     """
     # Intentar decodificar con diferentes encodings
     decoded = None
@@ -62,23 +61,22 @@ def parse_csv_file(content: bytes) -> List[Dict[str, Any]]:
     cleaned_rows = []
     for row in rows:
         cleaned_row = {}
+        has_content = False
+        
         for k, v in row.items():
             if k:
-                # Limpiar clave
-                clean_key = k.strip().replace('\ufeff', '')
+                # Limpiar clave: minúsculas, quitar BOM/espacios y reemplazar espacios por guiones bajos
+                clean_key = k.strip().lower().replace('\ufeff', '').replace(' ', '_')
                 cleaned_row[clean_key] = v
+                
+                # Check fundamental si la fila tiene CONTENIDO
+                if v and str(v).strip() != '':
+                    has_content = True
         
-        # =============================================
-        # VALIDACIÓN CORREGIDA: Solo necesita informe_id O suministro
-        # =============================================
-        informe_id = cleaned_row.get('informe_id')
-        suministro = cleaned_row.get('suministro')
-        
-        # Safe check for strings/none
-        has_informe = informe_id and str(informe_id).strip() != ''
-        has_suministro = suministro and str(suministro).strip() != ''
-        
-        if has_informe or has_suministro:
+        # VALIDACIÓN RELAJADA:
+        # Si la fila tiene algún contenido, la pasamos.
+        # Database.py se encarga de asignar ID si falta (auto-increment).
+        if has_content:
             cleaned_rows.append(cleaned_row)
     
     return cleaned_rows
@@ -87,7 +85,8 @@ def parse_csv_file(content: bytes) -> List[Dict[str, Any]]:
 def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
     """
     Parsea archivo XLSX (Excel).
-    Importa TODAS las filas que tengan al menos informe_id o suministro.
+    Buscamos dinámicamente la fila de cabeceras (la primera con datos).
+    Normaliza headers a minúsculas.
     """
     if not XLSX_SUPPORTED:
         raise ValueError("Soporte XLSX no disponible. Instale openpyxl: pip install openpyxl")
@@ -97,37 +96,50 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
     
     rows = []
     headers = []
+    header_row_index = -1
     
-    for row_idx, row in enumerate(sheet.iter_rows(values_only=True)):
-        if row_idx == 0:
-            # Primera fila son los headers
-            headers = [str(cell).strip() if cell else f'col_{i}' for i, cell in enumerate(row)]
-            print(f"[XLSX Parser] Headers: {headers[:10]}...")
-            continue
+    # 1. ENCONTRAR CABECERAS (buscar en las primeras 10 filas)
+    all_rows = list(sheet.iter_rows(values_only=True))
+    
+    for idx, row in enumerate(all_rows[:10]):
+        # Criterio heurístico: Una fila es cabecera si tiene al menos 3 columnas con texto
+        non_empty_cells = [str(cell).strip() for cell in row if cell and str(cell).strip()]
+        if len(non_empty_cells) >= 3:
+            header_row_index = idx
+            # Normalizar headers: minúsculas, sin espacios al inicio/fin, espacios intermedios a guiones bajos
+            headers = [
+                str(cell).strip().lower().replace(' ', '_') if cell else f'col_{i}' 
+                for i, cell in enumerate(row)
+            ]
+            print(f"[XLSX Parser] Headers found at row {idx}: {headers}")
+            break
+            
+    if header_row_index == -1:
+        raise ValueError("No se detectaron cabeceras válidas en las primeras 10 filas")
         
-        # Crear diccionario con los valores
+    # 2. PROCESAR DATOS (desde la fila siguiente a las cabeceras)
+    for row in all_rows[header_row_index + 1:]:
         row_dict = {}
+        has_content = False
+        
         for col_idx, cell in enumerate(row):
             if col_idx < len(headers):
-                # Use headers[col_idx] as key regardless of whether it's empty in original
-                # but valid headers should be present.
                 key = headers[col_idx]
-                if key:
-                     row_dict[key] = cell
+                # Ignorar columnas generadas automáticamente o vacías
+                if key and not key.startswith('col_'):
+                    row_dict[key] = cell
+                    
+                    # Verificar si hay contenido real
+                    if cell is not None and str(cell).strip() != '':
+                        has_content = True
         
-        # =============================================
-        # VALIDACIÓN CORREGIDA: Solo necesita informe_id O suministro
-        # =============================================
-        informe_id = row_dict.get('informe_id')
-        suministro = row_dict.get('suministro')
-        
-        has_informe = informe_id is not None and str(informe_id).strip() != ''
-        has_suministro = suministro is not None and str(suministro).strip() != ''
-        
-        if has_informe or has_suministro:
+        # VALIDACIÓN RELAJADA:
+        # Importamos si tiene CUALQUIER dato.
+        # Si falta 'informe_id', database.py usará auto-increment.
+        if has_content:
             rows.append(row_dict)
     
-    print(f"[XLSX Parser] Parsed {len(rows)} rows")
+    print(f"[XLSX Parser] Parsed {len(rows)} rows from total {len(all_rows)} rows in sheet")
     return rows
 
 
