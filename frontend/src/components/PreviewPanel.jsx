@@ -5,13 +5,20 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
     const [renderedHtml, setRenderedHtml] = useState('');
 
     // Excel Serial Date Conversion Utilities
+    // FIX: Use UTC-based calculation to prevent timezone shifts
     const excelSerialToDate = (serial) => {
         if (!serial || isNaN(serial) || serial < 1) return null;
-        const excelEpoch = new Date(1899, 11, 30);
-        const date = new Date(excelEpoch.getTime() + serial * 24 * 60 * 60 * 1000);
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = String(date.getFullYear()).slice(-2);
+
+        // Excel epoch is Dec 30, 1899 (accounting for the 1900 leap year bug)
+        // Calculate in UTC to avoid local timezone affecting the result
+        const excelEpochMs = Date.UTC(1899, 11, 30, 0, 0, 0);
+        const dateMs = excelEpochMs + (serial * 24 * 60 * 60 * 1000);
+        const date = new Date(dateMs);
+
+        // Use UTC methods to extract date parts (avoids local timezone conversion)
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const year = String(date.getUTCFullYear()).slice(-2);
         return `${day}/${month}/${year}`;
     };
 
