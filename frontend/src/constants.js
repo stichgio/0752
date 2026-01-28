@@ -16,10 +16,6 @@ export const REPORT_FIELDS = [
     { id: 'obs-contrata', label: 'Obs. Contrata' },
     { id: 'observaciones', label: 'Obs. Finales' },
     { id: 'fecha-corte', label: 'Fecha Corte' },
-    { id: 'direcciones-afectadas', label: 'Dir. Afectadas' },
-    // Medidas
-    { id: 'medidas_diametro', label: 'Medidas: Diámetro' },
-    { id: 'medidas_diametro_interno', label: 'Medidas: Diámetro Interno' },
-    { id: 'medidas_altura_util', label: 'Medidas: Altura Útil' },
-    { id: 'medidas_altura_total', label: 'Medidas: Altura Total' }
+    { id: 'direcciones-afectadas', label: 'Dir. Afectadas' }
 ];
+
