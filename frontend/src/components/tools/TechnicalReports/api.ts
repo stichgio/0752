@@ -54,6 +54,11 @@ export const technicalReportsApi = {
         return response.data;
     },
 
+    deleteAllReports: async () => {
+        const response = await axios.delete(`${API_BASE}/api/technical-reports/reports`);
+        return response.data;
+    },
+
     importCSV: async (file: File) => {
         const formData = new FormData();
         formData.append('file', file);

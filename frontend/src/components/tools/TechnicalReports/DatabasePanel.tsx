@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, RefreshCw, Search } from 'lucide-react';
+import { Upload, RefreshCw, Search, Trash2 } from 'lucide-react';
 import { TechnicalReport } from './types';
 
 interface Props {
@@ -8,9 +8,10 @@ interface Props {
     onReportSelect: (reportId: string) => void;
     onImportCSV: (file: File) => void;
     onReload: () => void;
+    onClearAll: () => void;
 }
 
-export default function DatabasePanel({ reports, selectedReportId, onReportSelect, onImportCSV, onReload }: Props) {
+export default function DatabasePanel({ reports, selectedReportId, onReportSelect, onImportCSV, onReload, onClearAll }: Props) {
     const [searchTerm, setSearchTerm] = useState('');
     const [filterCS, setFilterCS] = useState('');
     const selectedItemRef = useRef<HTMLButtonElement>(null);
@@ -40,10 +41,15 @@ export default function DatabasePanel({ reports, selectedReportId, onReportSelec
                         Importar
                         <input type="file" accept=".csv, .xlsx" onChange={(e) => e.target.files?.[0] && onImportCSV(e.target.files[0])} className="hidden" />
                     </label>
-                    <button onClick={onReload} className="btn-secondary w-full flex items-center justify-center gap-2 text-sm p-2">
-                        <RefreshCw size={16} />
-                        Recargar
-                    </button>
+                    <div className="flex gap-2">
+                        <button onClick={onReload} className="btn-secondary flex-1 flex items-center justify-center gap-2 text-sm p-2" title="Recargar lista">
+                            <RefreshCw size={16} />
+                            Recargar
+                        </button>
+                        <button onClick={onClearAll} className="btn-secondary flex-none flex items-center justify-center gap-2 text-sm p-2 text-red-500 hover:text-red-400 hover:bg-red-900/20 border-red-900/30" title="Eliminar TODOS los datos">
+                            <Trash2 size={16} />
+                        </button>
+                    </div>
                 </div>
             </div>
 

@@ -124,6 +124,24 @@ export default function TechnicalReports() {
         }
     };
 
+    const handleClearAllReports = async () => {
+        if (window.confirm('⚠️ ¿ESTÁ SEGURO? \n\nEsto eliminará TODOS los informes de la base de datos permanentemente.\nEsta acción no se puede deshacer.')) {
+            setIsLoading(true);
+            try {
+                await technicalReportsApi.deleteAllReports();
+                await loadReports();
+                setFormData(null);
+                setSelectedReportId(null);
+                setHasUnsavedChanges(false);
+            } catch (error) {
+                console.error('Error clearing reports:', error);
+                alert('Error eliminando informes');
+            } finally {
+                setIsLoading(false);
+            }
+        }
+    };
+
     const handleDownloadPDF = async () => {
         if (!selectedReportId || !formData) return;
         setIsLoading(true);
@@ -213,7 +231,7 @@ export default function TechnicalReports() {
             </div>
 
             <div className="grid grid-cols-[300px_1fr_400px] gap-6 p-6 h-[calc(100vh-80px)]">
-                <DatabasePanel reports={reports} selectedReportId={selectedReportId} onReportSelect={handleReportSelect} onImportCSV={handleImportCSV} onReload={loadReports} />
+                <DatabasePanel reports={reports} selectedReportId={selectedReportId} onReportSelect={handleReportSelect} onImportCSV={handleImportCSV} onReload={loadReports} onClearAll={handleClearAllReports} />
                 <PreviewPanel reportData={formData} zoom={100} logoLeft={logoLeft} logoRight={logoRight} />
                 <FormPanel
                     reportData={formData}
