@@ -14,7 +14,7 @@ export interface ReportHeader {
     codigo_infraestructura: string;
     ubicacion: string;
     suministro: string;
-    tipo: 'ELEVADO' | 'ENTERRADO' | 'SEMIENTERRADO';
+    tipo: 'ELEVADO' | 'ENTERRADO' | 'SEMIENTERRADO' | 'APOYADO';
     volumen: number;
 }
 
@@ -60,7 +60,7 @@ export interface InspeccionDescripcion {
 }
 
 export interface ValvulasCanastillas {
-    diametros: { '2': number; '3': number; '4': number; '6': number; '8': number; '10': number; '12': number; '14': number; };
+    diametros: { '2': number; '3': number; '4': number; '6': number; '8': number; '10': number; '12'?: number; '14'?: number; };
     aduccion?: { [key: string]: number };
     impulsion?: { [key: string]: number };
     bypass?: { [key: string]: number };

@@ -52,7 +52,7 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
             background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
             border: '2px solid #0066a1',
             borderRadius: '6px',
-            marginBottom: '6px',
+            marginBottom: '12px',
         },
         sedapalText: {
             fontSize: '18pt',
@@ -75,7 +75,7 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
         metaBox: {
             display: 'flex',
             justifyContent: 'flex-end',
-            marginBottom: '6px',
+            marginBottom: '12px',
         },
         metaTable: {
             borderCollapse: 'collapse' as const,
@@ -97,7 +97,7 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
             border: '1px solid #999',
             borderRadius: '4px',
             overflow: 'hidden',
-            marginBottom: '6px',
+            marginBottom: '12px',
         },
         infoRow: {
             display: 'grid',
@@ -122,7 +122,7 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
         table: {
             width: '100%',
             borderCollapse: 'collapse' as const,
-            marginBottom: '8px',
+            marginBottom: '12px',
             fontSize: '7pt',
             tableLayout: 'fixed' as const,
         },
@@ -395,19 +395,39 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
                             <td style={styles.td}>{reportData.valvulas.observaciones_impulsion || ''}</td>
                             <td style={styles.td}>{reportData.valvulas.sugerencias_impulsion || ''}</td>
                         </tr>
-                        {[
-                            { type: 'ADUCCIÓN', obsKey: 'observaciones_aduccion', sugKey: 'sugerencias_aduccion' },
-                            { type: 'BY PASS', obsKey: 'observaciones_bypass', sugKey: 'sugerencias_bypass' },
-                            { type: 'DESAGÜE', obsKey: 'observaciones_desague', sugKey: 'sugerencias_desague' }
-                        ].map(item => (
-                            <tr key={item.type}>
-                                <td style={{ ...styles.td, ...styles.rowLabel }}>{item.type}</td>
-                                <td colSpan={7} style={styles.td}></td>
-                                <td style={styles.td}></td><td style={styles.td}></td>
-                                <td style={styles.td}>{reportData.valvulas[item.obsKey] || ''}</td>
-                                <td style={styles.td}>{reportData.valvulas[item.sugKey] || ''}</td>
-                            </tr>
-                        ))}
+                        <tr>
+                            <td style={{ ...styles.td, ...styles.rowLabel }}>ADUCCIÓN</td>
+                            {['2', '3', '4', '6', '8', '10', '12'].map(d => (
+                                <td key={d} style={{ ...styles.td, textAlign: 'center' }}>
+                                    {reportData.valvulas.aduccion ? (reportData.valvulas.aduccion[d] || '') : ''}
+                                </td>
+                            ))}
+                            <td style={styles.td}></td><td style={styles.td}></td>
+                            <td style={styles.td}>{reportData.valvulas.observaciones_aduccion || ''}</td>
+                            <td style={styles.td}>{reportData.valvulas.sugerencias_aduccion || ''}</td>
+                        </tr>
+                        <tr>
+                            <td style={{ ...styles.td, ...styles.rowLabel }}>BY PASS</td>
+                            {['2', '3', '4', '6', '8', '10', '12'].map(d => (
+                                <td key={d} style={{ ...styles.td, textAlign: 'center' }}>
+                                    {reportData.valvulas.bypass ? (reportData.valvulas.bypass[d] || '') : ''}
+                                </td>
+                            ))}
+                            <td style={styles.td}></td><td style={styles.td}></td>
+                            <td style={styles.td}>{reportData.valvulas.observaciones_bypass || ''}</td>
+                            <td style={styles.td}>{reportData.valvulas.sugerencias_bypass || ''}</td>
+                        </tr>
+                        <tr>
+                            <td style={{ ...styles.td, ...styles.rowLabel }}>DESAGÜE</td>
+                            {['2', '3', '4', '6', '8', '10', '12'].map(d => (
+                                <td key={d} style={{ ...styles.td, textAlign: 'center' }}>
+                                    {reportData.valvulas.desague ? (reportData.valvulas.desague[d] || '') : ''}
+                                </td>
+                            ))}
+                            <td style={styles.td}></td><td style={styles.td}></td>
+                            <td style={styles.td}>{reportData.valvulas.observaciones_desague || ''}</td>
+                            <td style={styles.td}>{reportData.valvulas.sugerencias_desague || ''}</td>
+                        </tr>
                         <tr style={{ background: '#d4d8dd' }}>
                             <td style={{ ...styles.td, ...styles.rowLabel }}>TOTAL</td>
                             <td colSpan={7} style={styles.td}></td>
@@ -438,7 +458,7 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
                             <th rowSpan={2} style={styles.th}>Sugerencias</th>
                         </tr>
                         <tr>
-                            {['2\'\'', '3\'\'', '4\'\'', '6\'\'', '8\'\'', '10\'\'', '14\''].map(d => (
+                            {['2\'\'', '3\'\'', '4\'\'', '6\'\'', '8\'\'', '10\'\'', '14\'\''].map(d => (
                                 <th key={d} style={styles.th}>{d}</th>
                             ))}
                         </tr>
@@ -494,7 +514,7 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
                         </tr>
                         <tr style={{ background: '#d4d8dd' }}>
                             <td style={{ ...styles.td, ...styles.rowLabel }}>TOTAL</td>
-                            <td colSpan={8} style={styles.td}></td>
+                            <td colSpan={7} style={styles.td}></td>
                             <td style={{ ...styles.td, textAlign: 'center', fontWeight: 'bold' }}>{reportData.canastillas.operativas}</td>
                             <td style={{ ...styles.td, textAlign: 'center', fontWeight: 'bold' }}>{reportData.canastillas.no_operativas}</td>
                             <td style={styles.td}></td><td style={styles.td}></td>

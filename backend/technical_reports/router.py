@@ -84,9 +84,7 @@ def parse_csv_file(content: bytes) -> List[Dict[str, Any]]:
 
 def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
     """
-    Parsea archivo XLSX (Excel).
-    Buscamos dinámicamente la fila de cabeceras (la primera con datos).
-    Normaliza headers a minúsculas.
+    Parsea archivo XLSX (Excel) con detección robusta de headers.
     """
     if not XLSX_SUPPORTED:
         raise ValueError("Soporte XLSX no disponible. Instale openpyxl: pip install openpyxl")
@@ -98,26 +96,30 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
     headers = []
     header_row_index = -1
     
-    # 1. ENCONTRAR CABECERAS (buscar en las primeras 10 filas)
     all_rows = list(sheet.iter_rows(values_only=True))
     
-    for idx, row in enumerate(all_rows[:10]):
-        # Criterio heurístico: Una fila es cabecera si tiene al menos 3 columnas con texto
-        non_empty_cells = [str(cell).strip() for cell in row if cell and str(cell).strip()]
-        if len(non_empty_cells) >= 3:
-            header_row_index = idx
-            # Normalizar headers: minúsculas, sin espacios al inicio/fin, espacios intermedios a guiones bajos
-            headers = [
-                str(cell).strip().lower().replace(' ', '_') if cell else f'col_{i}' 
-                for i, cell in enumerate(row)
-            ]
-            print(f"[XLSX Parser] Headers found at row {idx}: {headers}")
-            break
-            
-    if header_row_index == -1:
-        raise ValueError("No se detectaron cabeceras válidas en las primeras 10 filas")
+    # Buscar fila de headers (debe contener 'informe_id' o similar)
+    for idx, row in enumerate(all_rows[:15]):  # Buscar en primeras 15 filas
+        row_values = [str(cell).strip().lower() if cell else '' for cell in row]
         
-    # 2. PROCESAR DATOS (desde la fila siguiente a las cabeceras)
+        # Detectar si esta fila contiene headers conocidos
+        if any(key in row_values for key in ['informe_id', 'cs', 'contratista', 'codigo_infraestructura']):
+            header_row_index = idx
+            # Normalizar: minúsculas, espacios a guiones bajos
+            headers = []
+            for i, cell in enumerate(row):
+                if cell:
+                    header = str(cell).strip().lower().replace(' ', '_').replace('\n', '_')
+                    headers.append(header)
+                else:
+                    headers.append(f'_col_{i}')
+            print(f"[XLSX] Headers detectados en fila {idx + 1}: {len(headers)} columnas")
+            break
+    
+    if header_row_index == -1:
+        raise ValueError("No se encontró fila de encabezados válida (debe contener 'informe_id', 'cs', etc.)")
+    
+    # Procesar datos
     for row in all_rows[header_row_index + 1:]:
         row_dict = {}
         has_content = False
@@ -125,21 +127,15 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
         for col_idx, cell in enumerate(row):
             if col_idx < len(headers):
                 key = headers[col_idx]
-                # Ignorar columnas generadas automáticamente o vacías
-                if key and not key.startswith('col_'):
+                if key and not key.startswith('_col_'):
                     row_dict[key] = cell
-                    
-                    # Verificar si hay contenido real
-                    if cell is not None and str(cell).strip() != '':
+                    if cell is not None and str(cell).strip() not in ('', 'None', 'nan'):
                         has_content = True
         
-        # VALIDACIÓN RELAJADA:
-        # Importamos si tiene CUALQUIER dato.
-        # Si falta 'informe_id', database.py usará auto-increment.
         if has_content:
             rows.append(row_dict)
     
-    print(f"[XLSX Parser] Parsed {len(rows)} rows from total {len(all_rows)} rows in sheet")
+    print(f"[XLSX] Parseadas {len(rows)} filas de datos")
     return rows
 
 

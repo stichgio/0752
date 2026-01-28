@@ -18,7 +18,7 @@ class ReportHeader(BaseModel):
     codigo_infraestructura: str
     ubicacion: str
     suministro: str
-    tipo: Literal['ELEVADO', 'ENTERRADO', 'SEMIENTERRADO']
+    tipo: Literal['ELEVADO', 'ENTERRADO', 'SEMIENTERRADO', 'APOYADO', 'CISTERNA']
     volumen: int
 
 class InspeccionDescripcion(BaseModel):

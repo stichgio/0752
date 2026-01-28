@@ -294,13 +294,13 @@ class TechnicalReportsDB:
                     },
                     canastillas={
                         "diametros": {
-                            '2': safe_int(row.get('canastillas_2', 0)),
-                            '3': safe_int(row.get('canastillas_3', 0)),
-                            '4': safe_int(row.get('canastillas_4', 0)),
-                            '6': safe_int(row.get('canastillas_6', 0)),
-                            '8': safe_int(row.get('canastillas_8', 0)),
-                            '10': safe_int(row.get('canastillas_10', 0)),
-                            '14': safe_int(row.get('canastillas_14', 0))
+                            '2': safe_int(row.get('canastillas_aduccion_2', 0)),
+                            '3': safe_int(row.get('canastillas_aduccion_3', 0)),
+                            '4': safe_int(row.get('canastillas_aduccion_4', 0)),
+                            '6': safe_int(row.get('canastillas_aduccion_6', 0)),
+                            '8': safe_int(row.get('canastillas_aduccion_8', 0)),
+                            '10': safe_int(row.get('canastillas_aduccion_10', 0)),
+                            '14': safe_int(row.get('canastillas_aduccion_14', 0))
                         },
                         "aduccion": {
                             '2': safe_int(row.get('canastillas_aduccion_2', 0)),
