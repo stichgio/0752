@@ -89,7 +89,12 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                         'subactividad': 'SUBACTIVIDAD', 'cuadrilla': 'CUADRILLA',
                         'obs-sedapal': 'OBSERVACION SEDAPAL', 'obs-contrata': 'OBSERVACION CONTRATA',
                         'fecha_corte': 'FECHA CORTE', 'fecha-corte': 'FECHA CORTE',
-                        'direcciones_afectadas': 'DIRECCIONES AFECTADAS', 'direcciones-afectadas': 'DIRECCIONES AFECTADAS'
+                        'direcciones_afectadas': 'DIRECCIONES AFECTADAS', 'direcciones-afectadas': 'DIRECCIONES AFECTADAS',
+                        // Medidas mappings
+                        'medidas_diametro': 'DIAMETRO', 'medidas-diametro': 'DIAMETRO',
+                        'medidas_diametro_interno': 'DIAMETRO INTERNO', 'medidas-diametro-interno': 'DIAMETRO INTERNO',
+                        'medidas_altura_util': 'ALTURA UTIL', 'medidas-altura-util': 'ALTURA UTIL',
+                        'medidas_altura_total': 'ALTURA TOTAL', 'medidas-altura-total': 'ALTURA TOTAL'
                     };
                     if (standardKeys[key]) {
                         reportData[standardKeys[key]] = value;
