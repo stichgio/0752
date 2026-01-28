@@ -533,6 +533,224 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
         raise ValueError(f"Error procesando Excel: {str(e)}")
 
 
+def transform_flat_to_nested(flat_data: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Transforma un diccionario plano (del Excel/CSV) a la estructura anidada
+    esperada por el modelo TechnicalReport de Pydantic.
+    
+    Ejemplo:
+        Input:  {'medidas_diametro': '2.5', 'valvulas_conduccion_2': 3, ...}
+        Output: {'medidas': {'diametro': '2.5'}, 'valvulas': {'diametros': {'2': 3}}, ...}
+    """
+    
+    def safe_int(val, default=0):
+        """Convierte a entero de forma segura"""
+        if val is None or val == '':
+            return default
+        try:
+            return int(float(str(val)))
+        except (ValueError, TypeError):
+            return default
+    
+    def safe_str(val, default=""):
+        """Convierte a string de forma segura"""
+        if val is None:
+            return default
+        return str(val).strip()
+    
+    def normalize_status(val) -> str:
+        """Normaliza valores de estado de inspección"""
+        if val is None:
+            return 'unchecked'
+        val_str = str(val).strip().lower()
+        
+        # Estados "normales"
+        if val_str in ['normal', 'buen estado', 'bueno', 'ok', 'bien', 'b', 'n']:
+            return 'normal'
+        # Estados "críticos"
+        elif val_str in ['critico', 'crítico', 'malo', 'mal', 'c', 'm', 'deficiente', 'dañado']:
+            return 'critico'
+        # Default
+        else:
+            return 'unchecked'
+    
+    result = {}
+    
+    # =====================
+    # 1. METADATA
+    # =====================
+    result['metadata'] = {
+        'informe_id': safe_int(flat_data.get('informe_id', 0)),
+        'dia': safe_int(flat_data.get('dia', 1)),
+        'mes': safe_str(flat_data.get('mes', 'Enero')),
+        'anio': safe_int(flat_data.get('anio', 2024)),
+        'pagina': safe_str(flat_data.get('pagina', '1 de 2'))
+    }
+    
+    # =====================
+    # 2. HEADER
+    # =====================
+    # Mapear tipo a valores válidos del Literal
+    tipo_raw = safe_str(flat_data.get('tipo', 'ELEVADO')).upper()
+    valid_tipos = ['ELEVADO', 'ENTERRADO', 'SEMIENTERRADO', 'APOYADO', 'CISTERNA']
+    tipo = tipo_raw if tipo_raw in valid_tipos else 'ELEVADO'
+    
+    result['header'] = {
+        'cs': safe_str(flat_data.get('cs', '')),
+        'contratista': safe_str(flat_data.get('contratista', '')),
+        'codigo_infraestructura': safe_str(flat_data.get('codigo_infraestructura', '')),
+        'ubicacion': safe_str(flat_data.get('ubicacion', '')),
+        'suministro': safe_str(flat_data.get('suministro', '')),
+        'tipo': tipo,
+        'volumen': safe_int(flat_data.get('volumen', 0))
+    }
+    
+    # =====================
+    # 3. MEDIDAS
+    # =====================
+    result['medidas'] = {
+        'diametro': safe_str(flat_data.get('medidas_diametro', '')),
+        'diametro_interno': safe_str(flat_data.get('medidas_diametro_interno', '')),
+        'altura_util': safe_str(flat_data.get('medidas_altura_util', '')),
+        'altura_total': safe_str(flat_data.get('medidas_altura_total', ''))
+    }
+    
+    # =====================
+    # 4. VÁLVULAS
+    # =====================
+    diametros_validos = ['2', '3', '4', '6', '8', '10', '12']
+    
+    # Inicializar estructura de válvulas
+    valvulas = {
+        'diametros': {d: 0 for d in diametros_validos},  # Conducción
+        'impulsion': {d: 0 for d in diametros_validos},
+        'aduccion': {d: 0 for d in diametros_validos},
+        'bypass': {d: 0 for d in diametros_validos},
+        'desague': {d: 0 for d in diametros_validos},
+        'operativas': safe_int(flat_data.get('valvulas_operativas', 0)),
+        'no_operativas': safe_int(flat_data.get('valvulas_no_operativas', 0)),
+        'observaciones_conduccion': safe_str(flat_data.get('obs_valvulas_conduccion', '')),
+        'sugerencias_conduccion': safe_str(flat_data.get('sug_valvulas_conduccion', '')),
+        'observaciones_impulsion': safe_str(flat_data.get('obs_valvulas_impulsion', '')),
+        'sugerencias_impulsion': safe_str(flat_data.get('sug_valvulas_impulsion', '')),
+        'observaciones_aduccion': safe_str(flat_data.get('obs_valvulas_aduccion', '')),
+        'sugerencias_aduccion': safe_str(flat_data.get('sug_valvulas_aduccion', '')),
+        'observaciones_bypass': safe_str(flat_data.get('obs_valvulas_bypass', '')),
+        'sugerencias_bypass': safe_str(flat_data.get('sug_valvulas_bypass', '')),
+        'observaciones_desague': safe_str(flat_data.get('obs_valvulas_desague', '')),
+        'sugerencias_desague': safe_str(flat_data.get('sug_valvulas_desague', ''))
+    }
+    
+    # Mapear diámetros de válvulas desde claves planas
+    valvula_tipos = {
+        'conduccion': 'diametros',  # Conducción se llama 'diametros' en el modelo
+        'impulsion': 'impulsion',
+        'aduccion': 'aduccion',
+        'bypass': 'bypass',
+        'desague': 'desague'
+    }
+    
+    for tipo_valvula, dict_name in valvula_tipos.items():
+        for d in diametros_validos:
+            key = f'valvulas_{tipo_valvula}_{d}'
+            if key in flat_data:
+                valvulas[dict_name][d] = safe_int(flat_data[key])
+    
+    result['valvulas'] = valvulas
+    
+    # =====================
+    # 5. CANASTILLAS
+    # =====================
+    diametros_canastillas = ['2', '3', '4', '6', '8', '10', '14']
+    
+    canastillas = {
+        'diametros': {d: 0 for d in diametros_canastillas},  # Principal (si existe en el modelo)
+        'aduccion': {d: 0 for d in diametros_canastillas},
+        'succion': {d: 0 for d in diametros_canastillas},
+        'desague': {d: 0 for d in diametros_canastillas},
+        'operativas': safe_int(flat_data.get('canastillas_operativas', 0)),
+        'no_operativas': safe_int(flat_data.get('canastillas_no_operativas', 0)),
+        'observaciones_aduccion': safe_str(flat_data.get('obs_canastillas_aduccion', '')),
+        'sugerencias_aduccion': safe_str(flat_data.get('sug_canastillas_aduccion', '')),
+        'observaciones_succion': safe_str(flat_data.get('obs_canastillas_succion', '')),
+        'sugerencias_succion': safe_str(flat_data.get('sug_canastillas_succion', '')),
+        'observaciones_desague': safe_str(flat_data.get('obs_canastillas_desague', '')),
+        'sugerencias_desague': safe_str(flat_data.get('sug_canastillas_desague', ''))
+    }
+    
+    # Mapear diámetros de canastillas desde claves planas
+    canastilla_tipos = ['aduccion', 'succion', 'desague']
+    
+    for tipo_can in canastilla_tipos:
+        for d in diametros_canastillas:
+            key = f'canastillas_{tipo_can}_{d}'
+            if key in flat_data:
+                canastillas[tipo_can][d] = safe_int(flat_data[key])
+    
+    result['canastillas'] = canastillas
+    
+    # =====================
+    # 6. INSPECCIÓN
+    # =====================
+    # Campos de estado (12 elementos)
+    inspeccion_estados = [
+        'caja_registro', 'marco_tapa', 'escalera_interior', 'escalera_exterior',
+        'cuba_interior', 'cuba_exterior', 'loza_fondo', 'loza_techo_interior',
+        'loza_techo_exterior', 'ducto_ventilacion', 'cerco_perimetrico', 'descarga'
+    ]
+    
+    inspeccion = {}
+    
+    # Estados normalizados
+    for estado in inspeccion_estados:
+        inspeccion[estado] = normalize_status(flat_data.get(estado))
+    
+    # Observaciones y sugerencias de inspección
+    obs_sug_mapping = {
+        'caja_registro': ('obs_caja_registro', 'sug_caja_registro'),
+        'marco_tapa': ('obs_marco_tapa', 'sug_marco_tapa'),
+        'escalera_int': ('obs_escalera_int', 'sug_escalera_int'),
+        'escalera_ext': ('obs_escalera_ext', 'sug_escalera_ext'),
+        'cuba_int': ('obs_cuba_int', 'sug_cuba_int'),
+        'cuba_ext': ('obs_cuba_ext', 'sug_cuba_ext'),
+        'loza_fondo': ('obs_loza_fondo', 'sug_loza_fondo'),
+        'loza_techo_int': ('obs_loza_techo_int', 'sug_loza_techo_int'),
+        'loza_techo_ext': ('obs_loza_techo_ext', 'sug_loza_techo_ext'),
+        'ducto': ('obs_ducto', 'sug_ducto'),
+        'cerco': ('obs_cerco', 'sug_cerco'),
+        'descarga': ('obs_descarga', 'sug_descarga')
+    }
+    
+    for field_suffix, (obs_key, sug_key) in obs_sug_mapping.items():
+        inspeccion[f'observaciones_{field_suffix}'] = safe_str(flat_data.get(obs_key, ''))
+        inspeccion[f'sugerencias_{field_suffix}'] = safe_str(flat_data.get(sug_key, ''))
+    
+    result['inspeccion'] = inspeccion
+    
+    # =====================
+    # 7. CAMPOS GENERALES
+    # =====================
+    result['observaciones'] = safe_str(flat_data.get('observaciones', ''))
+    result['sugerencias'] = safe_str(flat_data.get('sugerencias', ''))
+    result['status'] = 'draft'
+    result['last_modified'] = datetime.now().isoformat()
+    
+    # Generar ID único
+    informe_id = result['metadata']['informe_id']
+    result['id'] = f"report_{informe_id}" if informe_id > 0 else f"report_{datetime.now().strftime('%Y%m%d%H%M%S')}"
+    
+    # =====================
+    # 8. CAMPOS EXTRA (para report_volanteo y otros templates)
+    # =====================
+    # Preservar cualquier campo extra que venga del Excel pero no esté mapeado
+    extra_fields = ['FECHA CORTE', 'CENTRO', 'NIS', 'SECTOR', 'DIRECCION', 'OT']
+    for field in extra_fields:
+        if field in flat_data:
+            result[field] = flat_data[field]
+    
+    return result
+
+
 @router.get("/reports")
 async def get_all_reports(
     cs: Optional[str] = None,
@@ -630,8 +848,20 @@ async def import_file(file: UploadFile = File(...)):
         # Contar registros existentes
         existing_count = len(db.reports)
         
+        # TRANSFORMAR: Convertir datos planos a estructura anidada
+        transformed_rows = []
+        for row in rows:
+            try:
+                nested_row = transform_flat_to_nested(row)
+                transformed_rows.append(nested_row)
+            except Exception as e:
+                print(f"[WARN] Error transformando fila: {e}. Usando datos planos.")
+                transformed_rows.append(row)  # Fallback a datos originales
+        
+        print(f"[DEBUG] Filas transformadas: {len(transformed_rows)}")
+        
         # Importar (esto elimina los existentes y agrega los nuevos)
-        imported_reports = db.import_from_csv(rows, clear_existing=True)
+        imported_reports = db.import_from_csv(transformed_rows, clear_existing=True)
         
         print(f"[DEBUG] Registros importados: {len(imported_reports)}")
         
