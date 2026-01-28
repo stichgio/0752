@@ -804,7 +804,7 @@ async def delete_report(report_id: str):
         raise HTTPException(status_code=404, detail="Informe no encontrado")
     return {"success": True, "deleted_id": report_id}
 
-@router.delete("/reports")
+@router.delete("/clear-all-reports")
 async def delete_all_reports():
     """Eliminar TODOS los informes"""
     count = db.clear_all_reports()

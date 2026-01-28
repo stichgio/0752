@@ -230,20 +230,29 @@ export default function TechnicalReports() {
                 </div>
             </div>
 
-            <div className="grid grid-cols-[300px_1fr_400px] gap-6 p-6 h-[calc(100vh-80px)]">
-                <DatabasePanel reports={reports} selectedReportId={selectedReportId} onReportSelect={handleReportSelect} onImportCSV={handleImportCSV} onReload={loadReports} onClearAll={handleClearAllReports} />
+            <div className="grid grid-cols-[300px_1fr_400px] gap-6 p-6 h-[calc(100vh-80px)] overflow-hidden">
+                {/* Columna Izquierda: Scroll Independiente */}
+                <div className="h-full overflow-y-auto pr-2">
+                    <DatabasePanel reports={reports} selectedReportId={selectedReportId} onReportSelect={handleReportSelect} onImportCSV={handleImportCSV} onReload={loadReports} onClearAll={handleClearAllReports} />
+                </div>
+
+                {/* Columna Central */}
                 <PreviewPanel reportData={formData} zoom={100} logoLeft={logoLeft} logoRight={logoRight} />
-                <FormPanel
-                    reportData={formData}
-                    onChange={handleFormChange}
-                    onSave={handleSaveChanges}
-                    hasUnsavedChanges={hasUnsavedChanges}
-                    onDownloadImage={handleDownloadImage}
-                    logoLeft={logoLeft}
-                    logoRight={logoRight}
-                    onLogoLeftChange={setLogoLeft}
-                    onLogoRightChange={setLogoRight}
-                />
+
+                {/* Columna Derecha: Scroll Independiente */}
+                <div className="h-full overflow-y-auto pl-2">
+                    <FormPanel
+                        reportData={formData}
+                        onChange={handleFormChange}
+                        onSave={handleSaveChanges}
+                        hasUnsavedChanges={hasUnsavedChanges}
+                        onDownloadImage={handleDownloadImage}
+                        logoLeft={logoLeft}
+                        logoRight={logoRight}
+                        onLogoLeftChange={setLogoLeft}
+                        onLogoRightChange={setLogoRight}
+                    />
+                </div>
             </div>
 
             {isLoading && (

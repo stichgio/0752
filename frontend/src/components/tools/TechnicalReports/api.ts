@@ -55,7 +55,7 @@ export const technicalReportsApi = {
     },
 
     deleteAllReports: async () => {
-        const response = await axios.delete(`${API_BASE}/api/technical-reports/reports`);
+        const response = await axios.delete(`${API_BASE}/api/technical-reports/clear-all-reports`);
         return response.data;
     },
 
