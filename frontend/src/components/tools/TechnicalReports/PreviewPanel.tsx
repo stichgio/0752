@@ -154,7 +154,7 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
     };
 
     return (
-        <div className="h-full overflow-auto bg-gray-900 p-8 rounded-lg border border-gray-800">
+        <div className="h-full overflow-auto bg-[#111] p-8 rounded-lg border border-[#333]">
             <div
                 id="technical-report-preview"
                 className="mx-auto !bg-white !text-black shadow-lg"
@@ -169,15 +169,7 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
                     <div className="flex flex-col items-center justify-center h-[50px]">
                         {logoLeftUrl ? (
                             <img src={logoLeftUrl} style={{ maxWidth: '100%', maxHeight: '45px', objectFit: 'contain' }} />
-                        ) : (
-                            <>
-                                <div style={styles.sedapalText}>sedapal</div>
-                                <div style={{ width: '80px', marginTop: '3px' }}>
-                                    <div style={{ height: '3px', background: 'linear-gradient(90deg, #0066a1, #0088cc)', borderRadius: '2px' }}></div>
-                                    <div style={{ height: '2px', background: 'linear-gradient(90deg, #66b3d9, #99cce6)', marginTop: '2px', borderRadius: '1px' }}></div>
-                                </div>
-                            </>
-                        )}
+                        ) : null}
                     </div>
                     <div>
                         <h1 style={styles.headerTitle}>
@@ -187,14 +179,7 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
                     <div className="flex flex-col items-center justify-center h-[50px]">
                         {logoRightUrl ? (
                             <img src={logoRightUrl} style={{ maxWidth: '100%', maxHeight: '45px', objectFit: 'contain' }} />
-                        ) : (
-                            <>
-                                <div style={{ fontSize: '8pt', fontWeight: 'bold', color: '#333' }}>
-                                    HIDROSERVICI<span style={{ color: '#d4a017' }}>✪</span>S <span style={{ fontSize: '12pt', fontWeight: 'bold', color: '#d4a017' }}>AA</span>
-                                </div>
-                                <div style={{ fontSize: '7pt', fontWeight: 'bold', color: '#666' }}>E.I.R.L.</div>
-                            </>
-                        )}
+                        ) : null}
                     </div>
                 </div>
 
@@ -228,7 +213,7 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
                     </div>
                     <div style={{ ...styles.infoRow, gridTemplateColumns: '180px 1fr' }}>
                         <div style={styles.infoLabel}>CÓDIGO DE INFRAESTRUCTURA :</div>
-                        <div style={{ ...styles.infoValue, fontWeight: 'bold', color: '#0066a1', justifyContent: 'center' }}>{reportData.header.codigo_infraestructura}</div>
+                        <div style={{ ...styles.infoValue, fontWeight: 'bold', color: '#0066a1', justifyContent: 'center', fontSize: '12pt', padding: '8px' }}>{reportData.header.codigo_infraestructura}</div>
                     </div>
                     <div style={{ ...styles.infoRow, gridTemplateColumns: '100px 1fr 80px 100px' }}>
                         <div style={styles.infoLabel}>UBICACIÓN :</div>
@@ -538,12 +523,15 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
                     </thead>
                     <tbody>
                         {[
-                            'DIAMETRO', 'DIAMETRO INTERNO', 'ALTURA UTIL', 'ALTURA TOTAL'
+                            { label: 'DIAMETRO', key: 'diametro' },
+                            { label: 'DIAMETRO INTERNO', key: 'diametro_interno' },
+                            { label: 'ALTURA UTIL', key: 'altura_util' },
+                            { label: 'ALTURA TOTAL', key: 'altura_total' }
                         ].map(m => (
-                            <tr key={m}>
-                                <td style={{ ...styles.td, ...styles.rowLabel }}>{m}</td>
+                            <tr key={m.key}>
+                                <td style={{ ...styles.td, ...styles.rowLabel }}>{m.label}</td>
                                 <td style={{ ...styles.td, textAlign: 'center' }}>M</td>
-                                <td style={styles.td}></td>
+                                <td style={{ ...styles.td, textAlign: 'center' }}>{reportData.medidas?.[m.key] || ''}</td>
                             </tr>
                         ))}
                     </tbody>

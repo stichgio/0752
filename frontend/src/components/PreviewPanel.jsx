@@ -187,6 +187,20 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                 return reportData[key] || '-';
             });
 
+            // Handle direct image access by index: {{ report.images[0].path }}
+            const directImageRegex = /\{\{\s*report\.images\[(\d+)\]\.(path|name)\s*\}\}/g;
+            html = html.replace(directImageRegex, (match, indexStr, property) => {
+                const index = parseInt(indexStr);
+                if (images && images[index]) {
+                    if (property === 'path') {
+                        return URL.createObjectURL(images[index]);
+                    } else if (property === 'name') {
+                        return images[index].name;
+                    }
+                }
+                return '';
+            });
+
             // 3. Image Loop Handling
             // Match {% for img in report.images... %} (permissive match for filter conditions)
             const loopRegex = /\{%\s*for\s+img\s+in\s+report\.images.*?\s*%\}([\s\S]*?)\{%\s*endfor\s*%\}/g;

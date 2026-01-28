@@ -316,8 +316,6 @@
 </head>
 
 <body>
-    {% for item in reports %}
-    {% set report = item.data %}
     <div class="page-container">
 
         <!-- HEADER -->
@@ -326,11 +324,7 @@
                 {% if logo_left %}
                 <img src="{{ logo_left }}" class="logo-img" />
                 {% else %}
-                <div class="sedapal-text">sedapal</div>
-                <div style="width: 80px; margin-top: 3px;">
-                    <div class="sedapal-line1"></div>
-                    <div class="sedapal-line2"></div>
-                </div>
+                <!-- Blank default -->
                 {% endif %}
             </div>
             <div class="header-title">
@@ -340,9 +334,7 @@
                 {% if logo_right %}
                 <img src="{{ logo_right }}" class="logo-img" />
                 {% else %}
-                <div class="hidro-name">HIDROSERVICI<span style="color:#d4a017">✪</span>S <span
-                        class="hidro-aa">AA</span></div>
-                <div style="font-size: 7pt; font-weight: bold; color: #666; text-align:center;">E.I.R.L.</div>
+                <!-- Blank default -->
                 {% endif %}
             </div>
         </div>
@@ -376,7 +368,8 @@
             <div class="info-row codigo">
                 <div class="info-label">CÓDIGO DE INFRAESTRUCTURA :</div>
                 <div class="info-value"
-                    style="font-weight:bold; color:#0066a1; text-align:center; justify-content:center;">{{
+                    style="font-weight:bold; color:#0066a1; text-align:center; justify-content:center; font-size: 12pt; padding: 8px;">
+                    {{
                     report.header.codigo_infraestructura }}</div>
             </div>
             <div class="info-row four-cols">
@@ -409,6 +402,22 @@
                 </tr>
             </thead>
             <tbody>
+                {% set items = [
+                ('CAJA DE REGISTRO', 'caja_registro'),
+                ('MARCO Y TAPA SANITARIA', 'marco_tapa'),
+                ('ESCALERA INTERIOR', 'escalera_interior'),
+                ('ESCALERA EXTERIOR', 'escalera_exterior'),
+                ('CUBA INTERIOR', 'cuba_interior'),
+                ('CUBA EXTERIOR', 'cuba_exterior'),
+                ('LOZA DE FONDO', 'loza_fondo'),
+                ('LOZA DE TECHO INTERIOR', 'loza_techo_interior'),
+                ('LOZA DE TECHO EXTERIOR', 'loza_techo_exterior'),
+                ('DUCTO DE VENTILACIÓN', 'ducto_ventilacion'),
+                ('CERCO PERIMÉTRICO', 'cerco_perimetrico'),
+                ('DESCARGA', 'descarga')
+                ] %}
+
+                <!-- Manual Rows to match specific layout requirements (merged cells for Escalera, Cuba, Loza Techo) -->
                 <tr>
                     <td colspan="2" class="row-label">CAJA DE REGISTRO</td>
                     <td class="center">{% if report.inspeccion.caja_registro == 'normal' %}<span
@@ -700,7 +709,6 @@
                         }}</td>
                     <td class="center">{{ report.canastillas.aduccion['10'] if report.canastillas.aduccion['10'] else ''
                         }}</td>
-
                     <td class="center">{{ report.canastillas.aduccion['14'] if report.canastillas.aduccion['14'] else ''
                         }}</td>
                     <td class="center"></td>
@@ -722,7 +730,6 @@
                     </td>
                     <td class="center">{{ report.canastillas.succion['10'] if report.canastillas.succion['10'] else ''
                         }}</td>
-
                     <td class="center">{{ report.canastillas.succion['14'] if report.canastillas.succion['14'] else ''
                         }}</td>
                     <td class="center"></td>
@@ -744,7 +751,6 @@
                     </td>
                     <td class="center">{{ report.canastillas.desague['10'] if report.canastillas.desague['10'] else ''
                         }}</td>
-
                     <td class="center">{{ report.canastillas.desague['14'] if report.canastillas.desague['14'] else ''
                         }}</td>
                     <td class="center"></td>
@@ -761,7 +767,6 @@
                     <td></td>
                     <td></td>
                     <td></td>
-
                     <td class="center" style="font-weight:bold;">{{ report.canastillas.operativas }}</td>
                     <td class="center" style="font-weight:bold;">{{ report.canastillas.no_operativas }}</td>
                     <td></td>
@@ -869,7 +874,6 @@
 
     </div>
 
-    {% endfor %}
 </body>
 
 </html>
