@@ -804,6 +804,12 @@ async def delete_report(report_id: str):
         raise HTTPException(status_code=404, detail="Informe no encontrado")
     return {"success": True, "deleted_id": report_id}
 
+@router.delete("/reports")
+async def delete_all_reports():
+    """Eliminar TODOS los informes"""
+    count = db.clear_all_reports()
+    return {"success": True, "deleted_count": count, "message": f"Se eliminaron {count} informes"}
+
 
 @router.post("/import-file")
 async def import_file(file: UploadFile = File(...)):

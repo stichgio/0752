@@ -78,15 +78,16 @@ class TechnicalReportsDB:
         return report
     
     def delete_report(self, report_id: str) -> bool:
-        """Eliminar informe"""
+        self.load()
         if report_id in self.reports:
             del self.reports[report_id]
             self.save()
             return True
         return False
-    
+
     def clear_all_reports(self) -> int:
-        """Eliminar TODOS los informes de la base de datos"""
+        """Elimina todos los reportes y retorna la cantidad eliminada."""
+        self.load()
         count = len(self.reports)
         self.reports = {}
         self.save()
