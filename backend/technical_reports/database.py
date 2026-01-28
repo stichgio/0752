@@ -369,9 +369,11 @@ class TechnicalReportsDB:
         if not value or str(value).strip() == '' or str(value) == 'None':
             return 'unchecked'
         val_upper = str(value).upper().strip()
-        if val_upper == 'X' or val_upper == 'NORMAL':
+        # Valores para NORMAL
+        if val_upper in ['X', 'NORMAL', 'BUENO', 'OK', 'SI', 'SÍ', 'V']:
             return 'normal'
-        elif val_upper == 'CRITICO':
+        # Valores para CRÍTICO
+        elif val_upper in ['CRITICO', 'CRÍTICO', 'MALO', 'OBSERVADO', 'F', 'NO']:
             return 'critico'
         return 'unchecked'
 

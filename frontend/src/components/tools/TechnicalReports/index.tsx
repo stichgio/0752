@@ -115,9 +115,10 @@ export default function TechnicalReports() {
             setReports(freshData.reports || []);
 
             alert(`✅ ${result.imported_count} informes importados`);
-        } catch (error) {
-            console.error('Error importing CSV:', error);
-            alert('Error importando CSV');
+        } catch (error: any) {
+            console.error('Error importing file:', error);
+            const msg = error.response?.data?.detail || error.message || 'Error desconocido';
+            alert(`Error importando archivo: ${msg}`);
         } finally {
             setIsLoading(false);
         }
