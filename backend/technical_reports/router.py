@@ -559,20 +559,36 @@ def transform_flat_to_nested(flat_data: Dict[str, Any]) -> Dict[str, Any]:
         return str(val).strip()
     
     def normalize_status(val) -> str:
-        """Normaliza valores de estado de inspección"""
+        """
+        Normaliza valores de estado de inspección.
+        Unificado con _parse_check() de database.py para consistencia.
+        Case-insensitive.
+        """
         if val is None:
             return 'unchecked'
-        val_str = str(val).strip().lower()
+        val_str = str(val).strip().upper()
         
-        # Estados "normales"
-        if val_str in ['normal', 'buen estado', 'bueno', 'ok', 'bien', 'b', 'n']:
-            return 'normal'
-        # Estados "críticos"
-        elif val_str in ['critico', 'crítico', 'malo', 'mal', 'c', 'm', 'deficiente', 'dañado']:
-            return 'critico'
-        # Default
-        else:
+        if val_str == '' or val_str == 'NONE':
             return 'unchecked'
+        
+        # Estados "normales" - Lista completa unificada
+        normal_values = [
+            'X', 'NORMAL', 'BUENO', 'OK', 'SI', 'SÍ', 'V',  # De _parse_check
+            'BIEN', 'B', 'N', 'BUEN ESTADO'  # Adicionales
+        ]
+        if val_str in normal_values:
+            return 'normal'
+        
+        # Estados "críticos" - Lista completa unificada
+        critico_values = [
+            'CRITICO', 'CRÍTICO', 'MALO', 'OBSERVADO', 'F', 'NO',  # De _parse_check
+            'MAL', 'C', 'M', 'DEFICIENTE', 'DAÑADO'  # Adicionales
+        ]
+        if val_str in critico_values:
+            return 'critico'
+        
+        # Default
+        return 'unchecked'
     
     result = {}
     

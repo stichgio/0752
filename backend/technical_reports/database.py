@@ -390,16 +390,31 @@ class TechnicalReportsDB:
     
     @staticmethod
     def _parse_check(value) -> str:
-        """Convertir valor CSV a estado de checkbox"""
+        """
+        Convertir valor CSV/Excel a estado de checkbox.
+        Unificado con normalize_status() de router.py para consistencia.
+        Case-insensitive.
+        """
         if not value or str(value).strip() == '' or str(value) == 'None':
             return 'unchecked'
         val_upper = str(value).upper().strip()
-        # Valores para NORMAL
-        if val_upper in ['X', 'NORMAL', 'BUENO', 'OK', 'SI', 'SÍ', 'V']:
+        
+        # Valores para NORMAL - Lista completa unificada
+        normal_values = [
+            'X', 'NORMAL', 'BUENO', 'OK', 'SI', 'SÍ', 'V',
+            'BIEN', 'B', 'N', 'BUEN ESTADO'
+        ]
+        if val_upper in normal_values:
             return 'normal'
-        # Valores para CRÍTICO
-        elif val_upper in ['CRITICO', 'CRÍTICO', 'MALO', 'OBSERVADO', 'F', 'NO']:
+        
+        # Valores para CRÍTICO - Lista completa unificada
+        critico_values = [
+            'CRITICO', 'CRÍTICO', 'MALO', 'OBSERVADO', 'F', 'NO',
+            'MAL', 'C', 'M', 'DEFICIENTE', 'DAÑADO'
+        ]
+        if val_upper in critico_values:
             return 'critico'
+        
         return 'unchecked'
 
 # Instancia global
