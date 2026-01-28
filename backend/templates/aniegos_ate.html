@@ -19,9 +19,41 @@
 
         html,
         body {
-            width: 210mm;
-            height: 297mm;
-            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* PRINT STYLES */
+        @media print {
+
+            html,
+            body {
+                width: 210mm;
+                height: 297mm;
+                overflow: hidden;
+            }
+
+            .page {
+                page-break-after: always;
+            }
+        }
+
+        /* SCREEN PREVIEW STYLES */
+        @media screen {
+
+            html,
+            body {
+                width: 100%;
+                height: auto;
+                background: transparent;
+                overflow: visible;
+            }
+
+            /* .page styles are already defined below, effectively centering it in the flex container of PreviewPanel */
+            .page {
+                margin: 0 auto;
+                background: white;
+            }
         }
 
         body {
@@ -296,10 +328,7 @@
         <div class="info-bar">
             <div class="info-item"><span class="info-label">CENTRO:</span> {{ report.data.get('CENTRO', '-') }}</div>
             <div class="info-item"><span class="info-label">NIS:</span> {{ report.data.get('NIS', '-') }}</div>
-            <div class="info-item"><span class="info-label">Nro OT:</span> {{ report.data.get('Nro OT',
-                report.data.get('OT',
-                '-')) }}
-            </div>
+            <div class="info-item"><span class="info-label">Nro OT:</span> {{ report.data.get('Nro OT', '-') }}</div>
         </div>
 
         <!-- 1.0 LOCALIZACION -->
