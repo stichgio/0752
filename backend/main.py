@@ -15,6 +15,7 @@ from report_service import run_batch_generation, ReportService
 from pdf_tools import merge_pdfs_interleaved, split_pdf, split_pdf_by_ranges
 import zipfile
 from technical_reports.router import router as technical_reports_router
+from technical_reports.models import TechnicalReport
 
 app = FastAPI()
 
@@ -88,6 +89,46 @@ async def generate_single_pdf(
     try:
         # Parse JSON data
         row_data = json.loads(data)
+
+        # Validate against Pydantic model to ensure defaults (like impulsion) are populated
+        try:
+            if isinstance(row_data, dict) and 'valvulas' in row_data:
+                # Ensure it's a valid TechnicalReport, populating missing fields with defaults
+                validated = TechnicalReport(**row_data)
+                row_data = validated.dict()
+                print(f"Data validated and normalized successfully. ID: {row_data.get('id')}")
+        except Exception as e:
+            print(f"Warning: Model validation failed (continuing with raw data): {e}")
+
+        # --- MANUAL PATCHING FOR LEGACY/INCOMPLETE DATA ---
+        try:
+            if isinstance(row_data, dict):
+                # Ensure 'valvulas' exists
+                if 'valvulas' not in row_data or not isinstance(row_data['valvulas'], dict):
+                     row_data['valvulas'] = {}
+                
+                # Ensure 'impulsion' exists in valvulas
+                if 'impulsion' not in row_data['valvulas']:
+                    row_data['valvulas']['impulsion'] = {'2':0,'3':0,'4':0,'6':0,'8':0,'10':0,'12':0}
+                    row_data['valvulas']['observaciones_impulsion'] = ""
+                    row_data['valvulas']['sugerencias_impulsion'] = ""
+
+                # Ensure 'canastillas' exists and has '14' for all sections
+                if 'canastillas' in row_data and isinstance(row_data['canastillas'], dict):
+                    canastillas = row_data['canastillas']
+                    for section in ['diametros', 'aduccion', 'succion', 'desague']:
+                        if section in canastillas and isinstance(canastillas[section], dict):
+                             # Add '14' if missing (canastillas use 14" not 12")
+                             if '14' not in canastillas[section]:
+                                 canastillas[section]['14'] = 0
+                             
+                # Ensure 'inspeccion' exists (sometimes missing in very old drafts)
+                if 'inspeccion' not in row_data:
+                    row_data['inspeccion'] = {}
+                    
+        except Exception as e:
+            print(f"Error during manual data patching: {e}")
+        # --------------------------------------------------
         
         # Helper to process logo
         async def process_logo(logo_file):
