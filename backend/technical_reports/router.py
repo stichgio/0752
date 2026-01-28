@@ -499,8 +499,22 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
                     if not key.startswith("_col_") and cell_value is not None:
                         # FIX: Handle datetime objects to prevent timezone shifts (UTC vs Local)
                         if hasattr(cell_value, 'strftime'):
-                            # Force format to DD/MM/YY as seen in the template
-                            row_dict[key] = cell_value.strftime('%d/%m/%y')
+                            try:
+                                # HACK: Add safety margin for dates that are exactly at midnight
+                                # If server is UTC and local is UTC-5, 00:00:00 becomes previous day
+                                # Moving to noon (12:00:00) prevents this shift for reasonable timezones
+                                if hasattr(cell_value, 'hour') and cell_value.hour == 0 and cell_value.minute == 0:
+                                    from datetime import timedelta
+                                    # Create a new safe date object (don't modify original cell if possible/needed)
+                                    safe_date = cell_value + timedelta(hours=12)
+                                    row_dict[key] = safe_date.strftime('%d/%m/%y')
+                                    print(f"[DEBUG DATE] Original: {cell_value} -> Safe: {safe_date} -> Str: {row_dict[key]}")
+                                else:
+                                    # Already has time or is just date, just format
+                                    row_dict[key] = cell_value.strftime('%d/%m/%y')
+                            except Exception as e:
+                                print(f"[DATE ERROR] Could not fix date {cell_value}: {e}")
+                                row_dict[key] = str(cell_value)
                         else:
                             row_dict[key] = cell_value
                         
