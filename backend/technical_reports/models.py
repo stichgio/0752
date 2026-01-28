@@ -117,3 +117,6 @@ class TechnicalReport(BaseModel):
     sugerencias: str = ""
     status: Literal['draft', 'completed'] = 'draft'
     last_modified: str
+
+    class Config:
+        extra = "allow"
