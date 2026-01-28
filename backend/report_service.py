@@ -194,22 +194,28 @@ class ReportService:
         return d + (m / 60.0) + (s / 3600.0)
 
     def find_images(self, folder_path, pattern_id):
-        """Busca imágenes matching pattern"""
+        """Busca imágenes matching pattern con separadores estrictos para evitar duplicados"""
         images = []
         if not os.path.exists(folder_path):
             return images
 
-        regex = re.compile(rf"^{re.escape(str(pattern_id))}[-_]?(\d+)\.(jpg|jpeg|png)$", re.IGNORECASE)
+        # Regex estricta: Requiere separador (-, _) para sufijos o coincidencia exacta
+        regex = re.compile(rf"^{re.escape(str(pattern_id))}(?:[-_](\d+))?\.(jpg|jpeg|png)$", re.IGNORECASE)
         
         for file in os.listdir(folder_path):
             match = regex.match(file)
             if match:
                 full_path = os.path.join(folder_path, file)
                 metadata = self.get_image_metadata(full_path)
+                
+                # Si hay grupo 1 es el orden, si no es la imagen principal (0)
+                order_str = match.group(1)
+                order = int(order_str) if order_str else 0
+                
                 images.append({
                     "path": pathlib.Path(full_path).as_uri(),
                     "name": file,
-                    "order": int(match.group(1)),
+                    "order": order,
                     **metadata
                 })
         

@@ -905,41 +905,7 @@ async def import_csv(file: UploadFile = File(...)):
     return await import_file(file=file)
 
 
-@router.post("/reports/{report_id}/generate-pdf")
-async def generate_pdf(report_id: str):
-    """Generar PDF del informe"""
-    report = db.get_report(report_id)
-    if not report:
-        raise HTTPException(status_code=404, detail="Informe no encontrado")
-    
-    try:
-        import os
-        from report_service import ReportService
-        
-        # Localizar el directorio de templates específico para informes técnicos
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        templates_dir = os.path.join(current_dir, "templates")
-        
-        service = ReportService(templates_dir=templates_dir)
-        template = service.get_template("informe_tecnico.html")
-        
-        # Renderizar HTML con los datos del informe
-        html_content = template.render(report=report.dict())
-        
-        # Generar PDF usando WeasyPrint (vía report_service context)
-        from weasyprint import HTML as WeasyHTML
-        pdf_bytes = WeasyHTML(string=html_content).write_pdf()
-        
-        return Response(
-            content=pdf_bytes,
-            media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename=informe_{report_id}.pdf"}
-        )
-    except Exception as e:
-        import traceback
-        error_detail = traceback.format_exc()
-        print(f"Error generando PDF para {report_id}:\n{error_detail}")
-        raise HTTPException(status_code=500, detail=f"Error generando PDF: {str(e)}")
+
 
 @router.get("/autocomplete/cs")
 async def autocomplete_cs():

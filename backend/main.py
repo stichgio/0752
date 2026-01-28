@@ -28,25 +28,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Global storage (for demo purposes)
-current_data = {"df": None}
-jobs = {}
-
-from technical_reports.database import db as tech_reports_db
-from datetime import datetime
-
-@app.on_event("startup")
-async def startup_event():
-    reports = tech_reports_db.get_all_reports()
-    print(f"===== Application Startup at {datetime.now()} =====")
-    print(f"[TechReports DB] Loaded {len(reports)} reports")
-    for report in reports:
-        print(f"  - {report.id}: {report.header.cs}")
+# Global storage (removed unused legacy globals)
 
 # Create API Router with prefix
 api_router = APIRouter(prefix="/api")
 
-# Include the technical reports router
+# Include the technical reports router (Only include once)
 app.include_router(technical_reports_router)
 
 @api_router.get("/templates")
@@ -242,65 +229,6 @@ async def generate_single_pdf(
             }
         )
 
-@api_router.post("/upload")
-async def upload_file(file: UploadFile = File(...)):
-    contents = await file.read()
-    if file.filename.endswith('.csv'):
-        df = pd.read_csv(io.BytesIO(contents))
-    elif file.filename.endswith(('.xls', '.xlsx')):
-        df = pd.read_excel(io.BytesIO(contents))
-    else:
-        raise HTTPException(status_code=400, detail="Invalid file format")
-    
-    current_data["df"] = df
-    current_data["headers"] = df.columns.tolist()
-    
-    return {"headers": current_data["headers"], "rowCount": len(df)}
-
-def background_job(job_id: str, records: list, folder_path: str, id_column: str, output_folder: str):
-    try:
-        results = run_batch_generation(records, folder_path, id_column, output_folder)
-        jobs[job_id] = {
-            "status": "completed",
-            "total": len(records),
-            "success": sum(1 for r in results if r["status"] == "success"),
-            "results": results
-        }
-    except Exception as e:
-        jobs[job_id] = {
-            "status": "failed",
-            "error": str(e)
-        }
-
-@api_router.post("/generate")
-async def generate_reports(
-    background_tasks: BackgroundTasks,
-    folder_path: str = Form(...),
-    id_column: str = Form(...),
-    output_folder: str = Form(...)
-):
-    if current_data["df"] is None:
-        raise HTTPException(status_code=400, detail="No data uploaded")
-    
-    if not os.path.exists(folder_path):
-        raise HTTPException(status_code=400, detail="Local folder path does not exist")
-
-    job_id = str(uuid.uuid4())
-    os.makedirs(output_folder, exist_ok=True)
-
-    records = current_data["df"].to_dict('records')
-    jobs[job_id] = {"status": "processing", "total": len(records), "success": 0}
-    
-    background_tasks.add_task(background_job, job_id, records, folder_path, id_column, output_folder)
-    
-    return {"job_id": job_id}
-
-@api_router.get("/status/{job_id}")
-async def get_status(job_id: str):
-    if job_id not in jobs:
-        raise HTTPException(status_code=404, detail="Job not found")
-    return jobs[job_id]
-
 # --- PDF Tools Endpoints ---
 
 @api_router.post("/tools/merge-pdfs")
@@ -410,7 +338,7 @@ async def tool_split_pdf(
 
 # Include the API router
 app.include_router(api_router)
-app.include_router(technical_reports_router)
+
 
 # SERVING FRONTEND (React) - For Hugging Face Spaces / Docker
 # If 'static' folder exists (created by Dockerfile), serve it.
