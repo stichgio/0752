@@ -84,13 +84,21 @@ export default function App() {
     // Excel Serial Date Conversion Utilities
     const excelSerialToDate = (serial) => {
         if (!serial || isNaN(serial) || serial < 1) return null;
-        // Excel counts from 1900-01-01, but has a bug treating 1900 as leap year
-        const excelEpoch = new Date(1899, 11, 30); // Dec 30, 1899
-        const date = new Date(excelEpoch.getTime() + serial * 24 * 60 * 60 * 1000);
 
-        const day = String(date.getDate()).padStart(2, '0');
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const year = String(date.getFullYear()).slice(-2); // Last 2 digits
+        // FIX: Use UTC-based calculation to prevent timezone shifts
+        // Excel epoch is Dec 30, 1899 (accounting for the 1900 leap year bug)
+        // We calculate in UTC to avoid local timezone affecting the result
+
+        // Excel serial number represents days since epoch
+        // Add the serial to the epoch timestamp (in milliseconds)
+        const excelEpochMs = Date.UTC(1899, 11, 30, 0, 0, 0); // Dec 30, 1899 in UTC
+        const dateMs = excelEpochMs + (serial * 24 * 60 * 60 * 1000);
+        const date = new Date(dateMs);
+
+        // Use UTC methods to extract date parts (avoids local timezone conversion)
+        const day = String(date.getUTCDate()).padStart(2, '0');
+        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+        const year = String(date.getUTCFullYear()).slice(-2); // Last 2 digits
 
         return `${day}/${month}/${year}`; // Format: DD/MM/YY
     };
@@ -254,16 +262,33 @@ export default function App() {
         const reader = new FileReader();
         reader.onload = (evt) => {
             const bstr = evt.target.result;
-            const wb = XLSX.read(bstr, { type: 'binary' });
+            // FIX: Use cellDates:false to get raw number for dates, preventing timezone issues
+            const wb = XLSX.read(bstr, { type: 'binary', cellDates: false, cellNF: true });
             const wsname = wb.SheetNames[0];
             const ws = wb.Sheets[wsname];
-            const jsonData = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+            // FIX: Use raw option to get original values, then format dates manually
+            const jsonData = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, dateNF: 'dd/mm/yy' });
 
             if (jsonData.length > 0) {
                 const _headers = jsonData[0];
                 const _data = jsonData.slice(1).map(row => {
                     let obj = {};
-                    _headers.forEach((h, i) => obj[h] = row[i]);
+                    _headers.forEach((h, i) => {
+                        let cellValue = row[i];
+
+                        // FIX: Check if this looks like a date column and value is a number (Excel serial date)
+                        const headerUpper = String(h || '').toUpperCase();
+                        const isDateColumn = headerUpper.includes('FECHA') || headerUpper.includes('DATE');
+
+                        if (isDateColumn && typeof cellValue === 'number' && cellValue > 1000 && cellValue < 100000) {
+                            // Convert Excel serial date to DD/MM/YY format manually
+                            // This avoids timezone issues by treating it as pure numbers
+                            cellValue = excelSerialToDate(cellValue);
+                        }
+
+                        obj[h] = cellValue;
+                    });
                     return obj;
                 });
                 setHeaders(_headers);
