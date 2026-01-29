@@ -459,8 +459,12 @@ class ReportService:
                         "img_count": img_count
                     }]
                     
+                    # Para templates como informe_tecnico.html que esperan 'report' directamente
+                    # (estructura anidada: report.header.xxx, report.inspeccion.xxx)
+                    # vs templates que esperan 'reports' (lista con data como sub-objeto)
                     html_out = template.render(
                         reports=single_report_context,
+                        report=row_data,  # Para informe_tecnico.html
                         title="PANEL FOTOGRÁFICO",
                         logo_left=logo_left_uri or logo_left,
                         logo_right=logo_right_uri or logo_right

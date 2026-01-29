@@ -239,75 +239,91 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
         'sugerenciascanastillasdesague': 'sug_canastillas_desague', # Plural
 
         # --- INSPECCIÓN (OBSERVACIONES Y SUGERENCIAS) ---
-        'obscajaregistro': 'obs_caja_registro',
+        'obscajaregistro': 'obs_caja_registro',  # Coincide con Excel normalizado
         'observacionescajaregistro': 'obs_caja_registro',
         'observacionescajaderegistro': 'obs_caja_registro', # With 'de'
-        'sugcajaregistro': 'sug_caja_registro',
+        'sugcajaregistro': 'sug_caja_registro',  # Coincide con Excel normalizado
         'sugerenciascajaregistro': 'sug_caja_registro',
         'sugerenciascajaderegistro': 'sug_caja_registro', # With 'de'
-        
-        'obsmarcotapa': 'obs_marco_tapa',
+
+        'obsmarcotapa': 'obs_marco_tapa',  # Coincide con Excel normalizado
         'observacionesmarcotapa': 'obs_marco_tapa',
         'observacionesmarcoytapa': 'obs_marco_tapa', # With 'y'
         'observacionesmarcoytapasanitaria': 'obs_marco_tapa',
-        'sugmarcotapa': 'sug_marco_tapa',
+        'sugmarcotapa': 'sug_marco_tapa',  # Coincide con Excel normalizado
         'sugerenciasmarcotapa': 'sug_marco_tapa',
         'sugerenciasmarcoytapa': 'sug_marco_tapa', # With 'y'
         'sugerenciasmarcoytapasanitaria': 'sug_marco_tapa',
 
         'obsescalerainterior': 'obs_escalera_int',
         'observacionesescalerainterior': 'obs_escalera_int',
+        'obsescaleraint': 'obs_escalera_int',  # Abreviado (del Excel)
         'sugescalerainterior': 'sug_escalera_int',
         'sugerenciasescalerainterior': 'sug_escalera_int',
-        
+        'sugescaleraint': 'sug_escalera_int',  # Abreviado (del Excel)
+
         'obsescaleraexterior': 'obs_escalera_ext',
         'observacionesescaleraexterior': 'obs_escalera_ext',
+        'obsescaleraext': 'obs_escalera_ext',  # Abreviado (del Excel)
         'sugescaleraexterior': 'sug_escalera_ext',
         'sugerenciasescaleraexterior': 'sug_escalera_ext',
+        'sugescaleraext': 'sug_escalera_ext',  # Abreviado (del Excel)
 
         'obscubainterior': 'obs_cuba_int',
         'observacionescubainterior': 'obs_cuba_int',
+        'obscubaint': 'obs_cuba_int',  # Abreviado (del Excel)
         'sugcubainterior': 'sug_cuba_int',
         'sugerenciascubainterior': 'sug_cuba_int',
-        
+        'sugcubaint': 'sug_cuba_int',  # Abreviado (del Excel)
+
         'obscubaexterior': 'obs_cuba_ext',
         'observacionescubaexterior': 'obs_cuba_ext',
+        'obscubaext': 'obs_cuba_ext',  # Abreviado (del Excel)
         'sugcubaexterior': 'sug_cuba_ext',
         'sugerenciascubaexterior': 'sug_cuba_ext',
+        'sugcubaext': 'sug_cuba_ext',  # Abreviado (del Excel)
         
-        'obslozafondo': 'obs_loza_fondo',
+        'obslozafondo': 'obs_loza_fondo',  # Coincide con Excel normalizado
         'observacioneslozafondo': 'obs_loza_fondo',
         'observacioneslozadefondo': 'obs_loza_fondo', # With 'de'
-        'suglozafondo': 'sug_loza_fondo',
+        'suglozafondo': 'sug_loza_fondo',  # Coincide con Excel normalizado
         'sugerenciaslozafondo': 'sug_loza_fondo',
         'sugerenciaslozadefondo': 'sug_loza_fondo', # With 'de'
 
         'obslozatechointerior': 'obs_loza_techo_int',
         'observacioneslozatechointerior': 'obs_loza_techo_int',
+        'obslozatechoint': 'obs_loza_techo_int',  # Abreviado (del Excel)
         'suglozatechointerior': 'sug_loza_techo_int',
         'sugerenciaslozatechointerior': 'sug_loza_techo_int',
-        
+        'suglozatechoint': 'sug_loza_techo_int',  # Abreviado (del Excel)
+
         'obslozatechoexterior': 'obs_loza_techo_ext',
         'observacioneslozatechoexterior': 'obs_loza_techo_ext',
+        'obslozatechoext': 'obs_loza_techo_ext',  # Abreviado (del Excel)
         'suglozatechoexterior': 'sug_loza_techo_ext',
         'sugerenciaslozatechoexterior': 'sug_loza_techo_ext',
+        'suglozatechoext': 'sug_loza_techo_ext',  # Abreviado (del Excel)
 
         'obsductoventilacion': 'obs_ducto',
         'observacionesductoventilacion': 'obs_ducto',
         'observacionesductodeventilacion': 'obs_ducto', # With 'de'
+        'obsducto': 'obs_ducto',  # Abreviado (del Excel)
         'sugductoventilacion': 'sug_ducto',
         'sugerenciasductoventilacion': 'sug_ducto',
         'sugerenciasductodeventilacion': 'sug_ducto', # With 'de'
-        
+        'sugducto': 'sug_ducto',  # Abreviado (del Excel)
+
         'obscercoperimetrico': 'obs_cerco',
         'observacionescercoperimetrico': 'obs_cerco',
+        'obscerco': 'obs_cerco',  # Abreviado (del Excel)
         'sugcercoperimetrico': 'sug_cerco',
         'sugerenciascercoperimetrico': 'sug_cerco',
-        
-        'obsdescarga': 'obs_descarga',
+        'sugcerco': 'sug_cerco',  # Abreviado (del Excel)
+
+        'obsdescarga': 'obs_descarga',  # Ya está correcto
         'observacionesdescarga': 'obs_descarga',
         'observacionestuberiadescarga': 'obs_descarga', # Alias common
-        'sugdescarga': 'sug_descarga',
+        'sugdescarga': 'sug_descarga',  # Ya está correcto
         'sugerenciasdescarga': 'sug_descarga',
         'sugerenciastuberiadescarga': 'sug_descarga', # Alias common
 
