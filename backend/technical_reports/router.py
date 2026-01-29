@@ -180,23 +180,31 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
         # --- VÁLVULAS (OBSERVACIONES Y SUGERENCIAS) ---
         'obsvalvulasconduccion': 'obs_valvulas_conduccion',
         'observacionesconduccion': 'obs_valvulas_conduccion',
+        'observacionesvalvulasconduccion': 'obs_valvulas_conduccion', # Explicit full name
         'sugvalvulasconduccion': 'sug_valvulas_conduccion',
         'sugerenciasconduccion': 'sug_valvulas_conduccion',
+        'sugerenciasvalvulasconduccion': 'sug_valvulas_conduccion', # Explicit full name
         
         'obsvalvulasimpulsion': 'obs_valvulas_impulsion',
         'observacionesimpulsion': 'obs_valvulas_impulsion',
+        'observacionesvalvulasimpulsion': 'obs_valvulas_impulsion', # Explicit full name
         'sugvalvulasimpulsion': 'sug_valvulas_impulsion',
         'sugerenciasimpulsion': 'sug_valvulas_impulsion',
+        'sugerenciasvalvulasimpulsion': 'sug_valvulas_impulsion', # Explicit full name
         
         'obsvalvulasaduccion': 'obs_valvulas_aduccion',
         'observacionesaduccion': 'obs_valvulas_aduccion',
+        'observacionesvalvulasaduccion': 'obs_valvulas_aduccion', # Explicit full name
         'sugvalvulasaduccion': 'sug_valvulas_aduccion',
         'sugerenciasaduccion': 'sug_valvulas_aduccion',
+        'sugerenciasvalvulasaduccion': 'sug_valvulas_aduccion', # Explicit full name
         
         'obsvalvulasbypass': 'obs_valvulas_bypass',
         'observacionesbypass': 'obs_valvulas_bypass',
+        'observacionesvalvulasbypass': 'obs_valvulas_bypass', # Explicit full name
         'sugvalvulasbypass': 'sug_valvulas_bypass',
         'sugerenciasbypass': 'sug_valvulas_bypass',
+        'sugerenciasvalvulasbypass': 'sug_valvulas_bypass', # Explicit full name
         'observacionespass': 'obs_valvulas_bypass', # Posible error de tipeo "By Pass" -> "Pass"
 
         'obsvalvulasdesague': 'obs_valvulas_desague',
@@ -209,31 +217,43 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
         # --- CANASTILLAS (OBSERVACIONES Y SUGERENCIAS) ---
         'obscanastillasaduccion': 'obs_canastillas_aduccion',
         'observacionescanastillaaduccion': 'obs_canastillas_aduccion',
+        'observacionescanastillasaduccion': 'obs_canastillas_aduccion', # Plural
         'sugcanastillasaduccion': 'sug_canastillas_aduccion',
         'sugerenciascanastillaaduccion': 'sug_canastillas_aduccion',
+        'sugerenciascanastillasaduccion': 'sug_canastillas_aduccion', # Plural
         
         'obscanastillassuccion': 'obs_canastillas_succion',
         'observacionescanastillasuccion': 'obs_canastillas_succion',
+        'observacionescanastillassuccion': 'obs_canastillas_succion', # Plural
         'observacionessuccion': 'obs_canastillas_succion',
         'sugcanastillassuccion': 'sug_canastillas_succion',
         'sugerenciascanastillasuccion': 'sug_canastillas_succion',
+        'sugerenciascanastillassuccion': 'sug_canastillas_succion', # Plural
         'sugerenciassuccion': 'sug_canastillas_succion',
 
         'obscanastillasdesague': 'obs_canastillas_desague',
         'observacionescanastilladesague': 'obs_canastillas_desague',
+        'observacionescanastillasdesague': 'obs_canastillas_desague', # Plural
         'sugcanastillasdesague': 'sug_canastillas_desague',
         'sugerenciascanastilladesague': 'sug_canastillas_desague',
+        'sugerenciascanastillasdesague': 'sug_canastillas_desague', # Plural
 
         # --- INSPECCIÓN (OBSERVACIONES Y SUGERENCIAS) ---
         'obscajaregistro': 'obs_caja_registro',
         'observacionescajaregistro': 'obs_caja_registro',
+        'observacionescajaderegistro': 'obs_caja_registro', # With 'de'
         'sugcajaregistro': 'sug_caja_registro',
         'sugerenciascajaregistro': 'sug_caja_registro',
+        'sugerenciascajaderegistro': 'sug_caja_registro', # With 'de'
         
         'obsmarcotapa': 'obs_marco_tapa',
         'observacionesmarcotapa': 'obs_marco_tapa',
+        'observacionesmarcoytapa': 'obs_marco_tapa', # With 'y'
+        'observacionesmarcoytapasanitaria': 'obs_marco_tapa',
         'sugmarcotapa': 'sug_marco_tapa',
         'sugerenciasmarcotapa': 'sug_marco_tapa',
+        'sugerenciasmarcoytapa': 'sug_marco_tapa', # With 'y'
+        'sugerenciasmarcoytapasanitaria': 'sug_marco_tapa',
 
         'obsescalerainterior': 'obs_escalera_int',
         'observacionesescalerainterior': 'obs_escalera_int',
@@ -257,8 +277,10 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
         
         'obslozafondo': 'obs_loza_fondo',
         'observacioneslozafondo': 'obs_loza_fondo',
+        'observacioneslozadefondo': 'obs_loza_fondo', # With 'de'
         'suglozafondo': 'sug_loza_fondo',
         'sugerenciaslozafondo': 'sug_loza_fondo',
+        'sugerenciaslozadefondo': 'sug_loza_fondo', # With 'de'
 
         'obslozatechointerior': 'obs_loza_techo_int',
         'observacioneslozatechointerior': 'obs_loza_techo_int',
@@ -272,8 +294,10 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
 
         'obsductoventilacion': 'obs_ducto',
         'observacionesductoventilacion': 'obs_ducto',
+        'observacionesductodeventilacion': 'obs_ducto', # With 'de'
         'sugductoventilacion': 'sug_ducto',
         'sugerenciasductoventilacion': 'sug_ducto',
+        'sugerenciasductodeventilacion': 'sug_ducto', # With 'de'
         
         'obscercoperimetrico': 'obs_cerco',
         'observacionescercoperimetrico': 'obs_cerco',
@@ -282,8 +306,10 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
         
         'obsdescarga': 'obs_descarga',
         'observacionesdescarga': 'obs_descarga',
+        'observacionestuberiadescarga': 'obs_descarga', # Alias common
         'sugdescarga': 'sug_descarga',
         'sugerenciasdescarga': 'sug_descarga',
+        'sugerenciastuberiadescarga': 'sug_descarga', # Alias common
 
         # --- VÁLVULAS (DIÁMETROS) ---
         # Conducción

@@ -59,7 +59,7 @@
       "diametros": {
         "2": 0,
         "3": 0,
-        "4": 3,
+        "4": 0,
         "6": 0,
         "8": 0,
         "10": 0,
@@ -80,7 +80,7 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 1,
         "12": 0
       },
       "bypass": {
@@ -101,7 +101,7 @@
         "10": 0,
         "12": 0
       },
-      "operativas": 6,
+      "operativas": 4,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -128,10 +128,10 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 1,
+        "6": 0,
         "8": 0,
         "10": 0,
-        "14": 1
+        "14": 0
       },
       "succion": {
         "2": 0,
@@ -151,7 +151,7 @@
         "10": 0,
         "14": 0
       },
-      "operativas": 2,
+      "operativas": 0,
       "no_operativas": 0,
       "observaciones_aduccion": "NO TIENE DE 10\"",
       "sugerencias_aduccion": "INSTALAR",
@@ -169,7 +169,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.360020"
+    "last_modified": "2026-01-29T12:20:56.468189"
   },
   "RPT-0002": {
     "id": "RPT-0002",
@@ -341,7 +341,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.360020"
+    "last_modified": "2026-01-29T12:20:56.469193"
   },
   "RPT-0003": {
     "id": "RPT-0003",
@@ -513,7 +513,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.360020"
+    "last_modified": "2026-01-29T12:20:56.469703"
   },
   "RPT-0004": {
     "id": "RPT-0004",
@@ -678,14 +678,14 @@
     },
     "medidas": {
       "diametro": "15.2",
-      "diametro_interno": "5",
-      "altura_util": "5.2",
+      "diametro_interno": "",
+      "altura_util": "5",
       "altura_total": "5.2"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.361049"
+    "last_modified": "2026-01-29T12:20:56.469703"
   },
   "RPT-0005": {
     "id": "RPT-0005",
@@ -857,7 +857,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.361125"
+    "last_modified": "2026-01-29T12:20:56.469703"
   },
   "RPT-0006": {
     "id": "RPT-0006",
@@ -1029,7 +1029,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.361125"
+    "last_modified": "2026-01-29T12:20:56.469703"
   },
   "RPT-0007": {
     "id": "RPT-0007",
@@ -1201,7 +1201,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.361125"
+    "last_modified": "2026-01-29T12:20:56.470214"
   },
   "RPT-0008": {
     "id": "RPT-0008",
@@ -1373,7 +1373,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.361711"
+    "last_modified": "2026-01-29T12:20:56.470266"
   },
   "RPT-0009": {
     "id": "RPT-0009",
@@ -1545,7 +1545,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.361711"
+    "last_modified": "2026-01-29T12:20:56.470266"
   },
   "RPT-0010": {
     "id": "RPT-0010",
@@ -1717,7 +1717,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.361711"
+    "last_modified": "2026-01-29T12:20:56.470266"
   },
   "RPT-0011": {
     "id": "RPT-0011",
@@ -1889,7 +1889,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.362270"
+    "last_modified": "2026-01-29T12:20:56.470266"
   },
   "RPT-0012": {
     "id": "RPT-0012",
@@ -2061,7 +2061,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.362270"
+    "last_modified": "2026-01-29T12:20:56.470773"
   },
   "RPT-0013": {
     "id": "RPT-0013",
@@ -2233,7 +2233,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.362270"
+    "last_modified": "2026-01-29T12:20:56.470841"
   },
   "RPT-0014": {
     "id": "RPT-0014",
@@ -2405,7 +2405,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.362270"
+    "last_modified": "2026-01-29T12:20:56.470841"
   },
   "RPT-0015": {
     "id": "RPT-0015",
@@ -2577,7 +2577,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.362270"
+    "last_modified": "2026-01-29T12:20:56.470841"
   },
   "RPT-0016": {
     "id": "RPT-0016",
@@ -2749,7 +2749,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.362270"
+    "last_modified": "2026-01-29T12:20:56.470841"
   },
   "RPT-0017": {
     "id": "RPT-0017",
@@ -2921,7 +2921,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.362270"
+    "last_modified": "2026-01-29T12:20:56.470841"
   },
   "RPT-0018": {
     "id": "RPT-0018",
@@ -3093,7 +3093,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.363245"
+    "last_modified": "2026-01-29T12:20:56.471350"
   },
   "RPT-0019": {
     "id": "RPT-0019",
@@ -3265,7 +3265,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.363245"
+    "last_modified": "2026-01-29T12:20:56.471350"
   },
   "RPT-0020": {
     "id": "RPT-0020",
@@ -3437,7 +3437,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.363245"
+    "last_modified": "2026-01-29T12:20:56.471350"
   },
   "RPT-0021": {
     "id": "RPT-0021",
@@ -3609,7 +3609,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.363245"
+    "last_modified": "2026-01-29T12:20:56.471350"
   },
   "RPT-0022": {
     "id": "RPT-0022",
@@ -3781,7 +3781,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.363245"
+    "last_modified": "2026-01-29T12:20:56.471350"
   },
   "RPT-0023": {
     "id": "RPT-0023",
@@ -3953,7 +3953,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.364249"
+    "last_modified": "2026-01-29T12:20:56.471350"
   },
   "RPT-0024": {
     "id": "RPT-0024",
@@ -4125,7 +4125,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.364348"
+    "last_modified": "2026-01-29T12:20:56.471350"
   },
   "RPT-0025": {
     "id": "RPT-0025",
@@ -4297,7 +4297,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.364536"
+    "last_modified": "2026-01-29T12:20:56.471350"
   },
   "RPT-0026": {
     "id": "RPT-0026",
@@ -4469,7 +4469,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.364663"
+    "last_modified": "2026-01-29T12:20:56.472345"
   },
   "RPT-0027": {
     "id": "RPT-0027",
@@ -4641,7 +4641,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.364663"
+    "last_modified": "2026-01-29T12:20:56.472345"
   },
   "RPT-0028": {
     "id": "RPT-0028",
@@ -4813,7 +4813,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.364663"
+    "last_modified": "2026-01-29T12:20:56.472345"
   },
   "RPT-0029": {
     "id": "RPT-0029",
@@ -4985,7 +4985,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.364663"
+    "last_modified": "2026-01-29T12:20:56.472345"
   },
   "RPT-0030": {
     "id": "RPT-0030",
@@ -5157,7 +5157,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.364663"
+    "last_modified": "2026-01-29T12:20:56.472345"
   },
   "RPT-0031": {
     "id": "RPT-0031",
@@ -5329,7 +5329,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.364663"
+    "last_modified": "2026-01-29T12:20:56.473344"
   },
   "RPT-0032": {
     "id": "RPT-0032",
@@ -5501,7 +5501,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.364663"
+    "last_modified": "2026-01-29T12:20:56.473344"
   },
   "RPT-0033": {
     "id": "RPT-0033",
@@ -5591,7 +5591,7 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "12": 0
@@ -5601,11 +5601,11 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "12": 0
       },
-      "operativas": 2,
+      "operativas": 4,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -5657,23 +5657,23 @@
       },
       "operativas": 0,
       "no_operativas": 0,
-      "observaciones_aduccion": "",
-      "sugerencias_aduccion": "",
+      "observaciones_aduccion": "NO TIENE DE 6\"",
+      "sugerencias_aduccion": "COLOCAR",
       "observaciones_succion": "",
       "sugerencias_succion": "",
       "observaciones_desague": "",
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
+      "diametro": "11",
       "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "altura_util": "4",
+      "altura_total": "4.2"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.365673"
+    "last_modified": "2026-01-29T12:20:56.473344"
   },
   "RPT-0034": {
     "id": "RPT-0034",
@@ -5694,18 +5694,18 @@
       "volumen": 350
     },
     "inspeccion": {
-      "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
       "escalera_interior": "unchecked",
-      "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
-      "cuba_exterior": "unchecked",
-      "loza_fondo": "unchecked",
-      "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
-      "ducto_ventilacion": "unchecked",
-      "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
@@ -5736,7 +5736,7 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "12": 0
@@ -5744,7 +5744,7 @@
       "impulsion": {
         "2": 0,
         "3": 0,
-        "4": 0,
+        "4": 2,
         "6": 0,
         "8": 0,
         "10": 0,
@@ -5754,7 +5754,7 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "12": 0
@@ -5763,7 +5763,7 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "12": 0
@@ -5773,11 +5773,11 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "12": 0
       },
-      "operativas": 0,
+      "operativas": 6,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -5804,7 +5804,7 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "14": 0
@@ -5812,7 +5812,7 @@
       "succion": {
         "2": 0,
         "3": 0,
-        "4": 0,
+        "4": 1,
         "6": 0,
         "8": 0,
         "10": 0,
@@ -5827,7 +5827,7 @@
         "10": 0,
         "14": 0
       },
-      "operativas": 0,
+      "operativas": 2,
       "no_operativas": 0,
       "observaciones_aduccion": "",
       "sugerencias_aduccion": "",
@@ -5837,15 +5837,15 @@
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
+      "diametro": "9.9",
       "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "altura_util": "4.8",
+      "altura_total": "5"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.365673"
+    "last_modified": "2026-01-29T12:20:56.473344"
   },
   "RPT-0035": {
     "id": "RPT-0035",
@@ -5866,18 +5866,18 @@
       "volumen": 1750
     },
     "inspeccion": {
-      "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
       "escalera_interior": "unchecked",
-      "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
-      "cuba_exterior": "unchecked",
-      "loza_fondo": "unchecked",
-      "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
-      "ducto_ventilacion": "unchecked",
-      "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
@@ -5911,7 +5911,7 @@
         "6": 0,
         "8": 0,
         "10": 0,
-        "12": 0
+        "12": 1
       },
       "impulsion": {
         "2": 0,
@@ -5929,7 +5929,7 @@
         "6": 0,
         "8": 0,
         "10": 0,
-        "12": 0
+        "12": 1
       },
       "bypass": {
         "2": 0,
@@ -5938,7 +5938,7 @@
         "6": 0,
         "8": 0,
         "10": 0,
-        "12": 0
+        "12": 1
       },
       "desague": {
         "2": 0,
@@ -5947,9 +5947,9 @@
         "6": 0,
         "8": 0,
         "10": 0,
-        "12": 0
+        "12": 1
       },
-      "operativas": 0,
+      "operativas": 4,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -5979,7 +5979,7 @@
         "6": 0,
         "8": 0,
         "10": 0,
-        "14": 0
+        "14": 1
       },
       "succion": {
         "2": 0,
@@ -5999,25 +5999,25 @@
         "10": 0,
         "14": 0
       },
-      "operativas": 0,
+      "operativas": 1,
       "no_operativas": 0,
       "observaciones_aduccion": "",
       "sugerencias_aduccion": "",
-      "observaciones_succion": "",
-      "sugerencias_succion": "",
+      "observaciones_succion": "NO TIENE DE 8\"",
+      "sugerencias_succion": "INSTALAR",
       "observaciones_desague": "",
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
+      "diametro": "16.8",
       "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "altura_util": "8",
+      "altura_total": "8.4"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.365673"
+    "last_modified": "2026-01-29T12:20:56.473344"
   },
   "RPT-0036": {
     "id": "RPT-0036",
@@ -6038,18 +6038,18 @@
       "volumen": 1200
     },
     "inspeccion": {
-      "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
-      "escalera_interior": "unchecked",
-      "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
-      "cuba_exterior": "unchecked",
-      "loza_fondo": "unchecked",
-      "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
-      "ducto_ventilacion": "unchecked",
-      "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked",
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
@@ -6083,13 +6083,13 @@
         "6": 0,
         "8": 0,
         "10": 0,
-        "12": 0
+        "12": 1
       },
       "impulsion": {
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 2,
         "8": 0,
         "10": 0,
         "12": 0
@@ -6101,7 +6101,7 @@
         "6": 0,
         "8": 0,
         "10": 0,
-        "12": 0
+        "12": 1
       },
       "bypass": {
         "2": 0,
@@ -6110,7 +6110,7 @@
         "6": 0,
         "8": 0,
         "10": 0,
-        "12": 0
+        "12": 1
       },
       "desague": {
         "2": 0,
@@ -6118,11 +6118,11 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 1,
         "12": 0
       },
       "operativas": 0,
-      "no_operativas": 0,
+      "no_operativas": 6,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
       "observaciones_impulsion": "",
@@ -6151,7 +6151,7 @@
         "6": 0,
         "8": 0,
         "10": 0,
-        "14": 0
+        "14": 1
       },
       "succion": {
         "2": 0,
@@ -6160,7 +6160,7 @@
         "6": 0,
         "8": 0,
         "10": 0,
-        "14": 0
+        "14": 1
       },
       "desague": {
         "2": 0,
@@ -6171,7 +6171,7 @@
         "10": 0,
         "14": 0
       },
-      "operativas": 0,
+      "operativas": 2,
       "no_operativas": 0,
       "observaciones_aduccion": "",
       "sugerencias_aduccion": "",
@@ -6181,15 +6181,15 @@
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
+      "diametro": "15",
       "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "altura_util": "6",
+      "altura_total": "6.4"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.365673"
+    "last_modified": "2026-01-29T12:20:56.473344"
   },
   "RPT-0037": {
     "id": "RPT-0037",
@@ -6210,18 +6210,18 @@
       "volumen": 100
     },
     "inspeccion": {
-      "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
-      "escalera_interior": "unchecked",
-      "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
-      "cuba_exterior": "unchecked",
-      "loza_fondo": "unchecked",
-      "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
-      "ducto_ventilacion": "unchecked",
-      "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked",
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
@@ -6251,7 +6251,7 @@
       "diametros": {
         "2": 0,
         "3": 0,
-        "4": 0,
+        "4": 1,
         "6": 0,
         "8": 0,
         "10": 0,
@@ -6269,7 +6269,7 @@
       "aduccion": {
         "2": 0,
         "3": 0,
-        "4": 0,
+        "4": 1,
         "6": 0,
         "8": 0,
         "10": 0,
@@ -6278,7 +6278,7 @@
       "bypass": {
         "2": 0,
         "3": 0,
-        "4": 0,
+        "4": 1,
         "6": 0,
         "8": 0,
         "10": 0,
@@ -6288,12 +6288,12 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "12": 0
       },
-      "operativas": 0,
+      "operativas": 4,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -6319,7 +6319,7 @@
       "aduccion": {
         "2": 0,
         "3": 0,
-        "4": 0,
+        "4": 1,
         "6": 0,
         "8": 0,
         "10": 0,
@@ -6343,7 +6343,7 @@
         "10": 0,
         "14": 0
       },
-      "operativas": 0,
+      "operativas": 1,
       "no_operativas": 0,
       "observaciones_aduccion": "",
       "sugerencias_aduccion": "",
@@ -6353,15 +6353,15 @@
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
-      "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "diametro": "5",
+      "diametro_interno": "5",
+      "altura_util": "4",
+      "altura_total": "4.5"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.365673"
+    "last_modified": "2026-01-29T12:20:56.473344"
   },
   "RPT-0038": {
     "id": "RPT-0038",
@@ -6382,18 +6382,18 @@
       "volumen": 300
     },
     "inspeccion": {
-      "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
-      "escalera_interior": "unchecked",
-      "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
-      "cuba_exterior": "unchecked",
-      "loza_fondo": "unchecked",
-      "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
-      "ducto_ventilacion": "unchecked",
-      "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked",
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
@@ -6424,7 +6424,7 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "12": 0
@@ -6432,7 +6432,7 @@
       "impulsion": {
         "2": 0,
         "3": 0,
-        "4": 0,
+        "4": 3,
         "6": 0,
         "8": 0,
         "10": 0,
@@ -6441,7 +6441,7 @@
       "aduccion": {
         "2": 0,
         "3": 0,
-        "4": 0,
+        "4": 1,
         "6": 0,
         "8": 0,
         "10": 0,
@@ -6450,7 +6450,7 @@
       "bypass": {
         "2": 0,
         "3": 0,
-        "4": 0,
+        "4": 1,
         "6": 0,
         "8": 0,
         "10": 0,
@@ -6461,11 +6461,11 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "12": 0
       },
-      "operativas": 0,
+      "operativas": 7,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -6517,23 +6517,23 @@
       },
       "operativas": 0,
       "no_operativas": 0,
-      "observaciones_aduccion": "",
-      "sugerencias_aduccion": "",
-      "observaciones_succion": "",
-      "sugerencias_succion": "",
+      "observaciones_aduccion": "NO TIENE DE 4\"",
+      "sugerencias_aduccion": "INSTALAR",
+      "observaciones_succion": "NO TIENE DE 8\"",
+      "sugerencias_succion": "INSTALAR",
       "observaciones_desague": "",
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
+      "diametro": "9.35",
       "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "altura_util": "4.3",
+      "altura_total": "4.9"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.365673"
+    "last_modified": "2026-01-29T12:20:56.473344"
   },
   "RPT-0039": {
     "id": "RPT-0039",
@@ -6554,18 +6554,18 @@
       "volumen": 200
     },
     "inspeccion": {
-      "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
       "escalera_interior": "unchecked",
-      "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
-      "cuba_exterior": "unchecked",
-      "loza_fondo": "unchecked",
-      "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
-      "ducto_ventilacion": "unchecked",
-      "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
@@ -6596,14 +6596,14 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "12": 0
       },
       "impulsion": {
         "2": 0,
-        "3": 0,
+        "3": 3,
         "4": 0,
         "6": 0,
         "8": 0,
@@ -6613,7 +6613,7 @@
       "aduccion": {
         "2": 0,
         "3": 0,
-        "4": 0,
+        "4": 1,
         "6": 0,
         "8": 0,
         "10": 0,
@@ -6622,7 +6622,7 @@
       "bypass": {
         "2": 0,
         "3": 0,
-        "4": 0,
+        "4": 1,
         "6": 0,
         "8": 0,
         "10": 0,
@@ -6632,12 +6632,12 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "12": 0
       },
-      "operativas": 0,
+      "operativas": 7,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -6689,23 +6689,23 @@
       },
       "operativas": 0,
       "no_operativas": 0,
-      "observaciones_aduccion": "",
-      "sugerencias_aduccion": "",
-      "observaciones_succion": "",
-      "sugerencias_succion": "",
+      "observaciones_aduccion": "NO TIENE DE 4\"",
+      "sugerencias_aduccion": "INSTALAR",
+      "observaciones_succion": "NO TIENE DE 6\"",
+      "sugerencias_succion": "INSTALAR",
       "observaciones_desague": "",
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
+      "diametro": "7.55",
       "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "altura_util": "4.4",
+      "altura_total": "4.9"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.365673"
+    "last_modified": "2026-01-29T12:20:56.473344"
   },
   "RPT-0040": {
     "id": "RPT-0040",
@@ -6726,18 +6726,18 @@
       "volumen": 200
     },
     "inspeccion": {
-      "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
-      "escalera_interior": "unchecked",
-      "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
-      "cuba_exterior": "unchecked",
-      "loza_fondo": "unchecked",
-      "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
-      "ducto_ventilacion": "unchecked",
-      "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked",
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
@@ -6767,7 +6767,7 @@
       "diametros": {
         "2": 0,
         "3": 0,
-        "4": 0,
+        "4": 1,
         "6": 0,
         "8": 0,
         "10": 0,
@@ -6775,7 +6775,7 @@
       },
       "impulsion": {
         "2": 0,
-        "3": 0,
+        "3": 3,
         "4": 0,
         "6": 0,
         "8": 0,
@@ -6785,7 +6785,7 @@
       "aduccion": {
         "2": 0,
         "3": 0,
-        "4": 0,
+        "4": 1,
         "6": 0,
         "8": 0,
         "10": 0,
@@ -6794,7 +6794,7 @@
       "bypass": {
         "2": 0,
         "3": 0,
-        "4": 0,
+        "4": 1,
         "6": 0,
         "8": 0,
         "10": 0,
@@ -6804,12 +6804,12 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "12": 0
       },
-      "operativas": 0,
+      "operativas": 7,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -6861,23 +6861,23 @@
       },
       "operativas": 0,
       "no_operativas": 0,
-      "observaciones_aduccion": "",
-      "sugerencias_aduccion": "",
-      "observaciones_succion": "",
-      "sugerencias_succion": "",
+      "observaciones_aduccion": "NO TIENE DE 4\"",
+      "sugerencias_aduccion": "INSTALAR",
+      "observaciones_succion": "NO TIENE DE 6\"",
+      "sugerencias_succion": "INSTALAR",
       "observaciones_desague": "",
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
+      "diametro": "7.55",
       "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "altura_util": "4.55",
+      "altura_total": "5"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.365673"
+    "last_modified": "2026-01-29T12:20:56.473344"
   },
   "RPT-0041": {
     "id": "RPT-0041",
@@ -6898,18 +6898,18 @@
       "volumen": 150
     },
     "inspeccion": {
-      "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
       "escalera_interior": "unchecked",
-      "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
-      "cuba_exterior": "unchecked",
-      "loza_fondo": "unchecked",
-      "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
-      "ducto_ventilacion": "unchecked",
-      "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
@@ -6938,7 +6938,7 @@
     "valvulas": {
       "diametros": {
         "2": 0,
-        "3": 0,
+        "3": 1,
         "4": 0,
         "6": 0,
         "8": 0,
@@ -6957,7 +6957,7 @@
       "aduccion": {
         "2": 0,
         "3": 0,
-        "4": 0,
+        "4": 1,
         "6": 0,
         "8": 0,
         "10": 0,
@@ -6965,7 +6965,7 @@
       },
       "bypass": {
         "2": 0,
-        "3": 0,
+        "3": 1,
         "4": 0,
         "6": 0,
         "8": 0,
@@ -6976,12 +6976,12 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "12": 0
       },
-      "operativas": 0,
+      "operativas": 4,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -7033,23 +7033,23 @@
       },
       "operativas": 0,
       "no_operativas": 0,
-      "observaciones_aduccion": "",
-      "sugerencias_aduccion": "",
+      "observaciones_aduccion": "NO TIENE DE 4\"",
+      "sugerencias_aduccion": "INSTALAR",
       "observaciones_succion": "",
       "sugerencias_succion": "",
       "observaciones_desague": "",
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
+      "diametro": "7",
       "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "altura_util": "4.1",
+      "altura_total": "4.5"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.365673"
+    "last_modified": "2026-01-29T12:20:56.473344"
   },
   "RPT-0042": {
     "id": "RPT-0042",
@@ -7070,18 +7070,18 @@
       "volumen": 100
     },
     "inspeccion": {
-      "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
       "escalera_interior": "unchecked",
-      "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
-      "cuba_exterior": "unchecked",
-      "loza_fondo": "unchecked",
-      "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
-      "ducto_ventilacion": "unchecked",
-      "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
@@ -7109,7 +7109,7 @@
     },
     "valvulas": {
       "diametros": {
-        "2": 0,
+        "2": 1,
         "3": 0,
         "4": 0,
         "6": 0,
@@ -7129,14 +7129,14 @@
       "aduccion": {
         "2": 0,
         "3": 0,
-        "4": 0,
+        "4": 1,
         "6": 0,
         "8": 0,
         "10": 0,
         "12": 0
       },
       "bypass": {
-        "2": 0,
+        "2": 1,
         "3": 0,
         "4": 0,
         "6": 0,
@@ -7148,12 +7148,12 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "12": 0
       },
-      "operativas": 0,
+      "operativas": 4,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -7205,23 +7205,23 @@
       },
       "operativas": 0,
       "no_operativas": 0,
-      "observaciones_aduccion": "",
-      "sugerencias_aduccion": "",
+      "observaciones_aduccion": "NO TIENE DE 4\"",
+      "sugerencias_aduccion": "INSTALAR",
       "observaciones_succion": "",
       "sugerencias_succion": "",
       "observaciones_desague": "",
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
+      "diametro": "5.8",
       "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "altura_util": "4.1",
+      "altura_total": "4.6"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.366676"
+    "last_modified": "2026-01-29T12:20:56.474353"
   },
   "RPT-0043": {
     "id": "RPT-0043",
@@ -7242,18 +7242,18 @@
       "volumen": 150
     },
     "inspeccion": {
-      "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
       "escalera_interior": "unchecked",
-      "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
-      "cuba_exterior": "unchecked",
-      "loza_fondo": "unchecked",
-      "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
-      "ducto_ventilacion": "unchecked",
-      "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "critico",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
@@ -7272,8 +7272,8 @@
       "sugerencias_loza_techo_int": "",
       "observaciones_loza_techo_ext": "",
       "sugerencias_loza_techo_ext": "",
-      "observaciones_ducto": "",
-      "sugerencias_ducto": "",
+      "observaciones_ducto": "TUBOS CORROIDOS",
+      "sugerencias_ducto": "CAMBIAR",
       "observaciones_cerco": "",
       "sugerencias_cerco": "",
       "observaciones_descarga": "",
@@ -7285,14 +7285,14 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "12": 0
       },
       "impulsion": {
         "2": 0,
         "3": 0,
-        "4": 0,
+        "4": 2,
         "6": 0,
         "8": 0,
         "10": 0,
@@ -7301,7 +7301,7 @@
       "aduccion": {
         "2": 0,
         "3": 0,
-        "4": 0,
+        "4": 1,
         "6": 0,
         "8": 0,
         "10": 0,
@@ -7310,7 +7310,7 @@
       "bypass": {
         "2": 0,
         "3": 0,
-        "4": 0,
+        "4": 1,
         "6": 0,
         "8": 0,
         "10": 0,
@@ -7321,11 +7321,11 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "12": 0
       },
-      "operativas": 0,
+      "operativas": 6,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -7352,7 +7352,7 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "14": 0
@@ -7361,7 +7361,7 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "14": 0
@@ -7375,7 +7375,7 @@
         "10": 0,
         "14": 0
       },
-      "operativas": 0,
+      "operativas": 2,
       "no_operativas": 0,
       "observaciones_aduccion": "",
       "sugerencias_aduccion": "",
@@ -7385,15 +7385,15 @@
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
+      "diametro": "5.5",
       "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "altura_util": "2.4",
+      "altura_total": "2.9"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.366676"
+    "last_modified": "2026-01-29T12:20:56.474353"
   },
   "RPT-0044": {
     "id": "RPT-0044",
@@ -7414,18 +7414,18 @@
       "volumen": 1100
     },
     "inspeccion": {
-      "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
-      "escalera_interior": "unchecked",
-      "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
-      "cuba_exterior": "unchecked",
-      "loza_fondo": "unchecked",
-      "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
-      "ducto_ventilacion": "unchecked",
-      "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked",
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
@@ -7458,7 +7458,7 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 1,
         "12": 0
       },
       "impulsion": {
@@ -7475,7 +7475,7 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "12": 0
       },
@@ -7484,7 +7484,7 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "12": 0
       },
@@ -7494,10 +7494,10 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 1,
         "12": 0
       },
-      "operativas": 0,
+      "operativas": 4,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -7525,7 +7525,7 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "14": 0
       },
@@ -7547,7 +7547,7 @@
         "10": 0,
         "14": 0
       },
-      "operativas": 0,
+      "operativas": 1,
       "no_operativas": 0,
       "observaciones_aduccion": "",
       "sugerencias_aduccion": "",
@@ -7557,15 +7557,15 @@
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
+      "diametro": "15.5",
       "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "altura_util": "5.65",
+      "altura_total": "6.3"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.366676"
+    "last_modified": "2026-01-29T12:20:56.474353"
   },
   "RPT-0045": {
     "id": "RPT-0045",
@@ -7586,18 +7586,18 @@
       "volumen": 400
     },
     "inspeccion": {
-      "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
-      "escalera_interior": "unchecked",
-      "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
-      "cuba_exterior": "unchecked",
-      "loza_fondo": "unchecked",
-      "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
-      "ducto_ventilacion": "unchecked",
-      "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked",
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
@@ -7628,7 +7628,7 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "12": 0
@@ -7646,7 +7646,7 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "12": 0
@@ -7655,7 +7655,7 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "12": 0
@@ -7665,11 +7665,11 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "12": 0
       },
-      "operativas": 0,
+      "operativas": 4,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -7696,7 +7696,7 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "14": 0
@@ -7719,7 +7719,7 @@
         "10": 0,
         "14": 0
       },
-      "operativas": 0,
+      "operativas": 1,
       "no_operativas": 0,
       "observaciones_aduccion": "",
       "sugerencias_aduccion": "",
@@ -7729,15 +7729,15 @@
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
+      "diametro": "11.98",
       "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "altura_util": "3.6",
+      "altura_total": "4.3"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.366676"
+    "last_modified": "2026-01-29T12:20:56.474353"
   },
   "RPT-0046": {
     "id": "RPT-0046",
@@ -7758,18 +7758,18 @@
       "volumen": 900
     },
     "inspeccion": {
-      "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
-      "escalera_interior": "unchecked",
-      "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
-      "cuba_exterior": "unchecked",
-      "loza_fondo": "unchecked",
-      "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
-      "ducto_ventilacion": "unchecked",
-      "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked",
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
@@ -7802,7 +7802,7 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 1,
         "12": 0
       },
       "impulsion": {
@@ -7819,7 +7819,7 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "12": 0
       },
@@ -7828,7 +7828,7 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "12": 0
       },
@@ -7838,10 +7838,10 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 1,
         "12": 0
       },
-      "operativas": 0,
+      "operativas": 4,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -7869,7 +7869,7 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "14": 0
       },
@@ -7891,7 +7891,7 @@
         "10": 0,
         "14": 0
       },
-      "operativas": 0,
+      "operativas": 1,
       "no_operativas": 0,
       "observaciones_aduccion": "",
       "sugerencias_aduccion": "",
@@ -7901,15 +7901,15 @@
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
+      "diametro": "15.2",
       "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "altura_util": "4.8",
+      "altura_total": "5.6"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.366676"
+    "last_modified": "2026-01-29T12:20:56.474353"
   },
   "RPT-0047": {
     "id": "RPT-0047",
@@ -8081,7 +8081,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.366676"
+    "last_modified": "2026-01-29T12:20:56.474353"
   },
   "RPT-0048": {
     "id": "RPT-0048",
@@ -8253,7 +8253,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.366676"
+    "last_modified": "2026-01-29T12:20:56.474353"
   },
   "RPT-0049": {
     "id": "RPT-0049",
@@ -8274,18 +8274,18 @@
       "volumen": 450
     },
     "inspeccion": {
-      "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
-      "escalera_interior": "unchecked",
-      "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
-      "cuba_exterior": "unchecked",
-      "loza_fondo": "unchecked",
-      "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
-      "ducto_ventilacion": "unchecked",
-      "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked",
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
@@ -8318,7 +8318,7 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 1,
         "12": 0
       },
       "impulsion": {
@@ -8326,7 +8326,7 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 2,
         "10": 0,
         "12": 0
       },
@@ -8335,7 +8335,7 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "12": 0
       },
@@ -8344,7 +8344,7 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "12": 0
       },
@@ -8354,10 +8354,10 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 1,
         "12": 0
       },
-      "operativas": 0,
+      "operativas": 6,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -8386,7 +8386,7 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 1,
         "14": 0
       },
       "succion": {
@@ -8395,7 +8395,7 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 1,
         "14": 0
       },
       "desague": {
@@ -8407,7 +8407,7 @@
         "10": 0,
         "14": 0
       },
-      "operativas": 0,
+      "operativas": 2,
       "no_operativas": 0,
       "observaciones_aduccion": "",
       "sugerencias_aduccion": "",
@@ -8417,15 +8417,15 @@
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
+      "diametro": "12.4",
       "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "altura_util": "3.4",
+      "altura_total": "3.5"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.366676"
+    "last_modified": "2026-01-29T12:20:56.475343"
   },
   "RPT-0050": {
     "id": "RPT-0050",
@@ -8446,20 +8446,20 @@
       "volumen": 50
     },
     "inspeccion": {
-      "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
+      "caja_registro": "critico",
+      "marco_tapa": "normal",
       "escalera_interior": "unchecked",
-      "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
-      "cuba_exterior": "unchecked",
-      "loza_fondo": "unchecked",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
       "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
-      "ducto_ventilacion": "unchecked",
-      "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked",
-      "observaciones_caja_registro": "",
-      "sugerencias_caja_registro": "",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal",
+      "observaciones_caja_registro": "SIN REJILLA",
+      "sugerencias_caja_registro": "INSTALAR",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
       "observaciones_escalera_int": "",
@@ -8486,7 +8486,7 @@
     "valvulas": {
       "diametros": {
         "2": 0,
-        "3": 0,
+        "3": 1,
         "4": 0,
         "6": 0,
         "8": 0,
@@ -8505,7 +8505,7 @@
       "aduccion": {
         "2": 0,
         "3": 0,
-        "4": 0,
+        "4": 1,
         "6": 0,
         "8": 0,
         "10": 0,
@@ -8513,7 +8513,7 @@
       },
       "bypass": {
         "2": 0,
-        "3": 0,
+        "3": 1,
         "4": 0,
         "6": 0,
         "8": 0,
@@ -8522,14 +8522,14 @@
       },
       "desague": {
         "2": 0,
-        "3": 0,
+        "3": 1,
         "4": 0,
         "6": 0,
         "8": 0,
         "10": 0,
         "12": 0
       },
-      "operativas": 0,
+      "operativas": 4,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -8565,7 +8565,7 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "14": 0
@@ -8579,25 +8579,25 @@
         "10": 0,
         "14": 0
       },
-      "operativas": 0,
+      "operativas": 1,
       "no_operativas": 0,
-      "observaciones_aduccion": "",
-      "sugerencias_aduccion": "",
+      "observaciones_aduccion": "NO TIENE DE 4\"",
+      "sugerencias_aduccion": "INSTALAR",
       "observaciones_succion": "",
       "sugerencias_succion": "",
       "observaciones_desague": "",
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
+      "diametro": "5.6",
       "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "altura_util": "2.4",
+      "altura_total": "2.85"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.366676"
+    "last_modified": "2026-01-29T12:20:56.475343"
   },
   "RPT-0051": {
     "id": "RPT-0051",
@@ -8618,18 +8618,18 @@
       "volumen": 850
     },
     "inspeccion": {
-      "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
       "escalera_interior": "unchecked",
-      "escalera_exterior": "unchecked",
+      "escalera_exterior": "normal",
       "cuba_interior": "unchecked",
-      "cuba_exterior": "unchecked",
-      "loza_fondo": "unchecked",
+      "cuba_exterior": "normal",
+      "loza_fondo": "critico",
       "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
-      "ducto_ventilacion": "unchecked",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "critico",
       "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked",
+      "descarga": "normal",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
@@ -8642,14 +8642,14 @@
       "sugerencias_cuba_int": "",
       "observaciones_cuba_ext": "",
       "sugerencias_cuba_ext": "",
-      "observaciones_loza_fondo": "",
-      "sugerencias_loza_fondo": "",
+      "observaciones_loza_fondo": "CON DEGRADACION",
+      "sugerencias_loza_fondo": "EVALUAR",
       "observaciones_loza_techo_int": "",
       "sugerencias_loza_techo_int": "",
       "observaciones_loza_techo_ext": "",
       "sugerencias_loza_techo_ext": "",
-      "observaciones_ducto": "",
-      "sugerencias_ducto": "",
+      "observaciones_ducto": "SIN TUBOS",
+      "sugerencias_ducto": "INSTALAR",
       "observaciones_cerco": "",
       "sugerencias_cerco": "",
       "observaciones_descarga": "",
@@ -8663,7 +8663,7 @@
         "6": 0,
         "8": 0,
         "10": 0,
-        "12": 0
+        "12": 1
       },
       "impulsion": {
         "2": 0,
@@ -8671,7 +8671,7 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 2,
         "12": 0
       },
       "aduccion": {
@@ -8680,7 +8680,7 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 1,
         "12": 0
       },
       "bypass": {
@@ -8689,7 +8689,7 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 1,
         "12": 0
       },
       "desague": {
@@ -8698,10 +8698,10 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 1,
         "12": 0
       },
-      "operativas": 0,
+      "operativas": 6,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -8753,23 +8753,23 @@
       },
       "operativas": 0,
       "no_operativas": 0,
-      "observaciones_aduccion": "",
-      "sugerencias_aduccion": "",
-      "observaciones_succion": "",
-      "sugerencias_succion": "",
+      "observaciones_aduccion": "NO TIENE DE 10\"",
+      "sugerencias_aduccion": "INS0",
+      "observaciones_succion": "NO TIENE DE 12\"",
+      "sugerencias_succion": "INSTALAR",
       "observaciones_desague": "",
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
+      "diametro": "15.11",
       "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "altura_util": "5.11",
+      "altura_total": "5.3"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.366676"
+    "last_modified": "2026-01-29T12:20:56.475343"
   },
   "RPT-0052": {
     "id": "RPT-0052",
@@ -8790,18 +8790,18 @@
       "volumen": 370
     },
     "inspeccion": {
-      "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
       "escalera_interior": "unchecked",
-      "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
-      "cuba_exterior": "unchecked",
-      "loza_fondo": "unchecked",
-      "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
-      "ducto_ventilacion": "unchecked",
-      "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
@@ -8834,7 +8834,7 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 1,
         "12": 0
       },
       "impulsion": {
@@ -8842,7 +8842,7 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 2,
         "10": 0,
         "12": 0
       },
@@ -8851,7 +8851,7 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "12": 0
       },
@@ -8860,7 +8860,7 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "12": 0
       },
@@ -8870,10 +8870,10 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 1,
         "12": 0
       },
-      "operativas": 0,
+      "operativas": 6,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -8900,7 +8900,7 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "14": 0
@@ -8909,7 +8909,7 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "14": 0
@@ -8923,7 +8923,7 @@
         "10": 0,
         "14": 0
       },
-      "operativas": 0,
+      "operativas": 2,
       "no_operativas": 0,
       "observaciones_aduccion": "",
       "sugerencias_aduccion": "",
@@ -8933,15 +8933,15 @@
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
+      "diametro": "9.9",
       "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "altura_util": "4.7",
+      "altura_total": "5"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.366676"
+    "last_modified": "2026-01-29T12:20:56.475343"
   },
   "RPT-0053": {
     "id": "RPT-0053",
@@ -8962,18 +8962,18 @@
       "volumen": 300
     },
     "inspeccion": {
-      "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
-      "escalera_interior": "unchecked",
-      "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
-      "cuba_exterior": "unchecked",
-      "loza_fondo": "unchecked",
-      "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
-      "ducto_ventilacion": "unchecked",
-      "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked",
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
@@ -9006,7 +9006,7 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 1,
         "12": 0
       },
       "impulsion": {
@@ -9015,14 +9015,14 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 2,
         "12": 0
       },
       "aduccion": {
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "12": 0
@@ -9031,7 +9031,7 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "12": 0
@@ -9041,11 +9041,11 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "12": 0
       },
-      "operativas": 0,
+      "operativas": 6,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -9083,7 +9083,7 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 1,
         "14": 0
       },
       "desague": {
@@ -9095,25 +9095,25 @@
         "10": 0,
         "14": 0
       },
-      "operativas": 0,
+      "operativas": 1,
       "no_operativas": 0,
-      "observaciones_aduccion": "",
-      "sugerencias_aduccion": "",
+      "observaciones_aduccion": "NO TIENE DE 6\"",
+      "sugerencias_aduccion": "INSTALAR",
       "observaciones_succion": "",
       "sugerencias_succion": "",
       "observaciones_desague": "",
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
+      "diametro": "7.95",
       "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "altura_util": "5.5",
+      "altura_total": "6.5"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.367676"
+    "last_modified": "2026-01-29T12:20:56.475343"
   },
   "RPT-0054": {
     "id": "RPT-0054",
@@ -9134,18 +9134,18 @@
       "volumen": 600
     },
     "inspeccion": {
-      "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
       "escalera_interior": "unchecked",
-      "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
-      "cuba_exterior": "unchecked",
-      "loza_fondo": "unchecked",
-      "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
-      "ducto_ventilacion": "unchecked",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
       "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked",
+      "descarga": "normal",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
@@ -9177,7 +9177,7 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "12": 0
       },
@@ -9185,7 +9185,7 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 2,
         "8": 0,
         "10": 0,
         "12": 0
@@ -9194,7 +9194,7 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "12": 0
@@ -9203,7 +9203,7 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "12": 0
@@ -9213,11 +9213,11 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "12": 0
       },
-      "operativas": 0,
+      "operativas": 6,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -9269,23 +9269,23 @@
       },
       "operativas": 0,
       "no_operativas": 0,
-      "observaciones_aduccion": "",
-      "sugerencias_aduccion": "",
-      "observaciones_succion": "",
-      "sugerencias_succion": "",
+      "observaciones_aduccion": "NO TIENE DE 6\"",
+      "sugerencias_aduccion": "INSTALAR",
+      "observaciones_succion": "NO TIENE 2 DE 10\"",
+      "sugerencias_succion": "INSTALAR",
       "observaciones_desague": "",
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
+      "diametro": "12.65",
       "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "altura_util": "4.45",
+      "altura_total": "4.45"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.367676"
+    "last_modified": "2026-01-29T12:20:56.475343"
   },
   "RPT-0055": {
     "id": "RPT-0055",
@@ -9306,18 +9306,18 @@
       "volumen": 500
     },
     "inspeccion": {
-      "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
-      "escalera_interior": "unchecked",
-      "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
-      "cuba_exterior": "unchecked",
-      "loza_fondo": "unchecked",
-      "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
       "ducto_ventilacion": "unchecked",
-      "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
@@ -9336,8 +9336,8 @@
       "sugerencias_loza_techo_int": "",
       "observaciones_loza_techo_ext": "",
       "sugerencias_loza_techo_ext": "",
-      "observaciones_ducto": "",
-      "sugerencias_ducto": "",
+      "observaciones_ducto": "NO TIENE",
+      "sugerencias_ducto": "INSTALAR",
       "observaciones_cerco": "",
       "sugerencias_cerco": "",
       "observaciones_descarga": "",
@@ -9350,15 +9350,15 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
-        "12": 0
+        "10": 1,
+        "12": 1
       },
       "impulsion": {
         "2": 0,
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 4,
         "10": 0,
         "12": 0
       },
@@ -9387,9 +9387,9 @@
         "6": 0,
         "8": 0,
         "10": 0,
-        "12": 0
+        "12": 1
       },
-      "operativas": 0,
+      "operativas": 7,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -9428,7 +9428,7 @@
         "6": 0,
         "8": 0,
         "10": 0,
-        "14": 0
+        "14": 1
       },
       "desague": {
         "2": 0,
@@ -9439,7 +9439,7 @@
         "10": 0,
         "14": 0
       },
-      "operativas": 0,
+      "operativas": 1,
       "no_operativas": 0,
       "observaciones_aduccion": "",
       "sugerencias_aduccion": "",
@@ -9449,15 +9449,15 @@
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
+      "diametro": "9.85",
       "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "altura_util": "6.35",
+      "altura_total": "6.65"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.367676"
+    "last_modified": "2026-01-29T12:20:56.475343"
   },
   "RPT-0056": {
     "id": "RPT-0056",
@@ -9478,18 +9478,18 @@
       "volumen": 615
     },
     "inspeccion": {
-      "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
-      "escalera_interior": "unchecked",
-      "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
-      "cuba_exterior": "unchecked",
-      "loza_fondo": "unchecked",
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
       "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
-      "ducto_ventilacion": "unchecked",
-      "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "critico",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
@@ -9508,8 +9508,8 @@
       "sugerencias_loza_techo_int": "",
       "observaciones_loza_techo_ext": "",
       "sugerencias_loza_techo_ext": "",
-      "observaciones_ducto": "",
-      "sugerencias_ducto": "",
+      "observaciones_ducto": "CORROIDO",
+      "sugerencias_ducto": "CAMBIAR TUBOS",
       "observaciones_cerco": "",
       "sugerencias_cerco": "",
       "observaciones_descarga": "",
@@ -9523,14 +9523,14 @@
         "6": 0,
         "8": 0,
         "10": 0,
-        "12": 0
+        "12": 1
       },
       "impulsion": {
         "2": 0,
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 6,
         "10": 0,
         "12": 0
       },
@@ -9541,7 +9541,7 @@
         "6": 0,
         "8": 0,
         "10": 0,
-        "12": 0
+        "12": 1
       },
       "bypass": {
         "2": 0,
@@ -9550,7 +9550,7 @@
         "6": 0,
         "8": 0,
         "10": 0,
-        "12": 0
+        "12": 1
       },
       "desague": {
         "2": 0,
@@ -9559,9 +9559,9 @@
         "6": 0,
         "8": 0,
         "10": 0,
-        "12": 0
+        "12": 1
       },
-      "operativas": 0,
+      "operativas": 10,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -9591,7 +9591,7 @@
         "6": 0,
         "8": 0,
         "10": 0,
-        "14": 0
+        "14": 1
       },
       "succion": {
         "2": 0,
@@ -9599,7 +9599,7 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 6,
         "14": 0
       },
       "desague": {
@@ -9611,7 +9611,7 @@
         "10": 0,
         "14": 0
       },
-      "operativas": 0,
+      "operativas": 7,
       "no_operativas": 0,
       "observaciones_aduccion": "",
       "sugerencias_aduccion": "",
@@ -9621,15 +9621,15 @@
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
+      "diametro": "14",
       "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "altura_util": "3.95",
+      "altura_total": "4.25"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.367676"
+    "last_modified": "2026-01-29T12:20:56.475343"
   },
   "RPT-0057": {
     "id": "RPT-0057",
@@ -9650,18 +9650,18 @@
       "volumen": 600
     },
     "inspeccion": {
-      "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
       "escalera_interior": "unchecked",
-      "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
-      "cuba_exterior": "unchecked",
-      "loza_fondo": "unchecked",
-      "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
-      "ducto_ventilacion": "unchecked",
-      "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked",
+      "escalera_exterior": "normal",
+      "cuba_interior": "critico",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
@@ -9692,7 +9692,7 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "12": 0
@@ -9711,7 +9711,7 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "12": 0
       },
@@ -9719,7 +9719,7 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "12": 0
@@ -9729,11 +9729,11 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "12": 0
       },
-      "operativas": 0,
+      "operativas": 4,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -9785,23 +9785,23 @@
       },
       "operativas": 0,
       "no_operativas": 0,
-      "observaciones_aduccion": "",
-      "sugerencias_aduccion": "",
+      "observaciones_aduccion": "NO TIENE DE 8\"",
+      "sugerencias_aduccion": "INSTALAR",
       "observaciones_succion": "",
       "sugerencias_succion": "",
       "observaciones_desague": "",
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
+      "diametro": "11.9",
       "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "altura_util": "4.4",
+      "altura_total": "4.5"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.367676"
+    "last_modified": "2026-01-29T12:20:56.475343"
   },
   "RPT-0058": {
     "id": "RPT-0058",
@@ -9822,18 +9822,18 @@
       "volumen": 600
     },
     "inspeccion": {
-      "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
-      "escalera_interior": "unchecked",
-      "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
-      "cuba_exterior": "unchecked",
-      "loza_fondo": "unchecked",
-      "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
-      "ducto_ventilacion": "unchecked",
-      "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked",
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
@@ -9866,11 +9866,11 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 1,
         "12": 0
       },
       "impulsion": {
-        "2": 0,
+        "2": 2,
         "3": 0,
         "4": 0,
         "6": 0,
@@ -9883,7 +9883,7 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "12": 0
       },
@@ -9892,7 +9892,7 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "12": 0
       },
@@ -9901,11 +9901,11 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "12": 0
       },
-      "operativas": 0,
+      "operativas": 6,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -9933,7 +9933,7 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "14": 0
       },
@@ -9955,25 +9955,25 @@
         "10": 0,
         "14": 0
       },
-      "operativas": 0,
+      "operativas": 1,
       "no_operativas": 0,
       "observaciones_aduccion": "",
       "sugerencias_aduccion": "",
-      "observaciones_succion": "",
-      "sugerencias_succion": "",
+      "observaciones_succion": "NO TIENE",
+      "sugerencias_succion": "INSTALAR",
       "observaciones_desague": "",
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
+      "diametro": "7.95",
       "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "altura_util": "6",
+      "altura_total": "6.4"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.367676"
+    "last_modified": "2026-01-29T12:20:56.475343"
   },
   "RPT-0059": {
     "id": "RPT-0059",
@@ -9994,18 +9994,18 @@
       "volumen": 600
     },
     "inspeccion": {
-      "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
       "escalera_interior": "unchecked",
-      "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
-      "cuba_exterior": "unchecked",
-      "loza_fondo": "unchecked",
-      "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
-      "ducto_ventilacion": "unchecked",
-      "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
@@ -10036,7 +10036,7 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "12": 0
@@ -10045,7 +10045,7 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 2,
         "8": 0,
         "10": 0,
         "12": 0
@@ -10054,7 +10054,7 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "12": 0
@@ -10063,7 +10063,7 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "12": 0
@@ -10073,11 +10073,11 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "12": 0
       },
-      "operativas": 0,
+      "operativas": 6,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -10104,7 +10104,7 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "14": 0
@@ -10113,7 +10113,7 @@
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 1,
         "8": 0,
         "10": 0,
         "14": 0
@@ -10127,7 +10127,7 @@
         "10": 0,
         "14": 0
       },
-      "operativas": 0,
+      "operativas": 2,
       "no_operativas": 0,
       "observaciones_aduccion": "",
       "sugerencias_aduccion": "",
@@ -10137,15 +10137,15 @@
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
+      "diametro": "7.91",
       "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "altura_util": "4",
+      "altura_total": "4.4"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.367676"
+    "last_modified": "2026-01-29T12:20:56.476342"
   },
   "RPT-0060": {
     "id": "RPT-0060",
@@ -10166,18 +10166,18 @@
       "volumen": 700
     },
     "inspeccion": {
-      "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
       "escalera_interior": "unchecked",
-      "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
-      "cuba_exterior": "unchecked",
-      "loza_fondo": "unchecked",
-      "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
-      "ducto_ventilacion": "unchecked",
-      "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
@@ -10211,13 +10211,13 @@
         "6": 0,
         "8": 0,
         "10": 0,
-        "12": 0
+        "12": 1
       },
       "impulsion": {
         "2": 0,
         "3": 0,
         "4": 0,
-        "6": 0,
+        "6": 2,
         "8": 0,
         "10": 0,
         "12": 0
@@ -10228,7 +10228,7 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 1,
         "12": 0
       },
       "bypass": {
@@ -10237,7 +10237,7 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 1,
         "12": 0
       },
       "desague": {
@@ -10247,9 +10247,9 @@
         "6": 0,
         "8": 0,
         "10": 0,
-        "12": 0
+        "12": 1
       },
-      "operativas": 0,
+      "operativas": 6,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -10278,7 +10278,7 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 1,
         "14": 0
       },
       "succion": {
@@ -10287,7 +10287,7 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 1,
         "14": 0
       },
       "desague": {
@@ -10299,25 +10299,25 @@
         "10": 0,
         "14": 0
       },
-      "operativas": 0,
+      "operativas": 2,
       "no_operativas": 0,
       "observaciones_aduccion": "",
       "sugerencias_aduccion": "",
-      "observaciones_succion": "",
-      "sugerencias_succion": "",
+      "observaciones_succion": "LE FALTA UNA DE 6\"",
+      "sugerencias_succion": "INSTALAR",
       "observaciones_desague": "",
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
+      "diametro": "12.75",
       "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "altura_util": "5.55",
+      "altura_total": "6.1"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.367676"
+    "last_modified": "2026-01-29T12:20:56.476342"
   },
   "RPT-0061": {
     "id": "RPT-0061",
@@ -10338,18 +10338,18 @@
       "volumen": 1000
     },
     "inspeccion": {
-      "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
       "escalera_interior": "unchecked",
-      "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
-      "cuba_exterior": "unchecked",
-      "loza_fondo": "unchecked",
-      "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
-      "ducto_ventilacion": "unchecked",
-      "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
+      "loza_techo_interior": "normal",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "normal",
+      "cerco_perimetrico": "normal",
+      "descarga": "normal",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
@@ -10382,7 +10382,7 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 1,
         "12": 0
       },
       "impulsion": {
@@ -10400,7 +10400,7 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 1,
         "12": 0
       },
       "bypass": {
@@ -10409,7 +10409,7 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 1,
         "12": 0
       },
       "desague": {
@@ -10418,10 +10418,10 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 1,
         "12": 0
       },
-      "operativas": 0,
+      "operativas": 4,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -10450,7 +10450,7 @@
         "4": 0,
         "6": 0,
         "8": 0,
-        "10": 0,
+        "10": 1,
         "14": 0
       },
       "succion": {
@@ -10471,7 +10471,7 @@
         "10": 0,
         "14": 0
       },
-      "operativas": 0,
+      "operativas": 1,
       "no_operativas": 0,
       "observaciones_aduccion": "",
       "sugerencias_aduccion": "",
@@ -10481,15 +10481,15 @@
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
+      "diametro": "11.4",
       "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "altura_util": "4",
+      "altura_total": "3.3"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.367676"
+    "last_modified": "2026-01-29T12:20:56.476342"
   },
   "RPT-0062": {
     "id": "RPT-0062",
@@ -10510,18 +10510,18 @@
       "volumen": 650
     },
     "inspeccion": {
-      "caja_registro": "unchecked",
-      "marco_tapa": "unchecked",
-      "escalera_interior": "unchecked",
-      "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
-      "cuba_exterior": "unchecked",
-      "loza_fondo": "unchecked",
+      "caja_registro": "normal",
+      "marco_tapa": "normal",
+      "escalera_interior": "normal",
+      "escalera_exterior": "normal",
+      "cuba_interior": "normal",
+      "cuba_exterior": "normal",
+      "loza_fondo": "normal",
       "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
-      "ducto_ventilacion": "unchecked",
-      "cerco_perimetrico": "unchecked",
-      "descarga": "unchecked",
+      "loza_techo_exterior": "normal",
+      "ducto_ventilacion": "critico",
+      "cerco_perimetrico": "normal",
+      "descarga": "critico",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
@@ -10540,12 +10540,12 @@
       "sugerencias_loza_techo_int": "",
       "observaciones_loza_techo_ext": "",
       "sugerencias_loza_techo_ext": "",
-      "observaciones_ducto": "",
-      "sugerencias_ducto": "",
+      "observaciones_ducto": "SIN TUBOS",
+      "sugerencias_ducto": "EVALUAR",
       "observaciones_cerco": "",
       "sugerencias_cerco": "",
-      "observaciones_descarga": "",
-      "sugerencias_descarga": ""
+      "observaciones_descarga": "INOPERATIVA",
+      "sugerencias_descarga": "MANTENIMIENTO"
     },
     "valvulas": {
       "diametros": {
@@ -10553,13 +10553,13 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "12": 0
       },
       "impulsion": {
         "2": 0,
-        "3": 0,
+        "3": 2,
         "4": 0,
         "6": 0,
         "8": 0,
@@ -10571,7 +10571,7 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "12": 0
       },
@@ -10580,7 +10580,7 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "12": 0
       },
@@ -10589,11 +10589,11 @@
         "3": 0,
         "4": 0,
         "6": 0,
-        "8": 0,
+        "8": 1,
         "10": 0,
         "12": 0
       },
-      "operativas": 0,
+      "operativas": 6,
       "no_operativas": 0,
       "observaciones_conduccion": "",
       "sugerencias_conduccion": "",
@@ -10645,22 +10645,22 @@
       },
       "operativas": 0,
       "no_operativas": 0,
-      "observaciones_aduccion": "",
-      "sugerencias_aduccion": "",
-      "observaciones_succion": "",
-      "sugerencias_succion": "",
+      "observaciones_aduccion": "NO TIENE DE 8\"",
+      "sugerencias_aduccion": "INSTALAR",
+      "observaciones_succion": "NO TIENE DE 4\"",
+      "sugerencias_succion": "INSTALAR",
       "observaciones_desague": "",
       "sugerencias_desague": ""
     },
     "medidas": {
-      "diametro": "",
+      "diametro": "14.9",
       "diametro_interno": "",
-      "altura_util": "",
-      "altura_total": ""
+      "altura_util": "3.8",
+      "altura_total": "4"
     },
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-28T14:43:13.367676"
+    "last_modified": "2026-01-29T12:20:56.476342"
   }
 }
