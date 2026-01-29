@@ -1,11 +1,13 @@
 """
 Endpoints API REST para Informes Técnicos
 """
-from fastapi import APIRouter, UploadFile, File, HTTPException
-from fastapi.responses import Response
+from fastapi import APIRouter, UploadFile, File, HTTPException, Form, BackgroundTasks
+from fastapi.responses import Response, FileResponse
 from typing import Optional, List, Dict, Any
 import io
 import csv
+import os
+import json
 from datetime import datetime
 
 # Para XLSX
@@ -963,6 +965,125 @@ async def import_csv(file: UploadFile = File(...)):
     return await import_file(file=file)
 
 
+@router.post("/generate-consolidated-pdf")
+async def generate_consolidated_pdf(
+    background_tasks: BackgroundTasks,
+    logoLeft: Optional[UploadFile] = File(None),
+    logoRight: Optional[UploadFile] = File(None),
+    report_ids: Optional[str] = Form(None),  # JSON array of IDs or None for all
+):
+    """
+    Genera un PDF consolidado con todos los informes técnicos.
+    Si report_ids es None, incluye todos los informes.
+    """
+    import tempfile
+    import base64
+    from jinja2 import Environment, FileSystemLoader
+
+    try:
+        # Obtener reportes
+        all_reports = db.get_all_reports()
+
+        if not all_reports:
+            raise HTTPException(status_code=400, detail="No hay informes para exportar")
+
+        # Filtrar por IDs si se especificaron
+        if report_ids:
+            try:
+                ids_list = json.loads(report_ids)
+                all_reports = [r for r in all_reports if r.id in ids_list]
+            except:
+                pass  # Usar todos si hay error en el parsing
+
+        print(f"[PDF Consolidado] Generando PDF con {len(all_reports)} informes...")
+
+        # Procesar logos
+        async def process_logo(logo_file):
+            if not logo_file:
+                return None
+            content = await logo_file.read()
+            encoded = base64.b64encode(content).decode("utf-8")
+            mime = "image/png" if logo_file.filename.lower().endswith(".png") else "image/jpeg"
+            return f"data:{mime};base64,{encoded}"
+
+        logo_left_b64 = await process_logo(logoLeft)
+        logo_right_b64 = await process_logo(logoRight)
+
+        # Cargar template
+        templates_dir = os.path.join(os.path.dirname(__file__), "templates")
+        env = Environment(loader=FileSystemLoader(templates_dir))
+        template = env.get_template("informe_tecnico.html")
+
+        # Generar HTML para cada reporte
+        from weasyprint import HTML
+        from pypdf import PdfWriter, PdfReader
+        import io
+
+        pdf_writer = PdfWriter()
+
+        for idx, report in enumerate(all_reports):
+            try:
+                report_dict = report.model_dump()
+
+                # Renderizar HTML
+                html_content = template.render(
+                    report=report_dict,
+                    logo_left=logo_left_b64,
+                    logo_right=logo_right_b64
+                )
+
+                # Generar PDF en memoria
+                pdf_bytes = HTML(
+                    string=html_content,
+                    base_url=templates_dir
+                ).write_pdf()
+
+                # Agregar páginas al writer
+                reader = PdfReader(io.BytesIO(pdf_bytes))
+                for page in reader.pages:
+                    pdf_writer.add_page(page)
+
+                if (idx + 1) % 10 == 0:
+                    print(f"[PDF Consolidado] Procesados {idx + 1}/{len(all_reports)}")
+
+            except Exception as e:
+                print(f"[PDF Consolidado] Error en reporte {report.id}: {e}")
+                continue
+
+        # Escribir PDF final
+        output = io.BytesIO()
+        pdf_writer.write(output)
+        output.seek(0)
+
+        print(f"[PDF Consolidado] Completado! {len(all_reports)} informes generados")
+
+        # Crear archivo temporal para streaming
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+        temp_file.write(output.getvalue())
+        temp_file.close()
+
+        # Cleanup task
+        def cleanup_file(path: str):
+            try:
+                if os.path.exists(path):
+                    os.remove(path)
+            except Exception as e:
+                print(f"Error removing temp file: {e}")
+
+        background_tasks.add_task(cleanup_file, temp_file.name)
+
+        return FileResponse(
+            temp_file.name,
+            media_type="application/pdf",
+            filename=f"informes_tecnicos_consolidado_{len(all_reports)}.pdf"
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error generando PDF consolidado: {str(e)}")
 
 
 @router.get("/autocomplete/cs")

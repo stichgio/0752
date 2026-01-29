@@ -20,7 +20,7 @@
     "inspeccion": {
       "caja_registro": "critico",
       "marco_tapa": "normal",
-      "escalera_interior": "unchecked",
+      "escalera_interior": "critico",
       "escalera_exterior": "normal",
       "cuba_interior": "normal",
       "cuba_exterior": "normal",
@@ -34,8 +34,8 @@
       "sugerencias_caja_registro": "COLOCAR",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "CORROIDO",
+      "sugerencias_escalera_int": "CAMBIAR ESCALERA",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
       "observaciones_cuba_int": "",
@@ -50,8 +50,8 @@
       "sugerencias_loza_techo_ext": "",
       "observaciones_ducto": "",
       "sugerencias_ducto": "",
-      "observaciones_cerco": "",
-      "sugerencias_cerco": "",
+      "observaciones_cerco": "NO TIENE",
+      "sugerencias_cerco": "CONSTRUIR",
       "observaciones_descarga": "",
       "sugerencias_descarga": ""
     },
@@ -169,7 +169,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.762558"
+    "last_modified": "2026-01-29T13:22:38.668161"
   },
   "RPT-0002": {
     "id": "RPT-0002",
@@ -192,7 +192,7 @@
     "inspeccion": {
       "caja_registro": "normal",
       "marco_tapa": "normal",
-      "escalera_interior": "unchecked",
+      "escalera_interior": "critico",
       "escalera_exterior": "normal",
       "cuba_interior": "normal",
       "cuba_exterior": "normal",
@@ -206,8 +206,8 @@
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "FALTAN 3 ESCALONES",
+      "sugerencias_escalera_int": "CAMBIAR ESCALERA",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
       "observaciones_cuba_int": "",
@@ -222,8 +222,8 @@
       "sugerencias_loza_techo_ext": "",
       "observaciones_ducto": "",
       "sugerencias_ducto": "",
-      "observaciones_cerco": "",
-      "sugerencias_cerco": "",
+      "observaciones_cerco": "NO TIENE",
+      "sugerencias_cerco": "CONSTRUIR",
       "observaciones_descarga": "",
       "sugerencias_descarga": ""
     },
@@ -341,7 +341,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.762558"
+    "last_modified": "2026-01-29T13:22:38.668161"
   },
   "RPT-0003": {
     "id": "RPT-0003",
@@ -366,7 +366,7 @@
       "marco_tapa": "normal",
       "escalera_interior": "normal",
       "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
+      "cuba_interior": "critico",
       "cuba_exterior": "normal",
       "loza_fondo": "normal",
       "loza_techo_interior": "normal",
@@ -380,10 +380,10 @@
       "sugerencias_marco_tapa": "",
       "observaciones_escalera_int": "",
       "sugerencias_escalera_int": "",
-      "observaciones_escalera_ext": "",
-      "sugerencias_escalera_ext": "",
-      "observaciones_cuba_int": "",
-      "sugerencias_cuba_int": "",
+      "observaciones_escalera_ext": "NO TIENE",
+      "sugerencias_escalera_ext": "INSTALAR",
+      "observaciones_cuba_int": "CON DEGRADACION",
+      "sugerencias_cuba_int": "EVALUAR",
       "observaciones_cuba_ext": "",
       "sugerencias_cuba_ext": "",
       "observaciones_loza_fondo": "",
@@ -394,8 +394,8 @@
       "sugerencias_loza_techo_ext": "",
       "observaciones_ducto": "SIN TUBOS",
       "sugerencias_ducto": "INSTALAR",
-      "observaciones_cerco": "",
-      "sugerencias_cerco": "",
+      "observaciones_cerco": "NO TIENE",
+      "sugerencias_cerco": "CONSTRUIR",
       "observaciones_descarga": "",
       "sugerencias_descarga": ""
     },
@@ -513,7 +513,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.762558"
+    "last_modified": "2026-01-29T13:22:38.669160"
   },
   "RPT-0004": {
     "id": "RPT-0004",
@@ -538,10 +538,10 @@
       "marco_tapa": "normal",
       "escalera_interior": "unchecked",
       "escalera_exterior": "normal",
-      "cuba_interior": "unchecked",
+      "cuba_interior": "critico",
       "cuba_exterior": "normal",
       "loza_fondo": "normal",
-      "loza_techo_interior": "unchecked",
+      "loza_techo_interior": "critico",
       "loza_techo_exterior": "normal",
       "ducto_ventilacion": "normal",
       "cerco_perimetrico": "unchecked",
@@ -550,24 +550,24 @@
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "NO TIENE",
+      "sugerencias_escalera_int": "INSTALAR",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
-      "observaciones_cuba_int": "",
-      "sugerencias_cuba_int": "",
+      "observaciones_cuba_int": "CON DEGRADACION",
+      "sugerencias_cuba_int": "EVALUAR",
       "observaciones_cuba_ext": "",
       "sugerencias_cuba_ext": "",
       "observaciones_loza_fondo": "",
       "sugerencias_loza_fondo": "",
-      "observaciones_loza_techo_int": "",
-      "sugerencias_loza_techo_int": "",
+      "observaciones_loza_techo_int": "CON DEGRADACION",
+      "sugerencias_loza_techo_int": "EVALUAR",
       "observaciones_loza_techo_ext": "",
       "sugerencias_loza_techo_ext": "",
       "observaciones_ducto": "",
       "sugerencias_ducto": "",
-      "observaciones_cerco": "",
-      "sugerencias_cerco": "",
+      "observaciones_cerco": "NO TIENE",
+      "sugerencias_cerco": "CONSTRUIR",
       "observaciones_descarga": "",
       "sugerencias_descarga": ""
     },
@@ -685,7 +685,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.762558"
+    "last_modified": "2026-01-29T13:22:38.669160"
   },
   "RPT-0005": {
     "id": "RPT-0005",
@@ -708,9 +708,9 @@
     "inspeccion": {
       "caja_registro": "unchecked",
       "marco_tapa": "critico",
-      "escalera_interior": "unchecked",
+      "escalera_interior": "critico",
       "escalera_exterior": "normal",
-      "cuba_interior": "unchecked",
+      "cuba_interior": "critico",
       "cuba_exterior": "normal",
       "loza_fondo": "normal",
       "loza_techo_interior": "normal",
@@ -722,12 +722,12 @@
       "sugerencias_caja_registro": "CONSTRUIR",
       "observaciones_marco_tapa": "CORROIDA",
       "sugerencias_marco_tapa": "CAMBIAR",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "CORROIDO",
+      "sugerencias_escalera_int": "COLOCAR NUEVA",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
-      "observaciones_cuba_int": "",
-      "sugerencias_cuba_int": "",
+      "observaciones_cuba_int": "CON DEGRADACION",
+      "sugerencias_cuba_int": "EVALUAR",
       "observaciones_cuba_ext": "",
       "sugerencias_cuba_ext": "",
       "observaciones_loza_fondo": "",
@@ -738,8 +738,8 @@
       "sugerencias_loza_techo_ext": "",
       "observaciones_ducto": "",
       "sugerencias_ducto": "",
-      "observaciones_cerco": "",
-      "sugerencias_cerco": "",
+      "observaciones_cerco": "NO TIENE",
+      "sugerencias_cerco": "CONSTRUIR",
       "observaciones_descarga": "",
       "sugerencias_descarga": ""
     },
@@ -857,7 +857,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.763556"
+    "last_modified": "2026-01-29T13:22:38.669160"
   },
   "RPT-0006": {
     "id": "RPT-0006",
@@ -882,11 +882,11 @@
       "marco_tapa": "normal",
       "escalera_interior": "normal",
       "escalera_exterior": "normal",
-      "cuba_interior": "unchecked",
+      "cuba_interior": "critico",
       "cuba_exterior": "normal",
       "loza_fondo": "normal",
-      "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
+      "loza_techo_interior": "critico",
+      "loza_techo_exterior": "critico",
       "ducto_ventilacion": "normal",
       "cerco_perimetrico": "unchecked",
       "descarga": "normal",
@@ -898,20 +898,20 @@
       "sugerencias_escalera_int": "",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
-      "observaciones_cuba_int": "",
-      "sugerencias_cuba_int": "",
+      "observaciones_cuba_int": "CON DEGRADACION",
+      "sugerencias_cuba_int": "EVALUAR",
       "observaciones_cuba_ext": "",
       "sugerencias_cuba_ext": "",
       "observaciones_loza_fondo": "",
       "sugerencias_loza_fondo": "",
-      "observaciones_loza_techo_int": "",
-      "sugerencias_loza_techo_int": "",
-      "observaciones_loza_techo_ext": "",
-      "sugerencias_loza_techo_ext": "",
+      "observaciones_loza_techo_int": "CON DEGRADACION",
+      "sugerencias_loza_techo_int": "EVALUAR",
+      "observaciones_loza_techo_ext": "CON DEGRADACION",
+      "sugerencias_loza_techo_ext": "EVALUAR",
       "observaciones_ducto": "",
       "sugerencias_ducto": "",
-      "observaciones_cerco": "",
-      "sugerencias_cerco": "",
+      "observaciones_cerco": "NO TIENE",
+      "sugerencias_cerco": "CONSTRUIR",
       "observaciones_descarga": "",
       "sugerencias_descarga": ""
     },
@@ -1029,7 +1029,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.763556"
+    "last_modified": "2026-01-29T13:22:38.669160"
   },
   "RPT-0007": {
     "id": "RPT-0007",
@@ -1052,13 +1052,13 @@
     "inspeccion": {
       "caja_registro": "unchecked",
       "marco_tapa": "normal",
-      "escalera_interior": "unchecked",
+      "escalera_interior": "critico",
       "escalera_exterior": "normal",
-      "cuba_interior": "unchecked",
+      "cuba_interior": "critico",
       "cuba_exterior": "normal",
       "loza_fondo": "normal",
-      "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
+      "loza_techo_interior": "critico",
+      "loza_techo_exterior": "critico",
       "ducto_ventilacion": "normal",
       "cerco_perimetrico": "unchecked",
       "descarga": "normal",
@@ -1066,24 +1066,24 @@
       "sugerencias_caja_registro": "CONSTRUIR",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "DESPRENDIDA",
+      "sugerencias_escalera_int": "CAMBIAR",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
-      "observaciones_cuba_int": "",
-      "sugerencias_cuba_int": "",
+      "observaciones_cuba_int": "CON DEGRADACION",
+      "sugerencias_cuba_int": "EVALUAR",
       "observaciones_cuba_ext": "",
       "sugerencias_cuba_ext": "",
       "observaciones_loza_fondo": "",
       "sugerencias_loza_fondo": "",
-      "observaciones_loza_techo_int": "",
-      "sugerencias_loza_techo_int": "",
-      "observaciones_loza_techo_ext": "",
-      "sugerencias_loza_techo_ext": "",
+      "observaciones_loza_techo_int": "POR COLAPSAR",
+      "sugerencias_loza_techo_int": "EVALUAR",
+      "observaciones_loza_techo_ext": "POR COLAPSAR",
+      "sugerencias_loza_techo_ext": "EVALUAR",
       "observaciones_ducto": "",
       "sugerencias_ducto": "",
-      "observaciones_cerco": "",
-      "sugerencias_cerco": "",
+      "observaciones_cerco": "NO TIENE",
+      "sugerencias_cerco": "CONSTRUIR",
       "observaciones_descarga": "",
       "sugerencias_descarga": ""
     },
@@ -1201,7 +1201,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.763556"
+    "last_modified": "2026-01-29T13:22:38.669160"
   },
   "RPT-0008": {
     "id": "RPT-0008",
@@ -1229,7 +1229,7 @@
       "cuba_interior": "unchecked",
       "cuba_exterior": "unchecked",
       "loza_fondo": "normal",
-      "loza_techo_interior": "unchecked",
+      "loza_techo_interior": "critico",
       "loza_techo_exterior": "normal",
       "ducto_ventilacion": "unchecked",
       "cerco_perimetrico": "unchecked",
@@ -1238,24 +1238,24 @@
       "sugerencias_caja_registro": "CAMBIAR",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
-      "observaciones_escalera_ext": "",
-      "sugerencias_escalera_ext": "",
-      "observaciones_cuba_int": "",
-      "sugerencias_cuba_int": "",
-      "observaciones_cuba_ext": "",
-      "sugerencias_cuba_ext": "",
+      "observaciones_escalera_int": "NO TIENE",
+      "sugerencias_escalera_int": "INSTALAR",
+      "observaciones_escalera_ext": "NO TIENE",
+      "sugerencias_escalera_ext": "INSTALAR",
+      "observaciones_cuba_int": "CON DEGRADACION",
+      "sugerencias_cuba_int": "EVALUAR",
+      "observaciones_cuba_ext": "CON DEGRADACION",
+      "sugerencias_cuba_ext": "EVALUAR",
       "observaciones_loza_fondo": "",
       "sugerencias_loza_fondo": "",
-      "observaciones_loza_techo_int": "",
-      "sugerencias_loza_techo_int": "",
+      "observaciones_loza_techo_int": "POR COLAPSAR",
+      "sugerencias_loza_techo_int": "EVALUAR",
       "observaciones_loza_techo_ext": "",
       "sugerencias_loza_techo_ext": "",
       "observaciones_ducto": "NO TIENE",
       "sugerencias_ducto": "INSTALAR",
-      "observaciones_cerco": "",
-      "sugerencias_cerco": "",
+      "observaciones_cerco": "NO TIENE",
+      "sugerencias_cerco": "CONSTRUIR",
       "observaciones_descarga": "",
       "sugerencias_descarga": ""
     },
@@ -1373,7 +1373,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.763556"
+    "last_modified": "2026-01-29T13:22:38.669160"
   },
   "RPT-0009": {
     "id": "RPT-0009",
@@ -1396,7 +1396,7 @@
     "inspeccion": {
       "caja_registro": "normal",
       "marco_tapa": "normal",
-      "escalera_interior": "unchecked",
+      "escalera_interior": "critico",
       "escalera_exterior": "unchecked",
       "cuba_interior": "normal",
       "cuba_exterior": "normal",
@@ -1410,8 +1410,8 @@
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "CORROIDO",
+      "sugerencias_escalera_int": "CAMBIAR",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
       "observaciones_cuba_int": "",
@@ -1545,7 +1545,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.763556"
+    "last_modified": "2026-01-29T13:22:38.669160"
   },
   "RPT-0010": {
     "id": "RPT-0010",
@@ -1598,8 +1598,8 @@
       "sugerencias_loza_techo_ext": "",
       "observaciones_ducto": "NO TIENE",
       "sugerencias_ducto": "INSTALAR",
-      "observaciones_cerco": "",
-      "sugerencias_cerco": "",
+      "observaciones_cerco": "NO TIENE",
+      "sugerencias_cerco": "CONSTRUIR",
       "observaciones_descarga": "",
       "sugerencias_descarga": ""
     },
@@ -1717,7 +1717,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.763556"
+    "last_modified": "2026-01-29T13:22:38.669160"
   },
   "RPT-0011": {
     "id": "RPT-0011",
@@ -1889,7 +1889,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.764112"
+    "last_modified": "2026-01-29T13:22:38.669160"
   },
   "RPT-0012": {
     "id": "RPT-0012",
@@ -2061,7 +2061,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.764112"
+    "last_modified": "2026-01-29T13:22:38.669160"
   },
   "RPT-0013": {
     "id": "RPT-0013",
@@ -2233,7 +2233,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.764112"
+    "last_modified": "2026-01-29T13:22:38.669160"
   },
   "RPT-0014": {
     "id": "RPT-0014",
@@ -2405,7 +2405,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.764112"
+    "last_modified": "2026-01-29T13:22:38.669160"
   },
   "RPT-0015": {
     "id": "RPT-0015",
@@ -2428,12 +2428,12 @@
     "inspeccion": {
       "caja_registro": "normal",
       "marco_tapa": "normal",
-      "escalera_interior": "unchecked",
+      "escalera_interior": "critico",
       "escalera_exterior": "normal",
-      "cuba_interior": "unchecked",
+      "cuba_interior": "critico",
       "cuba_exterior": "normal",
       "loza_fondo": "normal",
-      "loza_techo_interior": "unchecked",
+      "loza_techo_interior": "critico",
       "loza_techo_exterior": "normal",
       "ducto_ventilacion": "critico",
       "cerco_perimetrico": "unchecked",
@@ -2442,24 +2442,24 @@
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "CORROIDA",
+      "sugerencias_escalera_int": "CAMBIAR ESCALERA",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
-      "observaciones_cuba_int": "",
-      "sugerencias_cuba_int": "",
+      "observaciones_cuba_int": "CON DEGRADACION",
+      "sugerencias_cuba_int": "EVALUAR",
       "observaciones_cuba_ext": "",
       "sugerencias_cuba_ext": "",
       "observaciones_loza_fondo": "",
       "sugerencias_loza_fondo": "",
-      "observaciones_loza_techo_int": "",
-      "sugerencias_loza_techo_int": "",
+      "observaciones_loza_techo_int": "CON DEGRADACION",
+      "sugerencias_loza_techo_int": "EVALUAR",
       "observaciones_loza_techo_ext": "",
       "sugerencias_loza_techo_ext": "",
       "observaciones_ducto": "CORROIDOS",
       "sugerencias_ducto": "CAMBIAR",
-      "observaciones_cerco": "",
-      "sugerencias_cerco": "",
+      "observaciones_cerco": "NO TIENE",
+      "sugerencias_cerco": "CONSTRUIR",
       "observaciones_descarga": "",
       "sugerencias_descarga": ""
     },
@@ -2577,7 +2577,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.764112"
+    "last_modified": "2026-01-29T13:22:38.670174"
   },
   "RPT-0016": {
     "id": "RPT-0016",
@@ -2601,7 +2601,7 @@
       "caja_registro": "normal",
       "marco_tapa": "normal",
       "escalera_interior": "normal",
-      "escalera_exterior": "unchecked",
+      "escalera_exterior": "critico",
       "cuba_interior": "normal",
       "cuba_exterior": "normal",
       "loza_fondo": "normal",
@@ -2616,8 +2616,8 @@
       "sugerencias_marco_tapa": "",
       "observaciones_escalera_int": "",
       "sugerencias_escalera_int": "",
-      "observaciones_escalera_ext": "",
-      "sugerencias_escalera_ext": "",
+      "observaciones_escalera_ext": "NO TIENE",
+      "sugerencias_escalera_ext": "INSTALAR",
       "observaciones_cuba_int": "",
       "sugerencias_cuba_int": "",
       "observaciones_cuba_ext": "",
@@ -2749,7 +2749,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.764112"
+    "last_modified": "2026-01-29T13:22:38.670174"
   },
   "RPT-0017": {
     "id": "RPT-0017",
@@ -2772,12 +2772,12 @@
     "inspeccion": {
       "caja_registro": "critico",
       "marco_tapa": "normal",
-      "escalera_interior": "unchecked",
+      "escalera_interior": "critico",
       "escalera_exterior": "normal",
-      "cuba_interior": "unchecked",
+      "cuba_interior": "critico",
       "cuba_exterior": "normal",
       "loza_fondo": "critico",
-      "loza_techo_interior": "unchecked",
+      "loza_techo_interior": "critico",
       "loza_techo_exterior": "normal",
       "ducto_ventilacion": "normal",
       "cerco_perimetrico": "unchecked",
@@ -2786,24 +2786,24 @@
       "sugerencias_caja_registro": "COLOCAR",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "CORROIDO",
+      "sugerencias_escalera_int": "CAMBIAR",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
-      "observaciones_cuba_int": "",
-      "sugerencias_cuba_int": "",
+      "observaciones_cuba_int": "CON DEGRADACION",
+      "sugerencias_cuba_int": "EVALUAR",
       "observaciones_cuba_ext": "",
       "sugerencias_cuba_ext": "",
       "observaciones_loza_fondo": "CON DEGRADACION",
       "sugerencias_loza_fondo": "EVALUAR",
-      "observaciones_loza_techo_int": "",
-      "sugerencias_loza_techo_int": "",
+      "observaciones_loza_techo_int": "COLAPSANDO",
+      "sugerencias_loza_techo_int": "EVALUAR",
       "observaciones_loza_techo_ext": "",
       "sugerencias_loza_techo_ext": "",
       "observaciones_ducto": "",
       "sugerencias_ducto": "",
-      "observaciones_cerco": "",
-      "sugerencias_cerco": "",
+      "observaciones_cerco": "NO TIENE",
+      "sugerencias_cerco": "CONSTRUIR",
       "observaciones_descarga": "",
       "sugerencias_descarga": ""
     },
@@ -2921,7 +2921,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.764659"
+    "last_modified": "2026-01-29T13:22:38.670174"
   },
   "RPT-0018": {
     "id": "RPT-0018",
@@ -2958,8 +2958,8 @@
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "NO TIENE",
+      "sugerencias_escalera_int": "INSTALAR",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
       "observaciones_cuba_int": "",
@@ -3093,7 +3093,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.764659"
+    "last_modified": "2026-01-29T13:22:38.670174"
   },
   "RPT-0019": {
     "id": "RPT-0019",
@@ -3130,8 +3130,8 @@
       "sugerencias_caja_registro": "INSTALAR",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "NO TIENE",
+      "sugerencias_escalera_int": "INSTALAR",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
       "observaciones_cuba_int": "",
@@ -3265,7 +3265,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.764659"
+    "last_modified": "2026-01-29T13:22:38.670174"
   },
   "RPT-0020": {
     "id": "RPT-0020",
@@ -3290,10 +3290,10 @@
       "marco_tapa": "critico",
       "escalera_interior": "unchecked",
       "escalera_exterior": "normal",
-      "cuba_interior": "unchecked",
+      "cuba_interior": "critico",
       "cuba_exterior": "normal",
       "loza_fondo": "normal",
-      "loza_techo_interior": "unchecked",
+      "loza_techo_interior": "critico",
       "loza_techo_exterior": "normal",
       "ducto_ventilacion": "critico",
       "cerco_perimetrico": "unchecked",
@@ -3302,24 +3302,24 @@
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "TAPA CORROIDA",
       "sugerencias_marco_tapa": "CAMBIAR",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "NO TIENE",
+      "sugerencias_escalera_int": "INSTALAR",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
-      "observaciones_cuba_int": "",
-      "sugerencias_cuba_int": "",
+      "observaciones_cuba_int": "CON DEGRADACION",
+      "sugerencias_cuba_int": "EVALUAR",
       "observaciones_cuba_ext": "",
       "sugerencias_cuba_ext": "",
       "observaciones_loza_fondo": "",
       "sugerencias_loza_fondo": "",
-      "observaciones_loza_techo_int": "",
-      "sugerencias_loza_techo_int": "",
+      "observaciones_loza_techo_int": "CON DEGRADACION",
+      "sugerencias_loza_techo_int": "EVALUAR",
       "observaciones_loza_techo_ext": "",
       "sugerencias_loza_techo_ext": "",
       "observaciones_ducto": "TUBOS CORROIDOS",
       "sugerencias_ducto": "CAMBIAR",
-      "observaciones_cerco": "",
-      "sugerencias_cerco": "",
+      "observaciones_cerco": "NO TIENE",
+      "sugerencias_cerco": "CONSTRUIR",
       "observaciones_descarga": "",
       "sugerencias_descarga": ""
     },
@@ -3437,7 +3437,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.764659"
+    "last_modified": "2026-01-29T13:22:38.670174"
   },
   "RPT-0021": {
     "id": "RPT-0021",
@@ -3490,8 +3490,8 @@
       "sugerencias_loza_techo_ext": "",
       "observaciones_ducto": "",
       "sugerencias_ducto": "",
-      "observaciones_cerco": "",
-      "sugerencias_cerco": "",
+      "observaciones_cerco": "NO TIENE",
+      "sugerencias_cerco": "CONSTRUIR",
       "observaciones_descarga": "",
       "sugerencias_descarga": ""
     },
@@ -3609,7 +3609,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.764659"
+    "last_modified": "2026-01-29T13:22:38.670174"
   },
   "RPT-0022": {
     "id": "RPT-0022",
@@ -3634,11 +3634,11 @@
       "marco_tapa": "unchecked",
       "escalera_interior": "unchecked",
       "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
+      "cuba_interior": "critico",
       "cuba_exterior": "normal",
       "loza_fondo": "normal",
-      "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
+      "loza_techo_interior": "critico",
+      "loza_techo_exterior": "critico",
       "ducto_ventilacion": "unchecked",
       "cerco_perimetrico": "normal",
       "descarga": "normal",
@@ -3646,20 +3646,20 @@
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "NO TIENE",
       "sugerencias_marco_tapa": "INSTALAR",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "NO TIENE",
+      "sugerencias_escalera_int": "INSTALAR",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
-      "observaciones_cuba_int": "",
-      "sugerencias_cuba_int": "",
+      "observaciones_cuba_int": "CON DEGRADACION",
+      "sugerencias_cuba_int": "EVALUAR",
       "observaciones_cuba_ext": "",
       "sugerencias_cuba_ext": "",
       "observaciones_loza_fondo": "",
       "sugerencias_loza_fondo": "",
-      "observaciones_loza_techo_int": "",
-      "sugerencias_loza_techo_int": "",
-      "observaciones_loza_techo_ext": "",
-      "sugerencias_loza_techo_ext": "",
+      "observaciones_loza_techo_int": "DE ETERNIT",
+      "sugerencias_loza_techo_int": "MANTENIMIENTO",
+      "observaciones_loza_techo_ext": "DE ETERNIT",
+      "sugerencias_loza_techo_ext": "MANTENIMIENTO",
       "observaciones_ducto": "NO TIENE",
       "sugerencias_ducto": "INSTALAR",
       "observaciones_cerco": "",
@@ -3781,7 +3781,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.764659"
+    "last_modified": "2026-01-29T13:22:38.670174"
   },
   "RPT-0023": {
     "id": "RPT-0023",
@@ -3804,12 +3804,12 @@
     "inspeccion": {
       "caja_registro": "critico",
       "marco_tapa": "critico",
-      "escalera_interior": "unchecked",
+      "escalera_interior": "critico",
       "escalera_exterior": "normal",
       "cuba_interior": "normal",
       "cuba_exterior": "normal",
       "loza_fondo": "normal",
-      "loza_techo_interior": "unchecked",
+      "loza_techo_interior": "critico",
       "loza_techo_exterior": "normal",
       "ducto_ventilacion": "normal",
       "cerco_perimetrico": "unchecked",
@@ -3818,8 +3818,8 @@
       "sugerencias_caja_registro": "COLOCAR",
       "observaciones_marco_tapa": "CORROIDO",
       "sugerencias_marco_tapa": "CAMBIAR",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "CORROIDO",
+      "sugerencias_escalera_int": "CAMBIAR ESCALERA",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
       "observaciones_cuba_int": "",
@@ -3828,14 +3828,14 @@
       "sugerencias_cuba_ext": "",
       "observaciones_loza_fondo": "",
       "sugerencias_loza_fondo": "",
-      "observaciones_loza_techo_int": "",
-      "sugerencias_loza_techo_int": "",
+      "observaciones_loza_techo_int": "CON DEGRADACION",
+      "sugerencias_loza_techo_int": "EVALUAR",
       "observaciones_loza_techo_ext": "",
       "sugerencias_loza_techo_ext": "",
       "observaciones_ducto": "",
       "sugerencias_ducto": "",
-      "observaciones_cerco": "",
-      "sugerencias_cerco": "",
+      "observaciones_cerco": "NO TIENE",
+      "sugerencias_cerco": "CONSTRUIR",
       "observaciones_descarga": "",
       "sugerencias_descarga": ""
     },
@@ -3953,7 +3953,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.764659"
+    "last_modified": "2026-01-29T13:22:38.672406"
   },
   "RPT-0024": {
     "id": "RPT-0024",
@@ -4125,7 +4125,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.765165"
+    "last_modified": "2026-01-29T13:22:38.672406"
   },
   "RPT-0025": {
     "id": "RPT-0025",
@@ -4297,7 +4297,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.765165"
+    "last_modified": "2026-01-29T13:22:38.672406"
   },
   "RPT-0026": {
     "id": "RPT-0026",
@@ -4325,7 +4325,7 @@
       "cuba_interior": "normal",
       "cuba_exterior": "normal",
       "loza_fondo": "normal",
-      "loza_techo_interior": "unchecked",
+      "loza_techo_interior": "critico",
       "loza_techo_exterior": "normal",
       "ducto_ventilacion": "critico",
       "cerco_perimetrico": "unchecked",
@@ -4344,14 +4344,14 @@
       "sugerencias_cuba_ext": "",
       "observaciones_loza_fondo": "",
       "sugerencias_loza_fondo": "",
-      "observaciones_loza_techo_int": "",
-      "sugerencias_loza_techo_int": "",
+      "observaciones_loza_techo_int": "CON DEGRADACION",
+      "sugerencias_loza_techo_int": "EVALUAR",
       "observaciones_loza_techo_ext": "",
       "sugerencias_loza_techo_ext": "",
       "observaciones_ducto": "CORROIDO",
       "sugerencias_ducto": "CAMBIAR",
-      "observaciones_cerco": "",
-      "sugerencias_cerco": "",
+      "observaciones_cerco": "NO TIENE",
+      "sugerencias_cerco": "CONSTRUIR",
       "observaciones_descarga": "",
       "sugerencias_descarga": ""
     },
@@ -4469,7 +4469,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.765165"
+    "last_modified": "2026-01-29T13:22:38.672406"
   },
   "RPT-0027": {
     "id": "RPT-0027",
@@ -4506,10 +4506,10 @@
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
-      "observaciones_escalera_ext": "",
-      "sugerencias_escalera_ext": "",
+      "observaciones_escalera_int": "NO TIENE",
+      "sugerencias_escalera_int": "INSTALAR",
+      "observaciones_escalera_ext": "NO TIENE",
+      "sugerencias_escalera_ext": "INSTALAR",
       "observaciones_cuba_int": "",
       "sugerencias_cuba_int": "",
       "observaciones_cuba_ext": "",
@@ -4641,7 +4641,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.765165"
+    "last_modified": "2026-01-29T13:22:38.672406"
   },
   "RPT-0028": {
     "id": "RPT-0028",
@@ -4665,14 +4665,14 @@
       "caja_registro": "unchecked",
       "marco_tapa": "normal",
       "escalera_interior": "normal",
-      "escalera_exterior": "unchecked",
+      "escalera_exterior": "critico",
       "cuba_interior": "normal",
       "cuba_exterior": "normal",
       "loza_fondo": "normal",
       "loza_techo_interior": "normal",
       "loza_techo_exterior": "normal",
       "ducto_ventilacion": "normal",
-      "cerco_perimetrico": "unchecked",
+      "cerco_perimetrico": "critico",
       "descarga": "normal",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
@@ -4680,8 +4680,8 @@
       "sugerencias_marco_tapa": "",
       "observaciones_escalera_int": "",
       "sugerencias_escalera_int": "",
-      "observaciones_escalera_ext": "",
-      "sugerencias_escalera_ext": "",
+      "observaciones_escalera_ext": "CORROIDO",
+      "sugerencias_escalera_ext": "CAMBIAR",
       "observaciones_cuba_int": "",
       "sugerencias_cuba_int": "",
       "observaciones_cuba_ext": "",
@@ -4694,8 +4694,8 @@
       "sugerencias_loza_techo_ext": "",
       "observaciones_ducto": "",
       "sugerencias_ducto": "",
-      "observaciones_cerco": "",
-      "sugerencias_cerco": "",
+      "observaciones_cerco": "NO TIENE",
+      "sugerencias_cerco": "CONSTRUIR",
       "observaciones_descarga": "",
       "sugerencias_descarga": ""
     },
@@ -4813,7 +4813,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.765165"
+    "last_modified": "2026-01-29T13:22:38.673406"
   },
   "RPT-0029": {
     "id": "RPT-0029",
@@ -4836,13 +4836,13 @@
     "inspeccion": {
       "caja_registro": "critico",
       "marco_tapa": "normal",
-      "escalera_interior": "unchecked",
+      "escalera_interior": "critico",
       "escalera_exterior": "normal",
-      "cuba_interior": "unchecked",
+      "cuba_interior": "critico",
       "cuba_exterior": "normal",
       "loza_fondo": "normal",
-      "loza_techo_interior": "unchecked",
-      "loza_techo_exterior": "unchecked",
+      "loza_techo_interior": "critico",
+      "loza_techo_exterior": "critico",
       "ducto_ventilacion": "normal",
       "cerco_perimetrico": "unchecked",
       "descarga": "normal",
@@ -4850,24 +4850,24 @@
       "sugerencias_caja_registro": "COLOCAR",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "CORROIDO",
+      "sugerencias_escalera_int": "CAMBIAR ESCALERA",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
-      "observaciones_cuba_int": "",
-      "sugerencias_cuba_int": "",
+      "observaciones_cuba_int": "CON DEGRADACION",
+      "sugerencias_cuba_int": "EVALUAR",
       "observaciones_cuba_ext": "",
       "sugerencias_cuba_ext": "",
       "observaciones_loza_fondo": "",
       "sugerencias_loza_fondo": "",
-      "observaciones_loza_techo_int": "",
-      "sugerencias_loza_techo_int": "",
-      "observaciones_loza_techo_ext": "",
-      "sugerencias_loza_techo_ext": "",
+      "observaciones_loza_techo_int": "COLAPSADO EN PARTE",
+      "sugerencias_loza_techo_int": "PELIGRO TOTAL",
+      "observaciones_loza_techo_ext": "COLAPSADO EN PARTE",
+      "sugerencias_loza_techo_ext": "PELIGRO TOTAL",
       "observaciones_ducto": "",
       "sugerencias_ducto": "",
-      "observaciones_cerco": "",
-      "sugerencias_cerco": "",
+      "observaciones_cerco": "NO TIENE",
+      "sugerencias_cerco": "CONSTRUIR",
       "observaciones_descarga": "",
       "sugerencias_descarga": ""
     },
@@ -4985,7 +4985,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.765165"
+    "last_modified": "2026-01-29T13:22:38.673406"
   },
   "RPT-0030": {
     "id": "RPT-0030",
@@ -5008,7 +5008,7 @@
     "inspeccion": {
       "caja_registro": "normal",
       "marco_tapa": "normal",
-      "escalera_interior": "unchecked",
+      "escalera_interior": "critico",
       "escalera_exterior": "normal",
       "cuba_interior": "normal",
       "cuba_exterior": "normal",
@@ -5022,8 +5022,8 @@
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "FALTA LA MITAD",
+      "sugerencias_escalera_int": "CAMBIAR ESCALERA",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
       "observaciones_cuba_int": "",
@@ -5157,7 +5157,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.765702"
+    "last_modified": "2026-01-29T13:22:38.673406"
   },
   "RPT-0031": {
     "id": "RPT-0031",
@@ -5180,9 +5180,9 @@
     "inspeccion": {
       "caja_registro": "normal",
       "marco_tapa": "critico",
-      "escalera_interior": "unchecked",
+      "escalera_interior": "critico",
       "escalera_exterior": "normal",
-      "cuba_interior": "unchecked",
+      "cuba_interior": "critico",
       "cuba_exterior": "normal",
       "loza_fondo": "normal",
       "loza_techo_interior": "normal",
@@ -5194,12 +5194,12 @@
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "SIN TAPA",
       "sugerencias_marco_tapa": "CAMBIAR",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "CORROIDO",
+      "sugerencias_escalera_int": "CAMBIAR ESCALERA",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
-      "observaciones_cuba_int": "",
-      "sugerencias_cuba_int": "",
+      "observaciones_cuba_int": "CON DEGRADACION",
+      "sugerencias_cuba_int": "EVALUAR",
       "observaciones_cuba_ext": "",
       "sugerencias_cuba_ext": "",
       "observaciones_loza_fondo": "",
@@ -5210,8 +5210,8 @@
       "sugerencias_loza_techo_ext": "",
       "observaciones_ducto": "SIN TUBOS",
       "sugerencias_ducto": "COLOCAR",
-      "observaciones_cerco": "",
-      "sugerencias_cerco": "",
+      "observaciones_cerco": "NO TIENE",
+      "sugerencias_cerco": "CONSTRUIR",
       "observaciones_descarga": "",
       "sugerencias_descarga": ""
     },
@@ -5329,7 +5329,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.765709"
+    "last_modified": "2026-01-29T13:22:38.673406"
   },
   "RPT-0032": {
     "id": "RPT-0032",
@@ -5352,9 +5352,9 @@
     "inspeccion": {
       "caja_registro": "normal",
       "marco_tapa": "normal",
-      "escalera_interior": "unchecked",
+      "escalera_interior": "critico",
       "escalera_exterior": "unchecked",
-      "cuba_interior": "unchecked",
+      "cuba_interior": "critico",
       "cuba_exterior": "unchecked",
       "loza_fondo": "normal",
       "loza_techo_interior": "normal",
@@ -5366,12 +5366,12 @@
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "CORROIDO",
+      "sugerencias_escalera_int": "CAMBIAR ESCALERA",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
-      "observaciones_cuba_int": "",
-      "sugerencias_cuba_int": "",
+      "observaciones_cuba_int": "CON DEGRADACION",
+      "sugerencias_cuba_int": "EVALUAR",
       "observaciones_cuba_ext": "",
       "sugerencias_cuba_ext": "",
       "observaciones_loza_fondo": "",
@@ -5501,7 +5501,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.765709"
+    "last_modified": "2026-01-29T13:22:38.673406"
   },
   "RPT-0033": {
     "id": "RPT-0033",
@@ -5526,24 +5526,24 @@
       "marco_tapa": "normal",
       "escalera_interior": "unchecked",
       "escalera_exterior": "normal",
-      "cuba_interior": "unchecked",
+      "cuba_interior": "critico",
       "cuba_exterior": "normal",
       "loza_fondo": "normal",
       "loza_techo_interior": "normal",
       "loza_techo_exterior": "normal",
       "ducto_ventilacion": "critico",
-      "cerco_perimetrico": "unchecked",
+      "cerco_perimetrico": "critico",
       "descarga": "normal",
       "observaciones_caja_registro": "SIN REJILLA-TAPA",
       "sugerencias_caja_registro": "COLOCAR",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "NO TIENE",
+      "sugerencias_escalera_int": "INSTALAR",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
-      "observaciones_cuba_int": "",
-      "sugerencias_cuba_int": "",
+      "observaciones_cuba_int": "CON DEGRADACION",
+      "sugerencias_cuba_int": "EVALUAR",
       "observaciones_cuba_ext": "",
       "sugerencias_cuba_ext": "",
       "observaciones_loza_fondo": "",
@@ -5554,8 +5554,8 @@
       "sugerencias_loza_techo_ext": "",
       "observaciones_ducto": "SOLO HUECOS",
       "sugerencias_ducto": "INSTALAR TUBOS",
-      "observaciones_cerco": "",
-      "sugerencias_cerco": "",
+      "observaciones_cerco": "LEVANTAR MAS MURO",
+      "sugerencias_cerco": "EVALUAR",
       "observaciones_descarga": "",
       "sugerencias_descarga": ""
     },
@@ -5673,7 +5673,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.765709"
+    "last_modified": "2026-01-29T13:22:38.673406"
   },
   "RPT-0034": {
     "id": "RPT-0034",
@@ -5696,7 +5696,7 @@
     "inspeccion": {
       "caja_registro": "normal",
       "marco_tapa": "normal",
-      "escalera_interior": "unchecked",
+      "escalera_interior": "critico",
       "escalera_exterior": "normal",
       "cuba_interior": "normal",
       "cuba_exterior": "normal",
@@ -5710,8 +5710,8 @@
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "CORROIDO",
+      "sugerencias_escalera_int": "CAMBIAR ESCALERA",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
       "observaciones_cuba_int": "",
@@ -5845,7 +5845,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.765709"
+    "last_modified": "2026-01-29T13:22:38.673406"
   },
   "RPT-0035": {
     "id": "RPT-0035",
@@ -5868,7 +5868,7 @@
     "inspeccion": {
       "caja_registro": "normal",
       "marco_tapa": "normal",
-      "escalera_interior": "unchecked",
+      "escalera_interior": "critico",
       "escalera_exterior": "normal",
       "cuba_interior": "normal",
       "cuba_exterior": "normal",
@@ -5882,8 +5882,8 @@
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "CORROIDA",
+      "sugerencias_escalera_int": "CAMBIAR ESCALERA",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
       "observaciones_cuba_int": "",
@@ -6017,7 +6017,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.765709"
+    "last_modified": "2026-01-29T13:22:38.673406"
   },
   "RPT-0036": {
     "id": "RPT-0036",
@@ -6189,7 +6189,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.765709"
+    "last_modified": "2026-01-29T13:22:38.673406"
   },
   "RPT-0037": {
     "id": "RPT-0037",
@@ -6361,7 +6361,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.765709"
+    "last_modified": "2026-01-29T13:22:38.673406"
   },
   "RPT-0038": {
     "id": "RPT-0038",
@@ -6533,7 +6533,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.765709"
+    "last_modified": "2026-01-29T13:22:38.674401"
   },
   "RPT-0039": {
     "id": "RPT-0039",
@@ -6556,7 +6556,7 @@
     "inspeccion": {
       "caja_registro": "normal",
       "marco_tapa": "normal",
-      "escalera_interior": "unchecked",
+      "escalera_interior": "critico",
       "escalera_exterior": "normal",
       "cuba_interior": "normal",
       "cuba_exterior": "normal",
@@ -6570,8 +6570,8 @@
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "CORROIDA",
+      "sugerencias_escalera_int": "CAMBIAR ESCALERA",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
       "observaciones_cuba_int": "",
@@ -6705,7 +6705,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.765709"
+    "last_modified": "2026-01-29T13:22:38.674401"
   },
   "RPT-0040": {
     "id": "RPT-0040",
@@ -6877,7 +6877,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.765709"
+    "last_modified": "2026-01-29T13:22:38.674401"
   },
   "RPT-0041": {
     "id": "RPT-0041",
@@ -6900,7 +6900,7 @@
     "inspeccion": {
       "caja_registro": "normal",
       "marco_tapa": "normal",
-      "escalera_interior": "unchecked",
+      "escalera_interior": "critico",
       "escalera_exterior": "normal",
       "cuba_interior": "normal",
       "cuba_exterior": "normal",
@@ -6914,8 +6914,8 @@
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "CORROIDA",
+      "sugerencias_escalera_int": "CAMBIAR ESCALERA",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
       "observaciones_cuba_int": "",
@@ -7049,7 +7049,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.765709"
+    "last_modified": "2026-01-29T13:22:38.674401"
   },
   "RPT-0042": {
     "id": "RPT-0042",
@@ -7072,7 +7072,7 @@
     "inspeccion": {
       "caja_registro": "normal",
       "marco_tapa": "normal",
-      "escalera_interior": "unchecked",
+      "escalera_interior": "critico",
       "escalera_exterior": "normal",
       "cuba_interior": "normal",
       "cuba_exterior": "normal",
@@ -7086,8 +7086,8 @@
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "CORROIDA",
+      "sugerencias_escalera_int": "CAMBIAR ESCALERA",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
       "observaciones_cuba_int": "",
@@ -7221,7 +7221,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.765709"
+    "last_modified": "2026-01-29T13:22:38.674401"
   },
   "RPT-0043": {
     "id": "RPT-0043",
@@ -7258,8 +7258,8 @@
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "NO TIENE",
+      "sugerencias_escalera_int": "INSTALAR",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
       "observaciones_cuba_int": "",
@@ -7393,7 +7393,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.766669"
+    "last_modified": "2026-01-29T13:22:38.674401"
   },
   "RPT-0044": {
     "id": "RPT-0044",
@@ -7565,7 +7565,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.766669"
+    "last_modified": "2026-01-29T13:22:38.674401"
   },
   "RPT-0045": {
     "id": "RPT-0045",
@@ -7737,7 +7737,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.766669"
+    "last_modified": "2026-01-29T13:22:38.674401"
   },
   "RPT-0046": {
     "id": "RPT-0046",
@@ -7909,7 +7909,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.766669"
+    "last_modified": "2026-01-29T13:22:38.674401"
   },
   "RPT-0047": {
     "id": "RPT-0047",
@@ -8081,7 +8081,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.766669"
+    "last_modified": "2026-01-29T13:22:38.674401"
   },
   "RPT-0048": {
     "id": "RPT-0048",
@@ -8253,7 +8253,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.766669"
+    "last_modified": "2026-01-29T13:22:38.675405"
   },
   "RPT-0049": {
     "id": "RPT-0049",
@@ -8425,7 +8425,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.766669"
+    "last_modified": "2026-01-29T13:22:38.675405"
   },
   "RPT-0050": {
     "id": "RPT-0050",
@@ -8453,7 +8453,7 @@
       "cuba_interior": "normal",
       "cuba_exterior": "normal",
       "loza_fondo": "normal",
-      "loza_techo_interior": "unchecked",
+      "loza_techo_interior": "critico",
       "loza_techo_exterior": "normal",
       "ducto_ventilacion": "normal",
       "cerco_perimetrico": "normal",
@@ -8462,8 +8462,8 @@
       "sugerencias_caja_registro": "INSTALAR",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "NO TIENE",
+      "sugerencias_escalera_int": "INSTALAR",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
       "observaciones_cuba_int": "",
@@ -8472,8 +8472,8 @@
       "sugerencias_cuba_ext": "",
       "observaciones_loza_fondo": "",
       "sugerencias_loza_fondo": "",
-      "observaciones_loza_techo_int": "",
-      "sugerencias_loza_techo_int": "",
+      "observaciones_loza_techo_int": "CON DEGRADACION",
+      "sugerencias_loza_techo_int": "EVALUAR",
       "observaciones_loza_techo_ext": "",
       "sugerencias_loza_techo_ext": "",
       "observaciones_ducto": "",
@@ -8597,7 +8597,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.766669"
+    "last_modified": "2026-01-29T13:22:38.675405"
   },
   "RPT-0051": {
     "id": "RPT-0051",
@@ -8620,12 +8620,12 @@
     "inspeccion": {
       "caja_registro": "normal",
       "marco_tapa": "normal",
-      "escalera_interior": "unchecked",
+      "escalera_interior": "critico",
       "escalera_exterior": "normal",
-      "cuba_interior": "unchecked",
+      "cuba_interior": "critico",
       "cuba_exterior": "normal",
       "loza_fondo": "critico",
-      "loza_techo_interior": "unchecked",
+      "loza_techo_interior": "critico",
       "loza_techo_exterior": "normal",
       "ducto_ventilacion": "critico",
       "cerco_perimetrico": "unchecked",
@@ -8634,24 +8634,24 @@
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "CORROIDO",
+      "sugerencias_escalera_int": "CAMBIAR ESCALERA",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
-      "observaciones_cuba_int": "",
-      "sugerencias_cuba_int": "",
+      "observaciones_cuba_int": "CON DEGRADACION",
+      "sugerencias_cuba_int": "EVALUAR",
       "observaciones_cuba_ext": "",
       "sugerencias_cuba_ext": "",
       "observaciones_loza_fondo": "CON DEGRADACION",
       "sugerencias_loza_fondo": "EVALUAR",
-      "observaciones_loza_techo_int": "",
-      "sugerencias_loza_techo_int": "",
+      "observaciones_loza_techo_int": "CON DEGRADACION",
+      "sugerencias_loza_techo_int": "EVALUAR",
       "observaciones_loza_techo_ext": "",
       "sugerencias_loza_techo_ext": "",
       "observaciones_ducto": "SIN TUBOS",
       "sugerencias_ducto": "INSTALAR",
-      "observaciones_cerco": "",
-      "sugerencias_cerco": "",
+      "observaciones_cerco": "NO TIENE",
+      "sugerencias_cerco": "CONSTRUIR",
       "observaciones_descarga": "",
       "sugerencias_descarga": ""
     },
@@ -8769,7 +8769,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.766669"
+    "last_modified": "2026-01-29T13:22:38.675405"
   },
   "RPT-0052": {
     "id": "RPT-0052",
@@ -8792,7 +8792,7 @@
     "inspeccion": {
       "caja_registro": "normal",
       "marco_tapa": "normal",
-      "escalera_interior": "unchecked",
+      "escalera_interior": "critico",
       "escalera_exterior": "normal",
       "cuba_interior": "normal",
       "cuba_exterior": "normal",
@@ -8806,8 +8806,8 @@
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "CORROIDO",
+      "sugerencias_escalera_int": "CAMBIAR ESCALERA",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
       "observaciones_cuba_int": "",
@@ -8941,7 +8941,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.766669"
+    "last_modified": "2026-01-29T13:22:38.675405"
   },
   "RPT-0053": {
     "id": "RPT-0053",
@@ -9113,7 +9113,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.766669"
+    "last_modified": "2026-01-29T13:22:38.675405"
   },
   "RPT-0054": {
     "id": "RPT-0054",
@@ -9144,14 +9144,14 @@
       "loza_techo_interior": "normal",
       "loza_techo_exterior": "normal",
       "ducto_ventilacion": "normal",
-      "cerco_perimetrico": "unchecked",
+      "cerco_perimetrico": "critico",
       "descarga": "normal",
       "observaciones_caja_registro": "",
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "NO TIENE",
+      "sugerencias_escalera_int": "INSTALAR",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
       "observaciones_cuba_int": "",
@@ -9166,8 +9166,8 @@
       "sugerencias_loza_techo_ext": "",
       "observaciones_ducto": "",
       "sugerencias_ducto": "",
-      "observaciones_cerco": "",
-      "sugerencias_cerco": "",
+      "observaciones_cerco": "NO TIENE",
+      "sugerencias_cerco": "CONSTRUIR",
       "observaciones_descarga": "",
       "sugerencias_descarga": ""
     },
@@ -9285,7 +9285,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.766669"
+    "last_modified": "2026-01-29T13:22:38.675405"
   },
   "RPT-0055": {
     "id": "RPT-0055",
@@ -9457,7 +9457,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.766669"
+    "last_modified": "2026-01-29T13:22:38.675405"
   },
   "RPT-0056": {
     "id": "RPT-0056",
@@ -9485,7 +9485,7 @@
       "cuba_interior": "normal",
       "cuba_exterior": "normal",
       "loza_fondo": "normal",
-      "loza_techo_interior": "unchecked",
+      "loza_techo_interior": "critico",
       "loza_techo_exterior": "normal",
       "ducto_ventilacion": "critico",
       "cerco_perimetrico": "normal",
@@ -9504,8 +9504,8 @@
       "sugerencias_cuba_ext": "",
       "observaciones_loza_fondo": "",
       "sugerencias_loza_fondo": "",
-      "observaciones_loza_techo_int": "",
-      "sugerencias_loza_techo_int": "",
+      "observaciones_loza_techo_int": "CON DEGRADACION",
+      "sugerencias_loza_techo_int": "EVAUAR",
       "observaciones_loza_techo_ext": "",
       "sugerencias_loza_techo_ext": "",
       "observaciones_ducto": "CORROIDO",
@@ -9629,7 +9629,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.767668"
+    "last_modified": "2026-01-29T13:22:38.675405"
   },
   "RPT-0057": {
     "id": "RPT-0057",
@@ -9652,7 +9652,7 @@
     "inspeccion": {
       "caja_registro": "normal",
       "marco_tapa": "normal",
-      "escalera_interior": "unchecked",
+      "escalera_interior": "normal",
       "escalera_exterior": "normal",
       "cuba_interior": "critico",
       "cuba_exterior": "normal",
@@ -9666,8 +9666,8 @@
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "CON DEGRADACION",
+      "sugerencias_escalera_int": "EVALUAR",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
       "observaciones_cuba_int": "",
@@ -9801,7 +9801,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.767668"
+    "last_modified": "2026-01-29T13:22:38.675405"
   },
   "RPT-0058": {
     "id": "RPT-0058",
@@ -9973,7 +9973,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.767668"
+    "last_modified": "2026-01-29T13:22:38.675405"
   },
   "RPT-0059": {
     "id": "RPT-0059",
@@ -9996,7 +9996,7 @@
     "inspeccion": {
       "caja_registro": "normal",
       "marco_tapa": "normal",
-      "escalera_interior": "unchecked",
+      "escalera_interior": "critico",
       "escalera_exterior": "normal",
       "cuba_interior": "normal",
       "cuba_exterior": "normal",
@@ -10010,8 +10010,8 @@
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "CORROIDO",
+      "sugerencias_escalera_int": "CAMBIAR ESCALERA",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
       "observaciones_cuba_int": "",
@@ -10145,7 +10145,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.767668"
+    "last_modified": "2026-01-29T13:22:38.676404"
   },
   "RPT-0060": {
     "id": "RPT-0060",
@@ -10182,8 +10182,8 @@
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "NO TIENE",
+      "sugerencias_escalera_int": "INSTALAR",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
       "observaciones_cuba_int": "",
@@ -10317,7 +10317,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.767668"
+    "last_modified": "2026-01-29T13:22:38.676404"
   },
   "RPT-0061": {
     "id": "RPT-0061",
@@ -10354,8 +10354,8 @@
       "sugerencias_caja_registro": "",
       "observaciones_marco_tapa": "",
       "sugerencias_marco_tapa": "",
-      "observaciones_escalera_int": "",
-      "sugerencias_escalera_int": "",
+      "observaciones_escalera_int": "NO TIENE",
+      "sugerencias_escalera_int": "INSTALAR",
       "observaciones_escalera_ext": "",
       "sugerencias_escalera_ext": "",
       "observaciones_cuba_int": "",
@@ -10489,7 +10489,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.767668"
+    "last_modified": "2026-01-29T13:22:38.676404"
   },
   "RPT-0062": {
     "id": "RPT-0062",
@@ -10517,7 +10517,7 @@
       "cuba_interior": "normal",
       "cuba_exterior": "normal",
       "loza_fondo": "normal",
-      "loza_techo_interior": "unchecked",
+      "loza_techo_interior": "critico",
       "loza_techo_exterior": "normal",
       "ducto_ventilacion": "critico",
       "cerco_perimetrico": "normal",
@@ -10536,8 +10536,8 @@
       "sugerencias_cuba_ext": "",
       "observaciones_loza_fondo": "",
       "sugerencias_loza_fondo": "",
-      "observaciones_loza_techo_int": "",
-      "sugerencias_loza_techo_int": "",
+      "observaciones_loza_techo_int": "CON DEGRADACION",
+      "sugerencias_loza_techo_int": "EVALUAR",
       "observaciones_loza_techo_ext": "",
       "sugerencias_loza_techo_ext": "",
       "observaciones_ducto": "SIN TUBOS",
@@ -10661,6 +10661,6 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-01-29T13:13:01.767668"
+    "last_modified": "2026-01-29T13:22:38.676404"
   }
 }

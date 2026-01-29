@@ -103,5 +103,26 @@ export const technicalReportsApi = {
         const params = cs ? `?cs=${cs}` : '';
         const response = await axios.get(`${API_BASE}/api/technical-reports/autocomplete/contratista${params}`);
         return response.data.options;
+    },
+
+    generateConsolidatedPDF: async (logoLeft?: File | null, logoRight?: File | null, reportIds?: string[]) => {
+        const formData = new FormData();
+
+        if (logoLeft) formData.append('logoLeft', logoLeft);
+        if (logoRight) formData.append('logoRight', logoRight);
+        if (reportIds && reportIds.length > 0) {
+            formData.append('report_ids', JSON.stringify(reportIds));
+        }
+
+        const response = await axios.post(
+            `${API_BASE}/api/technical-reports/generate-consolidated-pdf`,
+            formData,
+            {
+                headers: { 'Content-Type': 'multipart/form-data' },
+                responseType: 'blob',
+                timeout: 300000 // 5 minutos para PDFs grandes
+            }
+        );
+        return response.data;
     }
 };

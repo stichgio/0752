@@ -14,7 +14,7 @@ export interface ReportHeader {
     codigo_infraestructura: string;
     ubicacion: string;
     suministro: string;
-    tipo: 'ELEVADO' | 'ENTERRADO' | 'SEMIENTERRADO' | 'APOYADO';
+    tipo: 'ELEVADO' | 'ENTERRADO' | 'SEMIENTERRADO' | 'APOYADO' | 'CISTERNA';
     volumen: number;
 }
 
