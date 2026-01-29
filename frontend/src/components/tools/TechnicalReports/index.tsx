@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, FileDown, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileDown, Files } from 'lucide-react';
 import DatabasePanel from './DatabasePanel';
 import PreviewPanel from './PreviewPanel';
 import FormPanel from './FormPanel';
@@ -15,6 +15,7 @@ export default function TechnicalReports() {
     const [formData, setFormData] = useState<TechnicalReport | null>(null);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [loadingMessage, setLoadingMessage] = useState('Procesando...');
 
     const [logoLeft, setLogoLeft] = useState<File | null>(null);
     const [logoRight, setLogoRight] = useState<File | null>(null);
@@ -45,16 +46,6 @@ export default function TechnicalReports() {
             }));
         }
     }, [formData, selectedReportId, hasUnsavedChanges]);
-
-    // Función para limpiar borrador
-    const handleClearDraft = () => {
-        if (window.confirm('¿Limpiar borrador actual? Los cambios no guardados se perderán.')) {
-            localStorage.removeItem(STORAGE_KEY);
-            setFormData(null);
-            setSelectedReportId(null);
-            setHasUnsavedChanges(false);
-        }
-    };
 
     const loadReports = async () => {
         setIsLoading(true);
@@ -145,6 +136,7 @@ export default function TechnicalReports() {
     const handleDownloadPDF = async () => {
         if (!selectedReportId || !formData) return;
         setIsLoading(true);
+        setLoadingMessage('Generando PDF...');
         try {
             // Pass empty array for images as per new requirement
             const blob = await technicalReportsApi.generatePDF(formData, [], logoLeft, logoRight);
@@ -155,11 +147,14 @@ export default function TechnicalReports() {
             document.body.appendChild(link);
             link.click();
             link.remove();
-        } catch (error) {
+            window.URL.revokeObjectURL(url);
+        } catch (error: any) {
             console.error('Error:', error);
-            alert('Error generando PDF');
+            const msg = error.response?.data?.detail?.message || error.response?.data?.detail || error.message || 'Error desconocido';
+            alert(`Error generando PDF: ${msg}`);
         } finally {
             setIsLoading(false);
+            setLoadingMessage('Procesando...');
         }
     };
 
@@ -168,6 +163,7 @@ export default function TechnicalReports() {
         if (!element || !selectedReportId) return;
 
         setIsLoading(true);
+        setLoadingMessage('Capturando imagen...');
         try {
             // Capture at slightly higher scale for better quality
             const canvas = await html2canvas(element, {
@@ -188,6 +184,42 @@ export default function TechnicalReports() {
             alert('Error descargando imagen');
         } finally {
             setIsLoading(false);
+            setLoadingMessage('Procesando...');
+        }
+    };
+
+    const handleDownloadConsolidatedPDF = async () => {
+        if (reports.length === 0) {
+            alert('No hay informes para exportar');
+            return;
+        }
+
+        const confirmed = window.confirm(
+            `¿Desea generar un PDF consolidado con los ${reports.length} informes?\n\nEsto puede tomar varios minutos dependiendo de la cantidad de informes.`
+        );
+
+        if (!confirmed) return;
+
+        setIsLoading(true);
+        setLoadingMessage(`Generando PDF consolidado (${reports.length} informes)...`);
+
+        try {
+            const blob = await technicalReportsApi.generateConsolidatedPDF(logoLeft, logoRight);
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `informes_tecnicos_consolidado_${reports.length}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error: any) {
+            console.error('Error generating consolidated PDF:', error);
+            const msg = error.response?.data?.detail || error.message || 'Error desconocido';
+            alert(`Error generando PDF consolidado: ${msg}`);
+        } finally {
+            setIsLoading(false);
+            setLoadingMessage('Procesando...');
         }
     };
 
@@ -218,13 +250,18 @@ export default function TechnicalReports() {
                             Siguiente
                             <ChevronRight size={16} />
                         </button>
-                        <button onClick={handleDownloadPDF} disabled={!selectedReportId} className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <button onClick={handleDownloadPDF} disabled={!selectedReportId || isLoading} className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                             <FileDown size={16} />
                             Descargar PDF
                         </button>
-                        <button onClick={handleClearDraft} disabled={!formData} className="btn-secondary flex items-center gap-2 disabled:opacity-50 text-red-400 hover:text-red-300" title="Limpiar borrador actual">
-                            <Trash2 size={16} />
-                            Nuevo
+                        <button
+                            onClick={handleDownloadConsolidatedPDF}
+                            disabled={reports.length === 0 || isLoading}
+                            className="btn-secondary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-500 hover:to-blue-700 text-white border-blue-500"
+                            title={`Descargar PDF consolidado con ${reports.length} informes`}
+                        >
+                            <Files size={16} />
+                            PDF Consolidado
                         </button>
                     </div>
                 </div>
@@ -257,9 +294,10 @@ export default function TechnicalReports() {
 
             {isLoading && (
                 <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-                    <div className="bg-[#111] border border-[#333] rounded-lg p-6 flex flex-col items-center">
+                    <div className="bg-[#111] border border-[#333] rounded-lg p-8 flex flex-col items-center min-w-[300px]">
                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D71921] mx-auto"></div>
-                        <p className="mt-4 text-[#eee] font-mono">Procesando...</p>
+                        <p className="mt-4 text-[#eee] font-mono text-center">{loadingMessage}</p>
+                        <p className="mt-2 text-[#666] text-xs">Por favor espere...</p>
                     </div>
                 </div>
             )}
