@@ -62,32 +62,32 @@ class ReportService:
     def __init__(self, templates_dir=None):
         if templates_dir is None:
             templates_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
-        
+
         # ✅ OPTIMIZACIÓN SEGURA: Bytecode Cache
         cache_dir = os.path.join(TEMP_DIR, 'jinja2_cache')
         os.makedirs(cache_dir, exist_ok=True)
-        
+
         self.env = Environment(
             loader=FileSystemLoader(templates_dir),
             auto_reload=False,
             cache_size=400,
             bytecode_cache=jinja2.FileSystemBytecodeCache(cache_dir)
         )
-        
+
         # Pre-cargar templates más usados
         self.template = self.env.get_template("report.html")
         try:
             _ = self.template.module  # Forzar compilación
         except Exception:
             pass  # Ignorar errores de compilación
-        
+
         # Cache de templates adicionales
         self._template_cache = {}
-        
+
         # ✅ OPTIMIZACIÓN SEGURA: Cache de imágenes
         self._image_cache = {}
         self._logo_cache = {}
-        
+
         # ✅ OPTIMIZACIÓN SEGURA: Cliente HTTP persistente
         self._http_client = httpx.AsyncClient(
             timeout=30.0,
@@ -106,7 +106,7 @@ class ReportService:
                 print(f"Error loading template {template_name}: {e}")
                 # Fallback a template por defecto
                 self._template_cache[template_name] = self.template
-        
+
         return self._template_cache[template_name]
 
     def get_image_dimensions(self, img_path):
@@ -126,7 +126,7 @@ class ReportService:
             if piexif.ImageIFD.DateTime in exif_dict["0th"]:
                 date_str = exif_dict["0th"][piexif.ImageIFD.DateTime].decode("utf-8")
                 metadata["date"] = date_str
-            
+
             if "GPS" in exif_dict and exif_dict["GPS"]:
                 gps = exif_dict["GPS"]
                 if piexif.GPSIFD.GPSLatitude in gps and piexif.GPSIFD.GPSLongitude in gps:
@@ -151,7 +151,7 @@ class ReportService:
 
             img = Image.open(io.BytesIO(image_content))
             del image_content
-            
+
             if img.mode in ('RGBA', 'P', 'LA'):
                 background = Image.new('RGB', img.size, (255, 255, 255))
                 if img.mode == 'P':
@@ -166,22 +166,22 @@ class ReportService:
                 old_img = img
                 img = img.convert('RGB')
                 old_img.close()
-            
+
             if img.width <= max_size[0] and img.height <= max_size[1]:
                 effective_size = (img.width, img.height)
             else:
                 effective_size = max_size
-            
+
             img.thumbnail(effective_size, Image.Resampling.BILINEAR)
-            
+
             buffer = io.BytesIO()
             img.save(buffer, format="JPEG", quality=quality)
             img.close()
-            
+
             buffer.seek(0)
             result = buffer.getvalue()
             buffer.close()
-            
+
             return result
         except Exception as e:
             print(f"Error optimizing image: {e}")
@@ -201,24 +201,24 @@ class ReportService:
 
         # Regex estricta: Requiere separador (-, _) para sufijos o coincidencia exacta
         regex = re.compile(rf"^{re.escape(str(pattern_id))}(?:[-_](\d+))?\.(jpg|jpeg|png)$", re.IGNORECASE)
-        
+
         for file in os.listdir(folder_path):
             match = regex.match(file)
             if match:
                 full_path = os.path.join(folder_path, file)
                 metadata = self.get_image_metadata(full_path)
-                
+
                 # Si hay grupo 1 es el orden, si no es la imagen principal (0)
                 order_str = match.group(1)
                 order = int(order_str) if order_str else 0
-                
+
                 images.append({
                     "path": pathlib.Path(full_path).as_uri(),
                     "name": file,
                     "order": order,
                     **metadata
                 })
-        
+
         return sorted(images, key=lambda x: x["order"])
 
     def _convert_to_base64_uri(self, image_bytes, mime_type="image/jpeg"):
@@ -230,17 +230,17 @@ class ReportService:
         """Process logo and return base64 data URI"""
         if logo_data is None:
             return None
-            
+
         cache_key = f"logo_{side}"
         if cache_key in self._logo_cache:
             return self._logo_cache[cache_key]
-        
+
         try:
             # If already a data URI, return as-is
             if isinstance(logo_data, str) and logo_data.startswith("data:"):
                 self._logo_cache[cache_key] = logo_data
                 return logo_data
-            
+
             # Convert bytes to data URI
             if isinstance(logo_data, bytes):
                 logo_bytes = logo_data
@@ -248,7 +248,7 @@ class ReportService:
                 logo_bytes = logo_data.encode()
             else:
                 return logo_data
-            
+
             # Detect mime type (assume PNG for logos)
             data_uri = self._convert_to_base64_uri(logo_bytes, "image/png")
             self._logo_cache[cache_key] = data_uri
@@ -261,10 +261,10 @@ class ReportService:
         """Procesamiento de imágenes con base64 inline (sin archivos temporales)"""
         processed_images = []
         orientations = []
-        
+
         if not files:
             return processed_images, "grid", 0
-        
+
         try:
             loop = asyncio.get_running_loop()
         except RuntimeError:
@@ -278,7 +278,7 @@ class ReportService:
                     f_path = ""
                     f_name = ""
                     content = None
-                    
+
                     if isinstance(file_obj, dict):
                         f_path = file_obj.get("path", "")
                         f_name = file_obj.get("name", "")
@@ -308,7 +308,7 @@ class ReportService:
 
                     # Cache con hash
                     file_hash = hashlib.md5(content).hexdigest()
-                    
+
                     if file_hash in self._image_cache:
                         cached_result = self._image_cache[file_hash].copy()
                         cached_result['data'] = cached_result['data'].copy()
@@ -318,25 +318,25 @@ class ReportService:
                     # Extract Metadata
                     metadata = {"date": "N/A", "coords": "N/A"}
                     width, height, is_landscape = 0, 0, True
-                    
+
                     if f_path and os.path.exists(f_path):
                         try:
                             metadata = self.get_image_metadata(f_path)
                             width, height, is_landscape = self.get_image_dimensions(f_path)
                         except Exception:
                             pass
-                    
+
                     # Optimize Image
                     optimized_bytes = await loop.run_in_executor(
-                        None, 
-                        self.optimize_image_for_pdf, 
-                        content, 
-                        max_size, 
+                        None,
+                        self.optimize_image_for_pdf,
+                        content,
+                        max_size,
                         quality
                     )
-                    
+
                     del content
-                    
+
                     if not optimized_bytes:
                         return None
 
@@ -350,9 +350,9 @@ class ReportService:
 
                     # Convert to base64 data URI (no temp files needed)
                     image_data_uri = self._convert_to_base64_uri(optimized_bytes, "image/jpeg")
-                    
+
                     del optimized_bytes
-                    
+
                     result = {
                         "data": {
                             "path": image_data_uri,
@@ -366,11 +366,11 @@ class ReportService:
                         },
                         "orientation": is_landscape
                     }
-                    
+
                     self._image_cache[file_hash] = result
-                    
+
                     return result
-                    
+
                 except Exception as e:
                     print(f"Error processing file {file_obj}: {e}")
                     import traceback
@@ -379,7 +379,7 @@ class ReportService:
 
         tasks = [process_single_file(idx, f) for idx, f in enumerate(files)]
         results = await asyncio.gather(*tasks)
-        
+
         for res in results:
             if res:
                 processed_images.append(res["data"])
@@ -389,14 +389,14 @@ class ReportService:
 
         img_count = len(processed_images)
         majority_landscape = sum(orientations) > len(orientations) / 2 if orientations else True
-        
+
         if img_count == 2:
             layout_mode = "2h" if not majority_landscape else "2v"
         elif img_count == 4:
             layout_mode = "4v" if not majority_landscape else "4h"
         else:
             layout_mode = "grid"
-            
+
         return processed_images, layout_mode, img_count
 
     async def generate_batch_pdf(self, reports_list, output_path=None, logo_left=None, logo_right=None, custom_template_str=None, template_name=None):
@@ -404,16 +404,16 @@ class ReportService:
         Pipeline optimizado ESTABLE para generación de PDFs
         """
         from pypdf import PdfWriter, PdfReader
-        
+
         if not WEASYPRINT_AVAILABLE:
             raise RuntimeError("WeasyPrint is not available. Cannot generate PDFs.")
 
         total_reports = len(reports_list)
         print(f"[PDF] Starting batch: {total_reports} reports")
-        
+
         logo_left_uri = logo_left
         logo_right_uri = logo_right
-        
+
         # Template Selection con manejo de errores
         if custom_template_str:
             from jinja2 import Template
@@ -437,20 +437,20 @@ class ReportService:
         # Pipeline Asíncrono
         from asyncio import Queue
         processed_queue = Queue(maxsize=PIPELINE_BUFFER_SIZE)
-        
+
         async def process_images_stage():
             for i, report in enumerate(reports_list):
                 try:
                     row_data = report.get("data", {})
                     files = report.get("files", [])
-                    
+
                     # Procesar imágenes (ahora retorna solo 3 valores, sin temp_files)
                     images, layout_mode, img_count = await self._process_files_serial(
-                        files, 
-                        max_size=MAX_IMAGE_SIZE, 
+                        files,
+                        max_size=MAX_IMAGE_SIZE,
                         quality=JPEG_QUALITY
                     )
-                    
+
                     # Renderizar HTML
                     single_report_context = [{
                         "data": row_data,
@@ -458,7 +458,7 @@ class ReportService:
                         "layout_mode": layout_mode,
                         "img_count": img_count
                     }]
-                    
+
                     # Para templates como informe_tecnico.html que esperan 'report' directamente
                     # (estructura anidada: report.header.xxx, report.inspeccion.xxx)
                     # vs templates que esperan 'reports' (lista con data como sub-objeto)
@@ -469,68 +469,68 @@ class ReportService:
                         logo_left=logo_left_uri or logo_left,
                         logo_right=logo_right_uri or logo_right
                     )
-                    
+
                     await processed_queue.put({
                         'html': html_out,
                         'index': i
                     })
-                    
+
                     del html_out
                     del images
                     del single_report_context
-                    
+
                     if (i + 1) % GC_INTERVAL == 0:
                         gc.collect()
-                    
+
                     print(f"[PDF] Processed {i+1}/{total_reports}")
-                
+
                 except Exception as e:
                     print(f"[PDF] Error processing report {i}: {e}")
                     import traceback
                     traceback.print_exc()
-            
+
             await processed_queue.put(None)
-        
+
         async def generate_pdfs_stage():
             temp_pdf_paths = []
             loop = asyncio.get_running_loop()
-            
+
             with ThreadPoolExecutor(max_workers=MAX_PDF_WORKERS) as executor:
                 while True:
                     item = await processed_queue.get()
                     if item is None:
                         break
-                    
+
                     try:
                         pdf_path = await loop.run_in_executor(
                             executor,
                             _render_pdf_to_file_safe,
                             item['html']
                         )
-                        
+
                         if pdf_path:
                             temp_pdf_paths.append(pdf_path)
-                        
+
                         # No cleanup needed - images are inline base64
-                    
+
                     except Exception as e:
                         print(f"[PDF] Error generating PDF: {e}")
                         import traceback
                         traceback.print_exc()
-            
+
             return temp_pdf_paths
-        
+
         # Ejecutar pipeline
         producer_task = asyncio.create_task(process_images_stage())
         temp_pdf_paths = await generate_pdfs_stage()
         await producer_task
-        
+
         if not temp_pdf_paths:
             raise RuntimeError("No PDFs were generated successfully")
-        
+
         # Merge
         print(f"[PDF] Merging {len(temp_pdf_paths)} PDFs...")
-        
+
         final_writer = PdfWriter()
         for pdf_path in temp_pdf_paths:
             try:
@@ -538,11 +538,11 @@ class ReportService:
                     reader = PdfReader(f)
                     for page in reader.pages:
                         final_writer.add_page(page)
-                
+
                 os.remove(pdf_path)
             except Exception as e:
                 print(f"[PDF] Error merging {pdf_path}: {e}")
-        
+
         # Write output
         if output_path:
             with open(output_path, "wb") as f:
@@ -552,15 +552,15 @@ class ReportService:
             output_buffer = io.BytesIO()
             final_writer.write(output_buffer)
             result = output_buffer.getvalue()
-        
+
         final_writer.close()
-        
+
         # Cleanup caches (no temp files to delete - all inline base64)
         self._logo_cache.clear()
         self._image_cache.clear()
-        
+
         gc.collect()
-        
+
         print(f"[PDF] Complete! Generated {total_reports} pages")
         return result
 
@@ -575,7 +575,7 @@ class ReportService:
         """Single worker task"""
         item_id = str(row_data.get(id_column, ""))
         images = self.find_images(folder_path, item_id)
-        
+
         if not images:
             return {"id": item_id, "status": "skipped", "message": "No images found"}
 
@@ -584,9 +584,9 @@ class ReportService:
             images=images,
             title="PANEL FOTOGRÁFICO"
         )
-        
+
         pdf_file = os.path.join(output_path, f"Reporte_{item_id}.pdf")
-        
+
         try:
             HTML(string=html_out, base_url=folder_path).write_pdf(pdf_file)
             return {"id": item_id, "status": "success", "file": pdf_file}
@@ -605,20 +605,20 @@ def _render_pdf_to_file_safe(html_string):
     """
     import tempfile
     from weasyprint import HTML
-    
+
     try:
         temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
-        
+
         # ✅ CONFIGURACIÓN SEGURA: Sin optimizaciones arriesgadas
         HTML(string=html_string, base_url=os.getcwd()).write_pdf(
             temp_pdf.name,
             optimize_images=False,  # Ya optimizadas
             uncompressed_pdf=False  # Comprimir
         )
-        
+
         temp_pdf.close()
         return temp_pdf.name
-    
+
     except Exception as e:
         print(f"[ERROR] PDF rendering failed: {e}")
         import traceback
@@ -629,21 +629,21 @@ def _render_pdf_to_file_safe(html_string):
 def run_batch_generation(df_records, folder_path, id_column, output_path):
     """Legacy batch generation"""
     from concurrent.futures import ProcessPoolExecutor
-    
+
     service = ReportService()
     results = []
-    
+
     with ProcessPoolExecutor() as executor:
         futures = [
             executor.submit(service.generate_pdf_task, row, folder_path, id_column, output_path)
             for row in df_records
         ]
-        
+
         for future in futures:
             try:
                 results.append(future.result())
             except Exception as e:
                 print(f"Error in batch generation: {e}")
                 results.append({"status": "error", "message": str(e)})
-            
+
     return results

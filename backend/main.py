@@ -16,6 +16,7 @@ from pdf_tools import merge_pdfs_interleaved, split_pdf, split_pdf_by_ranges
 import zipfile
 from technical_reports.router import router as technical_reports_router
 from technical_reports.models import TechnicalReport
+from fichas_tecnicas.router import router as fichas_tecnicas_router
 
 app = FastAPI()
 
@@ -33,8 +34,9 @@ app.add_middleware(
 # Create API Router with prefix
 api_router = APIRouter(prefix="/api")
 
-# Include the technical reports router (Only include once)
+# Include the routers (Only include once)
 app.include_router(technical_reports_router)
+app.include_router(fichas_tecnicas_router)
 
 @api_router.get("/templates")
 async def list_templates():
