@@ -362,105 +362,162 @@
             font-size: 13px;
         }
 
-        /* Custom Split View */
+        /* Custom Split View - MEJORADO */
         .preview-container {
             width: 100%;
-            overflow-x: auto;
-            background: #222;
-            padding: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+            background: #1a1a1a;
+            padding: 24px;
             border-radius: 8px;
-            white-space: nowrap;
             margin-bottom: 20px;
+            border: 1px solid var(--border);
         }
 
         .pages-grid {
-            display: inline-flex;
-            gap: 16px;
-            align-items: center;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+            align-items: start;
         }
 
         .page-thumb-wrapper {
             position: relative;
             display: flex;
+            flex-direction: column;
             align-items: center;
+            gap: 12px;
         }
 
         .page-thumb {
-            width: 150px;
-            height: 200px;
-            /* approx A4 ratio */
+            width: 200px;
+            height: 280px;
+            /* approx A4 ratio - AUMENTADO */
             background: white;
-            border: 1px solid #444;
+            border: 2px solid #444;
+            border-radius: 4px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #ccc;
             position: relative;
-            flex-shrink: 0;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
         }
 
         .page-thumb:hover {
-            transform: scale(1.02);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+            border-color: #666;
         }
 
         .page-thumb.selected {
-            border: 2px solid var(--accent);
+            border: 3px solid var(--accent);
+            box-shadow: 0 0 20px rgba(215, 25, 33, 0.3);
         }
 
         .page-thumb canvas {
             max-width: 100%;
             max-height: 100%;
+            border-radius: 2px;
         }
 
         .page-number {
             position: absolute;
-            bottom: 8px;
-            right: 8px;
-            background: rgba(0, 0, 0, 0.7);
+            bottom: 12px;
+            right: 12px;
+            background: rgba(0, 0, 0, 0.85);
             color: white;
-            padding: 2px 6px;
-            font-size: 10px;
-            border-radius: 4px;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
         }
 
         .scissor-action {
-            width: 24px;
-            /* gap space */
-            height: 200px;
+            width: 100%;
+            height: 48px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             position: relative;
-            margin: 0 -8px;
-            /* Negative margin to overlay gap */
+            margin-top: 8px;
             z-index: 10;
         }
 
         /* Scissor icon style */
         .btn-scissor {
-            width: 24px;
-            height: 24px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            background: #333;
+            background: #2a2a2a;
             color: #888;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: all 0.2s;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+            border: 2px solid #444;
         }
 
         .btn-scissor:hover {
             background: #eee;
             color: #d71921;
+            border-color: #d71921;
+            transform: scale(1.1);
         }
 
         .btn-scissor.active {
             background: #d71921;
             color: white;
+            border-color: #d71921;
+        }
+
+        /* Controles de vista previa */
+        .preview-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+            padding: 12px 16px;
+            background: #222;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        .preview-info {
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+
+        .preview-info strong {
+            color: var(--text-main);
+        }
+
+        .zoom-controls {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .zoom-btn {
+            background: #333;
+            border: 1px solid #444;
+            color: var(--text-main);
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            transition: all 0.2s;
+        }
+
+        .zoom-btn:hover {
+            background: #444;
+            border-color: var(--accent);
         }
 
         /* Cut Line */
@@ -666,13 +723,36 @@
 
             <!-- MODE: Custom -->
             <div id="split-mode-custom" style="display: none; margin-top: 24px;">
-                <div class="preview-container" id="custom-preview-container">
-                    <div style="text-align: center; color: var(--text-dim); padding: 40px;">
-                        Carga un PDF para visualizar las páginas
+                <!-- Controles de Vista Previa -->
+                <div class="preview-controls" id="preview-controls" style="display: none;">
+                    <div class="preview-info">
+                        <strong id="preview-total-pages">0</strong> páginas encontradas
+                    </div>
+                    <div class="zoom-controls">
+                        <button class="zoom-btn" onclick="changeZoom(-0.1)">
+                            <i data-lucide="zoom-out" width="14"></i>
+                        </button>
+                        <span id="zoom-level" style="font-size: 11px; color: var(--text-dim); min-width: 40px; text-align: center;">100%</span>
+                        <button class="zoom-btn" onclick="changeZoom(0.1)">
+                            <i data-lucide="zoom-in" width="14"></i>
+                        </button>
                     </div>
                 </div>
-                <div style="font-size: 10px; color: var(--text-dim); text-align: center;">
-                    Haz click en las tijeras para marcar donde cortar el documento.
+                
+                <div class="preview-container" id="custom-preview-container">
+                    <div style="text-align: center; color: var(--text-dim); padding: 60px 40px;">
+                        <i data-lucide="file-text" width="48" style="margin-bottom: 16px; opacity: 0.5;"></i>
+                        <div style="font-size: 14px; margin-bottom: 8px;">Carga un PDF para visualizar las páginas</div>
+                        <div style="font-size: 12px; opacity: 0.7;">Podrás ver una vista previa de todas las páginas y marcar los puntos de corte</div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding: 12px; background: rgba(215, 25, 33, 0.1); border-radius: 6px; border: 1px solid rgba(215, 25, 33, 0.3);">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="scissors" width="16" style="color: var(--accent);"></i>
+                        <span style="font-size: 12px; color: var(--text-main);">Haz click en las <strong>tijeras</strong> entre páginas para marcar puntos de corte</span>
+                    </div>
+                    <div id="cuts-counter" style="font-size: 12px; color: var(--accent); font-weight: 600;">0 cortes marcados</div>
                 </div>
             </div>
 
@@ -746,7 +826,7 @@
             document.getElementById('split-mode-custom').style.display = mode === 'custom' ? 'block' : 'none';
 
             if (mode === 'custom' && state.splitFile) {
-                renderCustomPreview(state.splitFile);
+                renderCustomPreview(state.splitFile, currentZoom);
             }
         }
 
@@ -869,31 +949,52 @@
             state.splitFile = file;
             document.getElementById('split-filename').textContent = file.name;
             state.cutPoints = [];
+            currentZoom = 0.3; // Reset zoom
 
             if (state.splitMode === 'custom') {
-                renderCustomPreview(file);
+                renderCustomPreview(file, currentZoom);
             }
         }
 
-        // --- Custom Split Preview (PDF.js) ---
-        async function renderCustomPreview(file) {
+        // --- Custom Split Preview (PDF.js) - MEJORADO ---
+        let currentZoom = 0.3;
+        let currentPdf = null;
+        let currentNumPages = 0;
+
+        async function renderCustomPreview(file, zoom = 0.3) {
             const container = document.getElementById('custom-preview-container');
-            container.innerHTML = '<div style="padding: 20px; text-align: center">Generando vista previa...</div>';
+            container.innerHTML = '<div style="padding: 40px; text-align: center"><div class="spinner" style="margin: 0 auto 16px;"></div><div style="color: var(--text-dim);">Generando vista previa...</div></div>';
+            
+            // Mostrar controles
+            document.getElementById('preview-controls').style.display = 'flex';
 
             try {
                 // Read file
                 const arrayBuffer = await file.arrayBuffer();
-                const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
-                const numPages = pdf.numPages;
+                currentPdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+                currentNumPages = currentPdf.numPages;
+                currentZoom = zoom;
+
+                // Actualizar info
+                document.getElementById('preview-total-pages').textContent = currentNumPages;
+                document.getElementById('zoom-level').textContent = Math.round(currentZoom * 100) + '%';
 
                 container.innerHTML = '';
                 const grid = document.createElement('div');
                 grid.className = 'pages-grid';
+                grid.id = 'pages-grid';
 
-                for (let i = 1; i <= numPages; i++) {
+                for (let i = 1; i <= currentNumPages; i++) {
+                    // Page Wrapper
+                    const pageContainer = document.createElement('div');
+                    pageContainer.style.display = 'flex';
+                    pageContainer.style.flexDirection = 'column';
+                    pageContainer.style.alignItems = 'center';
+                    pageContainer.style.gap = '12px';
+
                     // Page Render
-                    const page = await pdf.getPage(i);
-                    const viewport = page.getViewport({ scale: 0.2 }); // Thumbnail size
+                    const page = await currentPdf.getPage(i);
+                    const viewport = page.getViewport({ scale: currentZoom });
 
                     const thumbWrapper = document.createElement('div');
                     thumbWrapper.className = 'page-thumb-wrapper';
@@ -917,30 +1018,57 @@
                     thumb.appendChild(numLabel);
 
                     thumbWrapper.appendChild(thumb);
-                    grid.appendChild(thumbWrapper);
+                    pageContainer.appendChild(thumbWrapper);
 
                     // Scissor (if not last page)
-                    if (i < numPages) {
+                    if (i < currentNumPages) {
+                        const scissorWrapper = document.createElement('div');
+                        scissorWrapper.style.width = '100%';
+                        scissorWrapper.style.display = 'flex';
+                        scissorWrapper.style.justifyContent = 'center';
+                        
                         const scissor = document.createElement('div');
                         scissor.className = 'scissor-action';
                         scissor.innerHTML = `
-                            <div class="cut-line"></div>
-                            <button class="btn-scissor">
-                                <i data-lucide="scissors" width="14"></i>
+                            <button class="btn-scissor" id="scissor-${i}">
+                                <i data-lucide="scissors" width="18"></i>
                             </button>
                         `;
                         // Toggle cut
                         scissor.onclick = () => toggleCut(i, scissor);
-                        grid.appendChild(scissor);
+                        
+                        scissorWrapper.appendChild(scissor);
+                        pageContainer.appendChild(scissorWrapper);
                     }
+
+                    grid.appendChild(pageContainer);
                 }
 
                 container.appendChild(grid);
                 lucide.createIcons();
+                updateCutsCounter();
 
             } catch (err) {
                 console.error(err);
-                container.innerHTML = '<div style="color: red; padding: 20px;">Error cargando vista previa del PDF</div>';
+                container.innerHTML = '<div style="color: #ff4444; padding: 40px; text-align: center;"><i data-lucide="alert-circle" width="32" style="margin-bottom: 12px;"></i><div>Error cargando vista previa del PDF</div><div style="font-size: 12px; margin-top: 8px; opacity: 0.7;">' + err.message + '</div></div>';
+                lucide.createIcons();
+            }
+        }
+
+        function changeZoom(delta) {
+            if (!currentPdf) return;
+            const newZoom = Math.max(0.2, Math.min(0.6, currentZoom + delta));
+            if (newZoom !== currentZoom) {
+                renderCustomPreview(state.splitFile, newZoom);
+            }
+        }
+
+        function updateCutsCounter() {
+            const count = state.cutPoints.length;
+            const counter = document.getElementById('cuts-counter');
+            if (counter) {
+                counter.textContent = count + (count === 1 ? ' corte marcado' : ' cortes marcados');
+                counter.style.color = count > 0 ? '#4CAF50' : 'var(--accent)';
             }
         }
 
@@ -955,6 +1083,8 @@
                 state.cutPoints.push(pageIndex);
                 state.cutPoints.sort((a, b) => a - b);
             }
+            
+            updateCutsCounter();
         }
 
 

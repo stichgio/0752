@@ -5,6 +5,7 @@ import html2canvas from 'html2canvas';
 import { FileSpreadsheet, Image as ImageIcon, Printer, Settings, FileCode, CheckCircle, AlertCircle, RotateCcw, Music, Calculator, FileText, Timer, Play, Pause, Coffee, Brain, ClipboardList } from 'lucide-react';
 import PreviewPanel from './components/PreviewPanel';
 import PomodoroTimer from './components/PomodoroTimer';
+import FichasTecnicas from './components/tools/FichasTecnicas';
 
 import { REPORT_FIELDS } from './constants';
 
@@ -26,6 +27,7 @@ export default function App() {
     // Selection State
     const [selectedIndex, setSelectedIndex] = useState('');
     const [isSidebarOpen, setSidebarOpen] = useState(true);
+    const [showFichasTool, setShowFichasTool] = useState(false);
 
     // Custom Logos State
     const [logoLeft, setLogoLeft] = useState(null);
@@ -943,6 +945,16 @@ export default function App() {
                                 <ClipboardList size={14} className="text-white" />
                                 Informes Técnicos
                             </a>
+                            {/* Fichas Técnicas - abrir en nueva pestaña (independiente) */}
+                            <a
+                                href="/fichas-tecnicas.html"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center gap-2 bg-neutral-800 hover:bg-neutral-700 text-white p-2 rounded transition-colors text-[10px] w-full cursor-pointer mt-2"
+                            >
+                                <FileSpreadsheet size={14} className="text-white" />
+                                Fichas Técnicas
+                            </a>
                         </div>
                     </div>
 
@@ -951,16 +963,29 @@ export default function App() {
 
             {/* Main Preview */}
             <main className="flex-1 flex flex-col h-full overflow-hidden relative">
-                <PreviewPanel
-                    ref={panelRef}
-                    data={data[selectedIndex]}
-                    images={getFilteredImages()}
-                    mappings={mappings}
-                    logoLeft={logoLeft}
-                    logoRight={logoRight}
-                    customTemplate={customTemplate}
-                    customColumns={customColumns}
-                />
+                {showFichasTool ? (
+                    <div className="h-full w-full bg-neutral-900">
+                        <div className="p-4 flex items-center justify-between border-b border-neutral-800">
+                            <button onClick={() => setShowFichasTool(false)} className="text-[12px] px-3 py-1 rounded bg-neutral-800 hover:bg-neutral-700">← Volver</button>
+                            <h2 className="text-white font-bold">Fichas Técnicas</h2>
+                            <div />
+                        </div>
+                        <div className="p-4 h-[calc(100%-56px)] overflow-auto">
+                            <FichasTecnicas />
+                        </div>
+                    </div>
+                ) : (
+                    <PreviewPanel
+                        ref={panelRef}
+                        data={data[selectedIndex]}
+                        images={getFilteredImages()}
+                        mappings={mappings}
+                        logoLeft={logoLeft}
+                        logoRight={logoRight}
+                        customTemplate={customTemplate}
+                        customColumns={customColumns}
+                    />
+                )}
             </main>
 
             {/* Custom Column Modal */}

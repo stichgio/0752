@@ -9,7 +9,8 @@ export default defineConfig({
         rollupOptions: {
             input: {
                 main: resolve(__dirname, 'index.html'),
-                technical: resolve(__dirname, 'technical-reports.html')
+                technical: resolve(__dirname, 'technical-reports.html'),
+                fichas: resolve(__dirname, 'fichas-tecnicas.html')
             }
         }
     },

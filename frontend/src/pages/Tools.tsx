@@ -1,13 +1,14 @@
 // frontend/src/pages/Tools.tsx
 
 import { useState } from 'react';
-import { Calculator, FileText, ClipboardList } from 'lucide-react';
+import { Calculator, FileText, ClipboardList, FileSpreadsheet } from 'lucide-react';
 import Calculadora from '@/components/tools/Calculator';
 import PDFTools from '@/components/tools/PDFTools';
 import TechnicalReports from '@/components/tools/TechnicalReports';
+import FichasTecnicas from '@/components/tools/FichasTecnicas';
 
 export default function Tools() {
-    const [activeTool, setActiveTool] = useState<'calculator' | 'pdf' | 'technical-reports' | null>(null);
+    const [activeTool, setActiveTool] = useState<'calculator' | 'pdf' | 'technical-reports' | 'fichas-tecnicas' | null>(null);
 
     return (
         <div className="min-h-screen bg-gray-900 text-white">
@@ -54,6 +55,17 @@ export default function Tools() {
                                 <span className="text-lg font-medium">Informes Técnicos</span>
                             </div>
                         </button>
+
+                        {/* Fichas Técnicas (NUEVA) */}
+                        <button
+                            onClick={() => setActiveTool('fichas-tecnicas')}
+                            className="bg-gray-800 hover:bg-gray-700 rounded-lg p-6 text-left transition-colors block"
+                        >
+                            <div className="flex items-center gap-3">
+                                <FileSpreadsheet size={24} />
+                                <span className="text-lg font-medium">Fichas Técnicas</span>
+                            </div>
+                        </button>
                     </div>
                 </div>
             ) : (
@@ -71,6 +83,7 @@ export default function Tools() {
                     {activeTool === 'calculator' && <Calculadora />}
                     {activeTool === 'pdf' && <PDFTools />}
                     {activeTool === 'technical-reports' && <TechnicalReports />}
+                    {activeTool === 'fichas-tecnicas' && <FichasTecnicas />}
                 </div>
             )}
         </div>
