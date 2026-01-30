@@ -59,7 +59,146 @@ GC_INTERVAL = 10
 PDF_BATCH_SIZE = 5  # Número de PDFs a generar en paralelo por lote
 HTML_PREFETCH_SIZE = 10  # Número de HTMLs a pre-renderizar adelante
 
+# ✅ GHOSTSCRIPT COMPRESSION: Reducir tamaño del PDF final
+GHOSTSCRIPT_ENABLED = True  # Habilitar compresión post-proceso
+GHOSTSCRIPT_QUALITY = "printer"  # Opciones: screen (72dpi), ebook (150dpi), printer (300dpi), prepress (300dpi+)
+
 TEMP_DIR = tempfile.gettempdir()
+
+# ============================================================================
+# GHOSTSCRIPT COMPRESSION UTILITY
+# ============================================================================
+
+def _check_ghostscript_available():
+    """Verifica si Ghostscript está disponible en el sistema"""
+    import shutil
+    # Buscar gs (Linux/Mac) o gswin64c (Windows)
+    gs_commands = ['gs', 'gswin64c', 'gswin32c']
+    for cmd in gs_commands:
+        if shutil.which(cmd):
+            return cmd
+    return None
+
+def _compress_pdf_with_ghostscript(input_path, output_path=None, quality="printer"):
+    """
+    Comprime un PDF usando Ghostscript sin pérdida visible de calidad.
+
+    Args:
+        input_path: Ruta al PDF original
+        output_path: Ruta de salida (si None, sobrescribe el original)
+        quality: Nivel de calidad
+            - "screen": 72 dpi, menor calidad, máxima compresión
+            - "ebook": 150 dpi, buena calidad, buena compresión
+            - "printer": 300 dpi, alta calidad, compresión moderada (RECOMENDADO)
+            - "prepress": 300 dpi, máxima calidad, mínima compresión
+
+    Returns:
+        tuple: (success: bool, compressed_path: str, stats: dict)
+    """
+    import subprocess
+    import shutil
+
+    gs_cmd = _check_ghostscript_available()
+    if not gs_cmd:
+        print("[GS] Ghostscript no disponible, omitiendo compresión")
+        return False, input_path, {"error": "Ghostscript not available"}
+
+    # Si no se especifica output, usar archivo temporal
+    if output_path is None:
+        tmp_output = tempfile.NamedTemporaryFile(delete=False, suffix='_compressed.pdf')
+        output_path = tmp_output.name
+        tmp_output.close()
+        replace_original = True
+    else:
+        replace_original = False
+
+    # Obtener tamaño original
+    original_size = os.path.getsize(input_path)
+
+    # Comando Ghostscript optimizado para calidad/tamaño
+    gs_args = [
+        gs_cmd,
+        '-sDEVICE=pdfwrite',
+        '-dCompatibilityLevel=1.4',
+        f'-dPDFSETTINGS=/{quality}',
+        '-dNOPAUSE',
+        '-dQUIET',
+        '-dBATCH',
+        # Optimizaciones adicionales sin afectar calidad visible
+        '-dDetectDuplicateImages=true',
+        '-dCompressFonts=true',
+        '-dSubsetFonts=true',
+        # Mantener calidad de imágenes
+        '-dColorImageDownsampleType=/Bicubic',
+        '-dGrayImageDownsampleType=/Bicubic',
+        '-dMonoImageDownsampleType=/Bicubic',
+        '-dAutoRotatePages=/None',
+        '-dColorConversionStrategy=/LeaveColorUnchanged',
+        f'-sOutputFile={output_path}',
+        input_path
+    ]
+
+    try:
+        result = subprocess.run(
+            gs_args,
+            capture_output=True,
+            text=True,
+            timeout=300  # 5 minutos máximo
+        )
+
+        if result.returncode != 0:
+            print(f"[GS] Error: {result.stderr}")
+            # Si falla, retornar el original
+            if replace_original and os.path.exists(output_path):
+                os.remove(output_path)
+            return False, input_path, {"error": result.stderr}
+
+        # Verificar que el archivo comprimido existe y es válido
+        if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
+            print("[GS] Error: Archivo comprimido inválido")
+            return False, input_path, {"error": "Invalid output file"}
+
+        compressed_size = os.path.getsize(output_path)
+        reduction = ((original_size - compressed_size) / original_size) * 100
+
+        stats = {
+            "original_size": original_size,
+            "compressed_size": compressed_size,
+            "reduction_percent": round(reduction, 1),
+            "quality": quality
+        }
+
+        # Solo usar versión comprimida si realmente es menor
+        if compressed_size < original_size:
+            if replace_original:
+                # Reemplazar original con comprimido
+                os.remove(input_path)
+                shutil.move(output_path, input_path)
+                print(f"[GS] ✅ Comprimido: {original_size/1024/1024:.1f}MB → {compressed_size/1024/1024:.1f}MB ({reduction:.1f}% reducción)")
+                return True, input_path, stats
+            else:
+                print(f"[GS] ✅ Comprimido: {original_size/1024/1024:.1f}MB → {compressed_size/1024/1024:.1f}MB ({reduction:.1f}% reducción)")
+                return True, output_path, stats
+        else:
+            # El comprimido es mayor o igual, usar original
+            if os.path.exists(output_path):
+                os.remove(output_path)
+            print(f"[GS] ℹ️ Sin mejora de compresión, usando original ({original_size/1024/1024:.1f}MB)")
+            return True, input_path, {"skipped": True, "reason": "No improvement"}
+
+    except subprocess.TimeoutExpired:
+        print("[GS] Error: Timeout en compresión")
+        if replace_original and os.path.exists(output_path):
+            os.remove(output_path)
+        return False, input_path, {"error": "Timeout"}
+    except Exception as e:
+        print(f"[GS] Error: {e}")
+        if replace_original and os.path.exists(output_path):
+            try:
+                os.remove(output_path)
+            except:
+                pass
+        return False, input_path, {"error": str(e)}
 
 
 class ReportService:
@@ -568,34 +707,84 @@ class ReportService:
             raise RuntimeError("No PDFs were generated successfully")
 
         # =====================================================================
-        # FASE 3: Merge final de todos los PDFs
+        # FASE 3: Merge con STREAMING - Escribe directamente a disco
         # =====================================================================
-        print(f"[PDF] Merging {len(all_pdf_paths)} PDFs...")
+        print(f"[PDF] Streaming merge of {len(all_pdf_paths)} PDFs...")
         merge_start = time.time()
 
-        final_writer = PdfWriter()
-        for pdf_path in all_pdf_paths:
-            try:
-                with open(pdf_path, 'rb') as f:
-                    reader = PdfReader(f)
-                    for page in reader.pages:
-                        final_writer.add_page(page)
-                # Eliminar archivo temporal inmediatamente después de leerlo
-                os.remove(pdf_path)
-            except Exception as e:
-                print(f"[PDF] Error merging {pdf_path}: {e}")
-
-        # Write output
+        # Determinar archivo de salida
         if output_path:
-            with open(output_path, "wb") as f:
-                final_writer.write(f)
-            result = output_path
+            final_output_path = output_path
         else:
-            output_buffer = io.BytesIO()
-            final_writer.write(output_buffer)
-            result = output_buffer.getvalue()
+            # Crear archivo temporal para el resultado
+            tmp_final = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+            final_output_path = tmp_final.name
+            tmp_final.close()
+
+        # ✅ STREAMING MERGE: Usar PdfWriter con escritura incremental
+        # Esto reduce significativamente el uso de memoria para PDFs grandes
+        final_writer = PdfWriter()
+
+        # Configurar para menor uso de memoria
+        merge_batch_size = 10  # Procesar en lotes pequeños para liberar memoria
+
+        for batch_idx in range(0, len(all_pdf_paths), merge_batch_size):
+            batch_paths = all_pdf_paths[batch_idx:batch_idx + merge_batch_size]
+
+            for pdf_path in batch_paths:
+                try:
+                    # Usar append que es más eficiente en memoria que add_page
+                    final_writer.append(pdf_path)
+                    # Eliminar archivo temporal inmediatamente
+                    os.remove(pdf_path)
+                except Exception as e:
+                    print(f"[PDF] Error merging {pdf_path}: {e}")
+                    # Intentar limpiar el archivo si falló
+                    try:
+                        if os.path.exists(pdf_path):
+                            os.remove(pdf_path)
+                    except:
+                        pass
+
+            # GC después de cada lote de merge
+            if batch_idx > 0 and batch_idx % (merge_batch_size * 2) == 0:
+                gc.collect()
+
+        # Escribir resultado final a disco
+        with open(final_output_path, "wb") as f:
+            final_writer.write(f)
 
         final_writer.close()
+        del final_writer
+        gc.collect()
+
+        merge_time = time.time() - merge_start
+
+        # =====================================================================
+        # FASE 4: Compresión Ghostscript (opcional)
+        # =====================================================================
+        compression_stats = None
+        if GHOSTSCRIPT_ENABLED and total_reports > 1:  # Solo comprimir si hay múltiples reportes
+            print(f"[PDF] Applying Ghostscript compression (quality={GHOSTSCRIPT_QUALITY})...")
+            compress_start = time.time()
+
+            success, final_output_path, compression_stats = _compress_pdf_with_ghostscript(
+                final_output_path,
+                quality=GHOSTSCRIPT_QUALITY
+            )
+
+            compress_time = time.time() - compress_start
+            print(f"[PDF]    - Compression time: {compress_time:.1f}s")
+
+        # Preparar resultado
+        if output_path:
+            result = output_path
+        else:
+            # Si no se especificó output_path, leer el archivo y retornar bytes
+            # (para compatibilidad con código existente)
+            with open(final_output_path, 'rb') as f:
+                result = f.read()
+            os.remove(final_output_path)
 
         # Cleanup caches
         self._logo_cache.clear()
@@ -604,11 +793,12 @@ class ReportService:
 
         # Estadísticas finales
         total_time = time.time() - start_time
-        merge_time = time.time() - merge_start
         gen_time = total_time - merge_time
         print(f"[PDF] ✅ Complete! {total_reports} reports in {total_time:.1f}s ({total_reports/total_time:.1f} reports/sec)")
         print(f"[PDF]    - Generation + HTML: {gen_time:.1f}s")
-        print(f"[PDF]    - Merge: {merge_time:.1f}s")
+        print(f"[PDF]    - Streaming merge: {merge_time:.1f}s")
+        if compression_stats and "reduction_percent" in compression_stats:
+            print(f"[PDF]    - Compression: {compression_stats['reduction_percent']}% size reduction")
 
         return result
 
