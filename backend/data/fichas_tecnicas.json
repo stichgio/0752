@@ -1,257 +1,5952 @@
 {
   "FT-00001": {
     "id": "FT-00001",
-    "os_numero": "OS-2024-001",
-    "cliente": "Constructora ABC S.A.C.",
-    "fecha": "15/01/2024",
-    "direccion": "Av. Principal 123 Oficina 456",
-    "distrito": "San Isidro",
+    "os_numero": "N° 00001",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-08 00:00:00",
+    "direccion": "1079 - RE-242,Urb. Las Viñas de La Molina (R-2.6)",
+    "distrito": "La Molina",
     "servicio": {
-      "desinfeccion": true,
-      "limpieza_ambientes": true,
-      "limpieza_pozos_septicos": false,
-      "limpieza_reservorios": false
-    },
-    "diagnostico_area": "Área de oficinas con 15 cubículos. Presencia de polvo acumulado en ventiladores y esquinas. Se detectaron focos de humedad en baños del primer piso.",
-    "condicion_sanitaria": "La zona circundante presenta buenas condiciones sanitarias. No se observan acumulaciones de basura. Vías de acceso limpias y despejadas.",
-    "tratamiento": {
-      "pulverizado": true,
-      "atomizado": false,
-      "thermonebulizado": false,
-      "nebulizado_ulv": true,
-      "otros": "Fumigación con manguera"
-    },
-    "productos": [
-      {
-        "producto": "Desinfectante Multiusos",
-        "composicion": "Cloro 5% + Surfactantes",
-        "lote": "LOT-001",
-        "fecha_vencimiento": "15/06/2025",
-        "unidad": "Litros",
-        "concentracion": "1:100",
-        "cantidad": "5"
-      },
-      {
-        "producto": "Insecticida Pyrethroid",
-        "composicion": "Piretrinas sintéticas",
-        "lote": "LOT-002",
-        "fecha_vencimiento": "20/08/2025",
-        "unidad": "Litros",
-        "concentracion": "1:50",
-        "cantidad": "3"
-      },
-      {
-        "producto": "Raticida Bromadiolona",
-        "composicion": "Anticoagulante 0.005%",
-        "lote": "LOT-003",
-        "fecha_vencimiento": "10/12/2025",
-        "unidad": "Kilos",
-        "concentracion": "",
-        "cantidad": "2"
-      },
-      {
-        "producto": "Desinfectante de Superficies",
-        "composicion": "Quaternarios de amonio",
-        "lote": "LOT-004",
-        "fecha_vencimiento": "22/04/2025",
-        "unidad": "Litros",
-        "concentracion": "1:200",
-        "cantidad": "4"
-      }
-    ],
-    "acciones_correctivas": "Limpieza profunda de ventiladores y aires acondicionados. Aplicación de desinfectante en áreas comunes y baños.",
-    "areas_tratadas": "Oficinas administrativas (150 m²) - Sala de reuniones (40 m²) - Área de cocina (25 m²) - Baños (3 unidades) - Recepción (30 m²)",
-    "personal_tecnico": [
-      "Juan Pérez - Supervisor Técnico",
-      "Carlos López - Técnico Especialista",
-      "María García - Auxiliar de Campo",
-      "",
-      "",
-      ""
-    ],
-    "hora_inicio": "08:30",
-    "hora_termino": "14:00",
-    "numero_certificado": "CERT-2024-001",
-    "obs_rec": {
-      "observacion_a": "Se recomienda mantener ventilación constante después del servicio",
-      "observacion_b": "Verificar sellado de ventanas para evitar entrada de plagas",
-      "observacion_c": "Programar servicio de mantenimiento mensual",
-      "recomendacion_a": "Mantener áreas limpias y ordenadas",
-      "recomendacion_b": "Reportar cualquier actividad de plagas inmediatamente",
-      "recomendacion_c": "No consumir alimentos en áreas de trabajo"
-    },
-    "satisfaccion": "muy_satisfecho",
-    "status": "draft",
-    "last_modified": "2026-01-30T15:16:09.876189"
-  },
-  "FT-00002": {
-    "id": "FT-00002",
-    "os_numero": "OS-2024-002",
-    "cliente": "Restaurante El Sabor Tradicional",
-    "fecha": "20/01/2024",
-    "direccion": "Calle Secundaria 789 Local 12",
-    "distrito": "Miraflores",
-    "servicio": {
-      "desinfeccion": true,
+      "desinfeccion": false,
       "limpieza_ambientes": false,
       "limpieza_pozos_septicos": false,
       "limpieza_reservorios": true
     },
-    "diagnostico_area": "Área de cocina con grasa acumulada en extractores. Presencia de cucarachas en zona de almacén. Filtros de campana requieren limpieza profunda.",
-    "condicion_sanitaria": "Se detecta acumulación de residuos orgánicos en contenedores externos. Recomendar limpieza diaria de área de desechos.",
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
     "tratamiento": {
       "pulverizado": false,
-      "atomizado": true,
-      "thermonebulizado": true,
-      "nebulizado_ulv": false,
-      "otros": "Cepillado mecánico"
-    },
-    "productos": [
-      {
-        "producto": "Desengrasante Industrial",
-        "composicion": "Agentes surfactantes concentrados",
-        "lote": "LOT-005",
-        "fecha_vencimiento": "30/09/2025",
-        "unidad": "Litros",
-        "concentracion": "1:20",
-        "cantidad": "8"
-      },
-      {
-        "producto": "Desinfectante Alimentario",
-        "composicion": "Peróxido de hidrógeno",
-        "lote": "LOT-006",
-        "fecha_vencimiento": "15/07/2025",
-        "unidad": "Litros",
-        "concentracion": "1:200",
-        "cantidad": "4"
-      },
-      {
-        "producto": "Biocida Reservorios",
-        "composicion": "Cloro estabilizado",
-        "lote": "LOT-007",
-        "fecha_vencimiento": "01/11/2025",
-        "unidad": "Litros",
-        "concentracion": "5 ppm",
-        "cantidad": "10"
-      },
-      {
-        "producto": "Gel Anticucarachas",
-        "composicion": "Fipronil 0.05%",
-        "lote": "LOT-008",
-        "fecha_vencimiento": "18/03/2026",
-        "unidad": "Kilos",
-        "concentracion": "",
-        "cantidad": "1"
-      }
-    ],
-    "acciones_correctivas": "Limpieza y desengrasado de sistema de extracción. Sanitización de áreas de preparación. Control de cucarachas en almacén.",
-    "areas_tratadas": "Cocina principal (80 m²) - Campana y extractores - Área de almacén (30 m²) - Comedor de personal (25 m²) - Baños de personal (2 unidades) - Reservorio de agua (5000 litros)",
-    "personal_tecnico": [
-      "Ana Rodríguez - Especialista en Sanitización",
-      "Pedro Martínez - Técnico de Campo",
-      "",
-      "",
-      "",
-      ""
-    ],
-    "hora_inicio": "06:00",
-    "hora_termino": "12:30",
-    "numero_certificado": "CERT-2024-002",
-    "obs_rec": {
-      "observacion_a": "Verificar temperatura de almacenamiento de alimentos después del servicio",
-      "observacion_b": "Revisar sellado de puertas y ventanas",
-      "observacion_c": "Mantener registro de temperatura diario",
-      "recomendacion_a": "Cumplir con normas de higiene establecidas",
-      "recomendacion_b": "No almacenar productos químicos cerca de alimentos",
-      "recomendacion_c": "Capacitar personal en manejo de desechos"
-    },
-    "satisfaccion": "satisfecho",
-    "status": "draft",
-    "last_modified": "2026-01-30T15:16:09.876189"
-  },
-  "FT-00003": {
-    "id": "FT-00003",
-    "os_numero": "OS-2024-003",
-    "cliente": "Edificio Residencial Los Pinos",
-    "fecha": "25/01/2024",
-    "direccion": "Av. Los Jardines 456 Dpto 201",
-    "distrito": "San Borja",
-    "servicio": {
-      "desinfeccion": false,
-      "limpieza_ambientes": true,
-      "limpieza_pozos_septicos": true,
-      "limpieza_reservorios": false
-    },
-    "diagnostico_area": "Departamento de 120 m² con 3 dormitorios. Acumulación de polvo en closets. Detectadas chinches en dormitorio principal. Baños con sarro y mohos.",
-    "condicion_sanitaria": "Buenas condiciones generales. Elevador operativo. Áreas comunes limpias. Estacionamiento con buena iluminación.",
-    "tratamiento": {
-      "pulverizado": true,
       "atomizado": false,
-      "thermonebulizado": true,
-      "nebulizado_ulv": true,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
       "otros": ""
     },
     "productos": [
       {
-        "producto": "Insecticida para Chinches",
-        "composicion": "Cipermetrina 10%",
-        "lote": "LOT-009",
-        "fecha_vencimiento": "20/05/2025",
-        "unidad": "Litros",
-        "concentracion": "1:30",
-        "cantidad": "4"
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
       },
       {
-        "producto": "Desinfectante Doméstico",
-        "composicion": "Cloro 3% + Fragancia",
-        "lote": "LOT-010",
-        "fecha_vencimiento": "12/08/2025",
-        "unidad": "Litros",
-        "concentracion": "1:150",
-        "cantidad": "6"
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
       },
       {
-        "producto": "Bactericida Pozos",
-        "composicion": "Enzimas biológicas",
-        "lote": "LOT-011",
-        "fecha_vencimiento": "05/10/2025",
-        "unidad": "Litros",
-        "concentracion": "1:500",
-        "cantidad": "8"
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
       },
       {
-        "producto": "Ambientador Desinfectante",
-        "composicion": "Citronela natural",
-        "lote": "LOT-012",
-        "fecha_vencimiento": "30/04/2025",
-        "unidad": "Litros",
-        "concentracion": "Directo",
-        "cantidad": "2"
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
       }
     ],
-    "acciones_correctivas": "Limpieza profunda de closets y roperos. Tratamiento para chinches en dormitorios. Desinfección de baños. Limpieza de pozo séptico (3 metros de profundidad).",
-    "areas_tratadas": "Dormitorio principal (25 m²) - Dormitorios secundarios (18 m²) - Sala comedor (30 m²) - Cocina (15 m²) - Baños (2 unidades) - Pozo séptico (1 unidad)",
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
     "personal_tecnico": [
-      "Luis Torres - Supervisor de Operaciones",
-      "Diana Ruiz - Técnica Especialista",
-      "José Vega - Ayudante de Campo",
+      "",
+      "",
+      "",
       "",
       "",
       ""
     ],
-    "hora_inicio": "09:00",
-    "hora_termino": "17:00",
-    "numero_certificado": "CERT-2024-003",
+    "hora_inicio": "",
+    "hora_termino": "",
+    "numero_certificado": "00001",
     "obs_rec": {
-      "observacion_a": "Inspección post-servicio programada para 48 horas después",
-      "observacion_b": "Aplicar segundo tratamiento en 15 días si es necesario",
-      "observacion_c": "Informar si persisten signos de chinches",
-      "recomendacion_a": "No lavar superficies tratadas por 24 horas",
-      "recomendacion_b": "Mantener ropa en bolsas selladas",
-      "recomendacion_c": "Ventilar habitaciones regularmente"
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
     },
-    "satisfaccion": "muy_satisfecho",
+    "satisfaccion": "",
     "status": "draft",
-    "last_modified": "2026-01-30T15:16:09.877189"
+    "last_modified": "2026-01-30T16:16:55.328577"
+  },
+  "FT-00002": {
+    "id": "FT-00002",
+    "os_numero": "N° 00002",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-07 00:00:00",
+    "direccion": "1134 - RE-411,Chancas de Andahuaylas",
+    "distrito": "Santa Anita",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "",
+    "hora_termino": "",
+    "numero_certificado": "00002",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.328577"
+  },
+  "FT-00003": {
+    "id": "FT-00003",
+    "os_numero": "N° 00003",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-08 00:00:00",
+    "direccion": "1050 -CR-30,San Pedro",
+    "distrito": "El Agustino",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "",
+    "hora_termino": "",
+    "numero_certificado": "00003",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.328577"
+  },
+  "FT-00004": {
+    "id": "FT-00004",
+    "os_numero": "N° 00004",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-08 00:00:00",
+    "direccion": "1048 -CR-129,PJ Santa Isabel",
+    "distrito": "El Agustino",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "",
+    "hora_termino": "",
+    "numero_certificado": "00004",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.328577"
+  },
+  "FT-00005": {
+    "id": "FT-00005",
+    "os_numero": "N° 00005",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-09 00:00:00",
+    "direccion": "1047 - CR-120 - PJ 7 de Octubre",
+    "distrito": "El Agustino",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "09:00:00",
+    "hora_termino": "12:00:00",
+    "numero_certificado": "00005",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.328577"
+  },
+  "FT-00006": {
+    "id": "FT-00006",
+    "os_numero": "N° 00006",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-09 00:00:00",
+    "direccion": "1061 - RE-415,PJ 7 de Octubre (R-5B)",
+    "distrito": "El Agustino",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "12:50:00",
+    "hora_termino": "16:00:00",
+    "numero_certificado": "00006",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.328577"
+  },
+  "FT-00007": {
+    "id": "FT-00007",
+    "os_numero": "N° 00007",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-10 00:00:00",
+    "direccion": "1060 - RE-414,PJ Santa Isabel (R-5A)",
+    "distrito": "El Agustino",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "09:00:00",
+    "hora_termino": "11:30:00",
+    "numero_certificado": "00007",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.328577"
+  },
+  "FT-00008": {
+    "id": "FT-00008",
+    "os_numero": "N° 00008",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-10 00:00:00",
+    "direccion": "1057 - RE-150,Independiente RE-1",
+    "distrito": "El Agustino",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "12:10:00",
+    "hora_termino": "14:40:00",
+    "numero_certificado": "00008",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.328577"
+  },
+  "FT-00009": {
+    "id": "FT-00009",
+    "os_numero": "N° 00009",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-11 00:00:00",
+    "direccion": "1257 - CR-497  EL GOLF DE HUAMPANI I",
+    "distrito": "Lurigancho",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "08:50:00",
+    "hora_termino": "10:40:00",
+    "numero_certificado": "00009",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.331137"
+  },
+  "FT-00010": {
+    "id": "FT-00010",
+    "os_numero": "N° 00010",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-11 00:00:00",
+    "direccion": "1258 - CR-498 EL HARAS DE HUAMPANI",
+    "distrito": "Lurigancho",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "12:40:00",
+    "hora_termino": "15:25:00",
+    "numero_certificado": "00010",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.331137"
+  },
+  "FT-00011": {
+    "id": "FT-00011",
+    "os_numero": "N° 00011",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-11 00:00:00",
+    "direccion": "1259 - CR-503  EL MIRASOL DE HUAMPANI",
+    "distrito": "Lurigancho",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "08:20:00",
+    "hora_termino": "11:20:00",
+    "numero_certificado": "00011",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.331137"
+  },
+  "FT-00012": {
+    "id": "FT-00012",
+    "os_numero": "N° 00012",
+    "cliente": "SEDAPAL",
+    "fecha": "2025-01-12 00:00:00",
+    "direccion": "1256 - CP1 (CR-391) AH MARIA JESUS ESPINOZA",
+    "distrito": "Ate",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "09:16:00",
+    "hora_termino": "10:25:00",
+    "numero_certificado": "00012",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.331137"
+  },
+  "FT-00013": {
+    "id": "FT-00013",
+    "os_numero": "N° 00013",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-12 00:00:00",
+    "direccion": "1306 - CR-518  (C-P2 VILLA DEL PERIODISTA)",
+    "distrito": "Ate",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "10:50:00",
+    "hora_termino": "13:50:00",
+    "numero_certificado": "00013",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.331137"
+  },
+  "FT-00014": {
+    "id": "FT-00014",
+    "os_numero": "N° 00014",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-12 00:00:00",
+    "direccion": "1307 - CR-516 (R-P3)  LA RONCADORA",
+    "distrito": "Ate",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "14:50:00",
+    "hora_termino": "18:00:00",
+    "numero_certificado": "00014",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.331137"
+  },
+  "FT-00015": {
+    "id": "FT-00015",
+    "os_numero": "N° 00015",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-13 00:00:00",
+    "direccion": "1085 - CR-169,Portada del Sol II (R2)",
+    "distrito": "La Molina",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "13:50:00",
+    "hora_termino": "17:30:00",
+    "numero_certificado": "00015",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.331137"
+  },
+  "FT-00016": {
+    "id": "FT-00016",
+    "os_numero": "N° 00016",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-13 00:00:00",
+    "direccion": "1169 - RC-6  Huaycan Zona T (CR-286)",
+    "distrito": "Ate",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "10:20:00",
+    "hora_termino": "11:55:00",
+    "numero_certificado": "00016",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.331137"
+  },
+  "FT-00017": {
+    "id": "FT-00017",
+    "os_numero": "N° 00017",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-14 00:00:00",
+    "direccion": "1077 - RE-099,La Molina Vieja (R1.5)",
+    "distrito": "La Molina",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "12:50:00",
+    "hora_termino": "17:20:00",
+    "numero_certificado": "00017",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.331137"
+  },
+  "FT-00018": {
+    "id": "FT-00018",
+    "os_numero": "N° 00018",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-14 00:00:00",
+    "direccion": "1170 - RH-4  Huaycan Zona T (CR-288)",
+    "distrito": "Ate",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "09:20:00",
+    "hora_termino": "12:25:00",
+    "numero_certificado": "00018",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.331137"
+  },
+  "FT-00019": {
+    "id": "FT-00019",
+    "os_numero": "N° 00019",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-15 00:00:00",
+    "direccion": "1174 - RC - 8.9 Huaycan Zona S",
+    "distrito": "Ate",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "13:10:00",
+    "hora_termino": "16:00:00",
+    "numero_certificado": "00019",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00020": {
+    "id": "FT-00020",
+    "os_numero": "N° 00020",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-15 00:00:00",
+    "direccion": "1081 - R-2 Lomas de La Molina",
+    "distrito": "La Molina",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "08:30:00",
+    "hora_termino": "11:20:00",
+    "numero_certificado": "00020",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00021": {
+    "id": "FT-00021",
+    "os_numero": "N° 00021",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-16 00:00:00",
+    "direccion": "1123 - CR-212 Urb. Portada del Sol III Etapa",
+    "distrito": "La Molina",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "13:00:00",
+    "hora_termino": "15:30:00",
+    "numero_certificado": "00021",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00022": {
+    "id": "FT-00022",
+    "os_numero": "N° 00022",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-16 00:00:00",
+    "direccion": "1119 - CR-13 Naplo Sol de La Molina 3ra Etapa",
+    "distrito": "La Molina",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "08:30:00",
+    "hora_termino": "11:10:00",
+    "numero_certificado": "00022",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00023": {
+    "id": "FT-00023",
+    "os_numero": "N° 00023",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-17 00:00:00",
+    "direccion": "1076 - R-104 Honolulu - Sol de La Molina 3ra Etapa",
+    "distrito": "La Molina",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "14:20:00",
+    "hora_termino": "17:20:00",
+    "numero_certificado": "00023",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00024": {
+    "id": "FT-00024",
+    "os_numero": "N° 00024",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-17 00:00:00",
+    "direccion": "1287 - RAP-06 AGRUPACION ARTESANAL VALLE TRIUNFO",
+    "distrito": "San Antonio de Huarochirí",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "08:20:00",
+    "hora_termino": "12:10:00",
+    "numero_certificado": "00024",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00025": {
+    "id": "FT-00025",
+    "os_numero": "N° 00025",
+    "cliente": "SEDAPAL",
+    "fecha": "2025-01-18 00:00:00",
+    "direccion": "1178 - RB-6 Huaycan Zona Z (CR-282)",
+    "distrito": "Ate",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "09:30:00",
+    "hora_termino": "12:20:00",
+    "numero_certificado": "00025",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00026": {
+    "id": "FT-00026",
+    "os_numero": "N° 00026",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-18 00:00:00",
+    "direccion": "1133 - RE-138 Urb. Santa Anita",
+    "distrito": "Santa Anita",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "12:50:00",
+    "hora_termino": "17:10:00",
+    "numero_certificado": "00026",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00027": {
+    "id": "FT-00027",
+    "os_numero": "N° 00027",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-19 00:00:00",
+    "direccion": "1177 - R-2 Huaycan Zona Z (CR-284)",
+    "distrito": "Ate",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "08:50:00",
+    "hora_termino": "12:00:00",
+    "numero_certificado": "00027",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00028": {
+    "id": "FT-00028",
+    "os_numero": "N° 00028",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-19 00:00:00",
+    "direccion": "1157 R-E1 Urb. Sol de Huampani",
+    "distrito": "Lurigancho",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "12:50:00",
+    "hora_termino": "16:50:00",
+    "numero_certificado": "00028",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00029": {
+    "id": "FT-00029",
+    "os_numero": "N° 00029",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-20 00:00:00",
+    "direccion": "1074 - RE-168 El Remanso de La Molina (R-2.5)",
+    "distrito": "La Molina",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "13:30:00",
+    "hora_termino": "16:00:00",
+    "numero_certificado": "00029",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00030": {
+    "id": "FT-00030",
+    "os_numero": "N° 00030",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-20 00:00:00",
+    "direccion": "1066 - CR-164,Bethania - Miade",
+    "distrito": "El Agustino",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "09:30:00",
+    "hora_termino": "11:50:00",
+    "numero_certificado": "00030",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00031": {
+    "id": "FT-00031",
+    "os_numero": "N° 00031",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-20 00:00:00",
+    "direccion": "1056 - RE-100,El Miade Canaan",
+    "distrito": "El Agustino",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "13:00:00",
+    "hora_termino": "17:30:00",
+    "numero_certificado": "00031",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00032": {
+    "id": "FT-00032",
+    "os_numero": "N° 00032",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-21 00:00:00",
+    "direccion": "1067 - CR-191,Las Terrazas de Catalina Huanca",
+    "distrito": "El Agustino",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "08:00:00",
+    "hora_termino": "11:00:00",
+    "numero_certificado": "00032",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00033": {
+    "id": "FT-00033",
+    "os_numero": "N° 00033",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-21 00:00:00",
+    "direccion": "1054 - RE - 151,PJ Las Terrazas de Catalina Huanca",
+    "distrito": "El Agustino",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "12:50:00",
+    "hora_termino": "16:30:00",
+    "numero_certificado": "00033",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00034": {
+    "id": "FT-00034",
+    "os_numero": "N° 00034",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-22 00:00:00",
+    "direccion": "1128 - R-2 Terrazas de Caraponguillo",
+    "distrito": "Lurigancho",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "09:10:00",
+    "hora_termino": "11:40:00",
+    "numero_certificado": "00034",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00035": {
+    "id": "FT-00035",
+    "os_numero": "N° 00035",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-22 00:00:00",
+    "direccion": "1126 - R-1 San Antonio de Carapongo",
+    "distrito": "Lurigancho",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "14:10:00",
+    "hora_termino": "17:10:00",
+    "numero_certificado": "00035",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00036": {
+    "id": "FT-00036",
+    "os_numero": "N° 00036",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-23 00:00:00",
+    "direccion": "1127 - R-1 Terrazas de Caraponguillo",
+    "distrito": "Lurigancho",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "13:15:00",
+    "hora_termino": "17:10:00",
+    "numero_certificado": "00036",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00037": {
+    "id": "FT-00037",
+    "os_numero": "N° 00037",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-23 00:00:00",
+    "direccion": "1260 - R-PE1 ,LAS TERRAZAS DE CARAPONGUILLO IV ETAPA",
+    "distrito": "Lurigancho",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "09:10:00",
+    "hora_termino": "13:00:00",
+    "numero_certificado": "00037",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00038": {
+    "id": "FT-00038",
+    "os_numero": "N° 00038",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-24 00:00:00",
+    "direccion": "1262 - R-PA1 (CR-506) EL MIRASOL DE HUAMPANI",
+    "distrito": "Lurigancho",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "07:50:00",
+    "hora_termino": "10:30:00",
+    "numero_certificado": "00038",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00039": {
+    "id": "FT-00039",
+    "os_numero": "N° 00039",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-24 00:00:00",
+    "direccion": "1263 - R-PA2 (CR-507) ,EL MIRASOL DE HUAMPANI",
+    "distrito": "Lurigancho",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "11:00:00",
+    "hora_termino": "13:15:00",
+    "numero_certificado": "00039",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00040": {
+    "id": "FT-00040",
+    "os_numero": "N° 00040",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-24 00:00:00",
+    "direccion": "1264 - R-PA3 (CR-508) ,EL MIRASOL DE HUAMPANI",
+    "distrito": "Lurigancho",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "14:40:00",
+    "hora_termino": "17:50:00",
+    "numero_certificado": "00040",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00041": {
+    "id": "FT-00041",
+    "os_numero": "N° 00041",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-25 00:00:00",
+    "direccion": "1265 - R-PA4 ,EL MIRASOL DE HUAMPANI",
+    "distrito": "Lurigancho",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "08:00:00",
+    "hora_termino": "11:00:00",
+    "numero_certificado": "00041",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00042": {
+    "id": "FT-00042",
+    "os_numero": "N° 00042",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-25 00:00:00",
+    "direccion": "1266 - R-PA5 ,EL MIRASOL DE HUAMPANI",
+    "distrito": "Lurigancho",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "12:00:00",
+    "hora_termino": "14:30:00",
+    "numero_certificado": "00042",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00043": {
+    "id": "FT-00043",
+    "os_numero": "N° 00043",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-26 00:00:00",
+    "direccion": "1176 - RB-9 Huaycan Zona Z (CR-283)",
+    "distrito": "Ate",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "09:00:00",
+    "hora_termino": "11:10:00",
+    "numero_certificado": "00043",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00044": {
+    "id": "FT-00044",
+    "os_numero": "N° 00044",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-26 00:00:00",
+    "direccion": "1282 - RAP-01 LOTIZACION CAJAMARQUILLA",
+    "distrito": "San Antonio de Huarochirí",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "12:50:00",
+    "hora_termino": "17:00:00",
+    "numero_certificado": "00044",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00045": {
+    "id": "FT-00045",
+    "os_numero": "N° 00045",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-27 00:00:00",
+    "direccion": "1283 - RAP-02 UNION PROGRESO DE CAJAMARQUILL",
+    "distrito": "San Antonio de Huarochirí",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "08:20:00",
+    "hora_termino": "11:30:00",
+    "numero_certificado": "00045",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00046": {
+    "id": "FT-00046",
+    "os_numero": "N° 00046",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-27 00:00:00",
+    "direccion": "1284 - RAP-03 SARACOTO ALTO",
+    "distrito": "San Antonio de Huarochirí",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "12:50:00",
+    "hora_termino": "17:00:00",
+    "numero_certificado": "00046",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.332180"
+  },
+  "FT-00047": {
+    "id": "FT-00047",
+    "os_numero": "N° 00047",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-28 00:00:00",
+    "direccion": "1285 - RAP- 04 LAS VIÑAS DE MEDIA LUNA",
+    "distrito": "San Antonio de Huarochirí",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "08:00:00",
+    "hora_termino": "10:40:00",
+    "numero_certificado": "00047",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.335689"
+  },
+  "FT-00048": {
+    "id": "FT-00048",
+    "os_numero": "N° 00048",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-28 00:00:00",
+    "direccion": "1286 - RAP-05 LOS PORTALES DE BASILIO AUQUI",
+    "distrito": "San Antonio de Huarochirí",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "11:00:00",
+    "hora_termino": "14:40:00",
+    "numero_certificado": "00048",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.335689"
+  },
+  "FT-00049": {
+    "id": "FT-00049",
+    "os_numero": "N° 00049",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-29 00:00:00",
+    "direccion": "1071 - RE-230,Coop.Musa R-4.1 (CR-251)",
+    "distrito": "La Molina",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "13:30:00",
+    "hora_termino": "17:20:00",
+    "numero_certificado": "00049",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.335689"
+  },
+  "FT-00050": {
+    "id": "FT-00050",
+    "os_numero": "N° 00050",
+    "cliente": "SEDAPAL",
+    "fecha": "2026-01-29 00:00:00",
+    "direccion": "1175 - R-1  Huaycan Zona Z",
+    "distrito": "Ate",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "08:30:00",
+    "hora_termino": "11:20:00",
+    "numero_certificado": "00050",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.335689"
+  },
+  "FT-00051": {
+    "id": "FT-00051",
+    "os_numero": "N° 00051",
+    "cliente": "SEDAPAL",
+    "fecha": "",
+    "direccion": "1084 - CR-168,Portada del Sol I Etapa (R-1)",
+    "distrito": "La Molina",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "",
+    "hora_termino": "",
+    "numero_certificado": "00051",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.335689"
+  },
+  "FT-00052": {
+    "id": "FT-00052",
+    "os_numero": "N° 00052",
+    "cliente": "SEDAPAL",
+    "fecha": "",
+    "direccion": "1005 - CR-183 RD-4 HUAYCAN - ZONA I",
+    "distrito": "Ate Vitarte",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "",
+    "hora_termino": "",
+    "numero_certificado": "00052",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.335689"
+  },
+  "FT-00053": {
+    "id": "FT-00053",
+    "os_numero": "N° 00053",
+    "cliente": "SEDAPAL",
+    "fecha": "",
+    "direccion": "1136 - CR-226 A.H MONTERREY (RA-2)",
+    "distrito": "Ate Vitarte",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "",
+    "hora_termino": "",
+    "numero_certificado": "00053",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.335689"
+  },
+  "FT-00054": {
+    "id": "FT-00054",
+    "os_numero": "N° 00054",
+    "cliente": "SEDAPAL",
+    "fecha": "",
+    "direccion": "1003 - CR-116 (R-1 )  HORACIO ZEVALLOS",
+    "distrito": "Ate Vitarte",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "",
+    "hora_termino": "",
+    "numero_certificado": "00054",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.335689"
+  },
+  "FT-00055": {
+    "id": "FT-00055",
+    "os_numero": "N° 00055",
+    "cliente": "SEDAPAL",
+    "fecha": "",
+    "direccion": "1008 - CR-215 SANTA ROSITA",
+    "distrito": "Ate Vitarte",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "",
+    "hora_termino": "",
+    "numero_certificado": "00055",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.335689"
+  },
+  "FT-00056": {
+    "id": "FT-00056",
+    "os_numero": "N° 00056",
+    "cliente": "SEDAPAL",
+    "fecha": "",
+    "direccion": "1002 - CR-114 HUAYCAN",
+    "distrito": "Ate Vitarte",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "",
+    "hora_termino": "",
+    "numero_certificado": "00056",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.335689"
+  },
+  "FT-00057": {
+    "id": "FT-00057",
+    "os_numero": "N° 00057",
+    "cliente": "SEDAPAL",
+    "fecha": "",
+    "direccion": "1024 - RE-252 MANYLSA",
+    "distrito": "Ate Vitarte",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "",
+    "hora_termino": "",
+    "numero_certificado": "00057",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.335689"
+  },
+  "FT-00058": {
+    "id": "FT-00058",
+    "os_numero": "N° 00058",
+    "cliente": "SEDAPAL",
+    "fecha": "",
+    "direccion": "1140 - R-242  RA-3  AMAUTA 1",
+    "distrito": "Ate Vitarte",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "",
+    "hora_termino": "",
+    "numero_certificado": "00058",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.335689"
+  },
+  "FT-00059": {
+    "id": "FT-00059",
+    "os_numero": "N° 00059",
+    "cliente": "SEDAPAL",
+    "fecha": "",
+    "direccion": "1141 - R-243  RA-4  AMAUTA 2",
+    "distrito": "Ate Vitarte",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "",
+    "hora_termino": "",
+    "numero_certificado": "00059",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.335689"
+  },
+  "FT-00060": {
+    "id": "FT-00060",
+    "os_numero": "N° 00060",
+    "cliente": "SEDAPAL",
+    "fecha": "",
+    "direccion": "1148 - RA-1 (CR-277)  SANTA ROSITA I",
+    "distrito": "Ate Vitarte",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "",
+    "hora_termino": "",
+    "numero_certificado": "00060",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.335689"
+  },
+  "FT-00061": {
+    "id": "FT-00061",
+    "os_numero": "N° 00061",
+    "cliente": "SEDAPAL",
+    "fecha": "",
+    "direccion": "1149 - RE-2 (R-240 )SANTA ROSITA I",
+    "distrito": "Ate Vitarte",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "",
+    "hora_termino": "",
+    "numero_certificado": "00061",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.335689"
+  },
+  "FT-00062": {
+    "id": "FT-00062",
+    "os_numero": "N° 00062",
+    "cliente": "SEDAPAL",
+    "fecha": "",
+    "direccion": "1026 - RE-412 CERRO CANDELA",
+    "distrito": "Ate Vitarte",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "",
+    "hora_termino": "",
+    "numero_certificado": "00062",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.335689"
+  },
+  "FT-00063": {
+    "id": "FT-00063",
+    "os_numero": "N° 00063",
+    "cliente": "SEDAPAL",
+    "fecha": "",
+    "direccion": "",
+    "distrito": "",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "",
+    "hora_termino": "",
+    "numero_certificado": "00063",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.335689"
+  },
+  "FT-00064": {
+    "id": "FT-00064",
+    "os_numero": "N° 00064",
+    "cliente": "SEDAPAL",
+    "fecha": "",
+    "direccion": "",
+    "distrito": "",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "",
+    "hora_termino": "",
+    "numero_certificado": "00064",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.335689"
+  },
+  "FT-00065": {
+    "id": "FT-00065",
+    "os_numero": "N° 00065",
+    "cliente": "SEDAPAL",
+    "fecha": "",
+    "direccion": "",
+    "distrito": "",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "",
+    "hora_termino": "",
+    "numero_certificado": "00065",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.335689"
+  },
+  "FT-00066": {
+    "id": "FT-00066",
+    "os_numero": "N° 00066",
+    "cliente": "SEDAPAL",
+    "fecha": "",
+    "direccion": "",
+    "distrito": "",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "",
+    "hora_termino": "",
+    "numero_certificado": "00066",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.335689"
+  },
+  "FT-00067": {
+    "id": "FT-00067",
+    "os_numero": "N° 00067",
+    "cliente": "SEDAPAL",
+    "fecha": "",
+    "direccion": "",
+    "distrito": "",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "",
+    "hora_termino": "",
+    "numero_certificado": "00067",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.335689"
+  },
+  "FT-00068": {
+    "id": "FT-00068",
+    "os_numero": "N° 00068",
+    "cliente": "SEDAPAL",
+    "fecha": "",
+    "direccion": "",
+    "distrito": "",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "",
+    "hora_termino": "",
+    "numero_certificado": "00068",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.335689"
+  },
+  "FT-00069": {
+    "id": "FT-00069",
+    "os_numero": "N° 00069",
+    "cliente": "SEDAPAL",
+    "fecha": "",
+    "direccion": "",
+    "distrito": "",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "",
+    "hora_termino": "",
+    "numero_certificado": "00069",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.335689"
+  },
+  "FT-00070": {
+    "id": "FT-00070",
+    "os_numero": "N° 00070",
+    "cliente": "SEDAPAL",
+    "fecha": "",
+    "direccion": "",
+    "distrito": "",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "",
+    "condicion_sanitaria": "",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": false,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
+        "composicion": "Cloro al 70%",
+        "lote": "20250321",
+        "fecha_vencimiento": "20.03.2027",
+        "unidad": "Kg.",
+        "concentracion": "0.7",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      },
+      {
+        "producto": "",
+        "composicion": "",
+        "lote": "",
+        "fecha_vencimiento": "",
+        "unidad": "",
+        "concentracion": "",
+        "cantidad": ""
+      }
+    ],
+    "acciones_correctivas": "",
+    "areas_tratadas": "",
+    "personal_tecnico": [
+      "",
+      "",
+      "",
+      "",
+      "",
+      ""
+    ],
+    "hora_inicio": "",
+    "hora_termino": "",
+    "numero_certificado": "",
+    "obs_rec": {
+      "observacion_a": "",
+      "observacion_b": "",
+      "observacion_c": "",
+      "recomendacion_a": "",
+      "recomendacion_b": "",
+      "recomendacion_c": ""
+    },
+    "satisfaccion": "",
+    "status": "draft",
+    "last_modified": "2026-01-30T16:16:55.335689"
   }
 }
