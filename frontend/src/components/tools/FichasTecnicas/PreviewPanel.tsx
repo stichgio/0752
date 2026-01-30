@@ -136,7 +136,7 @@ export default function PreviewPanel({ fichaData, logoLeft, logoRight }: Props) 
                                 </span>
                             </div>
                             {/* Campo O.S.N° con recuadro */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: 'auto', paddingRight: '10px' }}>
                                 <span style={{ fontSize: '9px', fontWeight: 'bold' }}>O.S.N°</span>
                                 <div style={{
                                     border: '1px solid #333',
