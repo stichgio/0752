@@ -1014,53 +1014,98 @@ async def generate_consolidated_pdf(
         env = Environment(loader=FileSystemLoader(templates_dir))
         template = env.get_template("informe_tecnico.html")
 
-        # Generar HTML para cada reporte
+        # =====================================================================
+        # STREAMING OPTIMIZADO: Generar PDFs en lotes y merge incremental
+        # =====================================================================
         from weasyprint import HTML
         from pypdf import PdfWriter, PdfReader
-        import io
+        from concurrent.futures import ThreadPoolExecutor
+        import gc
 
-        pdf_writer = PdfWriter()
+        # Configuración de batching
+        PDF_BATCH_SIZE = 5
+        temp_pdf_files = []
 
-        for idx, report in enumerate(all_reports):
+        def render_single_pdf(report_data):
+            """Renderiza un PDF individual a archivo temporal"""
             try:
-                report_dict = report.model_dump()
-
-                # Renderizar HTML
                 html_content = template.render(
-                    report=report_dict,
+                    report=report_data,
                     logo_left=logo_left_b64,
                     logo_right=logo_right_b64
                 )
 
-                # Generar PDF en memoria
-                pdf_bytes = HTML(
-                    string=html_content,
-                    base_url=templates_dir
-                ).write_pdf()
-
-                # Agregar páginas al writer
-                reader = PdfReader(io.BytesIO(pdf_bytes))
-                for page in reader.pages:
-                    pdf_writer.add_page(page)
-
-                if (idx + 1) % 10 == 0:
-                    print(f"[PDF Consolidado] Procesados {idx + 1}/{len(all_reports)}")
-
+                # Generar PDF a archivo temporal (no en memoria)
+                temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+                HTML(string=html_content, base_url=templates_dir).write_pdf(temp_pdf.name)
+                temp_pdf.close()
+                return temp_pdf.name
             except Exception as e:
-                print(f"[PDF Consolidado] Error en reporte {report.id}: {e}")
-                continue
+                print(f"[PDF Consolidado] Error renderizando: {e}")
+                return None
 
-        # Escribir PDF final
-        output = io.BytesIO()
-        pdf_writer.write(output)
-        output.seek(0)
+        # Generar PDFs en lotes paralelos
+        for batch_start in range(0, len(all_reports), PDF_BATCH_SIZE):
+            batch_end = min(batch_start + PDF_BATCH_SIZE, len(all_reports))
+            batch_reports = all_reports[batch_start:batch_end]
 
-        print(f"[PDF Consolidado] Completado! {len(all_reports)} informes generados")
+            # Procesar lote en paralelo
+            with ThreadPoolExecutor(max_workers=PDF_BATCH_SIZE) as executor:
+                batch_dicts = [r.model_dump() for r in batch_reports]
+                results = list(executor.map(render_single_pdf, batch_dicts))
 
-        # Crear archivo temporal para streaming
+                # Agregar PDFs válidos a la lista
+                for pdf_path in results:
+                    if pdf_path:
+                        temp_pdf_files.append(pdf_path)
+
+            print(f"[PDF Consolidado] Procesados {min(batch_end, len(all_reports))}/{len(all_reports)}")
+            gc.collect()
+
+        if not temp_pdf_files:
+            raise HTTPException(status_code=500, detail="No se pudo generar ningún PDF")
+
+        # Crear archivo final para streaming
         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
-        temp_file.write(output.getvalue())
         temp_file.close()
+
+        # ✅ STREAMING MERGE: Usar append para menor uso de memoria
+        pdf_writer = PdfWriter()
+
+        for pdf_path in temp_pdf_files:
+            try:
+                pdf_writer.append(pdf_path)
+                os.remove(pdf_path)  # Eliminar temporal inmediatamente
+            except Exception as e:
+                print(f"[PDF Consolidado] Error en merge: {e}")
+                try:
+                    os.remove(pdf_path)
+                except:
+                    pass
+
+        # Escribir directamente al archivo final
+        with open(temp_file.name, 'wb') as f:
+            pdf_writer.write(f)
+
+        pdf_writer.close()
+        del pdf_writer
+        gc.collect()
+
+        # =====================================================================
+        # Compresión Ghostscript (opcional)
+        # =====================================================================
+        from report_service import GHOSTSCRIPT_ENABLED, GHOSTSCRIPT_QUALITY, _compress_pdf_with_ghostscript
+
+        if GHOSTSCRIPT_ENABLED and len(all_reports) > 1:
+            print(f"[PDF Consolidado] Aplicando compresión Ghostscript...")
+            success, _, stats = _compress_pdf_with_ghostscript(
+                temp_file.name,
+                quality=GHOSTSCRIPT_QUALITY
+            )
+            if success and "reduction_percent" in stats:
+                print(f"[PDF Consolidado] Compresión: {stats['reduction_percent']}% reducción")
+
+        print(f"[PDF Consolidado] ✅ Completado! {len(all_reports)} informes generados")
 
         # Cleanup task
         def cleanup_file(path: str):
