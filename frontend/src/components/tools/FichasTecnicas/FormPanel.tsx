@@ -1,5 +1,5 @@
 import React from 'react';
-import { Save, Image, Upload } from 'lucide-react';
+import { Save, Image, Upload, Settings } from 'lucide-react';
 import { FichaTecnica, ProductoQuimico, SatisfaccionType } from './types';
 
 interface Props {
@@ -70,6 +70,14 @@ export default function FormPanel({
         });
     };
 
+    const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>, isLeft: boolean) => {
+        if (e.target.files && e.target.files[0]) {
+            const file = e.target.files[0];
+            if (isLeft) onLogoLeftChange(file);
+            else onLogoRightChange(file);
+        }
+    };
+
     return (
         <div className="bg-[#111] border border-[#333] rounded-lg p-4 h-full flex flex-col overflow-hidden">
             <div className="flex items-center justify-between mb-4">
@@ -86,66 +94,43 @@ export default function FormPanel({
 
             <div className="flex-1 overflow-y-auto space-y-4 pr-2">
                 {/* Logos */}
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="block text-xs text-[#888] mb-1">Logo Izquierdo</label>
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => onLogoLeftChange(e.target.files?.[0] || null)}
-                                className="hidden"
-                                id="logoLeft"
-                            />
-                            <label
-                                htmlFor="logoLeft"
-                                className="btn-secondary flex items-center gap-2 cursor-pointer text-xs"
-                            >
-                                <Upload size={12} />
-                                {logoLeft ? logoLeft.name.slice(0, 15) + '...' : 'Subir'}
-                            </label>
-                            {logoLeft && (
-                                <button
-                                    onClick={() => onLogoLeftChange(null)}
-                                    className="text-red-400 text-xs"
-                                >
-                                    X
-                                </button>
-                            )}
-                        </div>
+                <div className="bg-[#1a1a1a] p-2 rounded border border-[#333]">
+                    <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-[#eee]">
+                        <div className="bg-[#eee] text-[#000] rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold">0</div>
+                        <Settings size={12} />
+                        LOGOS Y CABECERA
                     </div>
-                    <div>
-                        <label className="block text-xs text-[#888] mb-1">Logo Derecho</label>
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => onLogoRightChange(e.target.files?.[0] || null)}
-                                className="hidden"
-                                id="logoRight"
-                            />
-                            <label
-                                htmlFor="logoRight"
-                                className="btn-secondary flex items-center gap-2 cursor-pointer text-xs"
-                            >
-                                <Upload size={12} />
-                                {logoRight ? logoRight.name.slice(0, 15) + '...' : 'Subir'}
+                    <div className="grid grid-cols-2 gap-2">
+                        {/* Logo Left */}
+                        <div className="flex flex-col items-center gap-1">
+                            <span className="text-[10px] text-[#888]">Logo Izq</span>
+                            <label className="w-full h-12 border border-dashed border-[#444] rounded flex flex-col items-center justify-center cursor-pointer hover:border-[#666] hover:bg-[#222] transition-colors relative overflow-hidden">
+                                {logoLeft ? (
+                                    <img src={URL.createObjectURL(logoLeft)} className="w-full h-full object-contain p-1" />
+                                ) : (
+                                    <span className="text-[9px] text-[#666]">Subir</span>
+                                )}
+                                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleLogoUpload(e, true)} />
                             </label>
-                            {logoRight && (
-                                <button
-                                    onClick={() => onLogoRightChange(null)}
-                                    className="text-red-400 text-xs"
-                                >
-                                    X
-                                </button>
-                            )}
+                        </div>
+                        {/* Logo Right */}
+                        <div className="flex flex-col items-center gap-1">
+                            <span className="text-[10px] text-[#888]">Logo Der</span>
+                            <label className="w-full h-12 border border-dashed border-[#444] rounded flex flex-col items-center justify-center cursor-pointer hover:border-[#666] hover:bg-[#222] transition-colors relative overflow-hidden">
+                                {logoRight ? (
+                                    <img src={URL.createObjectURL(logoRight)} className="w-full h-full object-contain p-1" />
+                                ) : (
+                                    <span className="text-[9px] text-[#666]">Subir</span>
+                                )}
+                                <input type="file" accept="image/*" className="hidden" onChange={(e) => handleLogoUpload(e, false)} />
+                            </label>
                         </div>
                     </div>
                 </div>
 
                 {/* Información General */}
                 <fieldset className="border border-[#333] rounded p-3">
-                    <legend className="text-xs text-[#00a0b0] px-2 font-bold">INFORMACIÓN GENERAL</legend>
+                    <legend className="text-xs text-[#ff0000] px-2 font-bold">INFORMACIÓN GENERAL</legend>
                     <div className="grid grid-cols-2 gap-3">
                         <div>
                             <label className="block text-xs text-[#888] mb-1">O.S. N°</label>
@@ -197,7 +182,7 @@ export default function FormPanel({
 
                 {/* Servicio a Efectuar */}
                 <fieldset className="border border-[#333] rounded p-3">
-                    <legend className="text-xs text-[#00a0b0] px-2 font-bold">SERVICIO A EFECTUAR</legend>
+                    <legend className="text-xs text-[#ff0000] px-2 font-bold">SERVICIO A EFECTUAR</legend>
                     <div className="grid grid-cols-2 gap-2">
                         {[
                             { key: 'desinfeccion', label: 'Desinfección' },
@@ -210,7 +195,7 @@ export default function FormPanel({
                                     type="checkbox"
                                     checked={fichaData.servicio[key as keyof typeof fichaData.servicio]}
                                     onChange={(e) => handleServicioChange(key as keyof typeof fichaData.servicio, e.target.checked)}
-                                    className="accent-[#00a0b0]"
+                                    className="accent-[#666]"
                                 />
                                 {label}
                             </label>
@@ -220,7 +205,7 @@ export default function FormPanel({
 
                 {/* Diagnóstico */}
                 <fieldset className="border border-[#333] rounded p-3">
-                    <legend className="text-xs text-[#00a0b0] px-2 font-bold">DIAGNÓSTICO DEL ÁREA A TRATAR</legend>
+                    <legend className="text-xs text-[#ff0000] px-2 font-bold">DIAGNÓSTICO DEL ÁREA A TRATAR</legend>
                     <textarea
                         value={fichaData.diagnostico_area}
                         onChange={(e) => handleInputChange('diagnostico_area', e.target.value)}
@@ -231,7 +216,7 @@ export default function FormPanel({
 
                 {/* Condición Sanitaria */}
                 <fieldset className="border border-[#333] rounded p-3">
-                    <legend className="text-xs text-[#00a0b0] px-2 font-bold">CONDICIÓN SANITARIA</legend>
+                    <legend className="text-xs text-[#ff0000] px-2 font-bold">CONDICIÓN SANITARIA</legend>
                     <textarea
                         value={fichaData.condicion_sanitaria}
                         onChange={(e) => handleInputChange('condicion_sanitaria', e.target.value)}
@@ -242,7 +227,7 @@ export default function FormPanel({
 
                 {/* Tipos de Tratamiento */}
                 <fieldset className="border border-[#333] rounded p-3">
-                    <legend className="text-xs text-[#00a0b0] px-2 font-bold">TIPOS DE TRATAMIENTO</legend>
+                    <legend className="text-xs text-[#ff0000] px-2 font-bold">TIPOS DE TRATAMIENTO</legend>
                     <div className="grid grid-cols-2 gap-2">
                         {[
                             { key: 'pulverizado', label: 'Pulverizado' },
@@ -255,7 +240,7 @@ export default function FormPanel({
                                     type="checkbox"
                                     checked={fichaData.tratamiento[key as keyof typeof fichaData.tratamiento] as boolean}
                                     onChange={(e) => handleTratamientoChange(key as keyof typeof fichaData.tratamiento, e.target.checked)}
-                                    className="accent-[#00a0b0]"
+                                    className="accent-[#666]"
                                 />
                                 {label}
                             </label>
@@ -274,7 +259,7 @@ export default function FormPanel({
 
                 {/* Productos Químicos */}
                 <fieldset className="border border-[#333] rounded p-3">
-                    <legend className="text-xs text-[#00a0b0] px-2 font-bold">PRODUCTOS QUÍMICOS/BIOLÓGICOS</legend>
+                    <legend className="text-xs text-[#ff0000] px-2 font-bold">PRODUCTOS QUÍMICOS/BIOLÓGICOS</legend>
                     <div className="space-y-3">
                         {fichaData.productos.map((prod, idx) => (
                             <div key={idx} className="bg-[#1a1a1a] rounded p-2">
@@ -337,7 +322,7 @@ export default function FormPanel({
 
                 {/* Acciones Correctivas */}
                 <fieldset className="border border-[#333] rounded p-3">
-                    <legend className="text-xs text-[#00a0b0] px-2 font-bold">ACCIONES CORRECTIVAS</legend>
+                    <legend className="text-xs text-[#ff0000] px-2 font-bold">ACCIONES CORRECTIVAS</legend>
                     <textarea
                         value={fichaData.acciones_correctivas}
                         onChange={(e) => handleInputChange('acciones_correctivas', e.target.value)}
@@ -348,7 +333,7 @@ export default function FormPanel({
 
                 {/* Áreas Tratadas */}
                 <fieldset className="border border-[#333] rounded p-3">
-                    <legend className="text-xs text-[#00a0b0] px-2 font-bold">ÁREAS TRATADAS</legend>
+                    <legend className="text-xs text-[#ff0000] px-2 font-bold">ÁREAS TRATADAS</legend>
                     <textarea
                         value={fichaData.areas_tratadas}
                         onChange={(e) => handleInputChange('areas_tratadas', e.target.value)}
@@ -359,12 +344,12 @@ export default function FormPanel({
 
                 {/* Personal Técnico */}
                 <fieldset className="border border-[#333] rounded p-3">
-                    <legend className="text-xs text-[#00a0b0] px-2 font-bold">PERSONAL TÉCNICO</legend>
+                    <legend className="text-xs text-[#ff0000] px-2 font-bold">PERSONAL TÉCNICO</legend>
                     <div className="grid grid-cols-2 gap-2">
-                        {(Array.isArray(fichaData.personal_tecnico) ? fichaData.personal_tecnico : 
-                          typeof fichaData.personal_tecnico === 'string' && fichaData.personal_tecnico ? 
-                          fichaData.personal_tecnico.split('\n').slice(0, 6).concat(Array(6).fill('')).slice(0, 6) : 
-                          ['', '', '', '', '', '']
+                        {(Array.isArray(fichaData.personal_tecnico) ? fichaData.personal_tecnico :
+                            typeof fichaData.personal_tecnico === 'string' && fichaData.personal_tecnico ?
+                                fichaData.personal_tecnico.split('\n').slice(0, 6).concat(Array(6).fill('')).slice(0, 6) :
+                                ['', '', '', '', '', '']
                         ).map((persona, idx) => (
                             <input
                                 key={idx}
@@ -413,7 +398,7 @@ export default function FormPanel({
 
                 {/* Observaciones y Recomendaciones */}
                 <fieldset className="border border-[#333] rounded p-3">
-                    <legend className="text-xs text-[#00a0b0] px-2 font-bold">OBSERVACIONES Y RECOMENDACIONES</legend>
+                    <legend className="text-xs text-[#ff0000] px-2 font-bold">OBSERVACIONES Y RECOMENDACIONES</legend>
                     <div className="grid grid-cols-2 gap-3">
                         <div>
                             <div className="text-xs text-[#888] mb-2">Observaciones</div>
@@ -448,7 +433,7 @@ export default function FormPanel({
 
                 {/* Satisfacción */}
                 <fieldset className="border border-[#333] rounded p-3">
-                    <legend className="text-xs text-[#00a0b0] px-2 font-bold">EVALUACIÓN DE SATISFACCIÓN</legend>
+                    <legend className="text-xs text-[#ff0000] px-2 font-bold">EVALUACIÓN DE SATISFACCIÓN</legend>
                     <div className="flex justify-around">
                         {[
                             { value: 'muy_satisfecho', label: 'Muy Satisfecho', emoji: '😊' },
@@ -468,7 +453,7 @@ export default function FormPanel({
                                 <span className={`text-2xl ${fichaData.satisfaccion === value ? 'scale-125' : 'opacity-50'} transition-all`}>
                                     {emoji}
                                 </span>
-                                <span className={`text-[10px] ${fichaData.satisfaccion === value ? 'text-[#00a0b0]' : 'text-[#666]'}`}>
+                                <span className={`text-[10px] ${fichaData.satisfaccion === value ? 'text-[#eee]' : 'text-[#666]'}`}>
                                     {label}
                                 </span>
                             </label>
@@ -489,7 +474,7 @@ export default function FormPanel({
                 }
                 .input-field:focus {
                     outline: none;
-                    border-color: #00a0b0;
+                    border-color: #666;
                 }
             `}</style>
         </div>
