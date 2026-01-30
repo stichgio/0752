@@ -58,7 +58,7 @@ export default function DatabasePanel({
                 />
                 <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="btn-secondary flex-1 flex items-center justify-center gap-2 text-xs"
+                    className="btn-red flex-1 flex items-center justify-center gap-2 text-xs"
                     title="Importar archivo CSV o XLSX"
                 >
                     <Upload size={14} />

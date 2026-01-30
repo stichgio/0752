@@ -170,3 +170,83 @@ body.technical-theme {
 .technical-theme .overflow-y-auto::-webkit-scrollbar-thumb:hover {
     background: #555;
 }
+
+/* Preview Panel Protection - Prevent dark theme from affecting white preview */
+.technical-theme .ficha-preview-container,
+.technical-theme .ficha-preview-container * {
+    background-color: inherit;
+    color: inherit;
+}
+
+.technical-theme .ficha-preview-container {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+}
+
+.technical-theme .ficha-preview-container input,
+.technical-theme .ficha-preview-container select,
+.technical-theme .ficha-preview-container textarea {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+    border-color: #333333 !important;
+}
+
+/* Button Active/Click Effects */
+.technical-theme .btn-primary:active:not(:disabled),
+.technical-theme .btn-secondary:active:not(:disabled),
+.technical-theme .btn-red:active:not(:disabled) {
+    transform: scale(0.95);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.technical-theme .btn-primary {
+    background: linear-gradient(to bottom, var(--accent), #a01118);
+    border: 1px solid var(--accent);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+
+.technical-theme .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(to bottom, #ef4444, var(--accent));
+    box-shadow: 0 2px 8px rgba(215, 25, 33, 0.4);
+}
+
+.technical-theme .btn-secondary {
+    background: linear-gradient(to bottom, #1a1a1a, #0d0d0d);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+
+.technical-theme .btn-secondary:hover:not(:disabled) {
+    background: linear-gradient(to bottom, #2a2a2a, #1a1a1a);
+    border-color: #555;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.technical-theme .btn-red {
+    background: linear-gradient(to bottom, #dc2626, #b91c1c);
+    border: 1px solid #dc2626;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+
+.technical-theme .btn-red:hover:not(:disabled) {
+    background: linear-gradient(to bottom, #ef4444, #dc2626);
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
+}

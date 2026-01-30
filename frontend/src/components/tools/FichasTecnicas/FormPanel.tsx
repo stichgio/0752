@@ -360,12 +360,22 @@ export default function FormPanel({
                 {/* Personal Técnico */}
                 <fieldset className="border border-[#333] rounded p-3">
                     <legend className="text-xs text-[#00a0b0] px-2 font-bold">PERSONAL TÉCNICO</legend>
-                    <textarea
-                        value={fichaData.personal_tecnico}
-                        onChange={(e) => handleInputChange('personal_tecnico', e.target.value)}
-                        className="input-field min-h-[40px]"
-                        rows={2}
-                    />
+                    <div className="grid grid-cols-2 gap-2">
+                        {fichaData.personal_tecnico.map((persona, idx) => (
+                            <input
+                                key={idx}
+                                type="text"
+                                placeholder={`Técnico ${idx + 1}`}
+                                value={persona}
+                                onChange={(e) => {
+                                    const newPersonal = [...fichaData.personal_tecnico];
+                                    newPersonal[idx] = e.target.value;
+                                    handleInputChange('personal_tecnico', newPersonal);
+                                }}
+                                className="input-field text-xs"
+                            />
+                        ))}
+                    </div>
                     <div className="grid grid-cols-3 gap-2 mt-2">
                         <div>
                             <label className="block text-xs text-[#888] mb-1">Hora Inicio</label>

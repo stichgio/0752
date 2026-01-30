@@ -199,7 +199,14 @@ class FichasTecnicasDB:
                     ],
                     acciones_correctivas=safe_str(row.get('acciones_correctivas', '')),
                     areas_tratadas=safe_str(row.get('areas_tratadas', '')),
-                    personal_tecnico=safe_str(row.get('personal_tecnico', '')),
+                    personal_tecnico=[
+                        safe_str(row.get('personal_tecnico_1', row.get('personal_tecnico', ''))),
+                        safe_str(row.get('personal_tecnico_2', '')),
+                        safe_str(row.get('personal_tecnico_3', '')),
+                        safe_str(row.get('personal_tecnico_4', '')),
+                        safe_str(row.get('personal_tecnico_5', '')),
+                        safe_str(row.get('personal_tecnico_6', ''))
+                    ],
                     hora_inicio=safe_str(row.get('hora_inicio', '')),
                     hora_termino=safe_str(row.get('hora_termino', '')),
                     numero_certificado=safe_str(row.get('numero_certificado', '')),

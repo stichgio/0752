@@ -81,8 +81,8 @@ class FichaTecnica(BaseModel):
     # Áreas tratadas
     areas_tratadas: str = ""
 
-    # Personal técnico
-    personal_tecnico: str = ""
+    # Personal técnico (3 filas x 2 columnas = 6 campos)
+    personal_tecnico: List[str] = ["", "", "", "", "", ""]
     hora_inicio: str = ""
     hora_termino: str = ""
     numero_certificado: str = ""
