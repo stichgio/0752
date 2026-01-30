@@ -346,11 +346,16 @@ export default function FormPanel({
                 <fieldset className="border border-[#333] rounded p-3">
                     <legend className="text-[14px] font-['DotGothic16'] text-[#888888] px-2 font-bold">PERSONAL TÉCNICO</legend>
                     <div className="grid grid-cols-2 gap-2">
-                        {(Array.isArray(fichaData.personal_tecnico) ? fichaData.personal_tecnico :
-                            typeof fichaData.personal_tecnico === 'string' && fichaData.personal_tecnico ?
-                                fichaData.personal_tecnico.split('\n').slice(0, 6).concat(Array(6).fill('')).slice(0, 6) :
-                                ['', '', '', '', '', '']
-                        ).map((persona, idx) => (
+                        {(() => {
+                            const pt = fichaData.personal_tecnico as unknown;
+                            if (Array.isArray(pt)) {
+                                return pt.length >= 6 ? pt.slice(0, 6) : [...pt, ...Array(6 - pt.length).fill('')];
+                            }
+                            if (typeof pt === 'string' && pt) {
+                                return (pt as string).split('\n').slice(0, 6).concat(Array(6).fill('')).slice(0, 6);
+                            }
+                            return ['', '', '', '', '', ''];
+                        })().map((persona, idx) => (
                             <input
                                 key={idx}
                                 type="text"
