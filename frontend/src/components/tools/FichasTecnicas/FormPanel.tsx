@@ -95,7 +95,7 @@ export default function FormPanel({
             <div className="flex-1 overflow-y-auto space-y-4 pr-2">
                 {/* Logos */}
                 <div className="bg-[#1a1a1a] p-2 rounded border border-[#333]">
-                    <div className="flex items-center gap-2 mb-2 text-xs font-semibold text-[#eee]">
+                    <div className="flex items-center gap-2 mb-2 text-[14px] font-['DotGothic16'] font-semibold text-[#eee]">
                         <div className="bg-[#eee] text-[#000] rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold">0</div>
                         <Settings size={12} />
                         LOGOS Y CABECERA
@@ -130,10 +130,10 @@ export default function FormPanel({
 
                 {/* Información General */}
                 <fieldset className="border border-[#333] rounded p-3">
-                    <legend className="text-xs text-[#ff0000] px-2 font-bold">INFORMACIÓN GENERAL</legend>
+                    <legend className="text-[14px] font-['DotGothic16'] text-[#888888] px-2 font-bold">INFORMACIÓN GENERAL</legend>
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className="block text-xs text-[#888] mb-1">O.S. N°</label>
+                            <label className="block text-[12px] font-['Roboto_Mono'] text-[#888] mb-1">O.S. N°</label>
                             <input
                                 type="text"
                                 value={fichaData.os_numero}
@@ -142,7 +142,7 @@ export default function FormPanel({
                             />
                         </div>
                         <div>
-                            <label className="block text-xs text-[#888] mb-1">Fecha</label>
+                            <label className="block text-[12px] font-['Roboto_Mono'] text-[#888] mb-1">Fecha</label>
                             <input
                                 type="text"
                                 value={fichaData.fecha}
@@ -151,7 +151,7 @@ export default function FormPanel({
                             />
                         </div>
                         <div className="col-span-2">
-                            <label className="block text-xs text-[#888] mb-1">Cliente</label>
+                            <label className="block text-[12px] font-['Roboto_Mono'] text-[#888] mb-1">Cliente</label>
                             <input
                                 type="text"
                                 value={fichaData.cliente}
@@ -160,7 +160,7 @@ export default function FormPanel({
                             />
                         </div>
                         <div className="col-span-2">
-                            <label className="block text-xs text-[#888] mb-1">Dirección</label>
+                            <label className="block text-[12px] font-['Roboto_Mono'] text-[#888] mb-1">Dirección</label>
                             <input
                                 type="text"
                                 value={fichaData.direccion}
@@ -169,7 +169,7 @@ export default function FormPanel({
                             />
                         </div>
                         <div>
-                            <label className="block text-xs text-[#888] mb-1">Distrito</label>
+                            <label className="block text-[12px] font-['Roboto_Mono'] text-[#888] mb-1">Distrito</label>
                             <input
                                 type="text"
                                 value={fichaData.distrito}
@@ -182,7 +182,7 @@ export default function FormPanel({
 
                 {/* Servicio a Efectuar */}
                 <fieldset className="border border-[#333] rounded p-3">
-                    <legend className="text-xs text-[#ff0000] px-2 font-bold">SERVICIO A EFECTUAR</legend>
+                    <legend className="text-[14px] font-['DotGothic16'] text-[#888888] px-2 font-bold">SERVICIO A EFECTUAR</legend>
                     <div className="grid grid-cols-2 gap-2">
                         {[
                             { key: 'desinfeccion', label: 'Desinfección' },
@@ -190,7 +190,7 @@ export default function FormPanel({
                             { key: 'limpieza_pozos_septicos', label: 'Limpieza de Pozos Sépticos' },
                             { key: 'limpieza_reservorios', label: 'Limpieza y Desinfección de Reservorios' }
                         ].map(({ key, label }) => (
-                            <label key={key} className="flex items-center gap-2 text-xs text-[#eee] cursor-pointer">
+                            <label key={key} className="flex items-center gap-2 text-[12px] font-['Roboto_Mono'] text-[#eee] cursor-pointer">
                                 <input
                                     type="checkbox"
                                     checked={fichaData.servicio[key as keyof typeof fichaData.servicio]}
@@ -205,7 +205,7 @@ export default function FormPanel({
 
                 {/* Diagnóstico */}
                 <fieldset className="border border-[#333] rounded p-3">
-                    <legend className="text-xs text-[#ff0000] px-2 font-bold">DIAGNÓSTICO DEL ÁREA A TRATAR</legend>
+                    <legend className="text-[14px] font-['DotGothic16'] text-[#888888] px-2 font-bold">DIAGNÓSTICO DEL ÁREA A TRATAR</legend>
                     <textarea
                         value={fichaData.diagnostico_area}
                         onChange={(e) => handleInputChange('diagnostico_area', e.target.value)}
@@ -216,7 +216,7 @@ export default function FormPanel({
 
                 {/* Condición Sanitaria */}
                 <fieldset className="border border-[#333] rounded p-3">
-                    <legend className="text-xs text-[#ff0000] px-2 font-bold">CONDICIÓN SANITARIA</legend>
+                    <legend className="text-[14px] font-['DotGothic16'] text-[#888888] px-2 font-bold">CONDICIÓN SANITARIA</legend>
                     <textarea
                         value={fichaData.condicion_sanitaria}
                         onChange={(e) => handleInputChange('condicion_sanitaria', e.target.value)}
@@ -227,7 +227,7 @@ export default function FormPanel({
 
                 {/* Tipos de Tratamiento */}
                 <fieldset className="border border-[#333] rounded p-3">
-                    <legend className="text-xs text-[#ff0000] px-2 font-bold">TIPOS DE TRATAMIENTO</legend>
+                    <legend className="text-[14px] font-['DotGothic16'] text-[#888888] px-2 font-bold">TIPOS DE TRATAMIENTO</legend>
                     <div className="grid grid-cols-2 gap-2">
                         {[
                             { key: 'pulverizado', label: 'Pulverizado' },
@@ -235,7 +235,7 @@ export default function FormPanel({
                             { key: 'thermonebulizado', label: 'Thermonebulizado' },
                             { key: 'nebulizado_ulv', label: 'Nebulizado ULV' }
                         ].map(({ key, label }) => (
-                            <label key={key} className="flex items-center gap-2 text-xs text-[#eee] cursor-pointer">
+                            <label key={key} className="flex items-center gap-2 text-[12px] font-['Roboto_Mono'] text-[#eee] cursor-pointer">
                                 <input
                                     type="checkbox"
                                     checked={fichaData.tratamiento[key as keyof typeof fichaData.tratamiento] as boolean}
@@ -259,11 +259,11 @@ export default function FormPanel({
 
                 {/* Productos Químicos */}
                 <fieldset className="border border-[#333] rounded p-3">
-                    <legend className="text-xs text-[#ff0000] px-2 font-bold">PRODUCTOS QUÍMICOS/BIOLÓGICOS</legend>
+                    <legend className="text-[14px] font-['DotGothic16'] text-[#888888] px-2 font-bold">PRODUCTOS QUÍMICOS/BIOLÓGICOS</legend>
                     <div className="space-y-3">
                         {fichaData.productos.map((prod, idx) => (
                             <div key={idx} className="bg-[#1a1a1a] rounded p-2">
-                                <div className="text-[10px] text-[#666] mb-1">Producto {idx + 1}</div>
+                                <div className="text-[12px] font-['Roboto_Mono'] text-[#666] mb-1">Producto {idx + 1}</div>
                                 <div className="grid grid-cols-3 gap-2">
                                     <input
                                         type="text"
@@ -322,7 +322,7 @@ export default function FormPanel({
 
                 {/* Acciones Correctivas */}
                 <fieldset className="border border-[#333] rounded p-3">
-                    <legend className="text-xs text-[#ff0000] px-2 font-bold">ACCIONES CORRECTIVAS</legend>
+                    <legend className="text-[14px] font-['DotGothic16'] text-[#888888] px-2 font-bold">ACCIONES CORRECTIVAS</legend>
                     <textarea
                         value={fichaData.acciones_correctivas}
                         onChange={(e) => handleInputChange('acciones_correctivas', e.target.value)}
@@ -333,7 +333,7 @@ export default function FormPanel({
 
                 {/* Áreas Tratadas */}
                 <fieldset className="border border-[#333] rounded p-3">
-                    <legend className="text-xs text-[#ff0000] px-2 font-bold">ÁREAS TRATADAS</legend>
+                    <legend className="text-[14px] font-['DotGothic16'] text-[#888888] px-2 font-bold">ÁREAS TRATADAS</legend>
                     <textarea
                         value={fichaData.areas_tratadas}
                         onChange={(e) => handleInputChange('areas_tratadas', e.target.value)}
@@ -344,7 +344,7 @@ export default function FormPanel({
 
                 {/* Personal Técnico */}
                 <fieldset className="border border-[#333] rounded p-3">
-                    <legend className="text-xs text-[#ff0000] px-2 font-bold">PERSONAL TÉCNICO</legend>
+                    <legend className="text-[14px] font-['DotGothic16'] text-[#888888] px-2 font-bold">PERSONAL TÉCNICO</legend>
                     <div className="grid grid-cols-2 gap-2">
                         {(Array.isArray(fichaData.personal_tecnico) ? fichaData.personal_tecnico :
                             typeof fichaData.personal_tecnico === 'string' && fichaData.personal_tecnico ?
@@ -367,7 +367,7 @@ export default function FormPanel({
                     </div>
                     <div className="grid grid-cols-3 gap-2 mt-2">
                         <div>
-                            <label className="block text-xs text-[#888] mb-1">Hora Inicio</label>
+                            <label className="block text-[12px] font-['Roboto_Mono'] text-[#888] mb-1">Hora Inicio</label>
                             <input
                                 type="text"
                                 value={fichaData.hora_inicio}
@@ -376,7 +376,7 @@ export default function FormPanel({
                             />
                         </div>
                         <div>
-                            <label className="block text-xs text-[#888] mb-1">Hora Término</label>
+                            <label className="block text-[12px] font-['Roboto_Mono'] text-[#888] mb-1">Hora Término</label>
                             <input
                                 type="text"
                                 value={fichaData.hora_termino}
@@ -385,7 +385,7 @@ export default function FormPanel({
                             />
                         </div>
                         <div>
-                            <label className="block text-xs text-[#888] mb-1">N° Certificado</label>
+                            <label className="block text-[12px] font-['Roboto_Mono'] text-[#888] mb-1">N° Certificado</label>
                             <input
                                 type="text"
                                 value={fichaData.numero_certificado}
@@ -398,13 +398,13 @@ export default function FormPanel({
 
                 {/* Observaciones y Recomendaciones */}
                 <fieldset className="border border-[#333] rounded p-3">
-                    <legend className="text-xs text-[#ff0000] px-2 font-bold">OBSERVACIONES Y RECOMENDACIONES</legend>
+                    <legend className="text-[14px] font-['DotGothic16'] text-[#888888] px-2 font-bold">OBSERVACIONES Y RECOMENDACIONES</legend>
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <div className="text-xs text-[#888] mb-2">Observaciones</div>
+                            <div className="text-[12px] font-['Roboto_Mono'] text-[#888] mb-2">Observaciones</div>
                             {['a', 'b', 'c'].map((letter) => (
                                 <div key={letter} className="flex items-center gap-2 mb-1">
-                                    <span className="text-xs text-[#666]">{letter})</span>
+                                    <span className="text-[12px] font-['Roboto_Mono'] text-[#666]">{letter})</span>
                                     <input
                                         type="text"
                                         value={fichaData.obs_rec[`observacion_${letter}` as keyof typeof fichaData.obs_rec]}
@@ -415,10 +415,10 @@ export default function FormPanel({
                             ))}
                         </div>
                         <div>
-                            <div className="text-xs text-[#888] mb-2">Recomendaciones</div>
+                            <div className="text-[12px] font-['Roboto_Mono'] text-[#888] mb-2">Recomendaciones</div>
                             {['a', 'b', 'c'].map((letter) => (
                                 <div key={letter} className="flex items-center gap-2 mb-1">
-                                    <span className="text-xs text-[#666]">{letter})</span>
+                                    <span className="text-[12px] font-['Roboto_Mono'] text-[#666]">{letter})</span>
                                     <input
                                         type="text"
                                         value={fichaData.obs_rec[`recomendacion_${letter}` as keyof typeof fichaData.obs_rec]}
@@ -433,7 +433,7 @@ export default function FormPanel({
 
                 {/* Satisfacción */}
                 <fieldset className="border border-[#333] rounded p-3">
-                    <legend className="text-xs text-[#ff0000] px-2 font-bold">EVALUACIÓN DE SATISFACCIÓN</legend>
+                    <legend className="text-[14px] font-['DotGothic16'] text-[#888888] px-2 font-bold">EVALUACIÓN DE SATISFACCIÓN</legend>
                     <div className="flex justify-around">
                         {[
                             { value: 'muy_satisfecho', label: 'Muy Satisfecho', emoji: '😊' },

@@ -43,7 +43,7 @@ export default function DatabasePanel({
     return (
         <div className="bg-[#111] border border-[#333] rounded-lg p-4 h-full flex flex-col">
             <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-[#eee] font-mono">Base de Datos</h2>
+                <h2 className="text-lg font-bold text-[#eee] font-['DotGothic16']">Base de Datos</h2>
                 <span className="text-xs text-[#666] font-mono">{fichas.length} fichas</span>
             </div>
 
@@ -106,15 +106,15 @@ export default function DatabasePanel({
                             key={ficha.id}
                             onClick={() => onFichaSelect(ficha.id)}
                             className={`p-3 rounded cursor-pointer transition-all border ${selectedFichaId === ficha.id
-                                    ? 'bg-[#222] border-[#666]'
-                                    : 'bg-[#1a1a1a] border-[#333] hover:border-[#555]'
+                                ? 'bg-[#222] border-[#666]'
+                                : 'bg-[#1a1a1a] border-[#333] hover:border-[#555]'
                                 }`}
                         >
                             <div className="flex items-center justify-between mb-1">
-                                <span className="font-mono text-xs text-[#00a0b0]">{ficha.os_numero || ficha.id}</span>
+                                <span className="font-['DotGothic16'] text-[14px] text-[#888888]">{ficha.os_numero || ficha.id}</span>
                                 <span className={`text-[10px] px-2 py-0.5 rounded ${ficha.status === 'completed'
-                                        ? 'bg-green-900/50 text-green-400'
-                                        : 'bg-yellow-900/50 text-yellow-400'
+                                    ? 'bg-green-900/50 text-green-400'
+                                    : 'bg-yellow-900/50 text-yellow-400'
                                     }`}>
                                     {ficha.status === 'completed' ? 'Completado' : 'Borrador'}
                                 </span>
