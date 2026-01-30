@@ -199,7 +199,8 @@ export default function App() {
             const validation = validateTemplateStructure(content);
 
             if (validation.valid) {
-                setCustomTemplate({ name: file.name, content });
+                // User-uploaded template - will send full content
+                setCustomTemplate({ name: file.name, content, isBackendTemplate: false });
                 setTemplateStatus('valid');
                 setTemplateError('');
             } else {
@@ -232,7 +233,8 @@ export default function App() {
 
             const validation = validateTemplateStructure(data.content);
             if (validation.valid) {
-                setCustomTemplate({ name: data.name, content: data.content });
+                // Mark as backend template - will send templateName instead of full content
+                setCustomTemplate({ name: data.name, content: data.content, isBackendTemplate: true });
                 setTemplateStatus('valid');
                 setTemplateError('');
 
@@ -502,7 +504,13 @@ export default function App() {
 
         // Append custom template if exists
         if (customTemplate) {
-            formData.append('customTemplate', customTemplate.content);
+            if (customTemplate.isBackendTemplate) {
+                // Backend template: send only the name (avoids encoding issues with large HTML)
+                formData.append('templateName', customTemplate.name);
+            } else {
+                // User-uploaded template: send full content
+                formData.append('customTemplate', customTemplate.content);
+            }
         }
 
         try {
