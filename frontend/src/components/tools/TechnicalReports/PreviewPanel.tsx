@@ -45,7 +45,7 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
         },
         header: {
             display: 'grid',
-            gridTemplateColumns: '120px 1fr 120px',
+            gridTemplateColumns: '120px 1fr 160px',
             gap: '8px',
             alignItems: 'center',
             padding: '8px 10px',
