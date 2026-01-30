@@ -104,34 +104,43 @@ export default function PreviewPanel({ fichaData, logoLeft, logoRight }: Props) 
             >
                 <div style={{ border: '2px solid #333', padding: '12px' }}>
                     {/* Header */}
-                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '10px' }}>
                         {/* Logo Izquierdo - Fondo blanco */}
                         <div style={{
                             background: '#ffffff',
                             padding: '5px',
                             display: 'flex',
                             alignItems: 'center',
-                            justifyContent: 'center',
-                            minWidth: '150px',
+                            justifyContent: 'flex-start',
+                            minWidth: '230px',
                             minHeight: '45px'
                         }}>
                             {logoLeftUrl ? (
-                                <img src={logoLeftUrl} alt="Logo" style={{ maxWidth: '140px', maxHeight: '40px', objectFit: 'contain' }} />
+                                <img src={logoLeftUrl} alt="Logo" style={{ maxWidth: '200px', maxHeight: '45px', objectFit: 'contain' }} />
                             ) : null}
                         </div>
 
                         {/* Título Central */}
-                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 15px' }}>
-                            <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#333', textAlign: 'center' }}>
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#333', textAlign: 'center', whiteSpace: 'nowrap' }}>
                                 FICHA TÉCNICA DE EVALUACIÓN DE ACTIVIDADES
                             </div>
                         </div>
 
                         {/* Sección O.S. N° a la derecha */}
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: '140px' }}>
+                        <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'flex-end',
+                            minWidth: '140px',
+                            marginRight: '-12px',
+                            marginTop: '-12px',
+                            paddingRight: '8px',
+                            paddingTop: '8px'
+                        }}>
                             {/* Número de OS grande en rojo */}
                             <div style={{ marginBottom: '5px' }}>
-                                <span style={{ color: '#c41e3a', fontSize: '20px', fontWeight: 'bold' }}>
+                                <span style={{ color: '#c41e3a', fontSize: '16px', fontWeight: 'bold' }}>
                                     N° {data.os_numero ? data.os_numero.replace(/^OS-/, '').replace(/-/g, '') : '00000'}
                                 </span>
                             </div>
@@ -379,7 +388,7 @@ export default function PreviewPanel({ fichaData, logoLeft, logoRight }: Props) 
                                 { value: 'regular', label: 'Regular', emoji: '😐' },
                                 { value: 'insatisfecho', label: 'Insatisfecho', emoji: '🙁' }
                             ].map(({ value, label, emoji }) => (
-                                <div key={value} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9px', fontWeight: data.satisfaccion === value ? 'bold' : 'normal', background: data.satisfaccion === value ? '#e0e0e0' : 'transparent', padding: '2px 6px', borderRadius: '3px' }}>
+                                <div key={value} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9px', fontWeight: data.satisfaccion === value ? 'bold' : 'normal', background: data.satisfaccion === value ? '#262626' : 'transparent', color: data.satisfaccion === value ? '#ffffff' : '#333', padding: '2px 6px', borderRadius: '3px' }}>
                                     <span style={{ fontSize: '14px' }}>{emoji}</span>
                                     <span>{label}</span>
                                 </div>
@@ -388,7 +397,7 @@ export default function PreviewPanel({ fichaData, logoLeft, logoRight }: Props) 
                     </div>
 
                     {/* Signatures */}
-                    <div style={{ display: 'flex', justifyContent: 'space-around', margin: '25px 0' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-around', margin: '50px 0 10px 0' }}>
                         {['Responsable de Servicio', 'Cliente', 'Inspector técnico'].map((label) => (
                             <div key={label} style={{ textAlign: 'center' }}>
                                 <div style={{ width: '130px', borderTop: '1px solid #333', marginBottom: '4px' }}></div>
