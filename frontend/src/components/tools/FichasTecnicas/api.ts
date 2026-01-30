@@ -85,6 +85,24 @@ export const fichasTecnicasApi = {
         return response.data;
     },
 
+    generatePDF: async (fichaId: string, logoLeft?: File | null, logoRight?: File | null) => {
+        const formData = new FormData();
+        formData.append('fichaId', fichaId);
+        if (logoLeft) formData.append('logoLeft', logoLeft);
+        if (logoRight) formData.append('logoRight', logoRight);
+
+        const response = await axios.post(
+            `${API_BASE}/api/fichas-tecnicas/generate-pdf`,
+            formData,
+            {
+                headers: { 'Content-Type': 'multipart/form-data' },
+                responseType: 'blob',
+                timeout: 60000
+            }
+        );
+        return response.data;
+    },
+
     getClienteOptions: async () => {
         const response = await axios.get(`${API_BASE}/api/fichas-tecnicas/autocomplete/cliente`);
         return response.data.options;
@@ -93,5 +111,22 @@ export const fichasTecnicasApi = {
     getDistritoOptions: async () => {
         const response = await axios.get(`${API_BASE}/api/fichas-tecnicas/autocomplete/distrito`);
         return response.data.options;
+    },
+
+    generateTemplatePDF: async (logoLeft?: File | null, logoRight?: File | null) => {
+        const formData = new FormData();
+        if (logoLeft) formData.append('logoLeft', logoLeft);
+        if (logoRight) formData.append('logoRight', logoRight);
+
+        const response = await axios.post(
+            `${API_BASE}/api/fichas-tecnicas/generate-template-pdf`,
+            formData,
+            {
+                headers: { 'Content-Type': 'multipart/form-data' },
+                responseType: 'blob',
+                timeout: 60000
+            }
+        );
+        return response.data;
     }
 };

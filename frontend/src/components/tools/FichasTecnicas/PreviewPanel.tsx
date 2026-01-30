@@ -31,27 +31,75 @@ export default function PreviewPanel({ fichaData, logoLeft, logoRight }: Props) 
         }
     }, [logoRight]);
 
-    if (!fichaData) {
-        return (
-            <div className="bg-[#1a1a1a] border border-[#333] rounded-lg h-full flex items-center justify-center">
-                <p className="text-[#666]">Seleccione una ficha para previsualizar</p>
-            </div>
-        );
-    }
+    // Valores por defecto para datos vacíos o incompletos
+    const defaultServicio = {
+        desinfeccion: false,
+        limpieza_ambientes: false,
+        limpieza_pozos_septicos: false,
+        limpieza_reservorios: false
+    };
+
+    const defaultTratamiento = {
+        pulverizado: false,
+        atomizado: false,
+        thermonebulizado: false,
+        nebulizado_ulv: false,
+        otros: ''
+    };
+
+    const defaultObsRec = {
+        observacion_a: '',
+        observacion_b: '',
+        observacion_c: '',
+        recomendacion_a: '',
+        recomendacion_b: '',
+        recomendacion_c: ''
+    };
+
+    const defaultProductos = [
+        { producto: '', composicion: '', lote: '', fecha_vencimiento: '', unidad: '', concentracion: '', cantidad: '' },
+        { producto: '', composicion: '', lote: '', fecha_vencimiento: '', unidad: '', concentracion: '', cantidad: '' },
+        { producto: '', composicion: '', lote: '', fecha_vencimiento: '', unidad: '', concentracion: '', cantidad: '' },
+        { producto: '', composicion: '', lote: '', fecha_vencimiento: '', unidad: '', concentracion: '', cantidad: '' }
+    ];
+
+    // Crear objeto data con valores seguros
+    const data = {
+        os_numero: fichaData?.os_numero || '',
+        cliente: fichaData?.cliente || '',
+        fecha: fichaData?.fecha || '',
+        direccion: fichaData?.direccion || '',
+        distrito: fichaData?.distrito || '',
+        servicio: { ...defaultServicio, ...(fichaData?.servicio || {}) },
+        diagnostico_area: fichaData?.diagnostico_area || '',
+        condicion_sanitaria: fichaData?.condicion_sanitaria || '',
+        tratamiento: { ...defaultTratamiento, ...(fichaData?.tratamiento || {}) },
+        productos: Array.isArray(fichaData?.productos) && fichaData.productos.length > 0 ? fichaData.productos : defaultProductos,
+        acciones_correctivas: fichaData?.acciones_correctivas || '',
+        areas_tratadas: fichaData?.areas_tratadas || '',
+        personal_tecnico: Array.isArray(fichaData?.personal_tecnico) ? fichaData.personal_tecnico : ['', '', '', '', '', ''],
+        hora_inicio: fichaData?.hora_inicio || '',
+        hora_termino: fichaData?.hora_termino || '',
+        numero_certificado: fichaData?.numero_certificado || '',
+        obs_rec: { ...defaultObsRec, ...(fichaData?.obs_rec || {}) },
+        satisfaccion: fichaData?.satisfaccion || ''
+    };
 
     return (
-        <div className="bg-[#1a1a1a] border border-[#333] rounded-lg h-full overflow-auto p-4">
+        <div className="h-full overflow-auto bg-[#111] p-8 rounded-lg border border-[#333]">
             <div
                 id="ficha-tecnica-preview"
-                className="bg-white text-black mx-auto shadow-lg"
+                className="ficha-preview-container mx-auto shadow-lg"
                 style={{
                     width: '210mm',
                     minHeight: '297mm',
-                    padding: '10mm',
-                    fontSize: '10px',
-                    fontFamily: 'Arial, sans-serif',
-                    transform: 'scale(0.65)',
-                    transformOrigin: 'top center'
+                    padding: '8px',
+                    backgroundColor: '#ffffff',
+                    fontFamily: "'Segoe UI', Calibri, Arial, sans-serif",
+                    fontSize: '7.5pt',
+                    lineHeight: '1.15',
+                    color: '#333333',
+                    boxSizing: 'border-box'
                 }}
             >
                 <div style={{ border: '2px solid #333', padding: '12px' }}>
@@ -73,7 +121,7 @@ export default function PreviewPanel({ fichaData, logoLeft, logoRight }: Props) 
                         </div>
                         <div style={{ textAlign: 'right' }}>
                             <div style={{ fontSize: '10px' }}>O.S. N°</div>
-                            <div style={{ color: '#c41e3a', fontSize: '16px', fontWeight: 'bold' }}>{fichaData.os_numero || 'N° 00001'}</div>
+                            <div style={{ color: '#c41e3a', fontSize: '16px', fontWeight: 'bold' }}>{data.os_numero || 'N° ______'}</div>
                         </div>
                     </div>
 
@@ -81,21 +129,21 @@ export default function PreviewPanel({ fichaData, logoLeft, logoRight }: Props) 
                     <div style={{ display: 'flex', gap: '15px', marginBottom: '6px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1 }}>
                             <label style={{ fontWeight: 'bold', fontSize: '9px', whiteSpace: 'nowrap' }}>Cliente :</label>
-                            <div style={{ borderBottom: '1px solid #333', flex: 1, padding: '2px 4px', fontSize: '9px' }}>{fichaData.cliente}</div>
+                            <div style={{ borderBottom: '1px solid #333', flex: 1, padding: '2px 4px', fontSize: '9px' }}>{data.cliente}</div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 0.5 }}>
                             <label style={{ fontWeight: 'bold', fontSize: '9px', whiteSpace: 'nowrap' }}>Fecha :</label>
-                            <div style={{ borderBottom: '1px solid #333', flex: 1, padding: '2px 4px', fontSize: '9px' }}>{fichaData.fecha}</div>
+                            <div style={{ borderBottom: '1px solid #333', flex: 1, padding: '2px 4px', fontSize: '9px' }}>{data.fecha}</div>
                         </div>
                     </div>
                     <div style={{ display: 'flex', gap: '15px', marginBottom: '6px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 1 }}>
                             <label style={{ fontWeight: 'bold', fontSize: '9px', whiteSpace: 'nowrap' }}>Dirección :</label>
-                            <div style={{ borderBottom: '1px solid #333', flex: 1, padding: '2px 4px', fontSize: '9px' }}>{fichaData.direccion}</div>
+                            <div style={{ borderBottom: '1px solid #333', flex: 1, padding: '2px 4px', fontSize: '9px' }}>{data.direccion}</div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 0.5 }}>
                             <label style={{ fontWeight: 'bold', fontSize: '9px', whiteSpace: 'nowrap' }}>Distrito :</label>
-                            <div style={{ borderBottom: '1px solid #333', flex: 1, padding: '2px 4px', fontSize: '9px' }}>{fichaData.distrito}</div>
+                            <div style={{ borderBottom: '1px solid #333', flex: 1, padding: '2px 4px', fontSize: '9px' }}>{data.distrito}</div>
                         </div>
                     </div>
 
@@ -113,8 +161,8 @@ export default function PreviewPanel({ fichaData, logoLeft, logoRight }: Props) 
                                     ].map(({ key, label }) => (
                                         <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', fontSize: '9px' }}>
                                             <span>{label}</span>
-                                            <span style={{ width: '16px', height: '11px', border: '1px solid #333', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', background: fichaData.servicio[key as keyof typeof fichaData.servicio] ? '#333' : 'white', color: fichaData.servicio[key as keyof typeof fichaData.servicio] ? 'white' : 'black' }}>
-                                                {fichaData.servicio[key as keyof typeof fichaData.servicio] ? 'X' : ''}
+                                            <span style={{ width: '16px', height: '11px', border: '1px solid #333', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', background: data.servicio[key as keyof typeof data.servicio] ? '#333' : 'white', color: data.servicio[key as keyof typeof data.servicio] ? 'white' : 'black' }}>
+                                                {data.servicio[key as keyof typeof data.servicio] ? 'X' : ''}
                                             </span>
                                         </div>
                                     ))}
@@ -122,7 +170,7 @@ export default function PreviewPanel({ fichaData, logoLeft, logoRight }: Props) 
                             </div>
                             <div style={{ flex: 1 }}>
                                 <div style={{ background: '#e0e0e0', padding: '4px', textAlign: 'center', fontWeight: 'bold', fontSize: '10px', borderBottom: '2px solid #333' }}>DIAGNÓSTICO DEL ÁREA A TRATAR</div>
-                                <div style={{ padding: '8px', minHeight: '70px', fontSize: '9px' }}>{fichaData.diagnostico_area}</div>
+                                <div style={{ padding: '8px', minHeight: '70px', fontSize: '9px' }}>{data.diagnostico_area}</div>
                             </div>
                         </div>
                     </div>
@@ -130,7 +178,7 @@ export default function PreviewPanel({ fichaData, logoLeft, logoRight }: Props) 
                     {/* Sanitary Condition */}
                     <div style={{ border: '2px solid #333', marginBottom: '8px' }}>
                         <div style={{ background: '#e0e0e0', padding: '4px', textAlign: 'center', fontWeight: 'bold', fontSize: '10px', borderBottom: '2px solid #333' }}>CONDICIÓN SANITARIA DE LA ZONA CIRCUNDANTE</div>
-                        <div style={{ padding: '4px', minHeight: '40px', fontSize: '9px' }}>{fichaData.condicion_sanitaria}</div>
+                        <div style={{ padding: '4px', minHeight: '40px', fontSize: '9px' }}>{data.condicion_sanitaria}</div>
                     </div>
 
                     {/* Treatment Types */}
@@ -141,19 +189,19 @@ export default function PreviewPanel({ fichaData, logoLeft, logoRight }: Props) 
                                 {['pulverizado', 'atomizado'].map((key) => (
                                     <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '9px' }}>
                                         <span style={{ textTransform: 'capitalize' }}>{key}</span>
-                                        <span style={{ width: '16px', height: '11px', border: '1px solid #333', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', background: fichaData.tratamiento[key as keyof typeof fichaData.tratamiento] ? '#333' : 'white', color: fichaData.tratamiento[key as keyof typeof fichaData.tratamiento] ? 'white' : 'black' }}>
-                                            {fichaData.tratamiento[key as keyof typeof fichaData.tratamiento] ? 'X' : ''}
+                                        <span style={{ width: '16px', height: '11px', border: '1px solid #333', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', background: data.tratamiento[key as keyof typeof data.tratamiento] ? '#333' : 'white', color: data.tratamiento[key as keyof typeof data.tratamiento] ? 'white' : 'black' }}>
+                                            {data.tratamiento[key as keyof typeof data.tratamiento] ? 'X' : ''}
                                         </span>
                                     </div>
                                 ))}
-                                <div style={{ fontSize: '9px' }}>Otros: {fichaData.tratamiento.otros}</div>
+                                <div style={{ fontSize: '9px' }}>Otros: {data.tratamiento.otros}</div>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                                 {['thermonebulizado', 'nebulizado_ulv'].map((key) => (
                                     <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '9px' }}>
                                         <span>{key === 'nebulizado_ulv' ? 'Nebulizado ULV' : 'Thermonebulizado'}</span>
-                                        <span style={{ width: '16px', height: '11px', border: '1px solid #333', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', background: fichaData.tratamiento[key as keyof typeof fichaData.tratamiento] ? '#333' : 'white', color: fichaData.tratamiento[key as keyof typeof fichaData.tratamiento] ? 'white' : 'black' }}>
-                                            {fichaData.tratamiento[key as keyof typeof fichaData.tratamiento] ? 'X' : ''}
+                                        <span style={{ width: '16px', height: '11px', border: '1px solid #333', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', background: data.tratamiento[key as keyof typeof data.tratamiento] ? '#333' : 'white', color: data.tratamiento[key as keyof typeof data.tratamiento] ? 'white' : 'black' }}>
+                                            {data.tratamiento[key as keyof typeof data.tratamiento] ? 'X' : ''}
                                         </span>
                                     </div>
                                 ))}
@@ -177,7 +225,7 @@ export default function PreviewPanel({ fichaData, logoLeft, logoRight }: Props) 
                                 </tr>
                             </thead>
                             <tbody>
-                                {fichaData.productos.map((prod, idx) => (
+                                {data.productos.map((prod, idx) => (
                                     <tr key={idx}>
                                         <td style={{ border: '1px solid #333', padding: '4px', fontSize: '8px', textAlign: 'center' }}>{prod.producto}</td>
                                         <td style={{ border: '1px solid #333', padding: '4px', fontSize: '8px', textAlign: 'center' }}>{prod.composicion}</td>
@@ -195,31 +243,46 @@ export default function PreviewPanel({ fichaData, logoLeft, logoRight }: Props) 
                     {/* Corrective Actions */}
                     <div style={{ border: '2px solid #333', marginBottom: '8px' }}>
                         <div style={{ background: '#e0e0e0', padding: '4px', textAlign: 'center', fontWeight: 'bold', fontSize: '10px', borderBottom: '2px solid #333' }}>ACCIONES CORRECTIVAS</div>
-                        <div style={{ padding: '4px', minHeight: '50px', fontSize: '9px' }}>{fichaData.acciones_correctivas}</div>
+                        <div style={{ padding: '4px', minHeight: '50px', fontSize: '9px' }}>{data.acciones_correctivas}</div>
                     </div>
 
                     {/* Treated Areas */}
                     <div style={{ border: '2px solid #333', marginBottom: '8px' }}>
                         <div style={{ background: '#e0e0e0', padding: '4px', textAlign: 'center', fontWeight: 'bold', fontSize: '10px', borderBottom: '2px solid #333' }}>ÁREAS TRATADAS</div>
-                        <div style={{ padding: '4px', minHeight: '50px', fontSize: '9px' }}>{fichaData.areas_tratadas}</div>
+                        <div style={{ padding: '4px', minHeight: '50px', fontSize: '9px' }}>{data.areas_tratadas}</div>
                     </div>
 
                     {/* Technical Staff */}
                     <div style={{ border: '2px solid #333', marginBottom: '8px' }}>
                         <div style={{ background: '#e0e0e0', padding: '4px', textAlign: 'center', fontWeight: 'bold', fontSize: '10px', borderBottom: '2px solid #333' }}>PERSONAL TÉCNICO</div>
-                        <div style={{ padding: '4px', minHeight: '35px', fontSize: '9px' }}>{fichaData.personal_tecnico}</div>
+                        <div style={{ display: 'flex', borderBottom: '2px solid #333' }}>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', borderRight: '1.5px solid #333' }}>
+                                {(Array.isArray(data.personal_tecnico) ? data.personal_tecnico : ['', '', '', '', '', '']).slice(0, 3).map((persona, idx) => (
+                                    <div key={idx} style={{ padding: '3px 6px', fontSize: '8px', minHeight: '18px', borderBottom: idx < 2 ? '1px solid #ddd' : 'none' }}>
+                                        {persona}
+                                    </div>
+                                ))}
+                            </div>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                                {(Array.isArray(data.personal_tecnico) ? data.personal_tecnico : ['', '', '', '', '', '']).slice(3, 6).map((persona, idx) => (
+                                    <div key={idx + 3} style={{ padding: '3px 6px', fontSize: '8px', minHeight: '18px', borderBottom: idx < 2 ? '1px solid #ddd' : 'none' }}>
+                                        {persona}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                         <div style={{ display: 'flex', borderTop: '2px solid #333' }}>
                             <div style={{ flex: 1, padding: '4px', borderRight: '1px solid #333', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <label style={{ fontWeight: 'bold', fontSize: '9px' }}>HORA INICIO :</label>
-                                <div style={{ borderBottom: '1px solid #333', flex: 1, fontSize: '9px' }}>{fichaData.hora_inicio}</div>
+                                <div style={{ borderBottom: '1px solid #333', flex: 1, fontSize: '9px' }}>{data.hora_inicio}</div>
                             </div>
                             <div style={{ flex: 1, padding: '4px', borderRight: '1px solid #333', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <label style={{ fontWeight: 'bold', fontSize: '9px' }}>HORA TÉRMINO :</label>
-                                <div style={{ borderBottom: '1px solid #333', flex: 1, fontSize: '9px' }}>{fichaData.hora_termino}</div>
+                                <div style={{ borderBottom: '1px solid #333', flex: 1, fontSize: '9px' }}>{data.hora_termino}</div>
                             </div>
                             <div style={{ flex: 1, padding: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                 <label style={{ fontWeight: 'bold', fontSize: '9px' }}>N° CERTIFICADO :</label>
-                                <div style={{ borderBottom: '1px solid #333', flex: 1, fontSize: '9px' }}>{fichaData.numero_certificado}</div>
+                                <div style={{ borderBottom: '1px solid #333', flex: 1, fontSize: '9px' }}>{data.numero_certificado}</div>
                             </div>
                         </div>
                     </div>
@@ -232,7 +295,7 @@ export default function PreviewPanel({ fichaData, logoLeft, logoRight }: Props) 
                                 {['a', 'b', 'c'].map((letter) => (
                                     <div key={letter} style={{ display: 'flex', gap: '4px', marginBottom: '3px' }}>
                                         <span style={{ fontSize: '9px' }}>{letter})</span>
-                                        <div style={{ flex: 1, borderBottom: '1px solid #333', fontSize: '9px' }}>{fichaData.obs_rec[`observacion_${letter}` as keyof typeof fichaData.obs_rec]}</div>
+                                        <div style={{ flex: 1, borderBottom: '1px solid #333', fontSize: '9px' }}>{data.obs_rec[`observacion_${letter}` as keyof typeof data.obs_rec]}</div>
                                     </div>
                                 ))}
                             </div>
@@ -241,7 +304,7 @@ export default function PreviewPanel({ fichaData, logoLeft, logoRight }: Props) 
                                 {['a', 'b', 'c'].map((letter) => (
                                     <div key={letter} style={{ display: 'flex', gap: '4px', marginBottom: '3px' }}>
                                         <span style={{ fontSize: '9px' }}>{letter})</span>
-                                        <div style={{ flex: 1, borderBottom: '1px solid #333', fontSize: '9px' }}>{fichaData.obs_rec[`recomendacion_${letter}` as keyof typeof fichaData.obs_rec]}</div>
+                                        <div style={{ flex: 1, borderBottom: '1px solid #333', fontSize: '9px' }}>{data.obs_rec[`recomendacion_${letter}` as keyof typeof data.obs_rec]}</div>
                                     </div>
                                 ))}
                             </div>
@@ -258,7 +321,7 @@ export default function PreviewPanel({ fichaData, logoLeft, logoRight }: Props) 
                                 { value: 'regular', label: 'Regular', emoji: '😐' },
                                 { value: 'insatisfecho', label: 'Insatisfecho', emoji: '🙁' }
                             ].map(({ value, label, emoji }) => (
-                                <div key={value} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9px', fontWeight: fichaData.satisfaccion === value ? 'bold' : 'normal', background: fichaData.satisfaccion === value ? '#e0e0e0' : 'transparent', padding: '2px 6px', borderRadius: '3px' }}>
+                                <div key={value} style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '9px', fontWeight: data.satisfaccion === value ? 'bold' : 'normal', background: data.satisfaccion === value ? '#e0e0e0' : 'transparent', padding: '2px 6px', borderRadius: '3px' }}>
                                     <span style={{ fontSize: '14px' }}>{emoji}</span>
                                     <span>{label}</span>
                                 </div>

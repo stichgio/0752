@@ -168,6 +168,59 @@ export default function FichasTecnicas() {
         }
     };
 
+    const handleDownloadPDF = async () => {
+        if (!selectedFichaId) {
+            handleDownloadTemplatePDF();
+            return;
+        }
+
+        setIsLoading(true);
+        setLoadingMessage('Generando PDF...');
+
+        try {
+            const blob = await fichasTecnicasApi.generatePDF(selectedFichaId, logoLeft, logoRight);
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `ficha_tecnica_${selectedFichaId}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error: any) {
+            console.error('Error generating PDF:', error);
+            const msg = error.response?.data?.detail || error.message || 'Error desconocido';
+            alert(`Error generando PDF: ${msg}`);
+        } finally {
+            setIsLoading(false);
+            setLoadingMessage('Procesando...');
+        }
+    };
+
+    const handleDownloadTemplatePDF = async () => {
+        setIsLoading(true);
+        setLoadingMessage('Generando plantilla PDF...');
+
+        try {
+            const blob = await fichasTecnicasApi.generateTemplatePDF(logoLeft, logoRight);
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `plantilla_ficha_tecnica.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error: any) {
+            console.error('Error generating template PDF:', error);
+            const msg = error.response?.data?.detail || error.message || 'Error desconocido';
+            alert(`Error generando plantilla PDF: ${msg}`);
+        } finally {
+            setIsLoading(false);
+            setLoadingMessage('Procesando...');
+        }
+    };
+
     const currentIndex = fichas.findIndex(f => f.id === selectedFichaId);
     const canPrev = currentIndex > 0;
     const canNext = currentIndex < fichas.length - 1;
@@ -196,9 +249,18 @@ export default function FichasTecnicas() {
                             <ChevronRight size={16} />
                         </button>
                         <button
+                            onClick={handleDownloadPDF}
+                            disabled={isLoading}
+                            className="btn-red flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={selectedFichaId ? "Descargar PDF de la ficha actual" : "Descargar plantilla en blanco"}
+                        >
+                            <FileDown size={16} />
+                            {selectedFichaId ? 'Descargar PDF' : 'Descargar Plantilla'}
+                        </button>
+                        <button
                             onClick={handleDownloadConsolidatedPDF}
                             disabled={fichas.length === 0 || isLoading}
-                            className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-[#dc2626] to-[#b91c1c] hover:from-[#ef4444] hover:to-[#dc2626] text-white border-[#dc2626]"
+                            className="btn-red flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                             title={`Descargar PDF consolidado con ${fichas.length} fichas`}
                         >
                             <Files size={16} />
@@ -242,35 +304,6 @@ export default function FichasTecnicas() {
                 </div>
             )}
 
-            <style>{`
-                .btn-primary {
-                    background: linear-gradient(to right, #00a0b0, #008090);
-                    border: 1px solid #00a0b0;
-                    color: white;
-                    padding: 8px 16px;
-                    border-radius: 4px;
-                    font-size: 13px;
-                    font-weight: 500;
-                    transition: all 0.2s;
-                }
-                .btn-primary:hover:not(:disabled) {
-                    background: linear-gradient(to right, #00b0c0, #009090);
-                }
-                .btn-secondary {
-                    background: #1a1a1a;
-                    border: 1px solid #333;
-                    color: #eee;
-                    padding: 8px 16px;
-                    border-radius: 4px;
-                    font-size: 13px;
-                    font-weight: 500;
-                    transition: all 0.2s;
-                }
-                .btn-secondary:hover:not(:disabled) {
-                    border-color: #555;
-                    background: #222;
-                }
-            `}</style>
         </div>
     );
 }

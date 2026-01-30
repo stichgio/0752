@@ -48,7 +48,7 @@ export interface FichaTecnica {
     productos: ProductoQuimico[];
     acciones_correctivas: string;
     areas_tratadas: string;
-    personal_tecnico: string;
+    personal_tecnico: string[]; // 3 filas x 2 columnas = 6 campos
     hora_inicio: string;
     hora_termino: string;
     numero_certificado: string;
@@ -88,7 +88,7 @@ export const createEmptyFicha = (): FichaTecnica => ({
     ],
     acciones_correctivas: '',
     areas_tratadas: '',
-    personal_tecnico: '',
+    personal_tecnico: ['', '', '', '', '', ''],
     hora_inicio: '',
     hora_termino: '',
     numero_certificado: '',

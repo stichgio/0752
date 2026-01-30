@@ -367,7 +367,149 @@ async def autocomplete_distrito():
     return {"options": sorted(distritos)}
 
 
+@router.post("/generate-pdf")
+async def generate_pdf(
+    fichaId: str = Form(...),
+    logoLeft: Optional[UploadFile] = File(None),
+    logoRight: Optional[UploadFile] = File(None),
+):
+    """
+    Genera un PDF para una ficha técnica individual.
+    """
+    import base64
+    from jinja2 import Environment, FileSystemLoader
+
+    try:
+        ficha = db.get_ficha(fichaId)
+        if not ficha:
+            raise HTTPException(status_code=404, detail="Ficha no encontrada")
+
+        async def process_logo(logo_file):
+            if not logo_file:
+                return None
+            content = await logo_file.read()
+            encoded = base64.b64encode(content).decode("utf-8")
+            mime = "image/png" if logo_file.filename.lower().endswith(".png") else "image/jpeg"
+            return f"data:{mime};base64,{encoded}"
+
+        logo_left_b64 = await process_logo(logoLeft)
+        logo_right_b64 = await process_logo(logoRight)
+
+        templates_dir = os.path.join(os.path.dirname(__file__), "templates")
+        env = Environment(loader=FileSystemLoader(templates_dir))
+        template = env.get_template("ficha_tecnica.html")
+
+        ficha_dict = ficha.dict()
+
+        html_content = template.render(
+            ficha=ficha_dict,
+            logo_left=logo_left_b64,
+            logo_right=logo_right_b64
+        )
+
+        from weasyprint import HTML
+        pdf_bytes = HTML(
+            string=html_content,
+            base_url=templates_dir
+        ).write_pdf()
+
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=ficha_tecnica_{fichaId}.pdf"}
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error generando PDF: {str(e)}")
+
+
 @router.get("/templates")
 async def list_templates():
     """Listar templates disponibles"""
     return {"templates": [{"id": "ficha_tecnica", "name": "Ficha Técnica de Evaluación"}]}
+
+
+@router.post("/generate-template-pdf")
+async def generate_template_pdf(
+    logoLeft: Optional[UploadFile] = File(None),
+    logoRight: Optional[UploadFile] = File(None),
+):
+    """
+    Genera un PDF con la plantilla en blanco de ficha técnica.
+    """
+    import base64
+    from jinja2 import Environment, FileSystemLoader
+
+    try:
+        async def process_logo(logo_file):
+            if not logo_file:
+                return None
+            content = await logo_file.read()
+            encoded = base64.b64encode(content).decode("utf-8")
+            mime = "image/png" if logo_file.filename.lower().endswith(".png") else "image/jpeg"
+            return f"data:{mime};base64,{encoded}"
+
+        logo_left_b64 = await process_logo(logoLeft)
+        logo_right_b64 = await process_logo(logoRight)
+
+        templates_dir = os.path.join(os.path.dirname(__file__), "templates")
+        env = Environment(loader=FileSystemLoader(templates_dir))
+        template = env.get_template("ficha_tecnica.html")
+
+        template_ficha = {
+            "id": "XXXXXXXX",
+            "os_numero": "OS-0000-000000",
+            "cliente": "NOMBRE DEL CLIENTE",
+            "direccion": "DIRECCIÓN DE LA OBRA",
+            "distrito": "DISTRITO",
+            "fecha": "__/__/____",
+            "contacto": "NOMBRE DE CONTACTO",
+            "telefono": "000-000-000",
+            "email": "email@cliente.com",
+            "tipo_obra": "TIPO DE OBRA",
+            "area_obra": "0.00 m²",
+            "duracion": "0 días",
+            "estado": "Pendiente",
+            "observaciones": "",
+            "tipo-red": "TIPO DE RED",
+            "sector": "SECTOR",
+            "conductor": "",
+            "seccion": "",
+            "calibre": "",
+            "longitud": "",
+            "material": "",
+            "elementos": [],
+            "imagenes": [],
+            "metadata": {
+                "version": "1.0",
+                "created_at": datetime.now().isoformat(),
+                "author": "Sistema de Fichas Técnicas"
+            }
+        }
+
+        html_content = template.render(
+            ficha=template_ficha,
+            logo_left=logo_left_b64,
+            logo_right=logo_right_b64
+        )
+
+        from weasyprint import HTML
+        pdf_bytes = HTML(
+            string=html_content,
+            base_url=templates_dir
+        ).write_pdf()
+
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={"Content-Disposition": "attachment; filename=plantilla_ficha_tecnica.pdf"}
+        )
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error generando plantilla PDF: {str(e)}")

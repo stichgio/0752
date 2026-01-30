@@ -1,1 +1,236 @@
-{}
+{
+  "FT-00001": {
+    "id": "FT-00001",
+    "os_numero": "OS-2024-001",
+    "cliente": "Constructora ABC S.A.C.",
+    "fecha": "15/01/2024",
+    "direccion": "Av. Principal 123 Oficina 456",
+    "distrito": "San Isidro",
+    "servicio": {
+      "desinfeccion": true,
+      "limpieza_ambientes": true,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": false
+    },
+    "diagnostico_area": "Área de oficinas con 15 cubículos. Presencia de polvo acumulado en ventiladores y esquinas. Se detectaron focos de humedad en baños del primer piso.",
+    "condicion_sanitaria": "La zona circundante presenta buenas condiciones sanitarias. No se observan acumulaciones de basura. Vías de acceso limpias y despejadas.",
+    "tratamiento": {
+      "pulverizado": true,
+      "atomizado": false,
+      "thermonebulizado": false,
+      "nebulizado_ulv": true,
+      "otros": "Fumigación con manguera"
+    },
+    "productos": [
+      {
+        "producto": "Desinfectante Multiusos",
+        "composicion": "Cloro 5% + Surfactantes",
+        "lote": "LOT-001",
+        "fecha_vencimiento": "15/06/2025",
+        "unidad": "Litros",
+        "concentracion": "1:100",
+        "cantidad": "5"
+      },
+      {
+        "producto": "Insecticida Pyrethroid",
+        "composicion": "Piretrinas sintéticas",
+        "lote": "LOT-002",
+        "fecha_vencimiento": "20/08/2025",
+        "unidad": "Litros",
+        "concentracion": "1:50",
+        "cantidad": "3"
+      },
+      {
+        "producto": "Raticida Bromadiolona",
+        "composicion": "Anticoagulante 0.005%",
+        "lote": "LOT-003",
+        "fecha_vencimiento": "10/12/2025",
+        "unidad": "Kilos",
+        "concentracion": "",
+        "cantidad": "2"
+      },
+      {
+        "producto": "Desinfectante de Superficies",
+        "composicion": "Quaternarios de amonio",
+        "lote": "LOT-004",
+        "fecha_vencimiento": "22/04/2025",
+        "unidad": "Litros",
+        "concentracion": "1:200",
+        "cantidad": "4"
+      }
+    ],
+    "acciones_correctivas": "Limpieza profunda de ventiladores y aires acondicionados. Aplicación de desinfectante en áreas comunes y baños.",
+    "areas_tratadas": "Oficinas administrativas (150 m²) - 15 cubículos\\nSala de reuniones (40 m²)\\nÁrea de cocina (25 m²)\\nBaños (3 unidades)\\nRecepción (30 m²)",
+    "personal_tecnico": "",
+    "hora_inicio": "08:30",
+    "hora_termino": "14:00",
+    "numero_certificado": "CERT-2024-001",
+    "obs_rec": {
+      "observacion_a": "Se recomienda mantener ventilación constante después del servicio",
+      "observacion_b": "Verificar sellado de ventanas para evitar entrada de plagas",
+      "observacion_c": "Programar servicio de mantenimiento mensual",
+      "recomendacion_a": "Mantener áreas limpias y ordenadas",
+      "recomendacion_b": "Reportar cualquier actividad de plagas inmediatamente",
+      "recomendacion_c": "No consumir alimentos en áreas de trabajo"
+    },
+    "satisfaccion": "muy_satisfecho",
+    "status": "draft",
+    "last_modified": "2026-01-30T08:46:18.156426"
+  },
+  "FT-00002": {
+    "id": "FT-00002",
+    "os_numero": "OS-2024-002",
+    "cliente": "Restaurante El Sabor Tradicional",
+    "fecha": "20/01/2024",
+    "direccion": "Calle Secundaria 789 Local 12",
+    "distrito": "Miraflores",
+    "servicio": {
+      "desinfeccion": true,
+      "limpieza_ambientes": false,
+      "limpieza_pozos_septicos": false,
+      "limpieza_reservorios": true
+    },
+    "diagnostico_area": "Área de cocina con grasa acumulada en extractores. Presencia de cucarachas en zona de almacén. Filtros de campana requieren limpieza profunda.",
+    "condicion_sanitaria": "Se detecta acumulación de residuos orgánicos en contenedores externos. Recomendar limpieza diaria de área de desechos.",
+    "tratamiento": {
+      "pulverizado": false,
+      "atomizado": true,
+      "thermonebulizado": true,
+      "nebulizado_ulv": false,
+      "otros": "Cepillado mecánico"
+    },
+    "productos": [
+      {
+        "producto": "Desengrasante Industrial",
+        "composicion": "Agentes surfactantes concentrados",
+        "lote": "LOT-005",
+        "fecha_vencimiento": "30/09/2025",
+        "unidad": "Litros",
+        "concentracion": "1:20",
+        "cantidad": "8"
+      },
+      {
+        "producto": "Desinfectante Alimentario",
+        "composicion": "Peróxido de hidrógeno",
+        "lote": "LOT-006",
+        "fecha_vencimiento": "15/07/2025",
+        "unidad": "Litros",
+        "concentracion": "1:200",
+        "cantidad": "4"
+      },
+      {
+        "producto": "Biocida Reservorios",
+        "composicion": "Cloro estabilizado",
+        "lote": "LOT-007",
+        "fecha_vencimiento": "01/11/2025",
+        "unidad": "Litros",
+        "concentracion": "5 ppm",
+        "cantidad": "10"
+      },
+      {
+        "producto": "Gel Anticucarachas",
+        "composicion": "Fipronil 0.05%",
+        "lote": "LOT-008",
+        "fecha_vencimiento": "18/03/2026",
+        "unidad": "Kilos",
+        "concentracion": "",
+        "cantidad": "1"
+      }
+    ],
+    "acciones_correctivas": "Limpieza y desengrasado de sistema de extracción. Sanitización de áreas de preparación. Control de cucarachas en almacén.",
+    "areas_tratadas": "Cocina principal (80 m²) - Campana y extractores\\nÁrea de almacén (30 m²)\\nComedor de personal (25 m²)\\nBaños de personal (2 unidades)\\nReservorio de agua (5000 litros)",
+    "personal_tecnico": "",
+    "hora_inicio": "06:00",
+    "hora_termino": "12:30",
+    "numero_certificado": "CERT-2024-002",
+    "obs_rec": {
+      "observacion_a": "Verificar temperatura de almacenamiento de alimentos después del servicio",
+      "observacion_b": "Revisar sellado de puertas y ventanas",
+      "observacion_c": "Mantener registro de temperatura diario",
+      "recomendacion_a": "Cumplir con normas de higiene establecidas",
+      "recomendacion_b": "No almacenar productos químicos cerca de alimentos",
+      "recomendacion_c": "Capacitar personal en manejo de desechos"
+    },
+    "satisfaccion": "satisfecho",
+    "status": "draft",
+    "last_modified": "2026-01-30T08:46:18.156426"
+  },
+  "FT-00003": {
+    "id": "FT-00003",
+    "os_numero": "OS-2024-003",
+    "cliente": "Edificio Residencial Los Pinos",
+    "fecha": "25/01/2024",
+    "direccion": "Av. Los Jardines 456 Dpto 201",
+    "distrito": "San Borja",
+    "servicio": {
+      "desinfeccion": false,
+      "limpieza_ambientes": true,
+      "limpieza_pozos_septicos": true,
+      "limpieza_reservorios": false
+    },
+    "diagnostico_area": "Departamento de 120 m² con 3 dormitorios. Acumulación de polvo en closets. Detectadas chinches en dormitorio principal. Baños con sarro y mohos.",
+    "condicion_sanitaria": "Buenas condiciones generales. Elevador operativo. Áreas comunes limpias. Estacionamiento con buena iluminación.",
+    "tratamiento": {
+      "pulverizado": true,
+      "atomizado": false,
+      "thermonebulizado": true,
+      "nebulizado_ulv": true,
+      "otros": ""
+    },
+    "productos": [
+      {
+        "producto": "Insecticida para Chinches",
+        "composicion": "Cipermetrina 10%",
+        "lote": "LOT-009",
+        "fecha_vencimiento": "20/05/2025",
+        "unidad": "Litros",
+        "concentracion": "1:30",
+        "cantidad": "4"
+      },
+      {
+        "producto": "Desinfectante Doméstico",
+        "composicion": "Cloro 3% + Fragancia",
+        "lote": "LOT-010",
+        "fecha_vencimiento": "12/08/2025",
+        "unidad": "Litros",
+        "concentracion": "1:150",
+        "cantidad": "6"
+      },
+      {
+        "producto": "Bactericida Pozos",
+        "composicion": "Enzimas biológicas",
+        "lote": "LOT-011",
+        "fecha_vencimiento": "05/10/2025",
+        "unidad": "Litros",
+        "concentracion": "1:500",
+        "cantidad": "8"
+      },
+      {
+        "producto": "Ambientador Desinfectante",
+        "composicion": "Citronela natural",
+        "lote": "LOT-012",
+        "fecha_vencimiento": "30/04/2025",
+        "unidad": "Litros",
+        "concentracion": "Directo",
+        "cantidad": "2"
+      }
+    ],
+    "acciones_correctivas": "Limpieza profunda de closets y roperos. Tratamiento para chinches en dormitorios. Desinfección de baños. Limpieza de pozo séptico (3 metros de profundidad).",
+    "areas_tratadas": "Dormitorio principal (25 m²)\\nDormitorio secundario (18 m²) - 2 unidades\\nSala comedor (30 m²)\\nCocina (15 m²)\\nBaños (2 unidades)\\nPozo séptico (1 unidad)",
+    "personal_tecnico": "",
+    "hora_inicio": "09:00",
+    "hora_termino": "17:00",
+    "numero_certificado": "CERT-2024-003",
+    "obs_rec": {
+      "observacion_a": "Inspección post-servicio programada para 48 horas después",
+      "observacion_b": "Aplicar segundo tratamiento en 15 días si es necesario",
+      "observacion_c": "Informar si persisten signos de chinches",
+      "recomendacion_a": "No lavar superficies tratadas por 24 horas",
+      "recomendacion_b": "Mantener ropa en bolsas selladas",
+      "recomendacion_c": "Ventilar habitaciones regularmente"
+    },
+    "satisfaccion": "muy_satisfecho",
+    "status": "draft",
+    "last_modified": "2026-01-30T08:46:18.156426"
+  }
+}
