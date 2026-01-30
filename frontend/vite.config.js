@@ -25,6 +25,14 @@ export default defineConfig({
                 target: 'http://localhost:7860',
                 changeOrigin: true
             }
+        },
+        // Permitir acceso a fichas-tecnicas.html directamente
+        fs: {
+            strict: false
         }
+    },
+    // Asegurar que todas las páginas HTML sean procesadas
+    optimizeDeps: {
+        include: ['lucide-react']
     }
 })

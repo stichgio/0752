@@ -26,51 +26,31 @@
         .container {
             max-width: 200mm;
             margin: 0 auto;
-            border: 1.5px solid #333;
-            padding: 6px;
+            border: 2px solid #333;
+            padding: 12px;
         }
 
         .header {
             display: flex;
             align-items: center;
-            margin-bottom: 6px;
-            gap: 8px;
+            margin-bottom: 10px;
+            gap: 10px;
         }
 
         .logo {
-            background: #1a1a2e;
+            background: #ffffff;
             padding: 5px;
             display: flex;
             align-items: center;
-            gap: 6px;
-            color: white;
+            justify-content: center;
             min-width: 150px;
+            min-height: 45px;
         }
 
         .logo img {
-            max-width: 32px;
-            max-height: 32px;
-        }
-
-        .logo-icon {
-            width: 28px;
-            height: 28px;
-            background: #d4af37;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-        }
-
-        .logo-text {
-            font-size: 9px;
-            font-weight: bold;
-            line-height: 1.1;
-        }
-
-        .logo-text span {
-            color: #d4af37;
+            max-width: 140px;
+            max-height: 40px;
+            object-fit: contain;
         }
 
         .title-section {
@@ -84,23 +64,45 @@
         }
 
         .form-number {
-            text-align: right;
-        }
-
-        .form-number-label {
-            font-size: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            min-width: 140px;
         }
 
         .form-number-value {
             color: #c41e3a;
-            font-size: 12px;
+            font-size: 16px;
             font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .form-number-field {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .form-number-label {
+            font-size: 9px;
+            font-weight: bold;
+        }
+
+        .form-number-box {
+            border: 1px solid #333;
+            min-width: 100px;
+            height: 20px;
+            padding: 2px 6px;
+            font-size: 9px;
+            display: flex;
+            align-items: center;
+            background: #ffffff;
         }
 
         .info-row {
             display: flex;
-            gap: 10px;
-            margin-bottom: 4px;
+            gap: 15px;
+            margin-bottom: 6px;
         }
 
         .info-field {
@@ -126,23 +128,23 @@
         .info-field .value {
             border-bottom: 1px solid #333;
             flex: 1;
-            padding: 1px 3px;
-            font-size: 8px;
-            min-height: 11px;
+            padding: 2px 4px;
+            font-size: 9px;
+            min-height: 14px;
         }
 
         .section {
-            border: 1.5px solid #333;
-            margin-bottom: 4px;
+            border: 2px solid #333;
+            margin-bottom: 8px;
         }
 
         .section-header {
             background: #e0e0e0;
-            padding: 2px;
+            padding: 4px;
             text-align: center;
             font-weight: bold;
-            font-size: 8px;
-            border-bottom: 1.5px solid #333;
+            font-size: 10px;
+            border-bottom: 2px solid #333;
         }
 
         .section-content {
@@ -163,25 +165,25 @@
         }
 
         .service-list {
-            padding: 3px;
+            padding: 4px;
         }
 
         .service-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2px;
-            font-size: 8px;
+            margin-bottom: 4px;
+            font-size: 9px;
         }
 
         .checkbox {
-            width: 14px;
-            height: 9px;
+            width: 16px;
+            height: 11px;
             border: 1px solid #333;
-            display: inline-block;
-            text-align: center;
-            font-size: 7px;
-            line-height: 8px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
         }
 
         .checkbox.checked {
@@ -190,28 +192,31 @@
         }
 
         .diagnostic-area {
-            padding: 4px;
-            min-height: 45px;
-            font-size: 8px;
+            padding: 8px;
+            min-height: 70px;
+            font-size: 9px;
         }
 
         .treatment-types {
             display: flex;
-            justify-content: space-around;
-            padding: 4px;
+            padding: 10px 20px;
         }
 
         .treatment-column {
+            flex: 1;
             display: flex;
             flex-direction: column;
-            gap: 3px;
+            gap: 8px;
         }
 
         .treatment-item {
             display: flex;
             align-items: center;
-            gap: 4px;
-            font-size: 8px;
+            font-size: 9px;
+        }
+
+        .treatment-item span:first-child {
+            width: 110px;
         }
 
         table {
@@ -221,34 +226,35 @@
 
         th, td {
             border: 1px solid #333;
-            padding: 2px;
+            padding: 4px;
             text-align: center;
-            font-size: 7.5px;
+            font-size: 8px;
         }
 
         th {
             background: #f5f5f5;
             font-weight: bold;
+            font-size: 8px;
         }
 
         .text-area {
-            min-height: 30px;
-            padding: 3px;
-            font-size: 8px;
+            min-height: 50px;
+            padding: 4px;
+            font-size: 9px;
         }
 
         .time-row {
             display: flex;
-            border-top: 1.5px solid #333;
+            border-top: 2px solid #333;
         }
 
         .time-field {
             flex: 1;
-            padding: 3px;
+            padding: 4px;
             border-right: 1px solid #333;
             display: flex;
             align-items: center;
-            gap: 3px;
+            gap: 4px;
         }
 
         .time-field:last-child {
@@ -257,13 +263,13 @@
 
         .time-field label {
             font-weight: bold;
-            font-size: 8px;
+            font-size: 9px;
         }
 
         .time-field .value {
             border-bottom: 1px solid #333;
             flex: 1;
-            font-size: 8px;
+            font-size: 9px;
         }
 
         .obs-rec {
@@ -272,7 +278,7 @@
 
         .obs-rec > div {
             flex: 1;
-            padding: 3px;
+            padding: 4px;
         }
 
         .obs-rec > div:first-child {
@@ -282,30 +288,30 @@
         .obs-rec-header {
             font-weight: bold;
             text-align: center;
-            margin-bottom: 2px;
-            font-size: 8px;
+            margin-bottom: 4px;
+            font-size: 9px;
         }
 
         .obs-item {
             display: flex;
-            gap: 3px;
-            margin-bottom: 2px;
+            gap: 4px;
+            margin-bottom: 3px;
         }
 
         .obs-item span {
-            font-size: 8px;
+            font-size: 9px;
         }
 
         .obs-item .value {
             flex: 1;
             border-bottom: 1px solid #333;
-            font-size: 8px;
+            font-size: 9px;
         }
 
         .personal-tecnico-grid {
             display: flex;
             width: 100%;
-            border-bottom: 1.5px solid #333;
+            border-bottom: 2px solid #333;
         }
 
         .personal-col {
@@ -332,32 +338,31 @@
         .satisfaction {
             display: flex;
             justify-content: space-around;
-            padding: 4px;
+            padding: 8px;
         }
 
         .satisfaction-item {
             display: flex;
             align-items: center;
-            gap: 3px;
-            font-size: 8px;
+            gap: 4px;
+            font-size: 9px;
+            padding: 2px 6px;
+            border-radius: 3px;
         }
 
         .satisfaction-item.selected {
             font-weight: bold;
             background: #e0e0e0;
-            padding: 1px 4px;
-            border-radius: 2px;
         }
 
         .smiley {
-            font-size: 11px;
+            font-size: 14px;
         }
 
         .signatures {
             display: flex;
             justify-content: space-around;
-            margin-top: 12px;
-            margin-bottom: 8px;
+            margin: 25px 0;
         }
 
         .signature {
@@ -365,41 +370,33 @@
         }
 
         .signature-line {
-            width: 100px;
+            width: 130px;
             border-top: 1px solid #333;
-            margin-bottom: 2px;
+            margin-bottom: 4px;
         }
 
         .signature-label {
-            font-size: 7px;
+            font-size: 8px;
         }
 
         .footer {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 6px;
-            padding-top: 4px;
-            font-size: 7px;
+            margin-top: 15px;
+            padding-top: 8px;
+            font-size: 8px;
             color: #00a0b0;
         }
 
         .footer-item {
             display: flex;
             align-items: center;
-            gap: 3px;
+            gap: 4px;
         }
 
         .footer-icon {
-            width: 11px;
-            height: 11px;
-            background: #00a0b0;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 7px;
+            font-size: 10px;
         }
 
         @media print {
@@ -417,20 +414,17 @@
             <div class="logo">
                 {% if logo_left %}
                 <img src="{{ logo_left }}" alt="Logo">
-                {% else %}
-                <div class="logo-icon">H</div>
                 {% endif %}
-                <div class="logo-text">
-                    HIDR SERVICIOS<br>
-                    <span>AA</span> E.I.R.L.
-                </div>
             </div>
             <div class="title-section">
                 <div class="main-title">FICHA TÉCNICA DE EVALUACIÓN DE ACTIVIDADES</div>
             </div>
             <div class="form-number">
-                <div class="form-number-label">O.S. N°</div>
-                <div class="form-number-value">{{ ficha.os_numero or 'N° 00001' }}</div>
+                <div class="form-number-value">N° {{ ficha.os_numero|replace('OS-', '')|replace('-', '') if ficha.os_numero else '00000' }}</div>
+                <div class="form-number-field">
+                    <span class="form-number-label">O.S.N°</span>
+                    <div class="form-number-box"></div>
+                </div>
             </div>
         </div>
 
@@ -657,21 +651,15 @@
         <!-- Footer -->
         <div class="footer">
             <div class="footer-item">
-                <div class="footer-icon">📍</div>
+                <span class="footer-icon">📍</span>
                 <span>Mz J1 lote 20. Urb. Los Precursores. Surco. Lima</span>
             </div>
             <div style="text-align: center;">
-                <div class="footer-item" style="justify-content: center; margin-bottom: 2px;">
-                    <div class="footer-icon">✉</div>
-                    <span>operaciones@hidroserviciosaa.com.pe</span>
-                </div>
-                <div class="footer-item" style="justify-content: center;">
-                    <div class="footer-icon">📞</div>
-                    <span>+51 946 803 367</span>
-                </div>
+                <div style="margin-bottom: 2px;">✉ operaciones@hidroserviciosaa.com.pe</div>
+                <div>📞 +51 946 803 367</div>
             </div>
             <div class="footer-item">
-                <div class="footer-icon">🌐</div>
+                <span class="footer-icon">🌐</span>
                 <span>www.hidroserviciosaa.com.pe/</span>
             </div>
         </div>

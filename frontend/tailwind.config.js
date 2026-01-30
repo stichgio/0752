@@ -2,6 +2,8 @@
 export default {
     content: [
         "./index.html",
+        "./fichas-tecnicas.html",
+        "./technical-reports.html",
         "./src/**/*.{js,ts,jsx,tsx}",
     ],
     theme: {
