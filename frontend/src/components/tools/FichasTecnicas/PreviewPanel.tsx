@@ -189,7 +189,7 @@ export default function PreviewPanel({ fichaData, logoLeft, logoRight }: Props) 
                                     ].map(({ key, label }) => (
                                         <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px', fontSize: '9px' }}>
                                             <span>{label}</span>
-                                            <span style={{ width: '16px', height: '11px', border: '1px solid #333', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', background: data.servicio[key as keyof typeof data.servicio] ? '#333' : 'white', color: data.servicio[key as keyof typeof data.servicio] ? 'white' : 'black' }}>
+                                            <span style={{ width: '16px', height: '11px', border: '1px solid #333', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', background: data.servicio[key as keyof typeof data.servicio] ? '#00a0b0' : 'white', color: data.servicio[key as keyof typeof data.servicio] ? 'white' : 'black' }}>
                                                 {data.servicio[key as keyof typeof data.servicio] ? 'X' : ''}
                                             </span>
                                         </div>
@@ -212,25 +212,24 @@ export default function PreviewPanel({ fichaData, logoLeft, logoRight }: Props) 
                     {/* Treatment Types */}
                     <div style={{ border: '2px solid #333', marginBottom: '8px' }}>
                         <div style={{ background: '#e0e0e0', padding: '4px', textAlign: 'center', fontWeight: 'bold', fontSize: '10px', borderBottom: '2px solid #333' }}>TIPOS DE TRATAMIENTO</div>
-                        <div style={{ display: 'flex', padding: '10px 20px' }}>
+                        <div style={{ display: 'flex', padding: '4px' }}>
                             {/* Columna izquierda */}
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                 {[
                                     { key: 'pulverizado', label: 'Pulverizado' },
                                     { key: 'atomizado', label: 'Atomizado' }
                                 ].map(({ key, label }) => (
-                                    <div key={key} style={{ display: 'flex', alignItems: 'center', fontSize: '9px' }}>
-                                        <span style={{ width: '90px' }}>{label}</span>
+                                    <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '9px' }}>
+                                        <span>{label}</span>
                                         <span style={{
-                                            width: '14px',
-                                            height: '14px',
+                                            width: '16px',
+                                            height: '11px',
                                             border: '1px solid #333',
                                             display: 'inline-flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            fontSize: '10px',
-                                            fontWeight: 'bold',
-                                            background: data.tratamiento[key as keyof typeof data.tratamiento] ? '#333' : 'white',
+                                            fontSize: '8px',
+                                            background: data.tratamiento[key as keyof typeof data.tratamiento] ? '#00a0b0' : 'white',
                                             color: data.tratamiento[key as keyof typeof data.tratamiento] ? 'white' : 'black'
                                         }}>
                                             {data.tratamiento[key as keyof typeof data.tratamiento] ? 'X' : ''}
@@ -238,30 +237,26 @@ export default function PreviewPanel({ fichaData, logoLeft, logoRight }: Props) 
                                     </div>
                                 ))}
                                 <div style={{ display: 'flex', alignItems: 'center', fontSize: '9px' }}>
-                                    <span style={{ width: '50px' }}>Otros:</span>
-                                    <span style={{ flex: 1, borderBottom: '1px solid #999', minHeight: '14px', paddingLeft: '4px' }}>
-                                        {data.tratamiento.otros}
-                                    </span>
+                                    <span>Otros: {data.tratamiento.otros}</span>
                                 </div>
                             </div>
                             {/* Columna derecha */}
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '4px' }}>
                                 {[
                                     { key: 'thermonebulizado', label: 'Thermonebulizado' },
                                     { key: 'nebulizado_ulv', label: 'Nebulizado ULV' }
                                 ].map(({ key, label }) => (
-                                    <div key={key} style={{ display: 'flex', alignItems: 'center', fontSize: '9px' }}>
-                                        <span style={{ width: '110px' }}>{label}</span>
+                                    <div key={key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '9px' }}>
+                                        <span>{label}</span>
                                         <span style={{
-                                            width: '14px',
-                                            height: '14px',
+                                            width: '16px',
+                                            height: '11px',
                                             border: '1px solid #333',
                                             display: 'inline-flex',
                                             alignItems: 'center',
                                             justifyContent: 'center',
-                                            fontSize: '10px',
-                                            fontWeight: 'bold',
-                                            background: data.tratamiento[key as keyof typeof data.tratamiento] ? '#333' : 'white',
+                                            fontSize: '8px',
+                                            background: data.tratamiento[key as keyof typeof data.tratamiento] ? '#00a0b0' : 'white',
                                             color: data.tratamiento[key as keyof typeof data.tratamiento] ? 'white' : 'black'
                                         }}>
                                             {data.tratamiento[key as keyof typeof data.tratamiento] ? 'X' : ''}
@@ -281,7 +276,7 @@ export default function PreviewPanel({ fichaData, logoLeft, logoRight }: Props) 
                                     <th style={{ border: '1px solid #333', padding: '4px', fontSize: '8px', background: '#f5f5f5' }}>PRODUCTO</th>
                                     <th style={{ border: '1px solid #333', padding: '4px', fontSize: '8px', background: '#f5f5f5' }}>COMPOSICIÓN</th>
                                     <th style={{ border: '1px solid #333', padding: '4px', fontSize: '8px', background: '#f5f5f5' }}>LOTE</th>
-                                    <th style={{ border: '1px solid #333', padding: '4px', fontSize: '7px', background: '#f5f5f5' }}>FECHA DE<br/>VENCIMIENTO</th>
+                                    <th style={{ border: '1px solid #333', padding: '4px', fontSize: '7px', background: '#f5f5f5' }}>FECHA DE<br />VENCIMIENTO</th>
                                     <th style={{ border: '1px solid #333', padding: '4px', fontSize: '8px', background: '#f5f5f5' }}>UNIDAD</th>
                                     <th style={{ border: '1px solid #333', padding: '4px', fontSize: '8px', background: '#f5f5f5' }}>CONCENTRACIÓN</th>
                                     <th style={{ border: '1px solid #333', padding: '4px', fontSize: '8px', background: '#f5f5f5' }}>CANTIDAD</th>

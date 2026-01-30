@@ -61,7 +61,14 @@
     ],
     "acciones_correctivas": "Limpieza profunda de ventiladores y aires acondicionados. Aplicación de desinfectante en áreas comunes y baños.",
     "areas_tratadas": "Oficinas administrativas (150 m²) - 15 cubículos\\nSala de reuniones (40 m²)\\nÁrea de cocina (25 m²)\\nBaños (3 unidades)\\nRecepción (30 m²)",
-    "personal_tecnico": "",
+    "personal_tecnico": [
+      "Juan Pérez - Supervisor Técnico",
+      "Carlos López - Técnico Especialista",
+      "María García - Auxiliar de Campo",
+      "",
+      "",
+      ""
+    ],
     "hora_inicio": "08:30",
     "hora_termino": "14:00",
     "numero_certificado": "CERT-2024-001",
@@ -75,7 +82,7 @@
     },
     "satisfaccion": "muy_satisfecho",
     "status": "draft",
-    "last_modified": "2026-01-30T08:46:18.156426"
+    "last_modified": "2026-01-30T11:05:03.088510"
   },
   "FT-00002": {
     "id": "FT-00002",
@@ -94,8 +101,8 @@
     "condicion_sanitaria": "Se detecta acumulación de residuos orgánicos en contenedores externos. Recomendar limpieza diaria de área de desechos.",
     "tratamiento": {
       "pulverizado": false,
-      "atomizado": false,
-      "thermonebulizado": false,
+      "atomizado": true,
+      "thermonebulizado": true,
       "nebulizado_ulv": false,
       "otros": "Cepillado mecánico"
     },
@@ -139,7 +146,14 @@
     ],
     "acciones_correctivas": "Limpieza y desengrasado de sistema de extracción. Sanitización de áreas de preparación. Control de cucarachas en almacén.",
     "areas_tratadas": "Cocina principal (80 m²) - Campana y extractores\\nÁrea de almacén (30 m²)\\nComedor de personal (25 m²)\\nBaños de personal (2 unidades)\\nReservorio de agua (5000 litros)",
-    "personal_tecnico": "",
+    "personal_tecnico": [
+      "Ana Rodríguez - Especialista en Sanitización",
+      "Pedro Martínez - Técnico de Campo",
+      "",
+      "",
+      "",
+      ""
+    ],
     "hora_inicio": "06:00",
     "hora_termino": "12:30",
     "numero_certificado": "CERT-2024-002",
@@ -151,9 +165,9 @@
       "recomendacion_b": "No almacenar productos químicos cerca de alimentos",
       "recomendacion_c": "Capacitar personal en manejo de desechos"
     },
-    "satisfaccion": "muy_satisfecho",
+    "satisfaccion": "insatisfecho",
     "status": "draft",
-    "last_modified": "2026-01-30T09:30:37.109187"
+    "last_modified": "2026-01-30T11:06:59.707317"
   },
   "FT-00003": {
     "id": "FT-00003",
@@ -217,7 +231,14 @@
     ],
     "acciones_correctivas": "Limpieza profunda de closets y roperos. Tratamiento para chinches en dormitorios. Desinfección de baños. Limpieza de pozo séptico (3 metros de profundidad).",
     "areas_tratadas": "Dormitorio principal (25 m²)\\nDormitorio secundario (18 m²) - 2 unidades\\nSala comedor (30 m²)\\nCocina (15 m²)\\nBaños (2 unidades)\\nPozo séptico (1 unidad)",
-    "personal_tecnico": "",
+    "personal_tecnico": [
+      "Luis Torres - Supervisor de Operaciones",
+      "Diana Ruiz - Técnica Especialista",
+      "José Vega - Ayudante de Campo",
+      "",
+      "",
+      ""
+    ],
     "hora_inicio": "09:00",
     "hora_termino": "17:00",
     "numero_certificado": "CERT-2024-003",
@@ -231,6 +252,6 @@
     },
     "satisfaccion": "muy_satisfecho",
     "status": "draft",
-    "last_modified": "2026-01-30T08:46:18.156426"
+    "last_modified": "2026-01-30T11:02:15.865143"
   }
 }

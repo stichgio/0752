@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -32,9 +33,11 @@
 
         .header {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
+            justify-content: space-between;
             margin-bottom: 10px;
-            gap: 10px;
+            gap: 5px;
+            position: relative;
         }
 
         .logo {
@@ -42,9 +45,9 @@
             padding: 5px;
             display: flex;
             align-items: center;
-            justify-content: center;
-            min-width: 150px;
-            min-height: 45px;
+            justify-content: flex-start;
+            min-width: 180px;
+            min-height: 50px;
         }
 
         .logo img {
@@ -58,9 +61,11 @@
         }
 
         .main-title {
-            font-size: 11px;
+            font-size: 16px;
             font-weight: bold;
             color: #333;
+            white-space: nowrap;
+            text-align: center;
         }
 
         .form-number {
@@ -68,6 +73,10 @@
             flex-direction: column;
             align-items: flex-end;
             min-width: 140px;
+            margin-right: -12px;
+            margin-top: -12px;
+            padding-right: 8px;
+            padding-top: 8px;
         }
 
         .form-number-value {
@@ -77,7 +86,7 @@
             margin-bottom: 5px;
             width: 100%;
             text-align: right;
-            padding-right: 5px;
+            padding-right: 0;
         }
 
         .form-number-field {
@@ -86,7 +95,7 @@
             justify-content: flex-end;
             gap: 6px;
             width: 100%;
-            padding-right: 5px;
+            padding-right: 0;
         }
 
         .form-number-label {
@@ -127,7 +136,7 @@
 
         .info-field label {
             font-weight: bold;
-            font-size: 8px;
+            font-size: 11px;
             white-space: nowrap;
         }
 
@@ -135,8 +144,8 @@
             border-bottom: 1px solid #333;
             flex: 1;
             padding: 2px 4px;
-            font-size: 9px;
-            min-height: 14px;
+            font-size: 11px;
+            min-height: 16px;
         }
 
         .section {
@@ -162,38 +171,48 @@
             gap: 0;
         }
 
-        .two-columns > div {
+        .two-columns>div {
             flex: 1;
         }
 
-        .two-columns > div:first-child {
+        .two-columns>div:first-child {
             border-right: 2px solid #333;
         }
 
-        .service-list {
-            padding: 4px;
+        .service-table {
+            width: 100%;
+            border-collapse: collapse;
         }
 
-        .service-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 4px;
+        .service-table td {
+            border: none;
+            padding: 4px;
             font-size: 9px;
+            vertical-align: middle;
+        }
+
+        .service-table td:first-child {
+            text-align: left;
+        }
+
+        .service-table .checkbox-cell {
+            text-align: right;
+            width: 25px;
         }
 
         .checkbox {
             width: 16px;
-            height: 11px;
+            height: 12px;
             border: 1px solid #333;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+            display: inline-block;
+            text-align: center;
+            line-height: 10px;
             font-size: 8px;
+            vertical-align: middle;
         }
 
         .checkbox.checked {
-            background: #333;
+            background: #00a0b0;
             color: white;
         }
 
@@ -203,26 +222,24 @@
             font-size: 9px;
         }
 
-        .treatment-types {
-            display: flex;
-            padding: 10px 20px;
+        .treatment-table {
+            width: 100%;
+            border-collapse: collapse;
         }
 
-        .treatment-column {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .treatment-item {
-            display: flex;
-            align-items: center;
+        .treatment-table td {
+            border: none;
+            padding: 4px;
             font-size: 9px;
+            vertical-align: middle;
         }
 
-        .treatment-item span:first-child {
-            width: 110px;
+        .treatment-table td:first-child {
+            padding-left: 10px;
+        }
+
+        .treatment-table .checkbox {
+            display: inline-block;
         }
 
         table {
@@ -230,7 +247,8 @@
             border-collapse: collapse;
         }
 
-        th, td {
+        th,
+        td {
             border: 1px solid #333;
             padding: 4px;
             text-align: center;
@@ -282,12 +300,12 @@
             display: flex;
         }
 
-        .obs-rec > div {
+        .obs-rec>div {
             flex: 1;
             padding: 4px;
         }
 
-        .obs-rec > div:first-child {
+        .obs-rec>div:first-child {
             border-right: 1px solid #333;
         }
 
@@ -413,6 +431,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <!-- Header -->
@@ -426,7 +445,8 @@
                 <div class="main-title">FICHA TÉCNICA DE EVALUACIÓN DE ACTIVIDADES</div>
             </div>
             <div class="form-number">
-                <div class="form-number-value">N° {{ ficha.os_numero|replace('OS-', '')|replace('-', '') if ficha.os_numero else '00000' }}</div>
+                <div class="form-number-value">N° {{ ficha.os_numero|replace('OS-', '')|replace('-', '') if
+                    ficha.os_numero else '00000' }}</div>
                 <div class="form-number-field">
                     <span class="form-number-label">O.S.N°</span>
                     <div class="form-number-box"></div>
@@ -461,24 +481,32 @@
             <div class="two-columns">
                 <div>
                     <div class="section-header">SERVICIO A EFECTUAR</div>
-                    <div class="service-list">
-                        <div class="service-item">
-                            <span>1. DESINFECCIÓN</span>
-                            <span class="checkbox {% if ficha.servicio.desinfeccion %}checked{% endif %}">{% if ficha.servicio.desinfeccion %}X{% endif %}</span>
-                        </div>
-                        <div class="service-item">
-                            <span>2. LIMPIEZA DE AMBIENTES</span>
-                            <span class="checkbox {% if ficha.servicio.limpieza_ambientes %}checked{% endif %}">{% if ficha.servicio.limpieza_ambientes %}X{% endif %}</span>
-                        </div>
-                        <div class="service-item">
-                            <span>3. LIMPIEZA DE POZOS SÉPTICOS</span>
-                            <span class="checkbox {% if ficha.servicio.limpieza_pozos_septicos %}checked{% endif %}">{% if ficha.servicio.limpieza_pozos_septicos %}X{% endif %}</span>
-                        </div>
-                        <div class="service-item">
-                            <span>4. LIMPIEZA Y DESINFECCIÓN DE<br>RESERVORIOS DE AGUA</span>
-                            <span class="checkbox {% if ficha.servicio.limpieza_reservorios %}checked{% endif %}">{% if ficha.servicio.limpieza_reservorios %}X{% endif %}</span>
-                        </div>
-                    </div>
+                    <table class="service-table">
+                        <tr>
+                            <td>1. DESINFECCIÓN</td>
+                            <td class="checkbox-cell"><span
+                                    class="checkbox {% if ficha.servicio.desinfeccion %}checked{% endif %}">{% if
+                                    ficha.servicio.desinfeccion %}X{% endif %}</span></td>
+                        </tr>
+                        <tr>
+                            <td>2. LIMPIEZA DE AMBIENTES</td>
+                            <td class="checkbox-cell"><span
+                                    class="checkbox {% if ficha.servicio.limpieza_ambientes %}checked{% endif %}">{% if
+                                    ficha.servicio.limpieza_ambientes %}X{% endif %}</span></td>
+                        </tr>
+                        <tr>
+                            <td>3. LIMPIEZA DE POZOS SÉPTICOS</td>
+                            <td class="checkbox-cell"><span
+                                    class="checkbox {% if ficha.servicio.limpieza_pozos_septicos %}checked{% endif %}">{%
+                                    if ficha.servicio.limpieza_pozos_septicos %}X{% endif %}</span></td>
+                        </tr>
+                        <tr>
+                            <td>4. LIMPIEZA Y DESINFECCIÓN DE RESERVORIOS DE AGUA</td>
+                            <td class="checkbox-cell"><span
+                                    class="checkbox {% if ficha.servicio.limpieza_reservorios %}checked{% endif %}">{%
+                                    if ficha.servicio.limpieza_reservorios %}X{% endif %}</span></td>
+                        </tr>
+                    </table>
                 </div>
                 <div>
                     <div class="section-header">DIAGNÓSTICO DEL ÁREA A TRATAR</div>
@@ -496,31 +524,35 @@
         <!-- Treatment Types -->
         <div class="section">
             <div class="section-header">TIPOS DE TRATAMIENTO</div>
-            <div class="treatment-types">
-                <div class="treatment-column">
-                    <div class="treatment-item">
-                        <span>Pulverizado</span>
-                        <span class="checkbox {% if ficha.tratamiento.pulverizado %}checked{% endif %}">{% if ficha.tratamiento.pulverizado %}X{% endif %}</span>
-                    </div>
-                    <div class="treatment-item">
-                        <span>Atomizado</span>
-                        <span class="checkbox {% if ficha.tratamiento.atomizado %}checked{% endif %}">{% if ficha.tratamiento.atomizado %}X{% endif %}</span>
-                    </div>
-                    <div class="treatment-item">
-                        <span>Otros: {{ ficha.tratamiento.otros }}</span>
-                    </div>
-                </div>
-                <div class="treatment-column">
-                    <div class="treatment-item">
-                        <span>Thermonebulizado</span>
-                        <span class="checkbox {% if ficha.tratamiento.thermonebulizado %}checked{% endif %}">{% if ficha.tratamiento.thermonebulizado %}X{% endif %}</span>
-                    </div>
-                    <div class="treatment-item">
-                        <span>Nebulizado ULV</span>
-                        <span class="checkbox {% if ficha.tratamiento.nebulizado_ulv %}checked{% endif %}">{% if ficha.tratamiento.nebulizado_ulv %}X{% endif %}</span>
-                    </div>
-                </div>
-            </div>
+            <table class="treatment-table">
+                <tr>
+                    <td style="width: 25%;">Pulverizado</td>
+                    <td style="width: 10%;"><span
+                            class="checkbox {% if ficha.tratamiento.pulverizado %}checked{% endif %}">{% if
+                            ficha.tratamiento.pulverizado %}X{% endif %}</span></td>
+                    <td style="width: 30%;"></td>
+                    <td style="width: 25%;">Thermonebulizado</td>
+                    <td style="width: 10%;"><span
+                            class="checkbox {% if ficha.tratamiento.thermonebulizado %}checked{% endif %}">{% if
+                            ficha.tratamiento.thermonebulizado %}X{% endif %}</span></td>
+                </tr>
+                <tr>
+                    <td>Atomizado</td>
+                    <td><span class="checkbox {% if ficha.tratamiento.atomizado %}checked{% endif %}">{% if
+                            ficha.tratamiento.atomizado %}X{% endif %}</span></td>
+                    <td></td>
+                    <td>Nebulizado ULV</td>
+                    <td><span class="checkbox {% if ficha.tratamiento.nebulizado_ulv %}checked{% endif %}">{% if
+                            ficha.tratamiento.nebulizado_ulv %}X{% endif %}</span></td>
+                </tr>
+                <tr>
+                    <td>Otros: {{ ficha.tratamiento.otros }}</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+            </table>
         </div>
 
         <!-- Products Table -->
@@ -602,15 +634,27 @@
             <div class="obs-rec">
                 <div>
                     <div class="obs-rec-header">OBSERVACIONES</div>
-                    <div class="obs-item"><span>a)</span><div class="value">{{ ficha.obs_rec.observacion_a }}</div></div>
-                    <div class="obs-item"><span>b)</span><div class="value">{{ ficha.obs_rec.observacion_b }}</div></div>
-                    <div class="obs-item"><span>c)</span><div class="value">{{ ficha.obs_rec.observacion_c }}</div></div>
+                    <div class="obs-item"><span>a)</span>
+                        <div class="value">{{ ficha.obs_rec.observacion_a }}</div>
+                    </div>
+                    <div class="obs-item"><span>b)</span>
+                        <div class="value">{{ ficha.obs_rec.observacion_b }}</div>
+                    </div>
+                    <div class="obs-item"><span>c)</span>
+                        <div class="value">{{ ficha.obs_rec.observacion_c }}</div>
+                    </div>
                 </div>
                 <div>
                     <div class="obs-rec-header">RECOMENDACIONES</div>
-                    <div class="obs-item"><span>a)</span><div class="value">{{ ficha.obs_rec.recomendacion_a }}</div></div>
-                    <div class="obs-item"><span>b)</span><div class="value">{{ ficha.obs_rec.recomendacion_b }}</div></div>
-                    <div class="obs-item"><span>c)</span><div class="value">{{ ficha.obs_rec.recomendacion_c }}</div></div>
+                    <div class="obs-item"><span>a)</span>
+                        <div class="value">{{ ficha.obs_rec.recomendacion_a }}</div>
+                    </div>
+                    <div class="obs-item"><span>b)</span>
+                        <div class="value">{{ ficha.obs_rec.recomendacion_b }}</div>
+                    </div>
+                    <div class="obs-item"><span>c)</span>
+                        <div class="value">{{ ficha.obs_rec.recomendacion_c }}</div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -671,4 +715,5 @@
         </div>
     </div>
 </body>
+
 </html>

@@ -88,7 +88,7 @@ export default function DatabasePanel({
                     placeholder="Buscar por cliente, O.S., distrito..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 pl-9 text-sm text-[#eee] placeholder-[#666] focus:border-[#00a0b0] focus:outline-none"
+                    className="w-full bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 pl-9 text-sm text-[#eee] placeholder-[#666] focus:border-[#666] focus:outline-none"
                 />
             </div>
 
@@ -105,19 +105,17 @@ export default function DatabasePanel({
                         <div
                             key={ficha.id}
                             onClick={() => onFichaSelect(ficha.id)}
-                            className={`p-3 rounded cursor-pointer transition-all border ${
-                                selectedFichaId === ficha.id
-                                    ? 'bg-[#00a0b0]/20 border-[#00a0b0]'
+                            className={`p-3 rounded cursor-pointer transition-all border ${selectedFichaId === ficha.id
+                                    ? 'bg-[#222] border-[#666]'
                                     : 'bg-[#1a1a1a] border-[#333] hover:border-[#555]'
-                            }`}
+                                }`}
                         >
                             <div className="flex items-center justify-between mb-1">
                                 <span className="font-mono text-xs text-[#00a0b0]">{ficha.os_numero || ficha.id}</span>
-                                <span className={`text-[10px] px-2 py-0.5 rounded ${
-                                    ficha.status === 'completed'
+                                <span className={`text-[10px] px-2 py-0.5 rounded ${ficha.status === 'completed'
                                         ? 'bg-green-900/50 text-green-400'
                                         : 'bg-yellow-900/50 text-yellow-400'
-                                }`}>
+                                    }`}>
                                     {ficha.status === 'completed' ? 'Completado' : 'Borrador'}
                                 </span>
                             </div>
