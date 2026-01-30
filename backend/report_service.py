@@ -55,6 +55,10 @@ MAX_PDF_WORKERS = 4
 PIPELINE_BUFFER_SIZE = 8
 GC_INTERVAL = 10
 
+# ✅ BATCHING OPTIMIZATION: Procesar múltiples reportes en paralelo
+PDF_BATCH_SIZE = 5  # Número de PDFs a generar en paralelo por lote
+HTML_PREFETCH_SIZE = 10  # Número de HTMLs a pre-renderizar adelante
+
 TEMP_DIR = tempfile.gettempdir()
 
 
@@ -401,15 +405,23 @@ class ReportService:
 
     async def generate_batch_pdf(self, reports_list, output_path=None, logo_left=None, logo_right=None, custom_template_str=None, template_name=None):
         """
-        Pipeline optimizado ESTABLE para generación de PDFs
+        Pipeline optimizado con BATCHING para generación de PDFs
+
+        Mejoras de rendimiento:
+        - Pre-renderiza múltiples HTMLs en paralelo (HTML_PREFETCH_SIZE)
+        - Genera PDFs en lotes paralelos (PDF_BATCH_SIZE)
+        - Merge incremental para liberar memoria
         """
         from pypdf import PdfWriter, PdfReader
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+        import time
 
         if not WEASYPRINT_AVAILABLE:
             raise RuntimeError("WeasyPrint is not available. Cannot generate PDFs.")
 
         total_reports = len(reports_list)
-        print(f"[PDF] Starting batch: {total_reports} reports")
+        start_time = time.time()
+        print(f"[PDF] Starting BATCHED generation: {total_reports} reports (batch_size={PDF_BATCH_SIZE})")
 
         logo_left_uri = logo_left
         logo_right_uri = logo_right
@@ -422,7 +434,6 @@ class ReportService:
             # Check if it's in the technical reports templates
             tech_tpl_path = os.path.join(os.path.dirname(__file__), "technical_reports", "templates", template_name)
             if os.path.exists(tech_tpl_path):
-                 # Load from file directly using a new environment for this specific path to avoid loader issues
                  tech_env = Environment(loader=FileSystemLoader(os.path.dirname(tech_tpl_path)))
                  template = tech_env.get_template(os.path.basename(tech_tpl_path))
             else:
@@ -434,111 +445,142 @@ class ReportService:
         else:
             template = self.template
 
-        # Pipeline Asíncrono
-        from asyncio import Queue
-        processed_queue = Queue(maxsize=PIPELINE_BUFFER_SIZE)
+        # =====================================================================
+        # FASE 1: Pre-procesar todos los HTMLs en paralelo (batched)
+        # =====================================================================
+        async def prepare_single_html(i, report):
+            """Prepara un HTML individual con sus imágenes procesadas"""
+            try:
+                row_data = report.get("data", {})
+                files = report.get("files", [])
 
-        async def process_images_stage():
-            for i, report in enumerate(reports_list):
-                try:
-                    row_data = report.get("data", {})
-                    files = report.get("files", [])
+                # Procesar imágenes
+                images, layout_mode, img_count = await self._process_files_serial(
+                    files,
+                    max_size=MAX_IMAGE_SIZE,
+                    quality=JPEG_QUALITY
+                )
 
-                    # Procesar imágenes (ahora retorna solo 3 valores, sin temp_files)
-                    images, layout_mode, img_count = await self._process_files_serial(
-                        files,
-                        max_size=MAX_IMAGE_SIZE,
-                        quality=JPEG_QUALITY
-                    )
+                # Renderizar HTML
+                single_report_context = [{
+                    "data": row_data,
+                    "images": images,
+                    "layout_mode": layout_mode,
+                    "img_count": img_count
+                }]
 
-                    # Renderizar HTML
-                    single_report_context = [{
-                        "data": row_data,
-                        "images": images,
-                        "layout_mode": layout_mode,
-                        "img_count": img_count
-                    }]
+                html_out = template.render(
+                    reports=single_report_context,
+                    report=row_data,
+                    title="PANEL FOTOGRÁFICO",
+                    logo_left=logo_left_uri or logo_left,
+                    logo_right=logo_right_uri or logo_right
+                )
 
-                    # Para templates como informe_tecnico.html que esperan 'report' directamente
-                    # (estructura anidada: report.header.xxx, report.inspeccion.xxx)
-                    # vs templates que esperan 'reports' (lista con data como sub-objeto)
-                    html_out = template.render(
-                        reports=single_report_context,
-                        report=row_data,  # Para informe_tecnico.html
-                        title="PANEL FOTOGRÁFICO",
-                        logo_left=logo_left_uri or logo_left,
-                        logo_right=logo_right_uri or logo_right
-                    )
+                return {'html': html_out, 'index': i}
 
-                    await processed_queue.put({
-                        'html': html_out,
-                        'index': i
-                    })
+            except Exception as e:
+                print(f"[PDF] Error preparing HTML {i}: {e}")
+                import traceback
+                traceback.print_exc()
+                return None
 
-                    del html_out
-                    del images
-                    del single_report_context
+        # Preparar HTMLs en lotes para mejor control de memoria
+        all_html_items = []
+        html_batch_size = HTML_PREFETCH_SIZE
 
-                    if (i + 1) % GC_INTERVAL == 0:
-                        gc.collect()
+        for batch_start in range(0, total_reports, html_batch_size):
+            batch_end = min(batch_start + html_batch_size, total_reports)
+            batch_reports = reports_list[batch_start:batch_end]
 
-                    print(f"[PDF] Processed {i+1}/{total_reports}")
+            # Procesar lote de HTMLs en paralelo
+            tasks = [
+                prepare_single_html(batch_start + idx, report)
+                for idx, report in enumerate(batch_reports)
+            ]
+            batch_results = await asyncio.gather(*tasks)
 
-                except Exception as e:
-                    print(f"[PDF] Error processing report {i}: {e}")
-                    import traceback
-                    traceback.print_exc()
+            # Filtrar resultados válidos
+            valid_results = [r for r in batch_results if r is not None]
+            all_html_items.extend(valid_results)
 
-            await processed_queue.put(None)
+            print(f"[PDF] HTMLs prepared: {len(all_html_items)}/{total_reports}")
 
-        async def generate_pdfs_stage():
-            temp_pdf_paths = []
-            loop = asyncio.get_running_loop()
+            # GC después de cada lote de HTMLs
+            if batch_end % GC_INTERVAL == 0:
+                gc.collect()
 
-            with ThreadPoolExecutor(max_workers=MAX_PDF_WORKERS) as executor:
-                while True:
-                    item = await processed_queue.get()
-                    if item is None:
-                        break
+        if not all_html_items:
+            raise RuntimeError("No HTMLs were prepared successfully")
 
+        # Ordenar por índice original
+        all_html_items.sort(key=lambda x: x['index'])
+
+        # =====================================================================
+        # FASE 2: Generar PDFs en lotes paralelos
+        # =====================================================================
+        print(f"[PDF] Starting PDF generation in batches of {PDF_BATCH_SIZE}...")
+
+        loop = asyncio.get_running_loop()
+        all_pdf_paths = []
+
+        # Procesar en lotes de PDF_BATCH_SIZE
+        for batch_start in range(0, len(all_html_items), PDF_BATCH_SIZE):
+            batch_end = min(batch_start + PDF_BATCH_SIZE, len(all_html_items))
+            batch_items = all_html_items[batch_start:batch_end]
+
+            # Generar lote de PDFs en paralelo usando ThreadPoolExecutor
+            with ThreadPoolExecutor(max_workers=PDF_BATCH_SIZE) as executor:
+                # Enviar todos los trabajos del lote simultáneamente
+                future_to_index = {
+                    executor.submit(_render_pdf_to_file_safe, item['html']): item['index']
+                    for item in batch_items
+                }
+
+                # Recoger resultados a medida que completan
+                batch_results = []
+                for future in as_completed(future_to_index):
+                    original_index = future_to_index[future]
                     try:
-                        pdf_path = await loop.run_in_executor(
-                            executor,
-                            _render_pdf_to_file_safe,
-                            item['html']
-                        )
-
+                        pdf_path = future.result()
                         if pdf_path:
-                            temp_pdf_paths.append(pdf_path)
-
-                        # No cleanup needed - images are inline base64
-
+                            batch_results.append((original_index, pdf_path))
                     except Exception as e:
-                        print(f"[PDF] Error generating PDF: {e}")
-                        import traceback
-                        traceback.print_exc()
+                        print(f"[PDF] Error generating PDF {original_index}: {e}")
 
-            return temp_pdf_paths
+                # Ordenar por índice y agregar a lista final
+                batch_results.sort(key=lambda x: x[0])
+                all_pdf_paths.extend([path for _, path in batch_results])
 
-        # Ejecutar pipeline
-        producer_task = asyncio.create_task(process_images_stage())
-        temp_pdf_paths = await generate_pdfs_stage()
-        await producer_task
+            # Liberar memoria de HTMLs procesados
+            for item in batch_items:
+                item['html'] = None
 
-        if not temp_pdf_paths:
+            processed_count = min(batch_end, len(all_html_items))
+            elapsed = time.time() - start_time
+            rate = processed_count / elapsed if elapsed > 0 else 0
+            print(f"[PDF] Generated: {processed_count}/{len(all_html_items)} PDFs ({rate:.1f} PDFs/sec)")
+
+            # GC después de cada lote
+            gc.collect()
+
+        if not all_pdf_paths:
             raise RuntimeError("No PDFs were generated successfully")
 
-        # Merge
-        print(f"[PDF] Merging {len(temp_pdf_paths)} PDFs...")
+        # =====================================================================
+        # FASE 3: Merge final de todos los PDFs
+        # =====================================================================
+        print(f"[PDF] Merging {len(all_pdf_paths)} PDFs...")
+        merge_start = time.time()
 
         final_writer = PdfWriter()
-        for pdf_path in temp_pdf_paths:
+        for pdf_path in all_pdf_paths:
             try:
                 with open(pdf_path, 'rb') as f:
                     reader = PdfReader(f)
                     for page in reader.pages:
                         final_writer.add_page(page)
-
+                # Eliminar archivo temporal inmediatamente después de leerlo
                 os.remove(pdf_path)
             except Exception as e:
                 print(f"[PDF] Error merging {pdf_path}: {e}")
@@ -555,13 +597,19 @@ class ReportService:
 
         final_writer.close()
 
-        # Cleanup caches (no temp files to delete - all inline base64)
+        # Cleanup caches
         self._logo_cache.clear()
         self._image_cache.clear()
-
         gc.collect()
 
-        print(f"[PDF] Complete! Generated {total_reports} pages")
+        # Estadísticas finales
+        total_time = time.time() - start_time
+        merge_time = time.time() - merge_start
+        gen_time = total_time - merge_time
+        print(f"[PDF] ✅ Complete! {total_reports} reports in {total_time:.1f}s ({total_reports/total_time:.1f} reports/sec)")
+        print(f"[PDF]    - Generation + HTML: {gen_time:.1f}s")
+        print(f"[PDF]    - Merge: {merge_time:.1f}s")
+
         return result
 
     async def generate_pdf_from_uploads(self, row_data, files, logo_left=None, logo_right=None, output_filename="report.pdf"):
