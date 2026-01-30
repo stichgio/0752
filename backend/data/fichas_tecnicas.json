@@ -94,8 +94,8 @@
     "condicion_sanitaria": "Se detecta acumulación de residuos orgánicos en contenedores externos. Recomendar limpieza diaria de área de desechos.",
     "tratamiento": {
       "pulverizado": false,
-      "atomizado": true,
-      "thermonebulizado": true,
+      "atomizado": false,
+      "thermonebulizado": false,
       "nebulizado_ulv": false,
       "otros": "Cepillado mecánico"
     },
@@ -151,9 +151,9 @@
       "recomendacion_b": "No almacenar productos químicos cerca de alimentos",
       "recomendacion_c": "Capacitar personal en manejo de desechos"
     },
-    "satisfaccion": "satisfecho",
+    "satisfaccion": "muy_satisfecho",
     "status": "draft",
-    "last_modified": "2026-01-30T08:46:18.156426"
+    "last_modified": "2026-01-30T09:30:37.109187"
   },
   "FT-00003": {
     "id": "FT-00003",

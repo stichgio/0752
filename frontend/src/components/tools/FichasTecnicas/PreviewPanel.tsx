@@ -104,24 +104,52 @@ export default function PreviewPanel({ fichaData, logoLeft, logoRight }: Props) 
             >
                 <div style={{ border: '2px solid #333', padding: '12px' }}>
                     {/* Header */}
-                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px', gap: '12px' }}>
-                        <div style={{ background: '#1a1a2e', padding: '8px', display: 'flex', alignItems: 'center', gap: '8px', color: 'white', minWidth: '180px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+                        {/* Logo Izquierdo - Fondo blanco */}
+                        <div style={{
+                            background: '#ffffff',
+                            padding: '5px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            minWidth: '150px',
+                            minHeight: '45px'
+                        }}>
                             {logoLeftUrl ? (
-                                <img src={logoLeftUrl} alt="Logo" style={{ maxWidth: '40px', maxHeight: '40px' }} />
-                            ) : (
-                                <div style={{ width: '36px', height: '36px', background: '#d4af37', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>H</div>
-                            )}
-                            <div style={{ fontSize: '11px', fontWeight: 'bold', lineHeight: 1.2 }}>
-                                HIDR SERVICIOS<br />
-                                <span style={{ color: '#d4af37' }}>AA</span> E.I.R.L.
+                                <img src={logoLeftUrl} alt="Logo" style={{ maxWidth: '140px', maxHeight: '40px', objectFit: 'contain' }} />
+                            ) : null}
+                        </div>
+
+                        {/* Título Central */}
+                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 15px' }}>
+                            <div style={{ fontSize: '16px', fontWeight: 'bold', color: '#333', textAlign: 'center' }}>
+                                FICHA TÉCNICA DE EVALUACIÓN DE ACTIVIDADES
                             </div>
                         </div>
-                        <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#333' }}>FICHA TÉCNICA DE EVALUACIÓN DE ACTIVIDADES</div>
-                        </div>
-                        <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontSize: '10px' }}>O.S. N°</div>
-                            <div style={{ color: '#c41e3a', fontSize: '16px', fontWeight: 'bold' }}>{data.os_numero || 'N° ______'}</div>
+
+                        {/* Sección O.S. N° a la derecha */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', minWidth: '140px' }}>
+                            {/* Número de OS grande en rojo */}
+                            <div style={{ marginBottom: '5px' }}>
+                                <span style={{ color: '#c41e3a', fontSize: '20px', fontWeight: 'bold' }}>
+                                    N° {data.os_numero ? data.os_numero.replace(/^OS-/, '').replace(/-/g, '') : '00000'}
+                                </span>
+                            </div>
+                            {/* Campo O.S.N° con recuadro */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <span style={{ fontSize: '9px', fontWeight: 'bold' }}>O.S.N°</span>
+                                <div style={{
+                                    border: '1px solid #333',
+                                    minWidth: '100px',
+                                    height: '20px',
+                                    padding: '2px 6px',
+                                    fontSize: '9px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    background: '#ffffff'
+                                }}>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -184,23 +212,58 @@ export default function PreviewPanel({ fichaData, logoLeft, logoRight }: Props) 
                     {/* Treatment Types */}
                     <div style={{ border: '2px solid #333', marginBottom: '8px' }}>
                         <div style={{ background: '#e0e0e0', padding: '4px', textAlign: 'center', fontWeight: 'bold', fontSize: '10px', borderBottom: '2px solid #333' }}>TIPOS DE TRATAMIENTO</div>
-                        <div style={{ display: 'flex', justifyContent: 'space-around', padding: '8px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                {['pulverizado', 'atomizado'].map((key) => (
-                                    <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '9px' }}>
-                                        <span style={{ textTransform: 'capitalize' }}>{key}</span>
-                                        <span style={{ width: '16px', height: '11px', border: '1px solid #333', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', background: data.tratamiento[key as keyof typeof data.tratamiento] ? '#333' : 'white', color: data.tratamiento[key as keyof typeof data.tratamiento] ? 'white' : 'black' }}>
+                        <div style={{ display: 'flex', padding: '10px 20px' }}>
+                            {/* Columna izquierda */}
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {[
+                                    { key: 'pulverizado', label: 'Pulverizado' },
+                                    { key: 'atomizado', label: 'Atomizado' }
+                                ].map(({ key, label }) => (
+                                    <div key={key} style={{ display: 'flex', alignItems: 'center', fontSize: '9px' }}>
+                                        <span style={{ width: '90px' }}>{label}</span>
+                                        <span style={{
+                                            width: '14px',
+                                            height: '14px',
+                                            border: '1px solid #333',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: '10px',
+                                            fontWeight: 'bold',
+                                            background: data.tratamiento[key as keyof typeof data.tratamiento] ? '#333' : 'white',
+                                            color: data.tratamiento[key as keyof typeof data.tratamiento] ? 'white' : 'black'
+                                        }}>
                                             {data.tratamiento[key as keyof typeof data.tratamiento] ? 'X' : ''}
                                         </span>
                                     </div>
                                 ))}
-                                <div style={{ fontSize: '9px' }}>Otros: {data.tratamiento.otros}</div>
+                                <div style={{ display: 'flex', alignItems: 'center', fontSize: '9px' }}>
+                                    <span style={{ width: '50px' }}>Otros:</span>
+                                    <span style={{ flex: 1, borderBottom: '1px solid #999', minHeight: '14px', paddingLeft: '4px' }}>
+                                        {data.tratamiento.otros}
+                                    </span>
+                                </div>
                             </div>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                {['thermonebulizado', 'nebulizado_ulv'].map((key) => (
-                                    <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '9px' }}>
-                                        <span>{key === 'nebulizado_ulv' ? 'Nebulizado ULV' : 'Thermonebulizado'}</span>
-                                        <span style={{ width: '16px', height: '11px', border: '1px solid #333', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '8px', background: data.tratamiento[key as keyof typeof data.tratamiento] ? '#333' : 'white', color: data.tratamiento[key as keyof typeof data.tratamiento] ? 'white' : 'black' }}>
+                            {/* Columna derecha */}
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                {[
+                                    { key: 'thermonebulizado', label: 'Thermonebulizado' },
+                                    { key: 'nebulizado_ulv', label: 'Nebulizado ULV' }
+                                ].map(({ key, label }) => (
+                                    <div key={key} style={{ display: 'flex', alignItems: 'center', fontSize: '9px' }}>
+                                        <span style={{ width: '110px' }}>{label}</span>
+                                        <span style={{
+                                            width: '14px',
+                                            height: '14px',
+                                            border: '1px solid #333',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            fontSize: '10px',
+                                            fontWeight: 'bold',
+                                            background: data.tratamiento[key as keyof typeof data.tratamiento] ? '#333' : 'white',
+                                            color: data.tratamiento[key as keyof typeof data.tratamiento] ? 'white' : 'black'
+                                        }}>
                                             {data.tratamiento[key as keyof typeof data.tratamiento] ? 'X' : ''}
                                         </span>
                                     </div>

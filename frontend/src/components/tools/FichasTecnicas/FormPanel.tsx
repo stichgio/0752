@@ -361,7 +361,11 @@ export default function FormPanel({
                 <fieldset className="border border-[#333] rounded p-3">
                     <legend className="text-xs text-[#00a0b0] px-2 font-bold">PERSONAL TÉCNICO</legend>
                     <div className="grid grid-cols-2 gap-2">
-                        {fichaData.personal_tecnico.map((persona, idx) => (
+                        {(Array.isArray(fichaData.personal_tecnico) ? fichaData.personal_tecnico : 
+                          typeof fichaData.personal_tecnico === 'string' && fichaData.personal_tecnico ? 
+                          fichaData.personal_tecnico.split('\n').slice(0, 6).concat(Array(6).fill('')).slice(0, 6) : 
+                          ['', '', '', '', '', '']
+                        ).map((persona, idx) => (
                             <input
                                 key={idx}
                                 type="text"
