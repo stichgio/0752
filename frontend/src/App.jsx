@@ -314,17 +314,37 @@ export default function App() {
     };
 
 
+    // Helper: Match image name to record ID with exact prefix matching
+    // Pattern: ID_NUMBER.ext or ID.ext (e.g., 1_1.jpeg, 1_2.jpg, 1.png)
+    // Prevents ID "1" from matching "11_1.jpeg" or "12_2.jpg"
+    const matchesRecordId = (imageName, recordId) => {
+        const id = String(recordId).trim();
+        const name = imageName.toLowerCase();
+        // Regex: ^ID followed by (separator + digits) or directly by .extension
+        // Example: For ID "1", matches: 1_1.jpg, 1_2.jpeg, 1-1.png, 1.jpg
+        // Does NOT match: 11_1.jpg, 12.jpg, 21_1.jpg
+        const regex = new RegExp(`^${id.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:[-_]\\d+)?\\.(jpg|jpeg|png|gif|webp)$`, 'i');
+        return regex.test(name);
+    };
+
     const getFilteredImages = () => {
         if (!selectedIndex && selectedIndex !== 0) return [];
 
-        // Logic: Look for files containing the ID
         const row = data[selectedIndex];
         if (!row || !idColumn) return [];
 
         const recordId = String(row[idColumn]);
-        return images.filter(img =>
-            img.name.toLowerCase().includes(recordId.toLowerCase())
-        );
+
+        // Use exact matching to prevent ID collisions
+        const filtered = images.filter(img => matchesRecordId(img.name, recordId));
+
+        // Remove duplicates by name (in case of re-uploads)
+        const seen = new Set();
+        return filtered.filter(img => {
+            if (seen.has(img.name)) return false;
+            seen.add(img.name);
+            return true;
+        });
     };
 
     const handleDownload = async () => {
@@ -416,10 +436,8 @@ export default function App() {
                 const recordId = String(row[idColumn]);
 
                 if (requiresImages) {
-                    // Original behavior: only include rows with matching images
-                    const rowImages = images.filter(img =>
-                        img.name.toLowerCase().includes(recordId.toLowerCase())
-                    );
+                    // Use exact matching to prevent ID collisions (e.g., ID "1" matching "11")
+                    const rowImages = images.filter(img => matchesRecordId(img.name, recordId));
 
                     if (rowImages.length > 0) {
                         const rowData = formatRowData(row);
