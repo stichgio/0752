@@ -12,7 +12,7 @@ import json
 import tempfile
 from typing import List, Optional
 from report_service import run_batch_generation, ReportService
-from pdf_tools import merge_pdfs_interleaved, split_pdf, split_pdf_by_ranges
+from pdf_tools import merge_pdfs_interleaved, merge_pdfs_sequential, split_pdf, split_pdf_by_ranges
 import zipfile
 from technical_reports.router import router as technical_reports_router
 from technical_reports.models import TechnicalReport
@@ -267,13 +267,57 @@ async def tool_merge_pdfs(
                 pdf_bytes = f.read()
 
             return Response(
-                content=pdf_bytes, 
+                content=pdf_bytes,
                 media_type="application/pdf",
                 headers={"Content-Disposition": "attachment; filename=merged_interleaved.pdf"}
             )
-            
+
     except Exception as e:
         print(f"Merge Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@api_router.post("/tools/merge-pdfs-normal")
+async def tool_merge_pdfs_normal(
+    files: List[UploadFile] = File(...)
+):
+    """
+    Merge normal (secuencial) - Une PDFs uno después del otro sin intercalar.
+    """
+    print(f"Tool Merge Normal Request: {len(files)} files")
+    if len(files) < 2:
+        raise HTTPException(status_code=400, detail="Se requieren al menos 2 archivos PDF")
+
+    try:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            input_paths = []
+            # Save uploaded files
+            for file in files:
+                file_path = os.path.join(temp_dir, file.filename)
+                with open(file_path, "wb") as buffer:
+                    shutil.copyfileobj(file.file, buffer)
+                input_paths.append(file_path)
+
+            # Define output path
+            output_path = os.path.join(temp_dir, "merged_output.pdf")
+
+            # Execute sequential merge
+            result = merge_pdfs_sequential(
+                input_paths=input_paths,
+                output_path=output_path
+            )
+
+            # Read result bytes
+            with open(output_path, "rb") as f:
+                pdf_bytes = f.read()
+
+            return Response(
+                content=pdf_bytes,
+                media_type="application/pdf",
+                headers={"Content-Disposition": "attachment; filename=merged_normal.pdf"}
+            )
+
+    except Exception as e:
+        print(f"Merge Normal Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.post("/tools/split-pdf")

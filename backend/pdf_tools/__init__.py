@@ -7,12 +7,13 @@ Módulo para manipulación de archivos PDF con soporte para:
 - Split por número de páginas
 """
 
-from .pdf_merger import merge_pdfs_interleaved
+from .pdf_merger import merge_pdfs_interleaved, merge_pdfs_sequential
 from .pdf_splitter import split_pdf, split_pdf_by_ranges
 from .utils import validate_pdf_file, get_pdf_info
 
 __all__ = [
     "merge_pdfs_interleaved",
+    "merge_pdfs_sequential",
     "split_pdf",
     "split_pdf_by_ranges",
     "validate_pdf_file",
