@@ -1,42 +1,9 @@
 import React, { forwardRef, useState, useEffect } from 'react';
+import { formatDateValue } from '../utils';
 
 const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, customTemplate, customColumns = [] }, ref) => {
     const [layoutMode, setLayoutMode] = useState('grid');
     const [renderedHtml, setRenderedHtml] = useState('');
-
-    // Excel Serial Date Conversion Utilities
-    // FIX: Use UTC-based calculation to prevent timezone shifts
-    const excelSerialToDate = (serial) => {
-        if (!serial || isNaN(serial) || serial < 1) return null;
-
-        // Excel epoch is Dec 30, 1899 (accounting for the 1900 leap year bug)
-        // Calculate in UTC to avoid local timezone affecting the result
-        const excelEpochMs = Date.UTC(1899, 11, 30, 0, 0, 0);
-        const dateMs = excelEpochMs + (serial * 24 * 60 * 60 * 1000);
-        const date = new Date(dateMs);
-
-        // Use UTC methods to extract date parts (avoids local timezone conversion)
-        const day = String(date.getUTCDate()).padStart(2, '0');
-        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-        const year = String(date.getUTCFullYear()).slice(-2);
-        return `${day}/${month}/${year}`;
-    };
-
-    const formatDateValue = (value) => {
-        if (!value || value === '-' || value === '') return '-';
-        const numVal = Number(value);
-        if (!isNaN(numVal) && numVal > 1000 && numVal < 100000) {
-            return excelSerialToDate(numVal) || '-';
-        }
-        if (typeof value === 'string') {
-            const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
-            if (isoMatch) return `${isoMatch[3]}/${isoMatch[2]}/${isoMatch[1].slice(-2)}`;
-            const dmyMatch = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-            if (dmyMatch) return `${dmyMatch[1].padStart(2, '0')}/${dmyMatch[2].padStart(2, '0')}/${dmyMatch[3].slice(-2)}`;
-            return value;
-        }
-        return String(value);
-    };
 
     // Helper to get mapped value with optional date formatting
     const getValue = (fieldId, isDateField = false) => {
