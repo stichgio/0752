@@ -463,7 +463,8 @@
             </div>
             <div class="info-field half">
                 <label>Fecha :</label>
-                <div class="value">{{ ficha.fecha }}</div>
+                <div class="value">{% if ficha.fecha %}{% set date_parts = ficha.fecha.split(' ')[0].split('-') %}{{
+                    date_parts[2] }}-{{ date_parts[1] }}-{{ date_parts[0] }}{% endif %}</div>
             </div>
         </div>
         <div class="info-row">

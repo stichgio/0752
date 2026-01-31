@@ -71,6 +71,8 @@ def parse_csv_file(content: bytes) -> List[Dict[str, Any]]:
     return cleaned_rows
 
 
+import unicodedata
+
 def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
     """Parsea archivo XLSX (Excel)."""
     if not XLSX_SUPPORTED:
@@ -79,33 +81,57 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
     try:
         workbook = openpyxl.load_workbook(io.BytesIO(content), data_only=True)
         sheet = workbook.active
-        all_rows = list(sheet.iter_rows(values_only=True))
+        # Use values_only=False to access number_format
+        all_rows = list(sheet.iter_rows(values_only=False))
 
         if not all_rows:
             return []
 
+        def normalize_header(s):
+            if not s: return f"_col_"
+            # Normalize unicode characters (remove accents)
+            s_norm = unicodedata.normalize('NFKD', str(s)).encode('ASCII', 'ignore').decode('utf-8')
+            return s_norm.strip().lower().replace(' ', '_')
+
         # Primera fila como headers
         headers = []
         for cell in all_rows[0]:
-            if cell:
-                header = str(cell).strip().lower().replace(' ', '_')
-                headers.append(header)
-            else:
-                headers.append(f"_col_{len(headers)}")
+            headers.append(normalize_header(cell.value) if cell else f"_col_{len(headers)}")
 
         # Extraer datos
         parsed_rows = []
         for row in all_rows[1:]:
-            if not any(row):
+            # Check if row has any values
+            if not any(c.value for c in row if c is not None):
                 continue
 
             row_dict = {}
             has_useful_data = False
 
-            for col_idx, cell_value in enumerate(row):
+            for col_idx, cell in enumerate(row):
                 if col_idx < len(headers):
                     key = headers[col_idx]
+                    cell_value = cell.value if cell else None
+
                     if cell_value is not None:
+                        # Special handling for 'concentracion' columns to preserve precision
+                        # 'concentracion' match is now safe due to normalization
+                        if 'concentracion' in key and isinstance(cell_value, (int, float)) and cell:
+                            try:
+                                fmt = cell.number_format
+                                # Common Excel numeric formats
+                                if '0.000' in fmt:
+                                    cell_value = "{:.3f}".format(cell_value)
+                                elif '0.00' in fmt:
+                                    cell_value = "{:.2f}".format(cell_value)
+                                elif '0.0' in fmt:
+                                     # Catch formats like 0.0 or 0.0_
+                                     cell_value = "{:.1f}".format(cell_value)
+                                elif fmt == '0' or fmt == '#':
+                                    cell_value = "{:.0f}".format(cell_value)
+                            except:
+                                pass # Fallback to standard conversion
+
                         row_dict[key] = cell_value
                         if str(cell_value).strip():
                             has_useful_data = True
