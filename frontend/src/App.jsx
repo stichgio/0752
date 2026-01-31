@@ -6,8 +6,10 @@ import { FileSpreadsheet, Image as ImageIcon, Printer, Settings, FileCode, Check
 import PreviewPanel from './components/PreviewPanel';
 import PomodoroTimer from './components/PomodoroTimer';
 import FichasTecnicas from './components/tools/FichasTecnicas';
+import { Step } from './components/common';
 
-import { REPORT_FIELDS } from './constants';
+import { REPORT_FIELDS, TEMPLATE_KEY_MAP, DATE_FIELDS, TEMPLATE_HEADERS } from './constants';
+import { excelSerialToDate, formatDateValue, isDateColumn } from './utils';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -82,59 +84,6 @@ export default function App() {
             })
             .catch(err => console.error("Error fetching templates:", err));
     }, []);
-
-    // Excel Serial Date Conversion Utilities
-    const excelSerialToDate = (serial) => {
-        if (!serial || isNaN(serial) || serial < 1) return null;
-
-        // FIX: Use UTC-based calculation to prevent timezone shifts
-        // Excel epoch is Dec 30, 1899 (accounting for the 1900 leap year bug)
-        // We calculate in UTC to avoid local timezone affecting the result
-
-        // Excel serial number represents days since epoch
-        // Add the serial to the epoch timestamp (in milliseconds)
-        const excelEpochMs = Date.UTC(1899, 11, 30, 0, 0, 0); // Dec 30, 1899 in UTC
-        const dateMs = excelEpochMs + (serial * 24 * 60 * 60 * 1000);
-        const date = new Date(dateMs);
-
-        // Use UTC methods to extract date parts (avoids local timezone conversion)
-        const day = String(date.getUTCDate()).padStart(2, '0');
-        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-        const year = String(date.getUTCFullYear()).slice(-2); // Last 2 digits
-
-        return `${day}/${month}/${year}`; // Format: DD/MM/YY
-    };
-
-    const formatDateValue = (value) => {
-        if (!value || value === '-' || value === '') return '-';
-
-        // If it's a number (Excel serial), convert it
-        const numVal = Number(value);
-        if (!isNaN(numVal) && numVal > 1000 && numVal < 100000) {
-            return excelSerialToDate(numVal) || '-';
-        }
-
-        // If it's already a date string in various formats, normalize it
-        if (typeof value === 'string') {
-            // Check for ISO format (YYYY-MM-DD)
-            const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
-            if (isoMatch) {
-                return `${isoMatch[3]}/${isoMatch[2]}/${isoMatch[1].slice(-2)}`;
-            }
-
-            // Check for DD/MM/YYYY format
-            const dmyMatch = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-            if (dmyMatch) {
-                return `${dmyMatch[1].padStart(2, '0')}/${dmyMatch[2].padStart(2, '0')}/${dmyMatch[3].slice(-2)}`;
-            }
-
-            // Already in DD/MM/YY format or other string, return as-is
-            return value;
-        }
-
-        return String(value);
-    };
-
 
     // Logo Upload Handler
     const handleLogoUpload = (e, side) => {
@@ -282,10 +231,7 @@ export default function App() {
                         let cellValue = row[i];
 
                         // FIX: Check if this looks like a date column and value is a number (Excel serial date)
-                        const headerUpper = String(h || '').toUpperCase();
-                        const isDateColumn = headerUpper.includes('FECHA') || headerUpper.includes('DATE');
-
-                        if (isDateColumn && typeof cellValue === 'number' && cellValue > 1000 && cellValue < 100000) {
+                        if (isDateColumn(h) && typeof cellValue === 'number' && cellValue > 1000 && cellValue < 100000) {
                             // Convert Excel serial date to DD/MM/YY format manually
                             // This avoids timezone issues by treating it as pure numbers
                             cellValue = excelSerialToDate(cellValue);
@@ -1070,21 +1016,4 @@ export default function App() {
     );
 }
 
-// Memoized Progress Bar component to prevent unnecessary re-renders
-
-
-const Step = ({ number, title, children, disabled, icon }) => (
-    <div className={`transition-opacity duration-300 ${disabled ? 'opacity-30 pointer-events-none' : 'opacity-100'}`}>
-        <div className="flex items-center gap-2 mb-3 text-neutral-300">
-            <div className="w-6 h-6 rounded-full bg-white text-black flex items-center justify-center font-bold text-xs ring-2 ring-black">
-                {number}
-            </div>
-            <h3 className="font-bold text-sm tracking-wide uppercase flex items-center gap-2">
-                {icon} {title}
-            </h3>
-        </div>
-        <div className="pl-8">
-            {children}
-        </div>
-    </div>
-);
+// Step component now imported from ./components/common
