@@ -533,7 +533,7 @@ export default function App() {
             {/* Sidebar */}
             <aside className={`bg-neutral-950 text-white w-96 flex flex-col border-r border-neutral-800 transition-all duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-96 absolute z-50 h-full'}`}>
                 <div className="p-4 bg-black border-b border-neutral-800 flex items-center gap-4">
-                    <img src="https://res.cloudinary.com/dzhp64paw/image/upload/v1768942627/glitch.png" alt="Logo" className="h-24 object-contain flex-shrink-0" />
+
 
                     {/* Pomodoro Timer Section - Isolated Component */}
                     <PomodoroTimer />
