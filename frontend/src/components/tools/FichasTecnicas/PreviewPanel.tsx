@@ -170,7 +170,7 @@ export default function PreviewPanel({ fichaData, logoLeft, logoRight }: Props) 
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '4px', flex: 0.5 }}>
                             <label style={{ fontWeight: 'bold', fontSize: '9px', whiteSpace: 'nowrap' }}>Fecha :</label>
-                            <div style={{ borderBottom: '1px solid #333', flex: 1, padding: '2px 4px', fontSize: '9px' }}>{data.fecha}</div>
+                            <div style={{ borderBottom: '1px solid #333', flex: 1, padding: '2px 4px', fontSize: '9px' }}>{data.fecha ? data.fecha.split(' ')[0].split('-').reverse().join('-') : ''}</div>
                         </div>
                     </div>
                     <div style={{ display: 'flex', gap: '15px', marginBottom: '6px' }}>
