@@ -60,7 +60,11 @@ export default function App() {
     const [columnError, setColumnError] = useState('');
 
     // Images Required State - for templates that don't need images
-    const [requiresImages, setRequiresImages] = useState(true);;
+    const [requiresImages, setRequiresImages] = useState(true);
+
+    // PDF Loading State
+    const [isPdfLoading, setIsPdfLoading] = useState(false);
+    const [pdfLoadingMessage, setPdfLoadingMessage] = useState('');
 
 
 
@@ -478,6 +482,9 @@ export default function App() {
         }
 
         try {
+            setIsPdfLoading(true);
+            setPdfLoadingMessage(exportScope === 'single' ? 'Generando PDF...' : `Generando PDF consolidado (${payload.length} registros)...`);
+
             console.log(`Sending PDF request: ${payload.length} reports, ${allImages.size} images`);
             const response = await fetch(`${API_BASE_URL}/generate-pdf`, {
                 method: 'POST',
@@ -507,6 +514,7 @@ export default function App() {
             a.remove();
 
         } catch (err) {
+            setIsPdfLoading(false);
             console.error("PDF Generation Error:", err);
 
             // Provide more helpful error messages
@@ -520,6 +528,8 @@ export default function App() {
             }
 
             alert(errorMessage);
+        } finally {
+            setIsPdfLoading(false);
         }
     };
 
@@ -701,10 +711,10 @@ export default function App() {
                     {/* Step 3: Mapping */}
                     <Step number="3" title="Mapeo de Columnas" icon={<Settings size={16} />}>
                         <div className={`transition-all duration-300 ${headers.length === 0 ? 'opacity-30 pointer-events-none' : ''}`}>
-                            <div className="mb-2">
-                                <label className="block text-neutral-400 text-xs mb-1 font-semibold">Columna ID (Clave)</label>
+                            <div className="mb-3">
+                                <label className="block text-neutral-400 text-sm mb-1.5 font-semibold">Columna ID (Clave)</label>
                                 <select
-                                    className="w-full bg-neutral-900 border border-neutral-700 rounded p-1.5 text-xs text-white focus:border-white outline-none"
+                                    className="w-full bg-neutral-900 border border-neutral-700 rounded p-2 text-sm text-white focus:border-white outline-none"
                                     value={idColumn}
                                     onChange={e => setIdColumn(e.target.value)}
                                 >
@@ -713,13 +723,13 @@ export default function App() {
                                 </select>
                             </div>
 
-                            <div className="space-y-1 border-t border-neutral-800 pt-2 max-h-48 overflow-y-auto pr-1">
+                            <div className="space-y-2 border-t border-neutral-800 pt-3 max-h-56 overflow-y-auto pr-1">
                                 {/* Predefined Fields */}
                                 {REPORT_FIELDS.map(field => (
-                                    <div key={field.id} className="grid grid-cols-2 gap-1 items-center">
-                                        <span className="text-neutral-500 text-[10px] uppercase font-medium">{field.label}</span>
+                                    <div key={field.id} className="grid grid-cols-2 gap-2 items-center">
+                                        <span className="text-neutral-500 text-xs uppercase font-medium">{field.label}</span>
                                         <select
-                                            className={`bg-neutral-900 border border-neutral-700 rounded px-1 py-1 text-[10px] text-white outline-none ${mappings[field.id] ? 'border-l-2 border-l-green-500' : ''}`}
+                                            className={`bg-neutral-900 border border-neutral-700 rounded px-2 py-1.5 text-xs text-white outline-none ${mappings[field.id] ? 'border-l-2 border-l-green-500' : ''}`}
                                             value={mappings[field.id] || ''}
                                             onChange={(e) => setMappings({ ...mappings, [field.id]: e.target.value })}
                                         >
@@ -731,10 +741,10 @@ export default function App() {
 
                                 {/* Custom Columns */}
                                 {customColumns.map(col => (
-                                    <div key={col.id} className="grid grid-cols-[1fr_auto_auto] gap-1 items-center bg-neutral-800/50 rounded px-1 py-0.5">
-                                        <span className="text-blue-400 text-[10px] uppercase font-medium">{col.name}</span>
+                                    <div key={col.id} className="grid grid-cols-[1fr_auto_auto] gap-2 items-center bg-neutral-800/50 rounded px-2 py-1">
+                                        <span className="text-white text-xs uppercase font-medium">{col.name}</span>
                                         <select
-                                            className={`bg-neutral-900 border border-neutral-700 rounded px-1 py-1 text-[10px] text-white outline-none ${mappings[col.id] ? 'border-l-2 border-l-blue-500' : ''}`}
+                                            className={`bg-neutral-900 border border-neutral-700 rounded px-2 py-1.5 text-xs text-white outline-none ${mappings[col.id] ? 'border-l-2 border-l-neutral-500' : ''}`}
                                             value={mappings[col.id] || col.mappedTo || ''}
                                             onChange={(e) => setMappings({ ...mappings, [col.id]: e.target.value })}
                                         >
@@ -756,7 +766,7 @@ export default function App() {
                             <button
                                 onClick={() => setShowColumnModal(true)}
                                 disabled={headers.length === 0}
-                                className="w-full mt-2 border border-dashed border-blue-600 hover:border-blue-400 text-blue-400 hover:text-blue-300 rounded p-2 text-center hover:bg-blue-500/10 transition-all flex items-center justify-center gap-2 text-[10px] disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full mt-3 border border-dashed border-white/70 hover:border-white text-white/70 hover:text-white rounded p-2.5 text-center hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <span>+</span> Agregar Columna Personalizada
                             </button>
@@ -764,7 +774,7 @@ export default function App() {
 
                         <button
                             onClick={handleDownloadTemplate}
-                            className="w-full mt-2 border border-dashed border-neutral-700 hover:border-neutral-500 rounded p-2 text-center hover:bg-neutral-800 transition-all flex items-center justify-center gap-2 text-[10px] text-neutral-400 hover:text-white"
+                            className="w-full mt-3 border border-dashed border-neutral-700 hover:border-neutral-500 rounded p-2.5 text-center hover:bg-neutral-800 transition-all flex items-center justify-center gap-2 text-xs text-neutral-400 hover:text-white"
                         >
                             <span>📥</span> Descargar Plantilla Excel
                         </button>
@@ -793,7 +803,7 @@ export default function App() {
                     {/* Step 5: Select Record */}
                     <Step number="5" title="Seleccionar Orden" disabled={requiresImages ? images.length === 0 : data.length === 0}>
                         <select
-                            className="w-full bg-white text-black font-bold border border-neutral-300 rounded p-2 text-xs focus:outline-none disabled:opacity-50"
+                            className="w-full bg-white text-black font-bold border border-neutral-300 rounded p-2.5 text-sm focus:outline-none disabled:opacity-50"
                             value={selectedIndex}
                             onChange={e => {
                                 setSelectedIndex(e.target.value);
@@ -810,18 +820,18 @@ export default function App() {
                         </select>
 
                         {/* EXPORT OPTIONS */}
-                        <div className="bg-neutral-900 border border-neutral-800 rounded p-2 mt-2">
-                            <h4 className="text-[10px] uppercase text-neutral-500 font-bold mb-2">Opciones de Exportación</h4>
+                        <div className="bg-neutral-900 border border-neutral-800 rounded p-3 mt-3">
+                            <h4 className="text-xs uppercase text-neutral-500 font-bold mb-3">Opciones de Exportación</h4>
 
-                            <div className="flex gap-2 mb-2">
+                            <div className="flex gap-2 mb-3">
                                 <button
-                                    className={`flex-1 py-1 px-2 rounded text-[10px] font-medium transition-colors ${exportScope === 'single' ? 'bg-black text-white border border-white' : 'bg-neutral-800 text-neutral-400'}`}
+                                    className={`flex-1 py-1.5 px-3 rounded text-xs font-medium transition-colors ${exportScope === 'single' ? 'bg-black text-white border border-white' : 'bg-neutral-800 text-neutral-400'}`}
                                     onClick={() => setExportScope('single')}
                                 >
                                     Solo Actual
                                 </button>
                                 <button
-                                    className={`flex-1 py-1 px-2 rounded text-[10px] font-medium transition-colors ${exportScope === 'all' ? 'bg-black text-white border border-white' : 'bg-neutral-800 text-neutral-400'}`}
+                                    className={`flex-1 py-1.5 px-3 rounded text-xs font-medium transition-colors ${exportScope === 'all' ? 'bg-black text-white border border-white' : 'bg-neutral-800 text-neutral-400'}`}
                                     onClick={() => setExportScope('all')}
                                 >
                                     Todo ({data.length})
@@ -829,7 +839,7 @@ export default function App() {
                             </div>
 
                             {exportScope === 'all' && (
-                                <div className="flex flex-col gap-1">
+                                <div className="flex flex-col gap-2">
                                     <label className="flex items-center gap-2 cursor-pointer">
                                         <input
                                             type="radio"
@@ -838,7 +848,7 @@ export default function App() {
                                             onChange={() => setExportFormat('consolidated')}
                                             className="text-blue-500 bg-neutral-800 border-neutral-600"
                                         />
-                                        <span className="text-white text-[10px]">PDF Consolidado (1 Archivo)</span>
+                                        <span className="text-white text-xs">PDF Consolidado (1 Archivo)</span>
                                     </label>
                                     <label className="flex items-center gap-2 cursor-pointer opacity-50">
                                         <input
@@ -848,7 +858,7 @@ export default function App() {
                                             onChange={() => setExportFormat('individual')}
                                             className="text-blue-500 bg-neutral-800 border-neutral-600"
                                         />
-                                        <span className="text-white text-[10px]">PDFs Individuales (ZIP)</span>
+                                        <span className="text-white text-xs">PDFs Individuales (ZIP)</span>
                                     </label>
                                 </div>
                             )}
@@ -860,20 +870,20 @@ export default function App() {
                                 disabled={exportScope === 'single' && selectedIndex === ''}
                                 className="flex items-center justify-center gap-2 bg-black hover:bg-neutral-900 border border-neutral-700 text-white font-bold p-3 rounded disabled:opacity-50 transition-colors shadow-lg text-sm"
                             >
-                                <Printer size={18} /> Descargar PDF (Alta Calidad)
+                                <Printer size={18} /> Descargar PDF
                             </button>
                             <div className="grid grid-cols-2 gap-2">
                                 <button
                                     onClick={handlePrint}
                                     disabled={selectedIndex === ''}
-                                    className="flex items-center justify-center gap-2 bg-neutral-800 hover:bg-neutral-700 text-white p-2 rounded disabled:opacity-50 transition-colors text-[10px]"
+                                    className="flex items-center justify-center gap-2 bg-neutral-800 hover:bg-neutral-700 text-white p-2.5 rounded disabled:opacity-50 transition-colors text-xs"
                                 >
                                     Impresión Rápida
                                 </button>
                                 <button
                                     onClick={handleDownload}
                                     disabled={selectedIndex === ''}
-                                    className="flex items-center justify-center gap-2 bg-neutral-800 hover:bg-neutral-700 text-white p-2 rounded disabled:opacity-50 transition-colors text-[10px]"
+                                    className="flex items-center justify-center gap-2 bg-neutral-800 hover:bg-neutral-700 text-white p-2.5 rounded disabled:opacity-50 transition-colors text-xs"
                                 >
                                     PNG Screenshot
                                 </button>
@@ -957,25 +967,25 @@ export default function App() {
                 )}
             </main>
 
-            {/* Custom Column Modal */}
+            {/* Custom Column Modal - Nothing Tech Style */}
             {
                 showColumnModal && (
-                    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
-                        <div className="bg-neutral-900 border border-neutral-700 rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl">
-                            <h3 className="text-white font-bold text-lg mb-4 flex items-center gap-2">
-                                <span className="text-blue-400">+</span> Agregar Columna Personalizada
+                    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+                        <div className="bg-[#0a0a0a] border border-white/20 rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl">
+                            <h3 className="text-white font-mono font-bold text-base mb-5 flex items-center gap-2 tracking-wide">
+                                <span className="text-white">+</span> Agregar Columna Personalizada
                             </h3>
 
                             {columnError && (
-                                <div className="bg-red-500/20 border border-red-500/50 text-red-300 text-xs rounded p-2 mb-4 flex items-center gap-2">
+                                <div className="bg-white/5 border border-white/30 text-white text-xs rounded p-2 mb-4 flex items-center gap-2">
                                     <AlertCircle size={14} />
                                     {columnError}
                                 </div>
                             )}
 
-                            <div className="space-y-4">
+                            <div className="space-y-5">
                                 <div>
-                                    <label className="block text-neutral-400 text-xs mb-1 font-semibold">
+                                    <label className="block text-white/60 text-xs mb-2 font-mono uppercase tracking-wider">
                                         Nombre de la Columna
                                     </label>
                                     <input
@@ -983,41 +993,41 @@ export default function App() {
                                         value={newColumnName}
                                         onChange={(e) => setNewColumnName(e.target.value)}
                                         placeholder="Ej: FECHA CORTE, OBSERVACIONES EXTRA"
-                                        className="w-full bg-neutral-800 border border-neutral-600 rounded p-2 text-sm text-white focus:border-blue-500 outline-none placeholder:text-neutral-500"
+                                        className="w-full bg-white text-black border-0 rounded p-3 text-sm font-mono focus:ring-2 focus:ring-white/50 outline-none placeholder:text-neutral-400"
                                     />
-                                    <p className="text-neutral-500 text-[10px] mt-1">
+                                    <p className="text-white/40 text-[10px] mt-1.5 font-mono">
                                         Este nombre aparecerá en el reporte generado
                                     </p>
                                 </div>
 
                                 <div>
-                                    <label className="block text-neutral-400 text-xs mb-1 font-semibold">
+                                    <label className="block text-white/60 text-xs mb-2 font-mono uppercase tracking-wider">
                                         Columna del CSV a Mapear
                                     </label>
                                     <select
                                         value={newColumnMapping}
                                         onChange={(e) => setNewColumnMapping(e.target.value)}
-                                        className="w-full bg-neutral-800 border border-neutral-600 rounded p-2 text-sm text-white focus:border-blue-500 outline-none"
+                                        className="w-full bg-[#1a1a1a] border border-white/20 rounded p-3 text-sm text-white font-mono focus:border-white/50 outline-none cursor-pointer"
                                     >
                                         <option value="">-- Seleccionar Columna --</option>
                                         {headers.map(h => <option key={h} value={h}>{h}</option>)}
                                     </select>
-                                    <p className="text-neutral-500 text-[10px] mt-1">
+                                    <p className="text-white/40 text-[10px] mt-1.5 font-mono">
                                         Los datos de esta columna se agregarán al reporte
                                     </p>
                                 </div>
                             </div>
 
-                            <div className="flex gap-2 mt-6">
+                            <div className="flex gap-3 mt-6">
                                 <button
                                     onClick={resetColumnModal}
-                                    className="flex-1 border border-neutral-600 text-neutral-400 hover:text-white hover:border-neutral-500 rounded py-2 text-sm transition-colors"
+                                    className="flex-1 border border-white/30 text-white/60 hover:text-white hover:border-white/60 rounded py-2.5 text-sm font-mono transition-colors"
                                 >
                                     Cancelar
                                 </button>
                                 <button
                                     onClick={addCustomColumn}
-                                    className="flex-1 bg-blue-600 hover:bg-blue-500 text-white rounded py-2 text-sm font-medium transition-colors"
+                                    className="flex-1 bg-white hover:bg-white/90 text-black rounded py-2.5 text-sm font-mono font-semibold transition-colors"
                                 >
                                     Agregar Columna
                                 </button>
@@ -1026,6 +1036,17 @@ export default function App() {
                     </div>
                 )
             }
+
+            {/* PDF Loading Modal */}
+            {isPdfLoading && (
+                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+                    <div className="bg-[#111] border border-[#333] rounded-lg p-8 flex flex-col items-center min-w-[300px]">
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D71921] mx-auto"></div>
+                        <p className="mt-4 text-[#eee] font-mono text-center">{pdfLoadingMessage}</p>
+                        <p className="mt-2 text-[#666] text-xs">Por favor espere...</p>
+                    </div>
+                </div>
+            )}
 
         </div >
     );
