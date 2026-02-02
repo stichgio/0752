@@ -1,0 +1,21 @@
+{
+  "name": "0752",
+  "version": "1.0.0",
+  "description": "---\r title: Stich 0752\r emoji: 📊\r colorFrom: blue\r colorTo: indigo\r sdk: docker\r pinned: false\r ---",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stichgio/0752.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/stichgio/0752/issues"
+  },
+  "homepage": "https://github.com/stichgio/0752#readme"
+}
