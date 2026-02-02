@@ -881,51 +881,48 @@ export default function App() {
                         </div>
                     </Step>
 
-                    {/* TOOLS Section - Always accessible */}
+                    {/* TOOLS Section - Retro Style */}
                     <div className="mt-6 pt-4 border-t border-neutral-800">
-                        <div className="flex items-center gap-2 mb-3 text-neutral-300">
-                            <div className="w-6 h-6 rounded-full bg-white text-black flex items-center justify-center font-bold text-xs ring-2 ring-black">
-                                ⚙
-                            </div>
-                            <h3 className="font-bold text-sm tracking-wide uppercase">TOOLS</h3>
+                        <div className="flex items-center gap-3 mb-4 text-neutral-300">
+                            <span className="text-white text-xl">⚙</span>
+                            <h3 className="font-mono font-bold text-base tracking-wider uppercase">TOOLS</h3>
                         </div>
-                        <div className="pl-8">
+                        <div className="space-y-2">
                             <a
                                 href="/calculator.html"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center justify-center gap-2 bg-neutral-800 hover:bg-neutral-700 text-white p-2 rounded transition-colors text-[10px] w-full cursor-pointer"
+                                className="group flex items-center justify-between w-full px-4 py-3 border border-dashed border-neutral-700 hover:border-neutral-500 bg-neutral-900/50 hover:bg-neutral-800/50 rounded-lg transition-all cursor-pointer"
                             >
-                                <Calculator size={14} className="text-white" />
-                                Calculadora
+                                <span className="font-mono text-xs tracking-wide text-neutral-200 uppercase">Calculadora</span>
+                                <Calculator className="w-5 h-5 text-neutral-500 group-hover:text-neutral-300" />
                             </a>
                             <a
                                 href="/pdf-tools.html"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center justify-center gap-2 bg-neutral-800 hover:bg-neutral-700 text-white p-2 rounded transition-colors text-[10px] w-full cursor-pointer mt-2"
+                                className="group flex items-center justify-between w-full px-4 py-3 border border-dashed border-neutral-700 hover:border-neutral-500 bg-neutral-900/50 hover:bg-neutral-800/50 rounded-lg transition-all cursor-pointer"
                             >
-                                <FileText size={14} className="text-white" />
-                                PDF Tools
+                                <span className="font-mono text-xs tracking-wide text-neutral-200 uppercase">PDF Tools</span>
+                                <FileText className="w-5 h-5 text-neutral-500 group-hover:text-neutral-300" />
                             </a>
                             <a
                                 href="/technical-reports.html"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center justify-center gap-2 bg-neutral-800 hover:bg-neutral-700 text-white p-2 rounded transition-colors text-[10px] w-full cursor-pointer mt-2"
+                                className="group flex items-center justify-between w-full px-4 py-3 border border-dashed border-neutral-700 hover:border-neutral-500 bg-neutral-900/50 hover:bg-neutral-800/50 rounded-lg transition-all cursor-pointer"
                             >
-                                <ClipboardList size={14} className="text-white" />
-                                Informes Técnicos
+                                <span className="font-mono text-xs tracking-wide text-neutral-200 uppercase">Informes Técnicos</span>
+                                <ClipboardList className="w-5 h-5 text-neutral-500 group-hover:text-neutral-300" />
                             </a>
-                            {/* Fichas Técnicas - abrir en nueva pestaña (independiente) */}
                             <a
                                 href="/fichas-tecnicas.html"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center justify-center gap-2 bg-neutral-800 hover:bg-neutral-700 text-white p-2 rounded transition-colors text-[10px] w-full cursor-pointer mt-2"
+                                className="group flex items-center justify-between w-full px-4 py-3 border border-dashed border-neutral-700 hover:border-neutral-500 bg-neutral-900/50 hover:bg-neutral-800/50 rounded-lg transition-all cursor-pointer"
                             >
-                                <FileSpreadsheet size={14} className="text-white" />
-                                Fichas Técnicas
+                                <span className="font-mono text-xs tracking-wide text-neutral-200 uppercase">Fichas Técnicas</span>
+                                <FileSpreadsheet className="w-5 h-5 text-neutral-500 group-hover:text-neutral-300" />
                             </a>
                         </div>
                     </div>
