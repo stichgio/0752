@@ -590,9 +590,9 @@
       "recomendacion_b": "",
       "recomendacion_c": ""
     },
-    "satisfaccion": "",
+    "satisfaccion": "regular",
     "status": "draft",
-    "last_modified": "2026-01-31T08:32:32.670722"
+    "last_modified": "2026-02-02T08:29:45.389460"
   },
   "FT-00008": {
     "id": "FT-00008",
@@ -3650,9 +3650,9 @@
       "recomendacion_b": "",
       "recomendacion_c": ""
     },
-    "satisfaccion": "",
+    "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-01-31T08:32:32.913519"
+    "last_modified": "2026-02-02T08:29:17.418898"
   },
   "FT-00044": {
     "id": "FT-00044",
