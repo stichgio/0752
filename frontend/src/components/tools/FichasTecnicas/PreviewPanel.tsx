@@ -141,7 +141,7 @@ export default function PreviewPanel({ fichaData, logoLeft, logoRight }: Props) 
                             {/* Número de OS grande en rojo */}
                             <div style={{ marginBottom: '5px' }}>
                                 <span style={{ color: '#c41e3a', fontSize: '16px', fontWeight: 'bold' }}>
-                                    N° {data.os_numero ? data.os_numero.replace(/^OS-/, '').replace(/-/g, '') : '00000'}
+                                    {data.os_numero ? data.os_numero.replace(/^OS-/, '').replace(/-/g, '') : '00000'}
                                 </span>
                             </div>
                             {/* Campo O.S.N° con recuadro */}
@@ -300,7 +300,7 @@ export default function PreviewPanel({ fichaData, logoLeft, logoRight }: Props) 
                                         <td style={{ border: '1px solid #333', padding: '4px', fontSize: '8px', textAlign: 'center' }}>{prod.fecha_vencimiento}</td>
                                         <td style={{ border: '1px solid #333', padding: '4px', fontSize: '8px', textAlign: 'center' }}>{prod.unidad}</td>
                                         <td style={{ border: '1px solid #333', padding: '4px', fontSize: '8px', textAlign: 'center' }}>{prod.concentracion}</td>
-                                        <td style={{ border: '1px solid #333', padding: '4px', fontSize: '8px', textAlign: 'center' }}>{prod.cantidad}</td>
+                                        <td style={{ border: '1px solid #333', padding: '4px', fontSize: '8px', textAlign: 'center' }}>{prod.cantidad ? parseFloat(prod.cantidad).toFixed(4) : ''}</td>
                                     </tr>
                                 ))}
                             </tbody>
