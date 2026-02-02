@@ -132,6 +132,21 @@ class FichasTecnicasDB:
             val = str(value).upper().strip()
             return val in ['X', 'SI', 'SÍ', 'TRUE', '1', 'YES', 'V']
 
+        def normalize_satisfaccion(value) -> str:
+            """Normaliza el valor de satisfacción al formato esperado por el modelo"""
+            if value is None or value == 'None':
+                return ''
+            val = str(value).strip().lower().replace(' ', '_')
+            # Mapeo de valores posibles
+            mapping = {
+                'muy_satisfecho': 'muy_satisfecho',
+                'muy satisfecho': 'muy_satisfecho',
+                'satisfecho': 'satisfecho',
+                'regular': 'regular',
+                'insatisfecho': 'insatisfecho',
+            }
+            return mapping.get(val, '')
+
         for idx, row in enumerate(data_list):
             try:
                 auto_increment_counter += 1
@@ -218,7 +233,7 @@ class FichasTecnicasDB:
                         recomendacion_b=safe_str(row.get('recomendacion_b', '')),
                         recomendacion_c=safe_str(row.get('recomendacion_c', ''))
                     ),
-                    satisfaccion=safe_str(row.get('satisfaccion', '')),
+                    satisfaccion=normalize_satisfaccion(row.get('satisfaccion', '')),
                     status='draft',
                     last_modified=datetime.now().isoformat()
                 )
