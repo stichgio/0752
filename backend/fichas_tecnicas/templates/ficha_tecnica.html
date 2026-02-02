@@ -454,7 +454,7 @@
                 <div class="main-title">FICHA TÉCNICA DE EVALUACIÓN DE ACTIVIDADES</div>
             </div>
             <div class="form-number">
-                <div class="form-number-value">N° {{ ficha.os_numero|replace('OS-', '')|replace('-', '') if
+                <div class="form-number-value">{{ ficha.os_numero|replace('OS-', '')|replace('-', '') if
                     ficha.os_numero else '00000' }}</div>
                 <div class="form-number-field">
                     <span class="form-number-label">O.S.N°</span>
@@ -589,7 +589,7 @@
                         <td>{{ producto.fecha_vencimiento }}</td>
                         <td>{{ producto.unidad }}</td>
                         <td>{{ producto.concentracion }}</td>
-                        <td>{{ (producto.cantidad|string)[:7] if producto.cantidad else '' }}</td>
+                        <td>{{ "%.4f"|format(producto.cantidad|float) if producto.cantidad else '' }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
