@@ -398,7 +398,7 @@ export default function PreviewPanel({ fichaData, logoLeft, logoRight }: Props) 
 
                     {/* Signatures */}
                     <div style={{ display: 'flex', justifyContent: 'space-around', margin: '50px 0 10px 0' }}>
-                        {['Responsable de Servicio', 'Cliente', 'Inspector técnico'].map((label) => (
+                        {['Responsable de Servicio', 'Cliente', 'Director Técnico'].map((label) => (
                             <div key={label} style={{ textAlign: 'center' }}>
                                 <div style={{ width: '130px', borderTop: '1px solid #333', marginBottom: '4px' }}></div>
                                 <div style={{ fontSize: '8px' }}>{label}</div>

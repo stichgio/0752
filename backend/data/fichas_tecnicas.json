@@ -24,10 +24,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.05"
       },
@@ -82,7 +82,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.706265"
+    "last_modified": "2026-02-02T16:16:33.419503"
   },
   "FT-00002": {
     "id": "FT-00002",
@@ -109,10 +109,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.07692"
       },
@@ -167,7 +167,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.710263"
+    "last_modified": "2026-02-02T16:16:33.420502"
   },
   "FT-00003": {
     "id": "FT-00003",
@@ -194,10 +194,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.007690000000000001"
       },
@@ -252,7 +252,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.710263"
+    "last_modified": "2026-02-02T16:16:33.420502"
   },
   "FT-00004": {
     "id": "FT-00004",
@@ -279,10 +279,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.036539999999999996"
       },
@@ -337,7 +337,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.710263"
+    "last_modified": "2026-02-02T16:16:33.420502"
   },
   "FT-00005": {
     "id": "FT-00005",
@@ -364,10 +364,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.03269"
       },
@@ -422,7 +422,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.711262"
+    "last_modified": "2026-02-02T16:16:33.420502"
   },
   "FT-00006": {
     "id": "FT-00006",
@@ -449,10 +449,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.013460000000000001"
       },
@@ -507,7 +507,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.711262"
+    "last_modified": "2026-02-02T16:16:33.420502"
   },
   "FT-00007": {
     "id": "FT-00007",
@@ -534,10 +534,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.00962"
       },
@@ -592,7 +592,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.711262"
+    "last_modified": "2026-02-02T16:16:33.420502"
   },
   "FT-00008": {
     "id": "FT-00008",
@@ -619,10 +619,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.00385"
       },
@@ -677,7 +677,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.711262"
+    "last_modified": "2026-02-02T16:16:33.420502"
   },
   "FT-00009": {
     "id": "FT-00009",
@@ -704,10 +704,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.0019"
       },
@@ -762,7 +762,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.711262"
+    "last_modified": "2026-02-02T16:16:33.420502"
   },
   "FT-00010": {
     "id": "FT-00010",
@@ -789,10 +789,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.00385"
       },
@@ -847,7 +847,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.711945"
+    "last_modified": "2026-02-02T16:16:33.420502"
   },
   "FT-00011": {
     "id": "FT-00011",
@@ -874,10 +874,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.0019"
       },
@@ -932,7 +932,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.711945"
+    "last_modified": "2026-02-02T16:16:33.421570"
   },
   "FT-00012": {
     "id": "FT-00012",
@@ -959,10 +959,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.0007700000000000001"
       },
@@ -1017,7 +1017,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.711945"
+    "last_modified": "2026-02-02T16:16:33.421570"
   },
   "FT-00013": {
     "id": "FT-00013",
@@ -1044,10 +1044,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.00385"
       },
@@ -1102,7 +1102,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.711945"
+    "last_modified": "2026-02-02T16:16:33.421570"
   },
   "FT-00014": {
     "id": "FT-00014",
@@ -1129,10 +1129,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.007690000000000001"
       },
@@ -1187,7 +1187,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.711945"
+    "last_modified": "2026-02-02T16:16:33.421570"
   },
   "FT-00015": {
     "id": "FT-00015",
@@ -1214,10 +1214,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.01731"
       },
@@ -1272,7 +1272,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.711945"
+    "last_modified": "2026-02-02T16:16:33.421570"
   },
   "FT-00016": {
     "id": "FT-00016",
@@ -1299,10 +1299,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.00577"
       },
@@ -1357,7 +1357,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.711945"
+    "last_modified": "2026-02-02T16:16:33.421570"
   },
   "FT-00017": {
     "id": "FT-00017",
@@ -1384,10 +1384,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.03077"
       },
@@ -1442,7 +1442,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.711945"
+    "last_modified": "2026-02-02T16:16:33.422088"
   },
   "FT-00018": {
     "id": "FT-00018",
@@ -1469,10 +1469,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.00577"
       },
@@ -1527,7 +1527,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.711945"
+    "last_modified": "2026-02-02T16:16:33.422088"
   },
   "FT-00019": {
     "id": "FT-00019",
@@ -1554,10 +1554,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.00385"
       },
@@ -1612,7 +1612,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.712944"
+    "last_modified": "2026-02-02T16:16:33.422088"
   },
   "FT-00020": {
     "id": "FT-00020",
@@ -1639,10 +1639,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.0019199999999999998"
       },
@@ -1697,7 +1697,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.712944"
+    "last_modified": "2026-02-02T16:16:33.422088"
   },
   "FT-00021": {
     "id": "FT-00021",
@@ -1724,10 +1724,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.00385"
       },
@@ -1782,7 +1782,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.712944"
+    "last_modified": "2026-02-02T16:16:33.422088"
   },
   "FT-00022": {
     "id": "FT-00022",
@@ -1809,10 +1809,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.0029"
       },
@@ -1867,7 +1867,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.712944"
+    "last_modified": "2026-02-02T16:16:33.422601"
   },
   "FT-00023": {
     "id": "FT-00023",
@@ -1894,10 +1894,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.00962"
       },
@@ -1952,7 +1952,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.712944"
+    "last_modified": "2026-02-02T16:16:33.422601"
   },
   "FT-00024": {
     "id": "FT-00024",
@@ -1979,10 +1979,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.03077"
       },
@@ -2037,7 +2037,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.712944"
+    "last_modified": "2026-02-02T16:16:33.422601"
   },
   "FT-00025": {
     "id": "FT-00025",
@@ -2064,10 +2064,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.00577"
       },
@@ -2122,7 +2122,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.712944"
+    "last_modified": "2026-02-02T16:16:33.422601"
   },
   "FT-00026": {
     "id": "FT-00026",
@@ -2149,10 +2149,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.03846"
       },
@@ -2207,7 +2207,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.712944"
+    "last_modified": "2026-02-02T16:16:33.422601"
   },
   "FT-00027": {
     "id": "FT-00027",
@@ -2234,10 +2234,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.00577"
       },
@@ -2292,7 +2292,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.713943"
+    "last_modified": "2026-02-02T16:16:33.422601"
   },
   "FT-00028": {
     "id": "FT-00028",
@@ -2319,10 +2319,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.01923"
       },
@@ -2377,7 +2377,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.713990"
+    "last_modified": "2026-02-02T16:16:33.422601"
   },
   "FT-00029": {
     "id": "FT-00029",
@@ -2404,10 +2404,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.04615"
       },
@@ -2462,7 +2462,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.713990"
+    "last_modified": "2026-02-02T16:16:33.422601"
   },
   "FT-00030": {
     "id": "FT-00030",
@@ -2489,10 +2489,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.00577"
       },
@@ -2547,7 +2547,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.713990"
+    "last_modified": "2026-02-02T16:16:33.422601"
   },
   "FT-00031": {
     "id": "FT-00031",
@@ -2574,10 +2574,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.04615"
       },
@@ -2632,7 +2632,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.713990"
+    "last_modified": "2026-02-02T16:16:33.422601"
   },
   "FT-00032": {
     "id": "FT-00032",
@@ -2659,10 +2659,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.0028799999999999997"
       },
@@ -2717,7 +2717,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.714523"
+    "last_modified": "2026-02-02T16:16:33.423593"
   },
   "FT-00033": {
     "id": "FT-00033",
@@ -2744,10 +2744,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.02308"
       },
@@ -2802,7 +2802,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.714523"
+    "last_modified": "2026-02-02T16:16:33.423593"
   },
   "FT-00034": {
     "id": "FT-00034",
@@ -2829,10 +2829,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.013460000000000001"
       },
@@ -2887,7 +2887,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.714523"
+    "last_modified": "2026-02-02T16:16:33.423593"
   },
   "FT-00035": {
     "id": "FT-00035",
@@ -2914,10 +2914,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.06731000000000001"
       },
@@ -2972,7 +2972,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.714523"
+    "last_modified": "2026-02-02T16:16:33.423593"
   },
   "FT-00036": {
     "id": "FT-00036",
@@ -2999,10 +2999,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.04615"
       },
@@ -3057,7 +3057,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.714523"
+    "last_modified": "2026-02-02T16:16:33.423593"
   },
   "FT-00037": {
     "id": "FT-00037",
@@ -3084,10 +3084,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.00385"
       },
@@ -3142,7 +3142,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.714523"
+    "last_modified": "2026-02-02T16:16:33.423593"
   },
   "FT-00038": {
     "id": "FT-00038",
@@ -3169,10 +3169,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.01154"
       },
@@ -3227,7 +3227,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.714523"
+    "last_modified": "2026-02-02T16:16:33.423593"
   },
   "FT-00039": {
     "id": "FT-00039",
@@ -3254,10 +3254,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.007690000000000001"
       },
@@ -3312,7 +3312,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.714523"
+    "last_modified": "2026-02-02T16:16:33.423593"
   },
   "FT-00040": {
     "id": "FT-00040",
@@ -3339,10 +3339,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.007690000000000001"
       },
@@ -3397,7 +3397,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.714523"
+    "last_modified": "2026-02-02T16:16:33.423593"
   },
   "FT-00041": {
     "id": "FT-00041",
@@ -3424,10 +3424,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.00577"
       },
@@ -3482,7 +3482,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.715495"
+    "last_modified": "2026-02-02T16:16:33.423593"
   },
   "FT-00042": {
     "id": "FT-00042",
@@ -3509,10 +3509,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.00385"
       },
@@ -3567,7 +3567,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.715495"
+    "last_modified": "2026-02-02T16:16:33.424968"
   },
   "FT-00043": {
     "id": "FT-00043",
@@ -3594,10 +3594,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.00577"
       },
@@ -3652,7 +3652,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.715495"
+    "last_modified": "2026-02-02T16:16:33.424968"
   },
   "FT-00044": {
     "id": "FT-00044",
@@ -3679,10 +3679,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.04231"
       },
@@ -3737,7 +3737,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.715495"
+    "last_modified": "2026-02-02T16:16:33.424968"
   },
   "FT-00045": {
     "id": "FT-00045",
@@ -3764,10 +3764,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.015380000000000001"
       },
@@ -3822,7 +3822,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.715495"
+    "last_modified": "2026-02-02T16:16:33.424968"
   },
   "FT-00046": {
     "id": "FT-00046",
@@ -3849,10 +3849,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.03461"
       },
@@ -3907,7 +3907,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.715495"
+    "last_modified": "2026-02-02T16:16:33.424968"
   },
   "FT-00047": {
     "id": "FT-00047",
@@ -3934,10 +3934,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.007690000000000001"
       },
@@ -3992,7 +3992,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.715495"
+    "last_modified": "2026-02-02T16:16:33.424968"
   },
   "FT-00048": {
     "id": "FT-00048",
@@ -4019,10 +4019,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.015380000000000001"
       },
@@ -4077,7 +4077,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.715495"
+    "last_modified": "2026-02-02T16:16:33.424968"
   },
   "FT-00049": {
     "id": "FT-00049",
@@ -4104,10 +4104,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.01731"
       },
@@ -4162,7 +4162,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.715495"
+    "last_modified": "2026-02-02T16:16:33.424968"
   },
   "FT-00050": {
     "id": "FT-00050",
@@ -4189,10 +4189,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.0019199999999999998"
       },
@@ -4247,7 +4247,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.716496"
+    "last_modified": "2026-02-02T16:16:33.424968"
   },
   "FT-00051": {
     "id": "FT-00051",
@@ -4274,10 +4274,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.03269"
       },
@@ -4332,7 +4332,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.716496"
+    "last_modified": "2026-02-02T16:16:33.425962"
   },
   "FT-00052": {
     "id": "FT-00052",
@@ -4359,10 +4359,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.013560000000000001"
       },
@@ -4417,7 +4417,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.716496"
+    "last_modified": "2026-02-02T16:16:33.425962"
   },
   "FT-00053": {
     "id": "FT-00053",
@@ -4444,10 +4444,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.01154"
       },
@@ -4502,7 +4502,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.716496"
+    "last_modified": "2026-02-02T16:16:33.425962"
   },
   "FT-00054": {
     "id": "FT-00054",
@@ -4529,10 +4529,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.02308"
       },
@@ -4587,7 +4587,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.716496"
+    "last_modified": "2026-02-02T16:16:33.425962"
   },
   "FT-00055": {
     "id": "FT-00055",
@@ -4614,10 +4614,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.01923"
       },
@@ -4672,7 +4672,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.716496"
+    "last_modified": "2026-02-02T16:16:33.425962"
   },
   "FT-00056": {
     "id": "FT-00056",
@@ -4699,10 +4699,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.02312"
       },
@@ -4757,7 +4757,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.716496"
+    "last_modified": "2026-02-02T16:16:33.425962"
   },
   "FT-00057": {
     "id": "FT-00057",
@@ -4784,10 +4784,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.02308"
       },
@@ -4842,7 +4842,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.716496"
+    "last_modified": "2026-02-02T16:16:33.425962"
   },
   "FT-00058": {
     "id": "FT-00058",
@@ -4869,10 +4869,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.02308"
       },
@@ -4927,7 +4927,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.716496"
+    "last_modified": "2026-02-02T16:16:33.425962"
   },
   "FT-00059": {
     "id": "FT-00059",
@@ -4954,10 +4954,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.02308"
       },
@@ -5012,7 +5012,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.716496"
+    "last_modified": "2026-02-02T16:16:33.425962"
   },
   "FT-00060": {
     "id": "FT-00060",
@@ -5039,10 +5039,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.026920000000000003"
       },
@@ -5097,7 +5097,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.717542"
+    "last_modified": "2026-02-02T16:16:33.425962"
   },
   "FT-00061": {
     "id": "FT-00061",
@@ -5124,10 +5124,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.03846"
       },
@@ -5182,7 +5182,7 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.717542"
+    "last_modified": "2026-02-02T16:16:33.426962"
   },
   "FT-00062": {
     "id": "FT-00062",
@@ -5209,10 +5209,10 @@
     "productos": [
       {
         "producto": "HIPO CAL GRAN PLUSCHLOR PIS CN",
-        "composicion": "Cloro al 70%",
+        "composicion": "CLORO AL 70%",
         "lote": "20250321",
         "fecha_vencimiento": "20.03.2027",
-        "unidad": "Kg.",
+        "unidad": "KG.",
         "concentracion": "0.70",
         "cantidad": "0.025"
       },
@@ -5267,6 +5267,6 @@
     },
     "satisfaccion": "satisfecho",
     "status": "draft",
-    "last_modified": "2026-02-02T15:33:11.717542"
+    "last_modified": "2026-02-02T16:16:33.426962"
   }
 }
