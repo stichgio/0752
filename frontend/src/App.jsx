@@ -2,7 +2,7 @@ import React, { useState, useRef, useMemo, memo } from 'react';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import html2canvas from 'html2canvas';
-import { FileSpreadsheet, Image as ImageIcon, Printer, Settings, FileCode, CheckCircle, AlertCircle, RotateCcw, Music, Calculator, FileText, Timer, Play, Pause, Coffee, Brain, ClipboardList } from 'lucide-react';
+import { FileSpreadsheet, Image as ImageIcon, Printer, Settings, FileCode, CheckCircle, AlertCircle, RotateCcw, Music, Calculator, FileText, Timer, Play, Pause, Coffee, Brain, ClipboardList, Shrink } from 'lucide-react';
 import PreviewPanel from './components/PreviewPanel';
 import PomodoroTimer from './components/PomodoroTimer';
 import FichasTecnicas from './components/tools/FichasTecnicas';
@@ -933,6 +933,15 @@ export default function App() {
                             >
                                 <span className="font-mono text-xs tracking-wide text-neutral-200 uppercase">Fichas Técnicas</span>
                                 <FileSpreadsheet className="w-5 h-5 text-neutral-500 group-hover:text-neutral-300" />
+                            </a>
+                            <a
+                                href="/image-optimizer.html"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="group flex items-center justify-between w-full px-4 py-3 border border-dashed border-neutral-700 hover:border-neutral-500 bg-neutral-900/50 hover:bg-neutral-800/50 rounded-lg transition-all cursor-pointer"
+                            >
+                                <span className="font-mono text-xs tracking-wide text-neutral-200 uppercase">Optimizador de Imagenes</span>
+                                <Shrink className="w-5 h-5 text-neutral-500 group-hover:text-neutral-300" />
                             </a>
                         </div>
                     </div>

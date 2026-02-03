@@ -12,7 +12,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "RE-242 (R-2.6)",
-      "ubicacion": "1079 - RE-242,Urb. Las Viñas de La Molina (R-2.6)",
+      "ubicacion": "1079 - RE-242,URB. LAS VIÑAS DE LA MOLINA (R-2.6)",
       "suministro": "4249572",
       "tipo": "APOYADO",
       "volumen": 1300
@@ -169,7 +169,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.386210"
+    "last_modified": "2026-02-03T14:19:36.663282"
   },
   "RPT-0002": {
     "id": "RPT-0002",
@@ -184,7 +184,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "RE-411",
-      "ubicacion": "1134 - RE-411,Chancas de Andahuaylas",
+      "ubicacion": "1134 - RE-411,CHANCAS DE ANDAHUAYLAS",
       "suministro": "4222825",
       "tipo": "ELEVADO",
       "volumen": 2000
@@ -341,7 +341,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.387209"
+    "last_modified": "2026-02-03T14:19:36.663282"
   },
   "RPT-0003": {
     "id": "RPT-0003",
@@ -356,7 +356,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "CR-30",
-      "ubicacion": "1050 -CR-30,San Pedro",
+      "ubicacion": "1050 -CR-30,SAN PEDRO",
       "suministro": "4048185",
       "tipo": "APOYADO",
       "volumen": 200
@@ -513,7 +513,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.387209"
+    "last_modified": "2026-02-03T14:19:36.663282"
   },
   "RPT-0004": {
     "id": "RPT-0004",
@@ -528,7 +528,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "CR-129",
-      "ubicacion": "1048 -CR-129,PJ Santa Isabel",
+      "ubicacion": "1048 -CR-129,PJ SANTA ISABEL",
       "suministro": "4277742",
       "tipo": "APOYADO",
       "volumen": 950
@@ -685,7 +685,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.387209"
+    "last_modified": "2026-02-03T14:19:36.663282"
   },
   "RPT-0005": {
     "id": "RPT-0005",
@@ -700,7 +700,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "CR-120",
-      "ubicacion": "1047 - CR-120 - PJ 7 de Octubre",
+      "ubicacion": "1047 - CR-120 - PJ 7 DE OCTUBRE",
       "suministro": "4201261",
       "tipo": "APOYADO",
       "volumen": 850
@@ -857,7 +857,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.387209"
+    "last_modified": "2026-02-03T14:19:36.663282"
   },
   "RPT-0006": {
     "id": "RPT-0006",
@@ -872,7 +872,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "RE-415 (R-5B)",
-      "ubicacion": "1061 - RE-415,PJ 7 de Octubre (R-5B)",
+      "ubicacion": "1061 - RE-415,PJ 7 DE OCTUBRE (R-5B)",
       "suministro": "4201338",
       "tipo": "APOYADO",
       "volumen": 350
@@ -1029,7 +1029,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.387209"
+    "last_modified": "2026-02-03T14:19:36.664293"
   },
   "RPT-0007": {
     "id": "RPT-0007",
@@ -1044,7 +1044,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "RE-414 (R-5A)",
-      "ubicacion": "1060 - RE-414,PJ Santa Isabel (R-5A)",
+      "ubicacion": "1060 - RE-414,PJ SANTA ISABEL (R-5A)",
       "suministro": "5397687",
       "tipo": "APOYADO",
       "volumen": 250
@@ -1201,7 +1201,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.387209"
+    "last_modified": "2026-02-03T14:19:36.664293"
   },
   "RPT-0008": {
     "id": "RPT-0008",
@@ -1216,7 +1216,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "RE-150",
-      "ubicacion": "1057 - RE-150,Independiente RE-1",
+      "ubicacion": "1057 - RE-150,INDEPENDIENTE RE-1",
       "suministro": "4270816",
       "tipo": "APOYADO",
       "volumen": 100
@@ -1373,7 +1373,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.387209"
+    "last_modified": "2026-02-03T14:19:36.664293"
   },
   "RPT-0009": {
     "id": "RPT-0009",
@@ -1545,7 +1545,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.387209"
+    "last_modified": "2026-02-03T14:19:36.664293"
   },
   "RPT-0010": {
     "id": "RPT-0010",
@@ -1717,7 +1717,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.387209"
+    "last_modified": "2026-02-03T14:19:36.664293"
   },
   "RPT-0011": {
     "id": "RPT-0011",
@@ -1889,7 +1889,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.388223"
+    "last_modified": "2026-02-03T14:19:36.664293"
   },
   "RPT-0012": {
     "id": "RPT-0012",
@@ -2061,7 +2061,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.388316"
+    "last_modified": "2026-02-03T14:19:36.664293"
   },
   "RPT-0013": {
     "id": "RPT-0013",
@@ -2233,7 +2233,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.388316"
+    "last_modified": "2026-02-03T14:19:36.664293"
   },
   "RPT-0014": {
     "id": "RPT-0014",
@@ -2405,7 +2405,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.388316"
+    "last_modified": "2026-02-03T14:19:36.664293"
   },
   "RPT-0015": {
     "id": "RPT-0015",
@@ -2420,7 +2420,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "CR-169 (R2)",
-      "ubicacion": "1085 - CR-169,Portada del Sol II (R2)",
+      "ubicacion": "1085 - CR-169,PORTADA DEL SOL II (R2)",
       "suministro": "4254998",
       "tipo": "APOYADO",
       "volumen": 450
@@ -2577,7 +2577,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.388316"
+    "last_modified": "2026-02-03T14:19:36.664293"
   },
   "RPT-0016": {
     "id": "RPT-0016",
@@ -2592,7 +2592,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "RC-6 (CR-286)",
-      "ubicacion": "1169 - RC-6  Huaycan Zona T (CR-286)",
+      "ubicacion": "1169 - RC-6  HUAYCAN ZONA T (CR-286)",
       "suministro": "5625946",
       "tipo": "APOYADO",
       "volumen": 150
@@ -2749,7 +2749,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.388316"
+    "last_modified": "2026-02-03T14:19:36.665292"
   },
   "RPT-0017": {
     "id": "RPT-0017",
@@ -2764,7 +2764,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "RE-099  (R1.5)",
-      "ubicacion": "1077 - RE-099,La Molina Vieja (R1.5)",
+      "ubicacion": "1077 - RE-099,LA MOLINA VIEJA (R1.5)",
       "suministro": "4040459",
       "tipo": "APOYADO",
       "volumen": 800
@@ -2921,7 +2921,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.388316"
+    "last_modified": "2026-02-03T14:19:36.665292"
   },
   "RPT-0018": {
     "id": "RPT-0018",
@@ -2936,7 +2936,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "RH-4 (CR-288)",
-      "ubicacion": "1170 - RH-4  Huaycan Zona T (CR-288)",
+      "ubicacion": "1170 - RH-4  HUAYCAN ZONA T (CR-288)",
       "suministro": "5625924",
       "tipo": "APOYADO",
       "volumen": 150
@@ -3093,7 +3093,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.388876"
+    "last_modified": "2026-02-03T14:19:36.665292"
   },
   "RPT-0019": {
     "id": "RPT-0019",
@@ -3108,7 +3108,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "RC - 8.9",
-      "ubicacion": "1174 - RC - 8.9 Huaycan Zona S",
+      "ubicacion": "1174 - RC - 8.9 HUAYCAN ZONA S",
       "suministro": "6704614",
       "tipo": "APOYADO",
       "volumen": 100
@@ -3265,7 +3265,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.388876"
+    "last_modified": "2026-02-03T14:19:36.665292"
   },
   "RPT-0020": {
     "id": "RPT-0020",
@@ -3280,7 +3280,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "R-2",
-      "ubicacion": "1081 - R-2 Lomas de La Molina",
+      "ubicacion": "1081 - R-2 LOMAS DE LA MOLINA",
       "suministro": "5403381",
       "tipo": "APOYADO",
       "volumen": 50
@@ -3437,7 +3437,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.388876"
+    "last_modified": "2026-02-03T14:19:36.665292"
   },
   "RPT-0021": {
     "id": "RPT-0021",
@@ -3452,7 +3452,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "CR-212",
-      "ubicacion": "1123 - CR-212 Urb. Portada del Sol III Etapa",
+      "ubicacion": "1123 - CR-212 URB. PORTADA DEL SOL III ETAPA",
       "suministro": "4281156",
       "tipo": "CISTERNA",
       "volumen": 100
@@ -3609,7 +3609,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.388876"
+    "last_modified": "2026-02-03T14:19:36.665292"
   },
   "RPT-0022": {
     "id": "RPT-0022",
@@ -3624,7 +3624,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "CR-13",
-      "ubicacion": "1119 - CR-13 Naplo Sol de La Molina 3ra Etapa",
+      "ubicacion": "1119 - CR-13 NAPLO SOL DE LA MOLINA 3RA ETAPA",
       "suministro": "5576003",
       "tipo": "CISTERNA",
       "volumen": 80
@@ -3781,7 +3781,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.388876"
+    "last_modified": "2026-02-03T14:19:36.665292"
   },
   "RPT-0023": {
     "id": "RPT-0023",
@@ -3796,7 +3796,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "R-104",
-      "ubicacion": "1076 - R-104 Honolulu - Sol de La Molina 3ra Etapa",
+      "ubicacion": "1076 - R-104 HONOLULU - SOL DE LA MOLINA 3RA ETAPA",
       "suministro": "5429373",
       "tipo": "APOYADO",
       "volumen": 250
@@ -3953,7 +3953,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.388876"
+    "last_modified": "2026-02-03T14:19:36.665292"
   },
   "RPT-0024": {
     "id": "RPT-0024",
@@ -4125,7 +4125,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.388876"
+    "last_modified": "2026-02-03T14:19:36.665292"
   },
   "RPT-0025": {
     "id": "RPT-0025",
@@ -4140,7 +4140,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "RB-6 (CR-282)",
-      "ubicacion": "1178 - RB-6 Huaycan Zona Z (CR-282)",
+      "ubicacion": "1178 - RB-6 HUAYCAN ZONA Z (CR-282)",
       "suministro": "5629480",
       "tipo": "APOYADO",
       "volumen": 150
@@ -4297,7 +4297,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.388876"
+    "last_modified": "2026-02-03T14:19:36.665292"
   },
   "RPT-0026": {
     "id": "RPT-0026",
@@ -4312,7 +4312,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "RE-138",
-      "ubicacion": "1133 - RE-138 Urb. Santa Anita",
+      "ubicacion": "1133 - RE-138 URB. SANTA ANITA",
       "suministro": "4025597",
       "tipo": "ELEVADO",
       "volumen": 1000
@@ -4469,7 +4469,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.388876"
+    "last_modified": "2026-02-03T14:19:36.666291"
   },
   "RPT-0027": {
     "id": "RPT-0027",
@@ -4484,7 +4484,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "R-2 (CR-284)",
-      "ubicacion": "1177 - R-2 Huaycan Zona Z (CR-284)",
+      "ubicacion": "1177 - R-2 HUAYCAN ZONA Z (CR-284)",
       "suministro": "5626438",
       "tipo": "APOYADO",
       "volumen": 150
@@ -4641,7 +4641,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.388876"
+    "last_modified": "2026-02-03T14:19:36.666291"
   },
   "RPT-0028": {
     "id": "RPT-0028",
@@ -4656,7 +4656,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "R-E1",
-      "ubicacion": "1157 R-E1 Urb. Sol de Huampani",
+      "ubicacion": "1157 R-E1 URB. SOL DE HUAMPANI",
       "suministro": "5461691",
       "tipo": "ELEVADO",
       "volumen": 500
@@ -4813,7 +4813,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.388876"
+    "last_modified": "2026-02-03T14:19:36.666291"
   },
   "RPT-0029": {
     "id": "RPT-0029",
@@ -4828,7 +4828,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "RE-168 (R-2.5)",
-      "ubicacion": "1074 - RE-168 El Remanso de La Molina (R-2.5)",
+      "ubicacion": "1074 - RE-168 EL REMANSO DE LA MOLINA (R-2.5)",
       "suministro": "5022269",
       "tipo": "APOYADO",
       "volumen": 1200
@@ -4985,7 +4985,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.389837"
+    "last_modified": "2026-02-03T14:19:36.666291"
   },
   "RPT-0030": {
     "id": "RPT-0030",
@@ -5000,7 +5000,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "CR-164",
-      "ubicacion": "1066 - CR-164,Bethania - Miade",
+      "ubicacion": "1066 - CR-164,BETHANIA - MIADE",
       "suministro": "5365979",
       "tipo": "CISTERNA",
       "volumen": 150
@@ -5157,7 +5157,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.389870"
+    "last_modified": "2026-02-03T14:19:36.666291"
   },
   "RPT-0031": {
     "id": "RPT-0031",
@@ -5172,7 +5172,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "RE-100",
-      "ubicacion": "1056 - RE-100,El Miade Canaan",
+      "ubicacion": "1056 - RE-100,EL MIADE CANAAN",
       "suministro": "4228702",
       "tipo": "APOYADO",
       "volumen": 1200
@@ -5329,7 +5329,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.389870"
+    "last_modified": "2026-02-03T14:19:36.666291"
   },
   "RPT-0032": {
     "id": "RPT-0032",
@@ -5344,7 +5344,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "CR-191",
-      "ubicacion": "1067 - CR-191,Las Terrazas de Catalina Huanca",
+      "ubicacion": "1067 - CR-191,LAS TERRAZAS DE CATALINA HUANCA",
       "suministro": "4050934",
       "tipo": "CISTERNA",
       "volumen": 75
@@ -5501,7 +5501,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.389870"
+    "last_modified": "2026-02-03T14:19:36.666291"
   },
   "RPT-0033": {
     "id": "RPT-0033",
@@ -5516,7 +5516,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "R E - 151",
-      "ubicacion": "1054 - RE - 151,PJ Las Terrazas de Catalina Huanca",
+      "ubicacion": "1054 - RE - 151,PJ LAS TERRAZAS DE CATALINA HUANCA",
       "suministro": "5087028",
       "tipo": "APOYADO",
       "volumen": 600
@@ -5673,7 +5673,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.389870"
+    "last_modified": "2026-02-03T14:19:36.666291"
   },
   "RPT-0034": {
     "id": "RPT-0034",
@@ -5688,7 +5688,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "R-2",
-      "ubicacion": "1128 - R-2 Terrazas de Caraponguillo",
+      "ubicacion": "1128 - R-2 TERRAZAS DE CARAPONGUILLO",
       "suministro": "6208067",
       "tipo": "APOYADO",
       "volumen": 350
@@ -5845,7 +5845,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.389870"
+    "last_modified": "2026-02-03T14:19:36.666291"
   },
   "RPT-0035": {
     "id": "RPT-0035",
@@ -5860,7 +5860,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "R-1",
-      "ubicacion": "1126 - R-1 San Antonio de Carapongo",
+      "ubicacion": "1126 - R-1 SAN ANTONIO DE CARAPONGO",
       "suministro": "5926795",
       "tipo": "APOYADO",
       "volumen": 1750
@@ -6017,7 +6017,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.389870"
+    "last_modified": "2026-02-03T14:19:36.666291"
   },
   "RPT-0036": {
     "id": "RPT-0036",
@@ -6032,7 +6032,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "R-1",
-      "ubicacion": "1127 - R-1 Terrazas de Caraponguillo",
+      "ubicacion": "1127 - R-1 TERRAZAS DE CARAPONGUILLO",
       "suministro": "6662979",
       "tipo": "APOYADO",
       "volumen": 1200
@@ -6189,7 +6189,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.389870"
+    "last_modified": "2026-02-03T14:19:36.666291"
   },
   "RPT-0037": {
     "id": "RPT-0037",
@@ -6361,7 +6361,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.389870"
+    "last_modified": "2026-02-03T14:19:36.667292"
   },
   "RPT-0038": {
     "id": "RPT-0038",
@@ -6533,7 +6533,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.389870"
+    "last_modified": "2026-02-03T14:19:36.667292"
   },
   "RPT-0039": {
     "id": "RPT-0039",
@@ -6705,7 +6705,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.389870"
+    "last_modified": "2026-02-03T14:19:36.667292"
   },
   "RPT-0040": {
     "id": "RPT-0040",
@@ -6877,7 +6877,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.390836"
+    "last_modified": "2026-02-03T14:19:36.667292"
   },
   "RPT-0041": {
     "id": "RPT-0041",
@@ -7049,7 +7049,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.390836"
+    "last_modified": "2026-02-03T14:19:36.667292"
   },
   "RPT-0042": {
     "id": "RPT-0042",
@@ -7221,7 +7221,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.390836"
+    "last_modified": "2026-02-03T14:19:36.667292"
   },
   "RPT-0043": {
     "id": "RPT-0043",
@@ -7236,7 +7236,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "RB-9 (CR-283)",
-      "ubicacion": "1176 - RB-9 Huaycan Zona Z (CR-283)",
+      "ubicacion": "1176 - RB-9 HUAYCAN ZONA Z (CR-283)",
       "suministro": "6579567",
       "tipo": "APOYADO",
       "volumen": 150
@@ -7393,7 +7393,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.390836"
+    "last_modified": "2026-02-03T14:19:36.667292"
   },
   "RPT-0044": {
     "id": "RPT-0044",
@@ -7565,7 +7565,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.390836"
+    "last_modified": "2026-02-03T14:19:36.667292"
   },
   "RPT-0045": {
     "id": "RPT-0045",
@@ -7737,7 +7737,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.390836"
+    "last_modified": "2026-02-03T14:19:36.667292"
   },
   "RPT-0046": {
     "id": "RPT-0046",
@@ -7909,7 +7909,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.390836"
+    "last_modified": "2026-02-03T14:19:36.668290"
   },
   "RPT-0047": {
     "id": "RPT-0047",
@@ -8081,7 +8081,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.390836"
+    "last_modified": "2026-02-03T14:19:36.668858"
   },
   "RPT-0048": {
     "id": "RPT-0048",
@@ -8253,7 +8253,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.390836"
+    "last_modified": "2026-02-03T14:19:36.668858"
   },
   "RPT-0049": {
     "id": "RPT-0049",
@@ -8268,7 +8268,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "RE-230 (CR-251)",
-      "ubicacion": "1071 - RE-230,Coop.Musa R-4.1 (CR-251)",
+      "ubicacion": "1071 - RE-230,COOP.MUSA R-4.1 (CR-251)",
       "suministro": "4278906",
       "tipo": "APOYADO",
       "volumen": 450
@@ -8425,7 +8425,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.390836"
+    "last_modified": "2026-02-03T14:19:36.668858"
   },
   "RPT-0050": {
     "id": "RPT-0050",
@@ -8440,7 +8440,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "R-1",
-      "ubicacion": "1175 - R-1  Huaycan Zona Z",
+      "ubicacion": "1175 - R-1  HUAYCAN ZONA Z",
       "suministro": "6238794",
       "tipo": "APOYADO",
       "volumen": 50
@@ -8597,7 +8597,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.391836"
+    "last_modified": "2026-02-03T14:19:36.668858"
   },
   "RPT-0051": {
     "id": "RPT-0051",
@@ -8612,7 +8612,7 @@
       "cs": "ATE VITARTE",
       "contratista": "HIDROSERVICIOS AA EIRL",
       "codigo_infraestructura": "CR-168 (R-1)",
-      "ubicacion": "1084 - CR-168,Portada del Sol I Etapa (R-1)",
+      "ubicacion": "1084 - CR-168,PORTADA DEL SOL I ETAPA (R-1)",
       "suministro": "5032097",
       "tipo": "APOYADO",
       "volumen": 850
@@ -8769,7 +8769,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.391836"
+    "last_modified": "2026-02-03T14:19:36.668858"
   },
   "RPT-0052": {
     "id": "RPT-0052",
@@ -8941,7 +8941,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.391836"
+    "last_modified": "2026-02-03T14:19:36.668858"
   },
   "RPT-0053": {
     "id": "RPT-0053",
@@ -9113,7 +9113,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.391836"
+    "last_modified": "2026-02-03T14:19:36.668858"
   },
   "RPT-0054": {
     "id": "RPT-0054",
@@ -9285,7 +9285,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.391836"
+    "last_modified": "2026-02-03T14:19:36.669376"
   },
   "RPT-0055": {
     "id": "RPT-0055",
@@ -9457,7 +9457,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.391836"
+    "last_modified": "2026-02-03T14:19:36.669376"
   },
   "RPT-0056": {
     "id": "RPT-0056",
@@ -9629,7 +9629,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.391836"
+    "last_modified": "2026-02-03T14:19:36.669376"
   },
   "RPT-0057": {
     "id": "RPT-0057",
@@ -9801,7 +9801,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.391836"
+    "last_modified": "2026-02-03T14:19:36.669376"
   },
   "RPT-0058": {
     "id": "RPT-0058",
@@ -9973,7 +9973,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.391836"
+    "last_modified": "2026-02-03T14:19:36.669376"
   },
   "RPT-0059": {
     "id": "RPT-0059",
@@ -10145,7 +10145,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.391836"
+    "last_modified": "2026-02-03T14:19:36.669376"
   },
   "RPT-0060": {
     "id": "RPT-0060",
@@ -10317,7 +10317,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.392834"
+    "last_modified": "2026-02-03T14:19:36.669376"
   },
   "RPT-0061": {
     "id": "RPT-0061",
@@ -10489,7 +10489,7 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.392834"
+    "last_modified": "2026-02-03T14:19:36.669376"
   },
   "RPT-0062": {
     "id": "RPT-0062",
@@ -10661,6 +10661,6 @@
     "observaciones": "",
     "sugerencias": "",
     "status": "draft",
-    "last_modified": "2026-02-03T08:31:42.392834"
+    "last_modified": "2026-02-03T14:19:36.669376"
   }
 }
