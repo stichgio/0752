@@ -46,9 +46,9 @@ def parse_csv_file(content: bytes) -> List[Dict[str, Any]]:
     try:
         reader = csv.DictReader(io.StringIO(decoded), delimiter=';')
         temp_rows = list(reader)
-        
-        # Verificar si el parsing fue exitoso (más de 1 columna)
-        if temp_rows and len(temp_rows[0].keys()) > 3:
+
+        # Verificar si el parsing fue exitoso (más de 1 columna indica que ; es el delimitador correcto)
+        if temp_rows and len(temp_rows[0].keys()) > 1:
             rows = temp_rows
             print(f"[CSV Parser] Parsed with semicolon delimiter: {len(rows)} rows, {len(rows[0].keys())} columns")
         else:
