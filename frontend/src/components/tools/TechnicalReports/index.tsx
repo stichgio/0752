@@ -239,7 +239,6 @@ export default function TechnicalReports() {
                             Generador de Informes Técnicos
                         </h1>
                     </div>
-
                     <div className="flex items-center gap-4">
                         <button onClick={() => canPrev && handleReportSelect(reports[currentIndex - 1].id)} disabled={!canPrev} className="btn-secondary flex items-center gap-2 disabled:opacity-50">
                             <ChevronLeft size={16} />
@@ -266,16 +265,13 @@ export default function TechnicalReports() {
                     </div>
                 </div>
             </div>
-
             <div className="grid grid-cols-[300px_1fr_400px] gap-6 p-6 h-[calc(100vh-80px)] overflow-hidden">
                 {/* Columna Izquierda: Scroll Independiente */}
                 <div className="h-full overflow-y-auto pr-2">
                     <DatabasePanel reports={reports} selectedReportId={selectedReportId} onReportSelect={handleReportSelect} onImportCSV={handleImportCSV} onReload={loadReports} onClearAll={handleClearAllReports} />
                 </div>
-
                 {/* Columna Central */}
                 <PreviewPanel reportData={formData} zoom={100} logoLeft={logoLeft} logoRight={logoRight} />
-
                 {/* Columna Derecha: Scroll Independiente */}
                 <div className="h-full overflow-y-auto pl-2">
                     <FormPanel
@@ -291,7 +287,6 @@ export default function TechnicalReports() {
                     />
                 </div>
             </div>
-
             {isLoading && (
                 <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
                     <div className="bg-[#111] border border-[#333] rounded-lg p-8 flex flex-col items-center min-w-[300px]">
