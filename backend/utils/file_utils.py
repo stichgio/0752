@@ -31,20 +31,6 @@ def safe_filename(filename: str) -> str:
     return safe_name
 
 
-def cleanup_temp_file(path: str) -> None:
-    """
-    Elimina un archivo temporal de forma segura.
-
-    Args:
-        path: Ruta al archivo a eliminar
-    """
-    try:
-        if os.path.exists(path):
-            os.remove(path)
-    except Exception as e:
-        print(f"Error removing temp file {path}: {e}")
-
-
 def ensure_directory(path: Path) -> Path:
     """
     Asegura que un directorio exista, creándolo si es necesario.
