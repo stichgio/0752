@@ -223,13 +223,27 @@ export default function TechnicalReports() {
         }
     };
 
+    const [isFocusMode, setIsFocusMode] = useState(false);
+
+    // Toggle Focus Mode with Ctrl + .
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.ctrlKey && e.key === '.') {
+                e.preventDefault();
+                setIsFocusMode(prev => !prev);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
     const currentIndex = reports.findIndex(r => r.id === selectedReportId);
     const canPrev = currentIndex > 0;
     const canNext = currentIndex < reports.length - 1;
 
     return (
         <div className="min-h-screen bg-[#0d0d0d] text-[#eee] technical-theme">
-            <div className="bg-[#0d0d0d] border-b border-[#333] px-6 py-4">
+            <div className={`bg-[#0d0d0d] border-b border-[#333] px-6 py-4 transition-all duration-300 ${isFocusMode ? '-mt-[80px]' : ''}`}>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <a href="/" className="text-[#888] hover:text-[#eee] transition-colors">
@@ -265,15 +279,22 @@ export default function TechnicalReports() {
                     </div>
                 </div>
             </div>
-            <div className="grid grid-cols-[300px_1fr_400px] gap-6 p-6 h-[calc(100vh-80px)] overflow-hidden">
+
+            {/* Main Layout Grid - Adjusted for Focus Mode */}
+            <div className={`grid transition-all duration-300 ease-in-out h-[calc(100vh-80px)] overflow-hidden ${isFocusMode
+                ? 'grid-cols-[0px_1fr_0px] gap-0 p-0 h-screen'
+                : 'grid-cols-[300px_1fr_400px] gap-6 p-6'
+                }`}>
                 {/* Columna Izquierda: Scroll Independiente */}
-                <div className="h-full overflow-y-auto pr-2">
+                <div className={`h-full overflow-y-auto pr-2 transition-opacity duration-300 ${isFocusMode ? 'invisible opacity-0' : 'visible opacity-100'}`}>
                     <DatabasePanel reports={reports} selectedReportId={selectedReportId} onReportSelect={handleReportSelect} onImportCSV={handleImportCSV} onReload={loadReports} onClearAll={handleClearAllReports} />
                 </div>
+
                 {/* Columna Central */}
                 <PreviewPanel reportData={formData} zoom={100} logoLeft={logoLeft} logoRight={logoRight} />
+
                 {/* Columna Derecha: Scroll Independiente */}
-                <div className="h-full overflow-y-auto pl-2">
+                <div className={`h-full overflow-y-auto pl-2 transition-opacity duration-300 ${isFocusMode ? 'invisible opacity-0' : 'visible opacity-100'}`}>
                     <FormPanel
                         reportData={formData}
                         onChange={handleFormChange}
@@ -287,6 +308,34 @@ export default function TechnicalReports() {
                     />
                 </div>
             </div>
+            {/* Navigation Buttons for Focus Mode */}
+            {isFocusMode && (
+                <>
+                    <button
+                        onClick={() => canPrev && handleReportSelect(reports[currentIndex - 1].id)}
+                        disabled={!canPrev}
+                        className={`fixed left-4 top-1/2 -translate-y-1/2 p-2 transition-colors z-[100] outline-none ${!canPrev ? 'text-gray-800 opacity-50 cursor-not-allowed' : 'text-red-600 hover:text-red-500 opacity-80 hover:opacity-100'}`}
+                        title="Informe Anterior"
+                    >
+                        <ChevronLeft size={80} strokeWidth={1.5} />
+                    </button>
+
+                    <button
+                        onClick={() => canNext && handleReportSelect(reports[currentIndex + 1].id)}
+                        disabled={!canNext}
+                        className={`fixed right-4 top-1/2 -translate-y-1/2 p-2 transition-colors z-[100] outline-none ${!canNext ? 'text-gray-800 opacity-50 cursor-not-allowed' : 'text-red-600 hover:text-red-500 opacity-80 hover:opacity-100'}`}
+                        title="Siguiente Informe"
+                    >
+                        <ChevronRight size={80} strokeWidth={1.5} />
+                    </button>
+
+                    {/* Exit hint */}
+                    <div className="fixed top-4 right-4 z-[100] text-white/30 text-xs font-mono pointer-events-none select-none">
+                        MODO FOCUS (CTRL + .)
+                    </div>
+                </>
+            )}
+
             {isLoading && (
                 <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
                     <div className="bg-[#111] border border-[#333] rounded-lg p-8 flex flex-col items-center min-w-[300px]">
