@@ -39,7 +39,7 @@ function formatBytes(bytes: number, decimals = 2): string {
 
 function getFileType(filename: string): 'image' | 'pdf' | 'unknown' {
     const ext = filename.toLowerCase().split('.').pop() || '';
-    if (['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff'].includes(ext)) {
+    if (['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'tif'].includes(ext)) {
         return 'image';
     }
     if (ext === 'pdf') {
@@ -83,7 +83,7 @@ export default function Compressor() {
     const stats: CompressionStats = React.useMemo(() => {
         const completed = files.filter(f => f.status === 'completed');
         const totalOriginalSize = completed.reduce((acc, f) => acc + f.originalSize, 0);
-        const totalCompressedSize = completed.reduce((acc, f) => acc + (f.compressedSize || 0), 0);
+        const totalCompressedSize = completed.reduce((acc, f) => acc + (f.compressedSize || f.originalSize), 0);
         const totalSaved = totalOriginalSize - totalCompressedSize;
         const percentageSaved = totalOriginalSize > 0 ? (totalSaved / totalOriginalSize) * 100 : 0;
 
@@ -111,7 +111,7 @@ export default function Compressor() {
     }, []);
 
     const processFiles = useCallback(async (inputFiles: FileList | File[]) => {
-        const validExtensions = ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'pdf'];
+        const validExtensions = ['jpg', 'jpeg', 'png', 'webp', 'bmp', 'tiff', 'tif', 'pdf'];
         const validFiles = Array.from(inputFiles).filter(file => {
             const ext = file.name.toLowerCase().split('.').pop() || '';
             return validExtensions.includes(ext);
@@ -147,6 +147,8 @@ export default function Compressor() {
         if (e.target.files && e.target.files.length > 0) {
             processFiles(e.target.files);
         }
+        // Reset input
+        e.target.value = '';
     }, [processFiles]);
 
     // ========================================================================
@@ -163,58 +165,59 @@ export default function Compressor() {
             f.status === 'pending' ? { ...f, status: 'processing' } : f
         ));
 
-        try {
-            // Comprimir archivos uno por uno para mejor UX
-            for (const fileItem of pendingFiles) {
-                try {
-                    const formData = new FormData();
-                    formData.append('file', fileItem.file);
-                    formData.append('quality', options.quality.toString());
-                    formData.append('pdf_quality', options.pdfQuality);
-                    if (options.maxDimension) {
-                        formData.append('max_dimension', options.maxDimension.toString());
-                    }
-
-                    const response = await fetch(`${API_BASE}/compressor/compress-single`, {
-                        method: 'POST',
-                        body: formData,
-                    });
-
-                    if (!response.ok) {
-                        throw new Error(`Error del servidor: ${response.status}`);
-                    }
-
-                    const compressedBlob = await response.blob();
-                    const originalSize = parseInt(response.headers.get('X-Original-Size') || '0');
-                    const compressedSize = parseInt(response.headers.get('X-Compressed-Size') || '0');
-
-                    setFiles(prev => prev.map(f =>
-                        f.id === fileItem.id
-                            ? {
-                                ...f,
-                                status: 'completed',
-                                compressedBlob,
-                                compressedSize: compressedSize || compressedBlob.size,
-                            }
-                            : f
-                    ));
-
-                } catch (error) {
-                    console.error(`Error compressing ${fileItem.originalName}:`, error);
-                    setFiles(prev => prev.map(f =>
-                        f.id === fileItem.id
-                            ? {
-                                ...f,
-                                status: 'error',
-                                error: error instanceof Error ? error.message : 'Error desconocido',
-                            }
-                            : f
-                    ));
+        // Comprimir archivos uno por uno
+        for (const fileItem of pendingFiles) {
+            try {
+                const formData = new FormData();
+                formData.append('file', fileItem.file);
+                formData.append('quality', options.quality.toString());
+                formData.append('pdf_quality', options.pdfQuality);
+                if (options.maxDimension) {
+                    formData.append('max_dimension', options.maxDimension.toString());
                 }
+
+                const response = await fetch(`${API_BASE}/compressor/compress-single`, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || `Error ${response.status}`);
+                }
+
+                const compressedBlob = await response.blob();
+                const originalSize = parseInt(response.headers.get('X-Original-Size') || '0') || fileItem.originalSize;
+                const compressedSize = parseInt(response.headers.get('X-Compressed-Size') || '0') || compressedBlob.size;
+                const errorHeader = response.headers.get('X-Error');
+
+                setFiles(prev => prev.map(f =>
+                    f.id === fileItem.id
+                        ? {
+                            ...f,
+                            status: 'completed',
+                            compressedBlob,
+                            compressedSize,
+                            error: errorHeader || undefined,
+                        }
+                        : f
+                ));
+
+            } catch (error) {
+                console.error(`Error compressing ${fileItem.originalName}:`, error);
+                setFiles(prev => prev.map(f =>
+                    f.id === fileItem.id
+                        ? {
+                            ...f,
+                            status: 'error',
+                            error: error instanceof Error ? error.message : 'Error de conexion',
+                        }
+                        : f
+                ));
             }
-        } finally {
-            setIsProcessing(false);
         }
+
+        setIsProcessing(false);
     };
 
     // ========================================================================
@@ -226,6 +229,7 @@ export default function Compressor() {
         const url = URL.createObjectURL(f.compressedBlob);
         const link = document.createElement('a');
         link.href = url;
+        // Usar nombre original
         link.download = f.originalName;
         document.body.appendChild(link);
         link.click();
@@ -242,39 +246,8 @@ export default function Compressor() {
             return;
         }
 
-        // Crear ZIP con todos los archivos comprimidos
-        const formData = new FormData();
-        completedFiles.forEach(f => {
-            if (f.compressedBlob) {
-                formData.append('files', f.compressedBlob, f.originalName);
-            }
-        });
-        formData.append('quality', options.quality.toString());
-        formData.append('compress_pdfs', options.compressPdfs.toString());
-        formData.append('pdf_quality', options.pdfQuality);
-
-        try {
-            const response = await fetch(`${API_BASE}/compressor/compress`, {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (!response.ok) throw new Error('Error al crear ZIP');
-
-            const blob = await response.blob();
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `comprimidos_${Date.now()}.zip`;
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            URL.revokeObjectURL(url);
-        } catch (error) {
-            console.error('Error downloading ZIP:', error);
-            // Fallback: descargar individualmente
-            completedFiles.forEach(f => handleDownloadSingle(f));
-        }
+        // Descargar cada archivo individualmente con su nombre original
+        completedFiles.forEach(f => handleDownloadSingle(f));
     };
 
     // ========================================================================
@@ -379,7 +352,7 @@ export default function Compressor() {
                                 className="w-full bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 text-sm text-white font-mono focus:border-[#555] outline-none placeholder:text-[#444]"
                             />
                             <p className="text-[9px] text-[#444] font-mono mt-1">
-                                Dejar vacio para mantener tamaño original
+                                Dejar vacio para mantener tamano original
                             </p>
                         </div>
                     </div>
@@ -430,7 +403,7 @@ export default function Compressor() {
                         {/* Info sobre Ghostscript */}
                         <div className="flex items-start gap-2 p-2 bg-[#111] border border-[#222] rounded text-[9px] text-[#555]">
                             <Info size={12} className="mt-0.5 shrink-0" />
-                            <span>La compresion de PDFs requiere Ghostscript instalado en el servidor.</span>
+                            <span>PDFs requieren Ghostscript en el servidor. Sin el, se devuelve el archivo original.</span>
                         </div>
                     </div>
 
@@ -474,22 +447,26 @@ export default function Compressor() {
                                     <span className="text-[#666]">Procesados</span>
                                     <span className="text-green-500">{stats.processedCount}</span>
                                 </div>
-                                <div className="border-t border-[#222] pt-2">
-                                    <div className="flex justify-between text-xs font-mono">
-                                        <span className="text-[#666]">Original</span>
-                                        <span className="text-white">{formatBytes(stats.totalOriginalSize)}</span>
-                                    </div>
-                                    <div className="flex justify-between text-xs font-mono mt-1">
-                                        <span className="text-[#666]">Comprimido</span>
-                                        <span className="text-white">{formatBytes(stats.totalCompressedSize)}</span>
-                                    </div>
-                                </div>
-                                <div className="border-t border-[#222] pt-2 flex justify-between text-xs font-mono">
-                                    <span className="text-[#666]">Reduccion</span>
-                                    <span className="text-green-500 font-bold">
-                                        {stats.percentageSaved > 0 ? `-${stats.percentageSaved.toFixed(1)}%` : '0%'}
-                                    </span>
-                                </div>
+                                {stats.processedCount > 0 && (
+                                    <>
+                                        <div className="border-t border-[#222] pt-2">
+                                            <div className="flex justify-between text-xs font-mono">
+                                                <span className="text-[#666]">Original</span>
+                                                <span className="text-white">{formatBytes(stats.totalOriginalSize)}</span>
+                                            </div>
+                                            <div className="flex justify-between text-xs font-mono mt-1">
+                                                <span className="text-[#666]">Comprimido</span>
+                                                <span className="text-white">{formatBytes(stats.totalCompressedSize)}</span>
+                                            </div>
+                                        </div>
+                                        <div className="border-t border-[#222] pt-2 flex justify-between text-xs font-mono">
+                                            <span className="text-[#666]">Reduccion</span>
+                                            <span className={`font-bold ${stats.percentageSaved > 0 ? 'text-green-500' : 'text-[#666]'}`}>
+                                                {stats.percentageSaved > 0 ? `-${stats.percentageSaved.toFixed(1)}%` : '0%'}
+                                            </span>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         </div>
                     )}
@@ -588,7 +565,7 @@ export default function Compressor() {
                         <div className="space-y-2">
                             {files.map((f) => {
                                 const FileIcon = getFileIcon(f.type);
-                                const reduction = f.compressedSize
+                                const reduction = f.compressedSize && f.compressedSize < f.originalSize
                                     ? ((f.originalSize - f.compressedSize) / f.originalSize * 100)
                                     : 0;
 
@@ -615,7 +592,7 @@ export default function Compressor() {
                                             <p className="text-sm font-mono text-white truncate" title={f.originalName}>
                                                 {f.originalName}
                                             </p>
-                                            <div className="flex items-center gap-3 mt-1">
+                                            <div className="flex items-center gap-3 mt-1 flex-wrap">
                                                 <span className="text-xs font-mono text-[#555]">
                                                     {formatBytes(f.originalSize)}
                                                 </span>
@@ -625,10 +602,17 @@ export default function Compressor() {
                                                         <span className="text-xs font-mono text-green-500">
                                                             {formatBytes(f.compressedSize)}
                                                         </span>
-                                                        <span className="text-xs font-mono text-green-500/70">
-                                                            (-{reduction.toFixed(1)}%)
-                                                        </span>
+                                                        {reduction > 0 && (
+                                                            <span className="text-xs font-mono text-green-500/70">
+                                                                (-{reduction.toFixed(1)}%)
+                                                            </span>
+                                                        )}
                                                     </>
+                                                )}
+                                                {f.status === 'completed' && f.error && (
+                                                    <span className="text-[10px] font-mono text-yellow-500">
+                                                        {f.error}
+                                                    </span>
                                                 )}
                                                 {f.status === 'error' && f.error && (
                                                     <span className="text-xs font-mono text-red-400 truncate">
