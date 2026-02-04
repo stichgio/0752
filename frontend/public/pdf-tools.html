@@ -245,6 +245,40 @@
             font-size: 13px;
         }
 
+        /* Drag & Drop styles for file-item */
+        .file-item.draggable {
+            cursor: grab;
+            transition: all 0.2s ease;
+        }
+
+        .file-item.draggable:hover {
+            background: #222;
+        }
+
+        .file-item.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+            background: #2a2a2a;
+        }
+
+        .file-item.drag-over {
+            border-top: 2px solid var(--accent);
+            margin-top: -2px;
+        }
+
+        .file-item .drag-handle {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-dim);
+            margin-right: 8px;
+            cursor: grab;
+        }
+
+        .file-item .drag-handle:active {
+            cursor: grabbing;
+        }
+
         /* Individual View (Slots) */
         .slots-container {
             display: grid;
@@ -618,6 +652,192 @@
                 transform: rotate(360deg);
             }
         }
+
+        /* -- Styles for ORGANIZE -- */
+        .organize-page-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            cursor: grab;
+            user-select: none;
+        }
+
+        .organize-page-wrapper.dragging {
+            opacity: 0.5;
+            cursor: grabbing;
+        }
+
+        .organize-page-wrapper.drag-over {
+            transform: scale(1.05);
+        }
+
+        .organize-page-wrapper.selected .organize-thumb {
+            border: 3px solid var(--accent);
+            box-shadow: 0 0 20px rgba(215, 25, 33, 0.4);
+        }
+
+        .organize-checkbox-overlay {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            z-index: 10;
+        }
+
+        .organize-checkbox {
+            width: 24px;
+            height: 24px;
+            border: 2px solid #666;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: transparent;
+        }
+
+        .organize-checkbox:hover {
+            border-color: var(--accent);
+            background: rgba(215, 25, 33, 0.3);
+        }
+
+        .organize-checkbox.checked {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        .organize-thumb {
+            width: 150px;
+            height: 200px;
+            background: white;
+            border: 2px solid #444;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: grab;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .organize-thumb:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+
+        .organize-thumb canvas {
+            max-width: 100%;
+            max-height: 100%;
+            border-radius: 2px;
+        }
+
+        .organize-page-number {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 4px 8px;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 4px;
+        }
+
+        .organize-page-controls {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .btn-page-control {
+            width: 32px;
+            height: 32px;
+            border-radius: 4px;
+            background: #2a2a2a;
+            border: 1px solid #444;
+            color: var(--text-dim);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-page-control:hover {
+            background: #333;
+            color: var(--text-main);
+            border-color: var(--accent);
+        }
+
+        .btn-page-control.delete:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: white;
+        }
+
+        /* Flash/Blink effect for actions */
+        @keyframes flashRotate {
+            0%, 100% { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); }
+            25% { box-shadow: 0 0 30px rgba(76, 175, 80, 0.8), 0 0 60px rgba(76, 175, 80, 0.4); border-color: #4CAF50; }
+            50% { box-shadow: 0 0 40px rgba(76, 175, 80, 1), 0 0 80px rgba(76, 175, 80, 0.6); border-color: #4CAF50; }
+            75% { box-shadow: 0 0 30px rgba(76, 175, 80, 0.8), 0 0 60px rgba(76, 175, 80, 0.4); border-color: #4CAF50; }
+        }
+
+        @keyframes flashDelete {
+            0%, 100% { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4); opacity: 1; }
+            25% { box-shadow: 0 0 30px rgba(215, 25, 33, 0.8), 0 0 60px rgba(215, 25, 33, 0.4); border-color: var(--accent); opacity: 0.8; }
+            50% { box-shadow: 0 0 40px rgba(215, 25, 33, 1), 0 0 80px rgba(215, 25, 33, 0.6); border-color: var(--accent); opacity: 0.6; }
+            75% { box-shadow: 0 0 30px rgba(215, 25, 33, 0.8), 0 0 60px rgba(215, 25, 33, 0.4); border-color: var(--accent); opacity: 0.8; }
+        }
+
+        @keyframes flashCut {
+            0%, 100% { transform: scale(1); }
+            25% { transform: scale(1.1); filter: brightness(1.5); }
+            50% { transform: scale(1.2); filter: brightness(2); }
+            75% { transform: scale(1.1); filter: brightness(1.5); }
+        }
+
+        .organize-thumb.flashing-rotate {
+            animation: flashRotate 0.4s ease-in-out;
+        }
+
+        .organize-thumb.flashing-delete {
+            animation: flashDelete 0.4s ease-in-out;
+        }
+
+        .btn-scissor.flashing-cut {
+            animation: flashCut 0.3s ease-in-out;
+        }
+
+        .organize-scissor-wrapper {
+            width: 100%;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            margin-top: 4px;
+        }
+
+        .organize-cut-indicator {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent);
+            top: -20px;
+            display: none;
+        }
+
+        .organize-scissor-wrapper.cut .organize-cut-indicator {
+            display: block;
+        }
     </style>
 </head>
 
@@ -641,6 +861,7 @@
             <button class="tab-btn active" onclick="switchMainTab('merge')">MERGE INTERCALADO</button>
             <button class="tab-btn" onclick="switchMainTab('merge-normal')">MERGE NORMAL</button>
             <button class="tab-btn" onclick="switchMainTab('split')">SPLIT PDF</button>
+            <button class="tab-btn" onclick="switchMainTab('organize')">ORGANIZAR</button>
         </div>
 
         <!-- MERGE INTERCALADO SECTION -->
@@ -807,6 +1028,113 @@
             </div>
         </div>
 
+        <!-- ORGANIZE SECTION -->
+        <div id="section-organize" class="section">
+            <div class="tool-header">
+                <div class="tool-title">Organizar PDF</div>
+                <div style="font-size: 12px; color: var(--text-dim);" id="organize-page-count"></div>
+            </div>
+
+            <!-- Info Banner -->
+            <div style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: rgba(215, 25, 33, 0.1); border: 1px solid rgba(215, 25, 33, 0.3); border-radius: 6px; margin-bottom: 16px;">
+                <i data-lucide="info" width="18" style="color: var(--accent); flex-shrink: 0;"></i>
+                <div style="font-size: 12px; color: var(--text-main);">
+                    <strong>Organizar:</strong> Reordena páginas arrastrándolas, rotar, eliminar y marcar puntos de corte. 
+                    <span style="color: var(--text-dim);">Atajos: Ctrl+Z (Deshacer) | Ctrl+Shift+Z (Rehacer) | Ctrl+A (Seleccionar todo) | R (Rotar) | Supr (Eliminar)</span>
+                </div>
+            </div>
+
+            <!-- Upload Section -->
+            <div id="organize-upload-section">
+                <div class="dropzone" id="organize-dropzone" onclick="document.getElementById('file-input-organize').click()">
+                    <i data-lucide="layout-grid" width="32" class="drop-icon"></i>
+                    <div style="font-size: 14px; margin-bottom: 4px;">Selecciona un PDF para organizar</div>
+                    <div style="font-size: 12px; color: var(--text-dim);">Click para cargar archivo</div>
+                </div>
+                <input type="file" id="file-input-organize" accept=".pdf" hidden onchange="handleOrganizeFile(this.files[0])">
+                <div id="organize-filename" style="text-align: center; font-size: 14px; margin-top: 12px; color: var(--text-main); display: none;"></div>
+            </div>
+
+            <!-- Thumbnails Grid -->
+            <div id="organize-thumbnails-section" style="display: none; margin-top: 24px;">
+                <!-- Stats Bar -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; padding: 12px 16px; background: #1a1a1a; border: 1px solid var(--border); border-radius: 6px;">
+                    <div id="organize-stats" style="font-size: 12px; color: var(--text-dim);">
+                        Total: <strong>0</strong> | Activas: <strong>0</strong> | Eliminadas: <strong>0</strong> | Rotadas: <strong>0</strong>
+                    </div>
+                    <div style="display: flex; gap: 8px;">
+                        <button class="zoom-btn" onclick="selectAllOrganizePages()" title="Seleccionar todas (Ctrl+A)">
+                            <i data-lucide="check-square" width="14"></i>
+                        </button>
+                        <button class="zoom-btn" id="btn-organize-undo" onclick="undoOrganize()" title="Deshacer (Ctrl+Z)" disabled>
+                            <i data-lucide="undo-2" width="14"></i>
+                        </button>
+                        <button class="zoom-btn" id="btn-organize-redo" onclick="redoOrganize()" title="Rehacer (Ctrl+Shift+Z)" disabled>
+                            <i data-lucide="redo-2" width="14"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Bulk Actions -->
+                <div id="organize-bulk-actions" style="display: none; margin-bottom: 16px; padding: 12px; background: rgba(215, 25, 33, 0.1); border: 1px solid rgba(215, 25, 33, 0.3); border-radius: 6px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-size: 12px; color: var(--text-main);">
+                            <strong id="organize-selected-count">0</strong> páginas seleccionadas
+                        </span>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="zoom-btn" onclick="rotateSelectedOrganizePages()" title="Rotar seleccionadas (R)" style="background: #2a2a2a;">
+                                <i data-lucide="rotate-cw" width="14"></i>
+                            </button>
+                            <button class="zoom-btn" onclick="deleteSelectedOrganizePages()" title="Eliminar seleccionadas (Supr)" style="background: var(--accent); color: white; border-color: var(--accent);">
+                                <i data-lucide="trash-2" width="14"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Preview Controls -->
+                <div class="preview-controls">
+                    <div class="preview-info">
+                        <strong id="organize-total-pages">0</strong> páginas
+                    </div>
+                    <div class="zoom-controls">
+                        <button class="zoom-btn" onclick="changeOrganizeZoom(-0.1)">
+                            <i data-lucide="zoom-out" width="14"></i>
+                        </button>
+                        <span id="organize-zoom-level" style="font-size: 11px; color: var(--text-dim); min-width: 40px; text-align: center;">30%</span>
+                        <button class="zoom-btn" onclick="changeOrganizeZoom(0.1)">
+                            <i data-lucide="zoom-in" width="14"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="preview-container" id="organize-preview-container" style="max-height: 700px;">
+                    <div id="organize-pages-grid" class="pages-grid"></div>
+                </div>
+
+                <!-- Scissors Info -->
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 12px; padding: 12px; background: rgba(215, 25, 33, 0.1); border-radius: 6px; border: 1px solid rgba(215, 25, 33, 0.3);">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="scissors" width="16" style="color: var(--accent);"></i>
+                        <span style="font-size: 12px; color: var(--text-main);">Haz click en las <strong>tijeras</strong> entre páginas para marcar puntos de corte</span>
+                    </div>
+                    <div id="organize-cuts-counter" style="font-size: 12px; color: var(--accent); font-weight: 600;">0 cortes marcados</div>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="controls-row">
+                <button class="btn-action" onclick="resetOrganize()" style="background: transparent; color: var(--text-main); border: 1px solid var(--border);">
+                    <i data-lucide="refresh-cw" width="14" style="vertical-align: middle; margin-right: 6px;"></i>
+                    NUEVO
+                </button>
+                <button class="btn-action" onclick="executeOrganize()" id="btn-organize-download" disabled>
+                    <i data-lucide="download" width="14" style="vertical-align: middle; margin-right: 6px;"></i>
+                    DESCARGAR PDF
+                </button>
+            </div>
+        </div>
+
     </div>
 
     <!-- Loading Overlay -->
@@ -849,7 +1177,8 @@
             const tabIndexMap = {
                 'merge': 0,
                 'merge-normal': 1,
-                'split': 2
+                'split': 2,
+                'organize': 3
             };
             const index = tabIndexMap[tab] ?? 0;
             document.querySelectorAll('.tab-btn')[index].classList.add('active');
@@ -895,11 +1224,25 @@
 
             state.mergeFiles.forEach((file, idx) => {
                 const el = document.createElement('div');
-                el.className = 'file-item';
+                el.className = 'file-item draggable';
+                el.draggable = true;
+                el.dataset.index = idx;
+                el.dataset.listType = 'multi';
                 el.innerHTML = `
-                    <span>${idx + 1}. ${file.name}</span>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="drag-handle"><i data-lucide="grip-vertical" width="14"></i></span>
+                        <span>${idx + 1}. ${file.name}</span>
+                    </div>
                     <i data-lucide="x" width="14" style="cursor: pointer; opacity: 0.5" onclick="removeMultiFile(${idx})"></i>
                 `;
+
+                // Drag & Drop events
+                el.addEventListener('dragstart', handleMultiDragStart);
+                el.addEventListener('dragend', handleMultiDragEnd);
+                el.addEventListener('dragover', handleMultiDragOver);
+                el.addEventListener('dragleave', handleMultiDragLeave);
+                el.addEventListener('drop', handleMultiDrop);
+
                 container.appendChild(el);
             });
             lucide.createIcons();
@@ -908,6 +1251,50 @@
         function removeMultiFile(idx) {
             state.mergeFiles.splice(idx, 1);
             renderMultiFileList();
+        }
+
+        // --- Drag & Drop for Merge Intercalado (Multiple) ---
+        let multiDraggedIndex = null;
+
+        function handleMultiDragStart(e) {
+            multiDraggedIndex = parseInt(this.dataset.index);
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', multiDraggedIndex);
+        }
+
+        function handleMultiDragEnd(e) {
+            this.classList.remove('dragging');
+            document.querySelectorAll('#multi-file-list .file-item').forEach(item => {
+                item.classList.remove('drag-over');
+            });
+            multiDraggedIndex = null;
+        }
+
+        function handleMultiDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            const targetIndex = parseInt(this.dataset.index);
+            if (targetIndex !== multiDraggedIndex) {
+                this.classList.add('drag-over');
+            }
+        }
+
+        function handleMultiDragLeave(e) {
+            this.classList.remove('drag-over');
+        }
+
+        function handleMultiDrop(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+            const targetIndex = parseInt(this.dataset.index);
+
+            if (multiDraggedIndex !== null && multiDraggedIndex !== targetIndex) {
+                // Reorder the array
+                const [movedFile] = state.mergeFiles.splice(multiDraggedIndex, 1);
+                state.mergeFiles.splice(targetIndex, 0, movedFile);
+                renderMultiFileList();
+            }
         }
 
         // --- Merge Normal Logic ---
@@ -922,11 +1309,24 @@
 
             state.mergeNormalFiles.forEach((file, idx) => {
                 const el = document.createElement('div');
-                el.className = 'file-item';
+                el.className = 'file-item draggable';
+                el.draggable = true;
+                el.dataset.index = idx;
                 el.innerHTML = `
-                    <span>${idx + 1}. ${file.name}</span>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span class="drag-handle"><i data-lucide="grip-vertical" width="14"></i></span>
+                        <span>${idx + 1}. ${file.name}</span>
+                    </div>
                     <i data-lucide="x" width="14" style="cursor: pointer; opacity: 0.5" onclick="removeNormalFile(${idx})"></i>
                 `;
+
+                // Drag & Drop events
+                el.addEventListener('dragstart', handleDragStart);
+                el.addEventListener('dragend', handleDragEnd);
+                el.addEventListener('dragover', handleDragOver);
+                el.addEventListener('dragleave', handleDragLeave);
+                el.addEventListener('drop', handleDrop);
+
                 container.appendChild(el);
             });
             lucide.createIcons();
@@ -935,6 +1335,50 @@
         function removeNormalFile(idx) {
             state.mergeNormalFiles.splice(idx, 1);
             renderNormalFileList();
+        }
+
+        // --- Drag & Drop for Normal Merge ---
+        let draggedIndex = null;
+
+        function handleDragStart(e) {
+            draggedIndex = parseInt(this.dataset.index);
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', draggedIndex);
+        }
+
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            document.querySelectorAll('.file-item').forEach(item => {
+                item.classList.remove('drag-over');
+            });
+            draggedIndex = null;
+        }
+
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            const targetIndex = parseInt(this.dataset.index);
+            if (targetIndex !== draggedIndex) {
+                this.classList.add('drag-over');
+            }
+        }
+
+        function handleDragLeave(e) {
+            this.classList.remove('drag-over');
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+            const targetIndex = parseInt(this.dataset.index);
+
+            if (draggedIndex !== null && draggedIndex !== targetIndex) {
+                // Reorder the array
+                const [movedFile] = state.mergeNormalFiles.splice(draggedIndex, 1);
+                state.mergeNormalFiles.splice(targetIndex, 0, movedFile);
+                renderNormalFileList();
+            }
         }
 
         // --- Merge Logic (Individual/Slots) ---
@@ -1322,6 +1766,660 @@
 
         function setLoading(b) {
             document.getElementById('loading').classList.toggle('active', b);
+        }
+
+        // --- Organize Logic ---
+        let organizeState = {
+            file: null,
+            pages: [], // Array of { pageNum, originalPageNum, rotation, deleted }
+            cutPoints: [],
+            zoom: 0.25,
+            pdf: null,
+            draggedIndex: null,
+            // Undo/Redo
+            history: [],
+            historyIndex: -1,
+            maxHistory: 20,
+            // Multi-select
+            selectedPages: new Set()
+        };
+
+        // Save state to history
+        function saveOrganizeHistory() {
+            // Remove future history if we're not at the end
+            if (organizeState.historyIndex < organizeState.history.length - 1) {
+                organizeState.history = organizeState.history.slice(0, organizeState.historyIndex + 1);
+            }
+            
+            // Save current state
+            const stateSnapshot = {
+                pages: JSON.parse(JSON.stringify(organizeState.pages)),
+                cutPoints: [...organizeState.cutPoints]
+            };
+            
+            organizeState.history.push(stateSnapshot);
+            
+            // Limit history size
+            if (organizeState.history.length > organizeState.maxHistory) {
+                organizeState.history.shift();
+            } else {
+                organizeState.historyIndex++;
+            }
+            
+            updateUndoRedoButtons();
+        }
+
+        // Undo
+        function undoOrganize() {
+            if (organizeState.historyIndex > 0) {
+                organizeState.historyIndex--;
+                const state = organizeState.history[organizeState.historyIndex];
+                organizeState.pages = JSON.parse(JSON.stringify(state.pages));
+                organizeState.cutPoints = [...state.cutPoints];
+                organizeState.selectedPages.clear();
+                renderOrganizeThumbnails();
+                updateOrganizeCutsCounter();
+                updateUndoRedoButtons();
+                updateOrganizeStats();
+            }
+        }
+
+        // Redo
+        function redoOrganize() {
+            if (organizeState.historyIndex < organizeState.history.length - 1) {
+                organizeState.historyIndex++;
+                const state = organizeState.history[organizeState.historyIndex];
+                organizeState.pages = JSON.parse(JSON.stringify(state.pages));
+                organizeState.cutPoints = [...state.cutPoints];
+                organizeState.selectedPages.clear();
+                renderOrganizeThumbnails();
+                updateOrganizeCutsCounter();
+                updateUndoRedoButtons();
+                updateOrganizeStats();
+            }
+        }
+
+        // Update undo/redo buttons
+        function updateUndoRedoButtons() {
+            const undoBtn = document.getElementById('btn-organize-undo');
+            const redoBtn = document.getElementById('btn-organize-redo');
+            if (undoBtn) undoBtn.disabled = organizeState.historyIndex <= 0;
+            if (redoBtn) redoBtn.disabled = organizeState.historyIndex >= organizeState.history.length - 1;
+        }
+
+        // Select/Deselect page
+        function toggleSelectPage(index) {
+            if (organizeState.selectedPages.has(index)) {
+                organizeState.selectedPages.delete(index);
+            } else {
+                organizeState.selectedPages.add(index);
+            }
+            renderOrganizeThumbnails();
+            updateOrganizeStats();
+        }
+
+        // Select all pages
+        function selectAllOrganizePages() {
+            const activePages = organizeState.pages.filter(p => !p.deleted);
+            if (organizeState.selectedPages.size === activePages.length) {
+                organizeState.selectedPages.clear();
+            } else {
+                for (let i = 0; i < activePages.length; i++) {
+                    organizeState.selectedPages.add(i);
+                }
+            }
+            renderOrganizeThumbnails();
+            updateOrganizeStats();
+        }
+
+        // Delete selected pages
+        function deleteSelectedOrganizePages() {
+            if (organizeState.selectedPages.size === 0) return;
+            
+            if (!confirm(`¿Eliminar ${organizeState.selectedPages.size} páginas seleccionadas?`)) return;
+            
+            saveOrganizeHistory();
+            
+            const indices = Array.from(organizeState.selectedPages).sort((a, b) => b - a);
+            indices.forEach(index => {
+                const activePages = organizeState.pages.filter(p => !p.deleted);
+                if (index < activePages.length) {
+                    const pageToDelete = activePages[index];
+                    pageToDelete.deleted = true;
+                }
+            });
+            
+            // Recalculate cut points
+            organizeState.cutPoints = organizeState.cutPoints.filter(cp => {
+                const activePages = organizeState.pages.filter(p => !p.deleted);
+                return cp < activePages.length - 1;
+            });
+            
+            organizeState.selectedPages.clear();
+            renderOrganizeThumbnails();
+            updateOrganizeCutsCounter();
+            updateUndoRedoButtons();
+            updateOrganizeStats();
+        }
+
+        // Rotate selected pages
+        function rotateSelectedOrganizePages() {
+            if (organizeState.selectedPages.size === 0) return;
+            
+            saveOrganizeHistory();
+            
+            const activePages = organizeState.pages.filter(p => !p.deleted);
+            organizeState.selectedPages.forEach(index => {
+                if (index < activePages.length) {
+                    activePages[index].rotation = (activePages[index].rotation + 90) % 360;
+                }
+            });
+            
+            organizeState.selectedPages.clear();
+            renderOrganizeThumbnails();
+            updateUndoRedoButtons();
+        }
+
+        // Update stats display
+        function updateOrganizeStats() {
+            const activePages = organizeState.pages.filter(p => !p.deleted);
+            const rotatedPages = activePages.filter(p => p.rotation !== 0).length;
+            const selectedCount = organizeState.selectedPages.size;
+            
+            document.getElementById('organize-stats').innerHTML = `
+                Total: <strong>${organizeState.pages.length}</strong> | 
+                Activas: <strong>${activePages.length}</strong> | 
+                Eliminadas: <strong>${organizeState.pages.length - activePages.length}</strong> | 
+                Rotadas: <strong>${rotatedPages}</strong>
+                ${selectedCount > 0 ? ` | <span style="color: var(--accent);">Seleccionadas: <strong>${selectedCount}</strong></span>` : ''}
+            `;
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Only handle shortcuts when organize tab is active
+            const organizeSection = document.getElementById('section-organize');
+            if (!organizeSection || !organizeSection.classList.contains('active')) return;
+            
+            // Don't handle if user is typing in an input
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key.toLowerCase()) {
+                    case 'z':
+                        e.preventDefault();
+                        if (e.shiftKey) {
+                            redoOrganize();
+                        } else {
+                            undoOrganize();
+                        }
+                        break;
+                    case 'a':
+                        e.preventDefault();
+                        selectAllOrganizePages();
+                        break;
+                }
+            } else {
+                switch(e.key) {
+                    case 'Delete':
+                    case 'Backspace':
+                        e.preventDefault();
+                        if (organizeState.selectedPages.size > 0) {
+                            deleteSelectedOrganizePages();
+                        }
+                        break;
+                    case 'r':
+                    case 'R':
+                        e.preventDefault();
+                        if (organizeState.selectedPages.size > 0) {
+                            rotateSelectedOrganizePages();
+                        }
+                        break;
+                    case 'Escape':
+                        organizeState.selectedPages.clear();
+                        renderOrganizeThumbnails();
+                        updateOrganizeStats();
+                        break;
+                }
+            }
+        });
+
+        async function handleOrganizeFile(file) {
+            if (!file) return;
+            
+            organizeState.file = file;
+            organizeState.pages = [];
+            organizeState.cutPoints = [];
+            organizeState.zoom = 0.25;
+            organizeState.history = [];
+            organizeState.historyIndex = -1;
+            organizeState.selectedPages.clear();
+            
+            document.getElementById('organize-filename').textContent = file.name;
+            document.getElementById('organize-filename').style.display = 'block';
+            document.getElementById('organize-upload-section').style.display = 'none';
+            document.getElementById('organize-thumbnails-section').style.display = 'block';
+            document.getElementById('btn-organize-download').disabled = false;
+            
+            await loadOrganizePDF(file);
+            
+            // Save initial state to history
+            saveOrganizeHistory();
+            updateOrganizeStats();
+        }
+
+        async function loadOrganizePDF(file) {
+            const container = document.getElementById('organize-pages-grid');
+            container.innerHTML = '<div style="padding: 40px; text-align: center; grid-column: 1/-1;"><div class="spinner" style="margin: 0 auto 16px;"></div><div style="color: var(--text-dim);">Cargando PDF...</div></div>';
+            
+            try {
+                const arrayBuffer = await file.arrayBuffer();
+                organizeState.pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+                const numPages = organizeState.pdf.numPages;
+                
+                // Initialize pages array
+                organizeState.pages = Array.from({ length: numPages }, (_, i) => ({
+                    pageNum: i + 1,
+                    originalPageNum: i + 1,
+                    rotation: 0,
+                    deleted: false
+                }));
+                
+                document.getElementById('organize-total-pages').textContent = numPages;
+                await renderOrganizeThumbnails();
+                updateOrganizeCutsCounter();
+                
+            } catch (err) {
+                console.error(err);
+                container.innerHTML = '<div style="color: #ff4444; padding: 40px; text-align: center; grid-column: 1/-1;"><i data-lucide="alert-circle" width="32" style="margin-bottom: 12px;"></i><div>Error cargando PDF</div></div>';
+                lucide.createIcons();
+            }
+        }
+
+        async function renderOrganizeThumbnails() {
+            const container = document.getElementById('organize-pages-grid');
+            container.innerHTML = '';
+            
+            const activePages = organizeState.pages.filter(p => !p.deleted);
+            
+            // Update bulk actions visibility
+            const bulkActions = document.getElementById('organize-bulk-actions');
+            if (bulkActions) {
+                bulkActions.style.display = organizeState.selectedPages.size > 0 ? 'block' : 'none';
+                const selectedCountEl = document.getElementById('organize-selected-count');
+                if (selectedCountEl) {
+                    selectedCountEl.textContent = organizeState.selectedPages.size;
+                }
+            }
+            
+            for (let i = 0; i < activePages.length; i++) {
+                const pageData = activePages[i];
+                const page = await organizeState.pdf.getPage(pageData.originalPageNum);
+                const viewport = page.getViewport({ scale: organizeState.zoom, rotation: pageData.rotation });
+                
+                const wrapper = document.createElement('div');
+                const isSelected = organizeState.selectedPages.has(i);
+                wrapper.className = 'organize-page-wrapper' + (isSelected ? ' selected' : '');
+                wrapper.draggable = true;
+                wrapper.dataset.index = i;
+                
+                // Drag events
+                wrapper.addEventListener('dragstart', handleOrganizeDragStart);
+                wrapper.addEventListener('dragover', handleOrganizeDragOver);
+                wrapper.addEventListener('drop', handleOrganizeDrop);
+                wrapper.addEventListener('dragend', handleOrganizeDragEnd);
+                wrapper.addEventListener('dragleave', handleOrganizeDragLeave);
+                
+                // Click to select (but not if clicking buttons)
+                wrapper.addEventListener('click', function(e) {
+                    if (e.target.closest('button') || e.target.closest('.organize-checkbox')) return;
+                    toggleSelectPage(i);
+                });
+                
+                // Thumbnail
+                const thumb = document.createElement('div');
+                thumb.className = 'organize-thumb';
+                
+                // Checkbox overlay
+                const checkboxOverlay = document.createElement('div');
+                checkboxOverlay.className = 'organize-checkbox-overlay';
+                checkboxOverlay.innerHTML = `
+                    <div class="organize-checkbox ${isSelected ? 'checked' : ''}" onclick="event.stopPropagation(); toggleSelectPage(${i})">
+                        <i data-lucide="check" width="14"></i>
+                    </div>
+                `;
+                thumb.appendChild(checkboxOverlay);
+                
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                
+                const renderContext = { canvasContext: context, viewport: viewport };
+                await page.render(renderContext).promise;
+                
+                thumb.appendChild(canvas);
+                
+                // Page number with rotation indicator
+                const numLabel = document.createElement('div');
+                numLabel.className = 'organize-page-number';
+                const rotationIcon = pageData.rotation > 0 ? ` ↻${pageData.rotation}°` : '';
+                numLabel.innerText = (i + 1) + rotationIcon;
+                thumb.appendChild(numLabel);
+                
+                wrapper.appendChild(thumb);
+                
+                // Controls
+                const controls = document.createElement('div');
+                controls.className = 'organize-page-controls';
+                controls.innerHTML = `
+                    <button class="btn-page-control" onclick="event.stopPropagation(); rotateOrganizePage(${i})" title="Rotar 90°">
+                        <i data-lucide="rotate-cw" width="16"></i>
+                    </button>
+                    <button class="btn-page-control delete" onclick="event.stopPropagation(); deleteOrganizePage(${i})" title="Eliminar página">
+                        <i data-lucide="trash-2" width="16"></i>
+                    </button>
+                `;
+                wrapper.appendChild(controls);
+                
+                // Scissor (if not last page)
+                if (i < activePages.length - 1) {
+                    const scissorWrapper = document.createElement('div');
+                    scissorWrapper.className = 'organize-scissor-wrapper';
+                    scissorWrapper.innerHTML = `
+                        <div class="organize-cut-indicator"></div>
+                        <button class="btn-scissor ${organizeState.cutPoints.includes(i) ? 'active' : ''}" onclick="event.stopPropagation(); toggleOrganizeCut(${i})">
+                            <i data-lucide="scissors" width="16"></i>
+                        </button>
+                    `;
+                    wrapper.appendChild(scissorWrapper);
+                }
+                
+                container.appendChild(wrapper);
+            }
+            
+            lucide.createIcons();
+        }
+
+        // Drag & Drop handlers
+        function handleOrganizeDragStart(e) {
+            organizeState.draggedIndex = parseInt(e.currentTarget.dataset.index);
+            e.currentTarget.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function handleOrganizeDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            e.currentTarget.classList.add('drag-over');
+        }
+
+        function handleOrganizeDragLeave(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+
+        function handleOrganizeDrop(e) {
+            e.preventDefault();
+            const dropIndex = parseInt(e.currentTarget.dataset.index);
+            const dragIndex = organizeState.draggedIndex;
+            
+            if (dragIndex === dropIndex) return;
+            
+            saveOrganizeHistory();
+            
+            // Apply flash effect to target
+            const targetWrapper = document.querySelectorAll('.organize-page-wrapper')[dropIndex];
+            const targetThumb = targetWrapper.querySelector('.organize-thumb');
+            targetThumb.classList.add('flashing-rotate');
+            
+            // Get active pages
+            const activePages = organizeState.pages.filter(p => !p.deleted);
+            
+            // Reorder
+            const [movedPage] = activePages.splice(dragIndex, 1);
+            activePages.splice(dropIndex, 0, movedPage);
+            
+            // Update pages array
+            const deletedPages = organizeState.pages.filter(p => p.deleted);
+            organizeState.pages = [...activePages, ...deletedPages];
+            
+            // Update selection indices
+            const newSelection = new Set();
+            organizeState.selectedPages.forEach(selectedIndex => {
+                if (selectedIndex === dragIndex) {
+                    newSelection.add(dropIndex);
+                } else if (dragIndex < dropIndex) {
+                    if (selectedIndex > dragIndex && selectedIndex <= dropIndex) {
+                        newSelection.add(selectedIndex - 1);
+                    } else {
+                        newSelection.add(selectedIndex);
+                    }
+                } else {
+                    if (selectedIndex >= dropIndex && selectedIndex < dragIndex) {
+                        newSelection.add(selectedIndex + 1);
+                    } else {
+                        newSelection.add(selectedIndex);
+                    }
+                }
+            });
+            organizeState.selectedPages = newSelection;
+            
+            setTimeout(() => {
+                renderOrganizeThumbnails();
+                updateOrganizeStats();
+                updateUndoRedoButtons();
+            }, 150);
+        }
+
+        function handleOrganizeDragEnd(e) {
+            e.currentTarget.classList.remove('dragging');
+            document.querySelectorAll('.organize-page-wrapper').forEach(el => {
+                el.classList.remove('drag-over');
+            });
+            organizeState.draggedIndex = null;
+        }
+
+        function rotateOrganizePage(index) {
+            saveOrganizeHistory();
+            const activePages = organizeState.pages.filter(p => !p.deleted);
+            const pageWrapper = document.querySelectorAll('.organize-page-wrapper')[index];
+            const thumb = pageWrapper.querySelector('.organize-thumb');
+            
+            // Apply flash effect
+            thumb.classList.add('flashing-rotate');
+            
+            setTimeout(() => {
+                activePages[index].rotation = (activePages[index].rotation + 90) % 360;
+                organizeState.selectedPages.delete(index);
+                renderOrganizeThumbnails();
+                updateOrganizeStats();
+                updateUndoRedoButtons();
+            }, 200);
+        }
+
+        function deleteOrganizePage(index) {
+            if (!confirm('¿Eliminar esta página?')) return;
+            
+            saveOrganizeHistory();
+            const activePages = organizeState.pages.filter(p => !p.deleted);
+            const pageWrapper = document.querySelectorAll('.organize-page-wrapper')[index];
+            const thumb = pageWrapper.querySelector('.organize-thumb');
+            
+            // Apply flash effect
+            thumb.classList.add('flashing-delete');
+            
+            setTimeout(() => {
+                const pageToDelete = activePages[index];
+                pageToDelete.deleted = true;
+                
+                // Remove cuts after this page
+                organizeState.cutPoints = organizeState.cutPoints.filter(cp => cp !== index);
+                
+                // Adjust remaining cuts
+                organizeState.cutPoints = organizeState.cutPoints.map(cp => cp > index ? cp - 1 : cp);
+                
+                // Remove from selection and adjust indices
+                organizeState.selectedPages.delete(index);
+                const newSelection = new Set();
+                organizeState.selectedPages.forEach(selectedIndex => {
+                    if (selectedIndex < index) {
+                        newSelection.add(selectedIndex);
+                    } else if (selectedIndex > index) {
+                        newSelection.add(selectedIndex - 1);
+                    }
+                });
+                organizeState.selectedPages = newSelection;
+                
+                const remainingActive = organizeState.pages.filter(p => !p.deleted);
+                document.getElementById('organize-total-pages').textContent = remainingActive.length;
+                
+                renderOrganizeThumbnails();
+                updateOrganizeCutsCounter();
+                updateOrganizeStats();
+                updateUndoRedoButtons();
+            }, 300);
+        }
+
+        function toggleOrganizeCut(index) {
+            saveOrganizeHistory();
+            const wrapper = document.querySelectorAll('.organize-page-wrapper')[index];
+            const scissorWrapper = wrapper.querySelector('.organize-scissor-wrapper');
+            const btn = scissorWrapper.querySelector('.btn-scissor');
+            
+            // Apply flash effect
+            btn.classList.add('flashing-cut');
+            
+            setTimeout(() => {
+                btn.classList.remove('flashing-cut');
+                
+                if (organizeState.cutPoints.includes(index)) {
+                    organizeState.cutPoints = organizeState.cutPoints.filter(cp => cp !== index);
+                    scissorWrapper.classList.remove('cut');
+                    btn.classList.remove('active');
+                } else {
+                    organizeState.cutPoints.push(index);
+                    organizeState.cutPoints.sort((a, b) => a - b);
+                    scissorWrapper.classList.add('cut');
+                    btn.classList.add('active');
+                }
+                
+                updateOrganizeCutsCounter();
+                updateUndoRedoButtons();
+            }, 150);
+        }
+
+        function updateOrganizeCutsCounter() {
+            const count = organizeState.cutPoints.length;
+            const counter = document.getElementById('organize-cuts-counter');
+            counter.textContent = count + (count === 1 ? ' corte marcado' : ' cortes marcados');
+            counter.style.color = count > 0 ? '#4CAF50' : 'var(--accent)';
+        }
+
+        function changeOrganizeZoom(delta) {
+            if (!organizeState.pdf) return;
+            const newZoom = Math.max(0.15, Math.min(0.5, organizeState.zoom + delta));
+            if (newZoom !== organizeState.zoom) {
+                organizeState.zoom = newZoom;
+                document.getElementById('organize-zoom-level').textContent = Math.round(newZoom * 100) + '%';
+                renderOrganizeThumbnails();
+            }
+        }
+
+        function resetOrganize() {
+            organizeState = {
+                file: null,
+                pages: [],
+                cutPoints: [],
+                zoom: 0.25,
+                pdf: null,
+                draggedIndex: null,
+                history: [],
+                historyIndex: -1,
+                selectedPages: new Set()
+            };
+
+            document.getElementById('organize-upload-section').style.display = 'block';
+            document.getElementById('organize-thumbnails-section').style.display = 'none';
+            document.getElementById('organize-filename').style.display = 'none';
+            document.getElementById('btn-organize-download').disabled = true;
+            document.getElementById('organize-pages-grid').innerHTML = '';
+            document.getElementById('file-input-organize').value = '';
+
+            // Hide bulk actions and reset stats
+            const bulkActions = document.getElementById('organize-bulk-actions');
+            if (bulkActions) bulkActions.style.display = 'none';
+
+            const statsEl = document.getElementById('organize-stats');
+            if (statsEl) statsEl.innerHTML = 'Total: <strong>0</strong> | Activas: <strong>0</strong> | Eliminadas: <strong>0</strong> | Rotadas: <strong>0</strong>';
+
+            updateUndoRedoButtons();
+        }
+
+        async function executeOrganize() {
+            if (!organizeState.file) {
+                alert('Selecciona un archivo PDF primero.');
+                return;
+            }
+            
+            const activePages = organizeState.pages.filter(p => !p.deleted);
+            if (activePages.length === 0) {
+                alert('No quedan páginas para procesar.');
+                return;
+            }
+            
+            setLoading(true);
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', organizeState.file);
+                
+                // Build operations
+                const operations = {
+                    pageOrder: activePages.map(p => p.originalPageNum),
+                    rotations: activePages.map(p => p.rotation),
+                    cuts: organizeState.cutPoints
+                };
+                
+                formData.append('operations', JSON.stringify(operations));
+                
+                // Check if we need to split (has cuts)
+                if (organizeState.cutPoints.length > 0) {
+                    // Calculate ranges from cuts
+                    const ranges = [];
+                    let start = 0;
+                    
+                    organizeState.cutPoints.forEach(cutIndex => {
+                        ranges.push([start + 1, cutIndex + 1]);
+                        start = cutIndex + 1;
+                    });
+                    
+                    // Last range
+                    if (start < activePages.length) {
+                        ranges.push([start + 1, activePages.length]);
+                    }
+                    
+                    formData.append('ranges', JSON.stringify(ranges));
+                    formData.append('mode', 'organize-split');
+                } else {
+                    formData.append('mode', 'organize');
+                }
+                
+                const res = await fetch('/api/tools/organize-pdf', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!res.ok) throw new Error(await res.text());
+                
+                const blob = await res.blob();
+                const filename = organizeState.cutPoints.length > 0 ? 'organized_split.zip' : 'organized.pdf';
+                downloadBlob(blob, filename);
+                
+            } catch (err) {
+                alert('Error al organizar PDF: ' + err.message);
+            } finally {
+                setLoading(false);
+            }
         }
 
     </script>
