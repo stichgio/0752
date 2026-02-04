@@ -103,8 +103,8 @@ async function cropImageToRatio(
                         // Usar offset personalizado
                         offsetY = Math.round(customOffset.y * maxOffsetY);
                     } else {
-                        // Desde arriba por defecto (preserva la parte inferior)
-                        offsetY = 0;
+                        // Desde abajo por defecto (preserva la parte inferior - ej: persona, datos)
+                        offsetY = maxOffsetY;
                     }
                 }
 
@@ -212,8 +212,8 @@ function CropEditor({ image, aspectRatio, onClose, onSave }: CropEditorProps) {
             // Recorte lateral -> centrado por defecto
             return { x: 0.5, y: 0 };
         } else {
-            // Recorte vertical -> desde arriba por defecto
-            return { x: 0, y: 0 };
+            // Recorte vertical -> desde abajo por defecto (preserva inferior)
+            return { x: 0, y: 1 };
         }
     });
 
@@ -322,7 +322,7 @@ function CropEditor({ image, aspectRatio, onClose, onSave }: CropEditorProps) {
         if (cropInfo.cropType === 'vertical') {
             setOffset({ x: 0.5, y: 0 }); // Centrado
         } else {
-            setOffset({ x: 0, y: 0 }); // Desde arriba
+            setOffset({ x: 0, y: 1 }); // Desde abajo
         }
     }, [cropInfo]);
 
@@ -1093,11 +1093,10 @@ export default function ImageOptimizer() {
                                         {options.aspectRatio !== 'original' && img.status === 'pending' && (
                                             <button
                                                 onClick={() => setPreviewImage(img)}
-                                                className={`absolute bottom-2 right-2 p-1.5 rounded transition-opacity flex items-center gap-1 ${
-                                                    img.customCropOffset
+                                                className={`absolute bottom-2 right-2 p-1.5 rounded transition-opacity flex items-center gap-1 ${img.customCropOffset
                                                         ? 'bg-yellow-500/80 opacity-100 hover:bg-yellow-600'
                                                         : 'bg-black/70 opacity-0 group-hover:opacity-100 hover:bg-green-600'
-                                                }`}
+                                                    }`}
                                                 title={img.customCropOffset ? 'Recorte personalizado - Click para editar' : 'Ajustar recorte'}
                                             >
                                                 <Crop size={12} />
