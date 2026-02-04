@@ -1,8 +1,8 @@
-import React, { useState, useRef, useMemo, memo } from 'react';
+import React, { useState, useRef, useMemo, memo, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import html2canvas from 'html2canvas';
-import { FileSpreadsheet, Image as ImageIcon, Printer, Settings, FileCode, CheckCircle, AlertCircle, RotateCcw, Music, Calculator, FileText, Timer, Play, Pause, Coffee, Brain, ClipboardList, Shrink, Archive } from 'lucide-react';
+import { FileSpreadsheet, Image as ImageIcon, Printer, Settings, FileCode, CheckCircle, AlertCircle, RotateCcw, Music, Calculator, FileText, Timer, Play, Pause, Coffee, Brain, ClipboardList, Shrink, Archive, ChevronLeft, ChevronRight } from 'lucide-react';
 import PreviewPanel from './components/PreviewPanel';
 import PomodoroTimer from './components/PomodoroTimer';
 import FichasTecnicas from './components/tools/FichasTecnicas';
@@ -66,12 +66,27 @@ export default function App() {
     const [isPdfLoading, setIsPdfLoading] = useState(false);
     const [pdfLoadingMessage, setPdfLoadingMessage] = useState('');
 
+    // Focus Mode State
+    const [isFocusMode, setIsFocusMode] = useState(false);
+
 
 
     // Save custom columns to localStorage whenever they change
-    React.useEffect(() => {
+    useEffect(() => {
         localStorage.setItem('customColumns', JSON.stringify(customColumns));
     }, [customColumns]);
+
+    // Toggle Focus Mode with Ctrl + .
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            if (e.ctrlKey && e.key === '.') {
+                e.preventDefault();
+                setIsFocusMode(prev => !prev);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
 
 
@@ -80,7 +95,7 @@ export default function App() {
 
 
     // Fetch available templates on mount
-    React.useEffect(() => {
+    useEffect(() => {
         fetch(`${API_BASE_URL}/templates`)
             .then(res => res.json())
             .then(data => {
@@ -88,6 +103,16 @@ export default function App() {
             })
             .catch(err => console.error("Error fetching templates:", err));
     }, []);
+
+    // Navigation helpers for Focus Mode
+    const canPrevRow = selectedIndex !== '' && parseInt(selectedIndex) > 0;
+    const canNextRow = selectedIndex !== '' && parseInt(selectedIndex) < data.length - 1;
+    const goToPrevRow = () => {
+        if (canPrevRow) setSelectedIndex(String(parseInt(selectedIndex) - 1));
+    };
+    const goToNextRow = () => {
+        if (canNextRow) setSelectedIndex(String(parseInt(selectedIndex) + 1));
+    };
 
     // Logo Upload Handler
     const handleLogoUpload = (e, side) => {
@@ -559,7 +584,7 @@ export default function App() {
         <div className="flex h-screen w-full bg-neutral-900 overflow-hidden font-sans text-sm">
 
             {/* Sidebar */}
-            <aside className={`bg-neutral-950 text-white w-96 flex flex-col border-r border-neutral-800 transition-all duration-300 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-96 absolute z-50 h-full'}`}>
+            <aside className={`bg-neutral-950 text-white w-96 flex flex-col border-r border-neutral-800 transition-all duration-300 ${isFocusMode ? 'w-0 overflow-hidden opacity-0 pointer-events-none' : ''} ${isSidebarOpen ? 'translate-x-0' : '-translate-x-96 absolute z-50 h-full'}`}>
                 <div className="p-4 bg-black border-b border-neutral-800 flex items-center gap-4">
 
 
@@ -982,6 +1007,39 @@ export default function App() {
                         customTemplate={customTemplate}
                         customColumns={customColumns}
                     />
+                )}
+
+                {/* Focus Mode Navigation Arrows */}
+                {isFocusMode && (
+                    <>
+                        <button
+                            onClick={goToPrevRow}
+                            disabled={!canPrevRow}
+                            className={`fixed left-4 top-1/2 -translate-y-1/2 p-2 transition-colors z-[100] outline-none ${!canPrevRow ? 'text-gray-700 opacity-50 cursor-not-allowed' : 'text-red-600 hover:text-red-500 opacity-80 hover:opacity-100'}`}
+                            title="Registro Anterior"
+                        >
+                            <ChevronLeft size={80} strokeWidth={1.5} />
+                        </button>
+
+                        <button
+                            onClick={goToNextRow}
+                            disabled={!canNextRow}
+                            className={`fixed right-4 top-1/2 -translate-y-1/2 p-2 transition-colors z-[100] outline-none ${!canNextRow ? 'text-gray-700 opacity-50 cursor-not-allowed' : 'text-red-600 hover:text-red-500 opacity-80 hover:opacity-100'}`}
+                            title="Siguiente Registro"
+                        >
+                            <ChevronRight size={80} strokeWidth={1.5} />
+                        </button>
+
+                        {/* Exit hint */}
+                        <div className="fixed top-4 right-4 z-[100] text-white/30 text-xs font-mono pointer-events-none select-none">
+                            MODO FOCUS (CTRL + .)
+                        </div>
+
+                        {/* Current position indicator */}
+                        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] text-white/50 text-sm font-mono bg-black/50 px-4 py-2 rounded-full">
+                            {selectedIndex !== '' ? `${parseInt(selectedIndex) + 1} / ${data.length}` : 'Sin registro seleccionado'}
+                        </div>
+                    </>
                 )}
             </main>
 
