@@ -1,5 +1,5 @@
 /**
- * Types for Compressor Tool
+ * Types for PDF Compressor Tool
  */
 
 export type FileStatus = 'pending' | 'processing' | 'completed' | 'error';
@@ -9,20 +9,15 @@ export type PDFQuality = 'screen' | 'ebook' | 'printer' | 'prepress';
 export interface CompressedFile {
     id: string;
     file: File;
-    preview?: string;
     originalSize: number;
     compressedSize?: number;
     compressedBlob?: Blob;
     status: FileStatus;
     originalName: string;
     error?: string;
-    type: 'image' | 'pdf' | 'unknown';
 }
 
 export interface CompressionOptions {
-    quality: number;           // 1-100
-    maxDimension?: number;     // Optional max width/height for images
-    compressPdfs: boolean;
     pdfQuality: PDFQuality;
 }
 
@@ -52,8 +47,6 @@ export const PDF_QUALITY_OPTIONS: { value: PDFQuality; label: string; descriptio
 ];
 
 export const DEFAULT_OPTIONS: CompressionOptions = {
-    quality: 85,
-    compressPdfs: true,
     pdfQuality: 'ebook',
 };
 
