@@ -1,3 +1,8 @@
+export interface CropOffset {
+    x: number;  // Offset X en porcentaje (0-1)
+    y: number;  // Offset Y en porcentaje (0-1)
+}
+
 export interface ImageFile {
     id: string;
     file: File;
@@ -14,6 +19,8 @@ export interface ImageFile {
     // Dimensiones finales (despues de crop + resize)
     finalWidth?: number;
     finalHeight?: number;
+    // Offset personalizado del recorte (si el usuario lo ajusto manualmente)
+    customCropOffset?: CropOffset;
 }
 
 export type OutputFormat = 'original' | 'jpeg' | 'png' | 'webp';

@@ -1,7 +1,7 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { ChevronLeft, Upload, Download, Trash2, Image as ImageIcon, FileDown, Loader2, CheckCircle, AlertCircle, X, Sliders, RotateCcw, Crop, Maximize2 } from 'lucide-react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { ChevronLeft, Upload, Download, Trash2, Image as ImageIcon, FileDown, Loader2, CheckCircle, AlertCircle, X, Sliders, RotateCcw, Crop, Maximize2, Eye, Move, Check, RotateCw } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
-import { ImageFile, CompressionOptions, CompressionStats, OutputFormat, AspectRatio, ASPECT_RATIO_OPTIONS } from './types';
+import { ImageFile, CompressionOptions, CompressionStats, OutputFormat, AspectRatio, ASPECT_RATIO_OPTIONS, CropOffset } from './types';
 
 // ============================================================================
 // CONFIGURACION POR DEFECTO
@@ -53,9 +53,16 @@ function getAspectRatioValue(ratio: AspectRatio): number | null {
 }
 
 // ============================================================================
-// FUNCION DE RECORTE CON CANVAS (Center Crop)
+// FUNCION DE RECORTE CON CANVAS
+// - Recorte horizontal (imagen mas alta): corta desde ARRIBA por defecto, preserva abajo
+// - Recorte vertical (imagen mas ancha): corta de los LADOS, centrado por defecto
+// - Soporta offset personalizado si el usuario lo ajusto
 // ============================================================================
-async function cropImageToRatio(file: File, targetRatio: number): Promise<File> {
+async function cropImageToRatio(
+    file: File,
+    targetRatio: number,
+    customOffset?: CropOffset
+): Promise<File> {
     return new Promise((resolve, reject) => {
         const img = new Image();
         const url = URL.createObjectURL(file);
@@ -72,17 +79,33 @@ async function cropImageToRatio(file: File, targetRatio: number): Promise<File> 
                 let offsetY: number;
 
                 if (originalRatio > targetRatio) {
-                    // Imagen mas ancha que el ratio objetivo -> recortar lados
+                    // Imagen mas ancha que el ratio objetivo -> recortar LADOS
                     cropHeight = originalHeight;
                     cropWidth = Math.round(originalHeight * targetRatio);
-                    offsetX = Math.round((originalWidth - cropWidth) / 2);
+                    const maxOffsetX = originalWidth - cropWidth;
+
+                    if (customOffset) {
+                        // Usar offset personalizado
+                        offsetX = Math.round(customOffset.x * maxOffsetX);
+                    } else {
+                        // Centrado por defecto
+                        offsetX = Math.round(maxOffsetX / 2);
+                    }
                     offsetY = 0;
                 } else {
-                    // Imagen mas alta que el ratio objetivo -> recortar arriba/abajo
+                    // Imagen mas alta que el ratio objetivo -> recortar vertical
                     cropWidth = originalWidth;
                     cropHeight = Math.round(originalWidth / targetRatio);
+                    const maxOffsetY = originalHeight - cropHeight;
+
                     offsetX = 0;
-                    offsetY = Math.round((originalHeight - cropHeight) / 2);
+                    if (customOffset) {
+                        // Usar offset personalizado
+                        offsetY = Math.round(customOffset.y * maxOffsetY);
+                    } else {
+                        // Desde arriba por defecto (preserva la parte inferior)
+                        offsetY = 0;
+                    }
                 }
 
                 // Crear canvas con las dimensiones del recorte
@@ -95,7 +118,7 @@ async function cropImageToRatio(file: File, targetRatio: number): Promise<File> 
                     throw new Error('No se pudo obtener contexto 2D del canvas');
                 }
 
-                // Dibujar la porcion recortada (center crop)
+                // Dibujar la porcion recortada
                 ctx.drawImage(
                     img,
                     offsetX, offsetY, cropWidth, cropHeight,  // Source rect
@@ -160,6 +183,307 @@ async function getImageDimensions(file: File): Promise<{ width: number; height: 
 }
 
 // ============================================================================
+// COMPONENTE DE VISTA PREVIA Y EDITOR DE RECORTE INTERACTIVO
+// ============================================================================
+interface CropEditorProps {
+    image: ImageFile;
+    aspectRatio: AspectRatio;
+    onClose: () => void;
+    onSave: (imageId: string, offset: CropOffset) => void;
+}
+
+function CropEditor({ image, aspectRatio, onClose, onSave }: CropEditorProps) {
+    const targetRatio = getAspectRatioValue(aspectRatio);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [isDragging, setIsDragging] = useState(false);
+
+    // Estado del offset (0-1 representa el porcentaje de desplazamiento posible)
+    const [offset, setOffset] = useState<CropOffset>(() => {
+        // Inicializar con el offset existente o valores por defecto
+        if (image.customCropOffset) {
+            return image.customCropOffset;
+        }
+        // Valores por defecto segun el tipo de recorte
+        if (!image.originalWidth || !image.originalHeight || !targetRatio) {
+            return { x: 0.5, y: 0 };
+        }
+        const originalRatio = image.originalWidth / image.originalHeight;
+        if (originalRatio > targetRatio) {
+            // Recorte lateral -> centrado por defecto
+            return { x: 0.5, y: 0 };
+        } else {
+            // Recorte vertical -> desde arriba por defecto
+            return { x: 0, y: 0 };
+        }
+    });
+
+    // Calcular info del recorte
+    const cropInfo = useMemo(() => {
+        if (!image.originalWidth || !image.originalHeight || targetRatio === null) {
+            return null;
+        }
+
+        const originalWidth = image.originalWidth;
+        const originalHeight = image.originalHeight;
+        const originalRatio = originalWidth / originalHeight;
+
+        let cropWidth: number;
+        let cropHeight: number;
+        let maxOffsetX: number;
+        let maxOffsetY: number;
+        let cropType: 'horizontal' | 'vertical' | 'none';
+
+        if (Math.abs(originalRatio - targetRatio) < 0.01) {
+            return { cropType: 'none' as const, cropWidth: originalWidth, cropHeight: originalHeight, maxOffsetX: 0, maxOffsetY: 0 };
+        }
+
+        if (originalRatio > targetRatio) {
+            // Imagen mas ancha -> recortar LADOS
+            cropHeight = originalHeight;
+            cropWidth = Math.round(originalHeight * targetRatio);
+            maxOffsetX = originalWidth - cropWidth;
+            maxOffsetY = 0;
+            cropType = 'vertical';
+        } else {
+            // Imagen mas alta -> recortar vertical
+            cropWidth = originalWidth;
+            cropHeight = Math.round(originalWidth / targetRatio);
+            maxOffsetX = 0;
+            maxOffsetY = originalHeight - cropHeight;
+            cropType = 'horizontal';
+        }
+
+        return { cropType, cropWidth, cropHeight, maxOffsetX, maxOffsetY };
+    }, [image, targetRatio]);
+
+    // Calcular posicion actual del recorte en pixeles
+    const currentCrop = useMemo(() => {
+        if (!cropInfo || cropInfo.cropType === 'none') return null;
+
+        const offsetX = cropInfo.cropType === 'vertical' ? Math.round(offset.x * cropInfo.maxOffsetX) : 0;
+        const offsetY = cropInfo.cropType === 'horizontal' ? Math.round(offset.y * cropInfo.maxOffsetY) : 0;
+
+        return { offsetX, offsetY, width: cropInfo.cropWidth, height: cropInfo.cropHeight };
+    }, [cropInfo, offset]);
+
+    // Manejar el arrastre
+    const handleMouseDown = useCallback((e: React.MouseEvent) => {
+        e.preventDefault();
+        setIsDragging(true);
+    }, []);
+
+    const handleMouseMove = useCallback((e: React.MouseEvent) => {
+        if (!isDragging || !containerRef.current || !cropInfo || cropInfo.cropType === 'none') return;
+
+        const rect = containerRef.current.getBoundingClientRect();
+        const imgElement = containerRef.current.querySelector('img');
+        if (!imgElement) return;
+
+        const imgRect = imgElement.getBoundingClientRect();
+
+        if (cropInfo.cropType === 'vertical') {
+            // Movimiento horizontal
+            const relativeX = e.clientX - imgRect.left;
+            const imgWidth = imgRect.width;
+            const cropWidthPercent = cropInfo.cropWidth / image.originalWidth!;
+            const maxOffset = 1 - cropWidthPercent;
+
+            // Calcular el centro del area de recorte
+            let newOffset = (relativeX / imgWidth) - (cropWidthPercent / 2);
+            newOffset = Math.max(0, Math.min(maxOffset, newOffset));
+            // Normalizar a 0-1
+            const normalizedOffset = maxOffset > 0 ? newOffset / maxOffset : 0.5;
+
+            setOffset(prev => ({ ...prev, x: normalizedOffset }));
+        } else {
+            // Movimiento vertical
+            const relativeY = e.clientY - imgRect.top;
+            const imgHeight = imgRect.height;
+            const cropHeightPercent = cropInfo.cropHeight / image.originalHeight!;
+            const maxOffset = 1 - cropHeightPercent;
+
+            // Calcular el centro del area de recorte
+            let newOffset = (relativeY / imgHeight) - (cropHeightPercent / 2);
+            newOffset = Math.max(0, Math.min(maxOffset, newOffset));
+            // Normalizar a 0-1
+            const normalizedOffset = maxOffset > 0 ? newOffset / maxOffset : 0;
+
+            setOffset(prev => ({ ...prev, y: normalizedOffset }));
+        }
+    }, [isDragging, cropInfo, image]);
+
+    const handleMouseUp = useCallback(() => {
+        setIsDragging(false);
+    }, []);
+
+    // Resetear al valor por defecto
+    const handleReset = useCallback(() => {
+        if (!cropInfo) return;
+        if (cropInfo.cropType === 'vertical') {
+            setOffset({ x: 0.5, y: 0 }); // Centrado
+        } else {
+            setOffset({ x: 0, y: 0 }); // Desde arriba
+        }
+    }, [cropInfo]);
+
+    // Guardar y cerrar
+    const handleSave = useCallback(() => {
+        onSave(image.id, offset);
+        onClose();
+    }, [image.id, offset, onSave, onClose]);
+
+    if (!cropInfo || cropInfo.cropType === 'none') {
+        return null;
+    }
+
+    // Calcular porcentajes para visualizacion
+    const cropBoxStyle = useMemo(() => {
+        if (!currentCrop || !image.originalWidth || !image.originalHeight) return {};
+
+        return {
+            left: `${(currentCrop.offsetX / image.originalWidth) * 100}%`,
+            top: `${(currentCrop.offsetY / image.originalHeight) * 100}%`,
+            width: `${(currentCrop.width / image.originalWidth) * 100}%`,
+            height: `${(currentCrop.height / image.originalHeight) * 100}%`,
+        };
+    }, [currentCrop, image]);
+
+    return (
+        <div
+            className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4"
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+        >
+            <div className="max-w-5xl w-full max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
+                {/* Header */}
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                        <Crop size={20} className="text-green-500" />
+                        <h3 className="text-white font-mono text-sm">Ajustar Area de Recorte</h3>
+                        <span className="text-[#666] font-mono text-xs">
+                            {aspectRatio} - {cropInfo.cropType === 'horizontal' ? 'Arrastra verticalmente' : 'Arrastra horizontalmente'}
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={handleReset}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#222] hover:bg-[#333] rounded text-xs font-mono text-[#888] hover:text-white transition-colors"
+                        >
+                            <RotateCw size={12} />
+                            Resetear
+                        </button>
+                        <button
+                            onClick={onClose}
+                            className="p-2 hover:bg-white/10 rounded transition-colors"
+                        >
+                            <X size={20} className="text-[#666] hover:text-white" />
+                        </button>
+                    </div>
+                </div>
+
+                {/* Editor Container */}
+                <div
+                    ref={containerRef}
+                    className="relative bg-[#111] rounded-lg overflow-hidden flex-1 flex items-center justify-center"
+                    style={{ cursor: isDragging ? 'grabbing' : 'default' }}
+                >
+                    {/* Imagen con overlay oscuro */}
+                    <div className="relative inline-block">
+                        <img
+                            src={image.preview}
+                            alt={image.originalName}
+                            className="max-h-[65vh] w-auto select-none"
+                            draggable={false}
+                        />
+
+                        {/* Overlay oscuro sobre toda la imagen */}
+                        <div className="absolute inset-0 bg-black/60 pointer-events-none" />
+
+                        {/* Area de recorte (clara) - arrastrable */}
+                        <div
+                            className="absolute border-2 border-green-500 cursor-grab active:cursor-grabbing"
+                            style={{
+                                ...cropBoxStyle,
+                                boxShadow: '0 0 0 9999px rgba(0,0,0,0.6)',
+                            }}
+                            onMouseDown={handleMouseDown}
+                        >
+                            {/* Imagen visible dentro del recorte */}
+                            <div
+                                className="absolute inset-0 overflow-hidden"
+                                style={{
+                                    backgroundImage: `url(${image.preview})`,
+                                    backgroundSize: `${(image.originalWidth! / cropInfo.cropWidth) * 100}% ${(image.originalHeight! / cropInfo.cropHeight) * 100}%`,
+                                    backgroundPosition: `-${currentCrop?.offsetX || 0}px -${currentCrop?.offsetY || 0}px`,
+                                }}
+                            />
+
+                            {/* Indicador de arrastre */}
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div className="bg-black/50 rounded-full p-2">
+                                    <Move size={20} className="text-white/80" />
+                                </div>
+                            </div>
+
+                            {/* Esquinas de referencia */}
+                            <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-white" />
+                            <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-white" />
+                            <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-white" />
+                            <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-white" />
+
+                            {/* Lineas de tercios */}
+                            <div className="absolute inset-0 pointer-events-none">
+                                <div className="absolute left-1/3 top-0 bottom-0 w-px bg-white/20" />
+                                <div className="absolute left-2/3 top-0 bottom-0 w-px bg-white/20" />
+                                <div className="absolute top-1/3 left-0 right-0 h-px bg-white/20" />
+                                <div className="absolute top-2/3 left-0 right-0 h-px bg-white/20" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Footer con info y botones */}
+                <div className="mt-4 flex items-center justify-between">
+                    <div className="flex items-center gap-6 text-xs font-mono">
+                        <div className="text-[#666]">
+                            Original: <span className="text-white">{image.originalWidth}x{image.originalHeight}</span>
+                        </div>
+                        <div className="text-[#666]">
+                            Resultado: <span className="text-green-500">{cropInfo.cropWidth}x{cropInfo.cropHeight}</span>
+                        </div>
+                        <div className="text-[#666]">
+                            Offset: <span className="text-yellow-500">
+                                {cropInfo.cropType === 'vertical'
+                                    ? `X: ${Math.round(offset.x * 100)}%`
+                                    : `Y: ${Math.round(offset.y * 100)}%`
+                                }
+                            </span>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={onClose}
+                            className="px-4 py-2 bg-[#222] hover:bg-[#333] rounded text-sm font-mono text-[#888] hover:text-white transition-colors"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            onClick={handleSave}
+                            className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded text-sm font-mono text-white transition-colors"
+                        >
+                            <Check size={16} />
+                            Aplicar Recorte
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ============================================================================
 // COMPONENTE PRINCIPAL
 // ============================================================================
 export default function ImageOptimizer() {
@@ -167,6 +491,7 @@ export default function ImageOptimizer() {
     const [options, setOptions] = useState<CompressionOptions>(DEFAULT_OPTIONS);
     const [isProcessing, setIsProcessing] = useState(false);
     const [isDragActive, setIsDragActive] = useState(false);
+    const [previewImage, setPreviewImage] = useState<ImageFile | null>(null);
 
     // Cleanup previews on unmount
     useEffect(() => {
@@ -176,6 +501,14 @@ export default function ImageOptimizer() {
             });
         };
     }, []);
+
+    // Limpiar customCropOffset cuando cambia el aspect ratio
+    useEffect(() => {
+        setImages(prev => prev.map(img => ({
+            ...img,
+            customCropOffset: undefined
+        })));
+    }, [options.aspectRatio]);
 
     // Estadisticas calculadas
     const stats: CompressionStats = React.useMemo(() => {
@@ -256,6 +589,15 @@ export default function ImageOptimizer() {
     }, [processFiles]);
 
     // ========================================================================
+    // HANDLER PARA GUARDAR OFFSET PERSONALIZADO DE RECORTE
+    // ========================================================================
+    const handleSaveCropOffset = useCallback((imageId: string, offset: CropOffset) => {
+        setImages(prev => prev.map(img =>
+            img.id === imageId ? { ...img, customCropOffset: offset } : img
+        ));
+    }, []);
+
+    // ========================================================================
     // PROCESO DE COMPRESION: Original -> Crop -> Resize/Compress -> Output
     // ========================================================================
     const compressImage = async (imageFile: ImageFile): Promise<ImageFile> => {
@@ -265,7 +607,12 @@ export default function ImageOptimizer() {
             // PASO 1: Recortar si hay un aspect ratio definido
             const targetRatio = getAspectRatioValue(options.aspectRatio);
             if (targetRatio !== null) {
-                fileToProcess = await cropImageToRatio(fileToProcess, targetRatio);
+                // Usar offset personalizado si existe
+                fileToProcess = await cropImageToRatio(
+                    fileToProcess,
+                    targetRatio,
+                    imageFile.customCropOffset
+                );
             }
 
             // PASO 2: Determinar configuracion de compresion
@@ -741,6 +1088,28 @@ export default function ImageOptimizer() {
                                         >
                                             <X size={12} />
                                         </button>
+
+                                        {/* Preview/Edit Crop Button - Solo si hay ratio diferente a original y la imagen esta pendiente */}
+                                        {options.aspectRatio !== 'original' && img.status === 'pending' && (
+                                            <button
+                                                onClick={() => setPreviewImage(img)}
+                                                className={`absolute bottom-2 right-2 p-1.5 rounded transition-opacity flex items-center gap-1 ${
+                                                    img.customCropOffset
+                                                        ? 'bg-yellow-500/80 opacity-100 hover:bg-yellow-600'
+                                                        : 'bg-black/70 opacity-0 group-hover:opacity-100 hover:bg-green-600'
+                                                }`}
+                                                title={img.customCropOffset ? 'Recorte personalizado - Click para editar' : 'Ajustar recorte'}
+                                            >
+                                                <Crop size={12} />
+                                            </button>
+                                        )}
+
+                                        {/* Indicador de recorte personalizado */}
+                                        {img.customCropOffset && options.aspectRatio !== 'original' && img.status === 'pending' && (
+                                            <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-yellow-500/90 rounded text-[8px] font-mono text-black font-bold">
+                                                CUSTOM
+                                            </div>
+                                        )}
                                     </div>
 
                                     {/* Info */}
@@ -801,6 +1170,16 @@ export default function ImageOptimizer() {
                     )}
                 </div>
             </main>
+
+            {/* Modal Editor de Recorte Interactivo */}
+            {previewImage && options.aspectRatio !== 'original' && (
+                <CropEditor
+                    image={previewImage}
+                    aspectRatio={options.aspectRatio}
+                    onClose={() => setPreviewImage(null)}
+                    onSave={handleSaveCropOffset}
+                />
+            )}
         </div>
     );
 }
