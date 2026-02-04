@@ -1,6 +1,6 @@
 """
-Compressor Module - File compression tool for images and PDFs
-Focuses on balanced compression maintaining visual quality.
+PDF Compressor Module - PDF file compression tool using Ghostscript.
+Optimizes PDF files while maintaining document quality.
 """
 
 from .router import router

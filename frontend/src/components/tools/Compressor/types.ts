@@ -56,3 +56,9 @@ export const DEFAULT_OPTIONS: CompressionOptions = {
     compressPdfs: true,
     pdfQuality: 'ebook',
 };
+
+export interface Toast {
+    id: string;
+    message: string;
+    type: 'success' | 'error' | 'info';
+}
