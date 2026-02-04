@@ -11,9 +11,10 @@ import zipfile
 import io
 import os
 import tempfile
-import shutil
 from PIL import Image
 import subprocess
+import json
+from urllib.parse import quote
 
 router = APIRouter(prefix="/api/compressor", tags=["compressor"])
 
@@ -26,16 +27,13 @@ def compress_image_pillow(
 ) -> tuple[bytes, str]:
     """
     Compress image using Pillow with quality-focused settings.
-    Returns compressed bytes and output filename.
+    Returns compressed bytes and original filename (preserving name).
     """
     img = Image.open(io.BytesIO(input_bytes))
 
-    # Convert RGBA to RGB if saving as JPEG
-    original_format = img.format or 'JPEG'
-    output_format = original_format
-
-    # Determine output format based on input
+    # Determine output format based on input extension
     ext = os.path.splitext(filename)[1].lower()
+
     if ext in ['.jpg', '.jpeg']:
         output_format = 'JPEG'
         if img.mode in ('RGBA', 'P'):
@@ -44,13 +42,18 @@ def compress_image_pillow(
         output_format = 'PNG'
     elif ext == '.webp':
         output_format = 'WEBP'
+    elif ext in ['.bmp', '.tiff', '.tif']:
+        # Convert BMP/TIFF to JPEG for better compression
+        output_format = 'JPEG'
+        if img.mode in ('RGBA', 'P'):
+            img = img.convert('RGB')
     else:
         output_format = 'JPEG'
         if img.mode in ('RGBA', 'P'):
             img = img.convert('RGB')
 
     # Resize if max_dimension is specified
-    if max_dimension:
+    if max_dimension and max_dimension > 0:
         width, height = img.size
         if width > max_dimension or height > max_dimension:
             if width > height:
@@ -74,43 +77,31 @@ def compress_image_pillow(
     elif output_format == 'PNG':
         save_kwargs = {
             'optimize': True,
-            'compress_level': 6  # Balanced compression
+            'compress_level': 6
         }
     elif output_format == 'WEBP':
         save_kwargs = {
             'quality': quality,
-            'method': 4  # Balanced speed/compression
+            'method': 4
         }
 
     img.save(output_buffer, format=output_format, **save_kwargs)
     output_buffer.seek(0)
 
-    # Generate output filename
-    base_name = os.path.splitext(filename)[0]
-    if output_format == 'JPEG':
-        output_filename = f"{base_name}.jpg"
-    elif output_format == 'PNG':
-        output_filename = f"{base_name}.png"
-    elif output_format == 'WEBP':
-        output_filename = f"{base_name}.webp"
-    else:
-        output_filename = filename
-
-    return output_buffer.read(), output_filename
+    # Keep original filename
+    return output_buffer.read(), filename
 
 
 def compress_pdf_ghostscript(input_path: str, output_path: str, quality: str = "ebook") -> bool:
     """
     Compress PDF using Ghostscript.
-    Quality levels: screen (lowest), ebook (balanced), printer (high), prepress (highest)
     Returns True if successful.
     """
-    # Map quality names to Ghostscript settings
     quality_settings = {
-        "screen": "/screen",      # ~72 dpi - smallest
-        "ebook": "/ebook",        # ~150 dpi - balanced (default)
-        "printer": "/printer",    # ~300 dpi - high quality
-        "prepress": "/prepress"   # ~300 dpi - highest quality
+        "screen": "/screen",
+        "ebook": "/ebook",
+        "printer": "/printer",
+        "prepress": "/prepress"
     }
 
     gs_quality = quality_settings.get(quality, "/ebook")
@@ -121,14 +112,14 @@ def compress_pdf_ghostscript(input_path: str, output_path: str, quality: str = "
 
     for cmd in gs_commands:
         try:
-            subprocess.run([cmd, '--version'], capture_output=True, check=True)
-            gs_cmd = cmd
-            break
-        except (subprocess.CalledProcessError, FileNotFoundError):
+            result = subprocess.run([cmd, '--version'], capture_output=True, timeout=5)
+            if result.returncode == 0:
+                gs_cmd = cmd
+                break
+        except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
             continue
 
     if not gs_cmd:
-        # Ghostscript not available, return False
         return False
 
     try:
@@ -142,11 +133,22 @@ def compress_pdf_ghostscript(input_path: str, output_path: str, quality: str = "
             '-dBATCH',
             f'-sOutputFile={output_path}',
             input_path
-        ], check=True, capture_output=True)
+        ], check=True, capture_output=True, timeout=120)
         return True
-    except subprocess.CalledProcessError as e:
+    except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
         print(f"Ghostscript error: {e}")
         return False
+
+
+def safe_filename_header(filename: str) -> str:
+    """Create a safe Content-Disposition header value."""
+    # Use RFC 5987 encoding for non-ASCII filenames
+    try:
+        filename.encode('ascii')
+        return f'attachment; filename="{filename}"'
+    except UnicodeEncodeError:
+        encoded = quote(filename, safe='')
+        return f"attachment; filename*=UTF-8''{encoded}"
 
 
 @router.post("/compress")
@@ -159,20 +161,11 @@ async def compress_files(
 ):
     """
     Compress multiple files (images and/or PDFs).
-
-    Parameters:
-    - files: Files to compress
-    - quality: Image quality (1-100), default 85 for balanced compression
-    - compress_pdfs: Whether to compress PDF files
-    - pdf_quality: PDF compression quality (screen, ebook, printer, prepress)
-    - max_dimension: Optional max width/height for images
-
-    Returns: ZIP file with compressed files and metadata
+    Returns: ZIP file with compressed files
     """
     if len(files) == 0:
         raise HTTPException(status_code=400, detail="No se proporcionaron archivos")
 
-    # Validate quality
     quality = max(1, min(100, quality))
 
     results = []
@@ -187,14 +180,13 @@ async def compress_files(
                 ext = os.path.splitext(filename)[1].lower()
 
                 compressed_content = None
-                compressed_filename = filename
                 success = False
                 error_msg = None
 
                 try:
                     # Handle images
-                    if ext in ['.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tiff']:
-                        compressed_content, compressed_filename = compress_image_pillow(
+                    if ext in ['.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tiff', '.tif']:
+                        compressed_content, _ = compress_image_pillow(
                             original_content,
                             filename,
                             quality=quality,
@@ -204,8 +196,8 @@ async def compress_files(
 
                     # Handle PDFs
                     elif ext == '.pdf' and compress_pdfs:
-                        input_path = os.path.join(temp_dir, f"input_{filename}")
-                        output_path = os.path.join(temp_dir, f"output_{filename}")
+                        input_path = os.path.join(temp_dir, f"input_{hash(filename)}.pdf")
+                        output_path = os.path.join(temp_dir, f"output_{hash(filename)}.pdf")
 
                         with open(input_path, 'wb') as f:
                             f.write(original_content)
@@ -213,31 +205,28 @@ async def compress_files(
                         if compress_pdf_ghostscript(input_path, output_path, pdf_quality):
                             with open(output_path, 'rb') as f:
                                 compressed_content = f.read()
-                            compressed_filename = filename
                             success = True
                         else:
-                            # Ghostscript not available, return original
                             compressed_content = original_content
-                            error_msg = "Ghostscript no disponible, archivo sin comprimir"
+                            error_msg = "Ghostscript no disponible"
 
                     else:
-                        # Unsupported file type, keep original
                         compressed_content = original_content
-                        error_msg = "Tipo de archivo no soportado para compresion"
+                        error_msg = "Tipo de archivo no soportado"
 
                 except Exception as e:
                     compressed_content = original_content
                     error_msg = str(e)
+                    print(f"Error compressing {filename}: {e}")
 
                 compressed_size = len(compressed_content) if compressed_content else original_size
 
-                # Only use compressed if it's actually smaller
+                # Only use compressed if smaller
                 if compressed_content and compressed_size >= original_size:
                     compressed_content = original_content
                     compressed_size = original_size
-                    compressed_filename = filename
                     if success:
-                        error_msg = "El archivo ya esta optimizado"
+                        error_msg = "Ya optimizado"
 
                 reduction_percent = ((original_size - compressed_size) / original_size * 100) if original_size > 0 else 0
 
@@ -250,28 +239,13 @@ async def compress_files(
                     "error": error_msg
                 })
 
-                compressed_files.append((compressed_filename, compressed_content or original_content))
+                compressed_files.append((filename, compressed_content or original_content))
 
-            # Create ZIP with results
+            # Create ZIP
             zip_buffer = io.BytesIO()
-
             with zipfile.ZipFile(zip_buffer, mode='w', compression=zipfile.ZIP_DEFLATED) as zip_file:
-                for filename, content in compressed_files:
-                    zip_file.writestr(filename, content)
-
-                # Add metadata file
-                import json
-                metadata = {
-                    "total_files": len(files),
-                    "total_original_size": sum(r["original_size"] for r in results),
-                    "total_compressed_size": sum(r["compressed_size"] for r in results),
-                    "total_reduction_percent": round(
-                        (sum(r["original_size"] for r in results) - sum(r["compressed_size"] for r in results)) /
-                        max(sum(r["original_size"] for r in results), 1) * 100, 1
-                    ),
-                    "files": results
-                }
-                zip_file.writestr("_compression_report.json", json.dumps(metadata, indent=2, ensure_ascii=False))
+                for fname, content in compressed_files:
+                    zip_file.writestr(fname, content)
 
             zip_buffer.seek(0)
 
@@ -279,12 +253,7 @@ async def compress_files(
                 content=zip_buffer.read(),
                 media_type="application/zip",
                 headers={
-                    "Content-Disposition": "attachment; filename=archivos_comprimidos.zip",
-                    "X-Compression-Stats": json.dumps({
-                        "total_original": metadata["total_original_size"],
-                        "total_compressed": metadata["total_compressed_size"],
-                        "reduction_percent": metadata["total_reduction_percent"]
-                    })
+                    "Content-Disposition": "attachment; filename=comprimidos.zip"
                 }
             )
 
@@ -292,7 +261,7 @@ async def compress_files(
         print(f"Error in compression: {e}")
         import traceback
         traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Error al comprimir archivos: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error al comprimir: {str(e)}")
 
 
 @router.post("/compress-single")
@@ -303,7 +272,7 @@ async def compress_single_file(
     max_dimension: Optional[int] = Form(default=None)
 ):
     """
-    Compress a single file and return it directly (not as ZIP).
+    Compress a single file and return it directly.
     """
     original_content = await file.read()
     original_size = len(original_content)
@@ -314,8 +283,8 @@ async def compress_single_file(
 
     try:
         # Handle images
-        if ext in ['.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tiff']:
-            compressed_content, output_filename = compress_image_pillow(
+        if ext in ['.jpg', '.jpeg', '.png', '.webp', '.bmp', '.tiff', '.tif']:
+            compressed_content, _ = compress_image_pillow(
                 original_content,
                 filename,
                 quality=quality,
@@ -323,14 +292,14 @@ async def compress_single_file(
             )
 
             # Determine media type
-            if output_filename.endswith('.jpg') or output_filename.endswith('.jpeg'):
+            if ext in ['.jpg', '.jpeg']:
                 media_type = 'image/jpeg'
-            elif output_filename.endswith('.png'):
+            elif ext == '.png':
                 media_type = 'image/png'
-            elif output_filename.endswith('.webp'):
+            elif ext == '.webp':
                 media_type = 'image/webp'
             else:
-                media_type = 'application/octet-stream'
+                media_type = 'image/jpeg'
 
             compressed_size = len(compressed_content)
 
@@ -340,10 +309,11 @@ async def compress_single_file(
                     content=original_content,
                     media_type=media_type,
                     headers={
-                        "Content-Disposition": f"attachment; filename={filename}",
+                        "Content-Disposition": safe_filename_header(filename),
                         "X-Original-Size": str(original_size),
                         "X-Compressed-Size": str(original_size),
-                        "X-Reduction-Percent": "0"
+                        "X-Reduction-Percent": "0",
+                        "X-Filename": filename
                     }
                 )
 
@@ -353,10 +323,11 @@ async def compress_single_file(
                 content=compressed_content,
                 media_type=media_type,
                 headers={
-                    "Content-Disposition": f"attachment; filename={output_filename}",
+                    "Content-Disposition": safe_filename_header(filename),
                     "X-Original-Size": str(original_size),
                     "X-Compressed-Size": str(compressed_size),
-                    "X-Reduction-Percent": str(reduction)
+                    "X-Reduction-Percent": str(reduction),
+                    "X-Filename": filename
                 }
             )
 
@@ -381,10 +352,11 @@ async def compress_single_file(
                             content=original_content,
                             media_type='application/pdf',
                             headers={
-                                "Content-Disposition": f"attachment; filename={filename}",
+                                "Content-Disposition": safe_filename_header(filename),
                                 "X-Original-Size": str(original_size),
                                 "X-Compressed-Size": str(original_size),
-                                "X-Reduction-Percent": "0"
+                                "X-Reduction-Percent": "0",
+                                "X-Filename": filename
                             }
                         )
 
@@ -394,52 +366,56 @@ async def compress_single_file(
                         content=compressed_content,
                         media_type='application/pdf',
                         headers={
-                            "Content-Disposition": f"attachment; filename={filename}",
+                            "Content-Disposition": safe_filename_header(filename),
                             "X-Original-Size": str(original_size),
                             "X-Compressed-Size": str(compressed_size),
-                            "X-Reduction-Percent": str(reduction)
+                            "X-Reduction-Percent": str(reduction),
+                            "X-Filename": filename
                         }
                     )
                 else:
-                    # Ghostscript not available
+                    # Ghostscript not available - return original with error header
                     return Response(
                         content=original_content,
                         media_type='application/pdf',
                         headers={
-                            "Content-Disposition": f"attachment; filename={filename}",
+                            "Content-Disposition": safe_filename_header(filename),
                             "X-Original-Size": str(original_size),
                             "X-Compressed-Size": str(original_size),
                             "X-Reduction-Percent": "0",
-                            "X-Error": "Ghostscript no disponible"
+                            "X-Filename": filename,
+                            "X-Error": "Ghostscript no disponible para comprimir PDFs"
                         }
                     )
 
         else:
             raise HTTPException(
                 status_code=400,
-                detail=f"Tipo de archivo no soportado: {ext}"
+                detail=f"Tipo de archivo no soportado: {ext}. Use JPG, PNG, WEBP o PDF."
             )
 
     except HTTPException:
         raise
     except Exception as e:
         print(f"Error compressing single file: {e}")
-        raise HTTPException(status_code=500, detail=f"Error al comprimir archivo: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error al comprimir: {str(e)}")
 
 
 @router.get("/health")
 async def health_check():
-    """Health check endpoint for the compressor service."""
-    # Check if Ghostscript is available
+    """Health check endpoint."""
     gs_available = False
     gs_commands = ['gs', 'gswin64c', 'gswin32c']
 
     for cmd in gs_commands:
         try:
-            subprocess.run([cmd, '--version'], capture_output=True, check=True)
-            gs_available = True
-            break
-        except (subprocess.CalledProcessError, FileNotFoundError):
+            result = subprocess.run([cmd, '--version'], capture_output=True, timeout=5)
+            if result.returncode == 0:
+                gs_available = True
+                break
+        except:
             continue
 
     return {

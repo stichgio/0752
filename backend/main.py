@@ -18,6 +18,7 @@ from technical_reports.router import router as technical_reports_router
 from technical_reports.models import TechnicalReport
 from fichas_tecnicas.router import router as fichas_tecnicas_router
 from image_optimizer.router import router as image_optimizer_router
+from compressor.router import router as compressor_router
 
 app = FastAPI()
 
@@ -39,6 +40,7 @@ api_router = APIRouter(prefix="/api")
 app.include_router(technical_reports_router)
 app.include_router(fichas_tecnicas_router)
 app.include_router(image_optimizer_router)
+app.include_router(compressor_router)
 
 @api_router.get("/templates")
 async def list_templates():

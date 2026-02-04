@@ -11,7 +11,8 @@ export default defineConfig({
                 main: resolve(__dirname, 'index.html'),
                 technical: resolve(__dirname, 'technical-reports.html'),
                 fichas: resolve(__dirname, 'fichas-tecnicas.html'),
-                imageOptimizer: resolve(__dirname, 'image-optimizer.html')
+                imageOptimizer: resolve(__dirname, 'image-optimizer.html'),
+                compressor: resolve(__dirname, 'compressor.html')
             }
         }
     },
