@@ -18,7 +18,7 @@ export interface ImageFile {
 
 export type OutputFormat = 'original' | 'jpeg' | 'png' | 'webp';
 
-export type AspectRatio = 'original' | '1:1' | '4:3' | '3:2' | '16:9' | '9:16' | '3:4' | '2:3';
+export type AspectRatio = 'original' | '1:1' | '4:3' | '4:5' | '3:2' | '16:9' | '9:16' | '3:4' | '2:3';
 
 export interface AspectRatioOption {
     value: AspectRatio;
@@ -30,6 +30,7 @@ export const ASPECT_RATIO_OPTIONS: AspectRatioOption[] = [
     { value: 'original', label: 'Original', ratio: null },
     { value: '1:1', label: '1:1 (Cuadrado)', ratio: 1 },
     { value: '4:3', label: '4:3 (Foto)', ratio: 4 / 3 },
+    { value: '4:5', label: '4:5 (Instagram)', ratio: 4 / 5 },
     { value: '3:2', label: '3:2 (DSLR)', ratio: 3 / 2 },
     { value: '16:9', label: '16:9 (Video)', ratio: 16 / 9 },
     { value: '9:16', label: '9:16 (Story)', ratio: 9 / 16 },
