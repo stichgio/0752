@@ -1,7 +1,7 @@
 import React, { forwardRef, useState, useEffect } from 'react';
 import { formatDateValue } from '../utils';
 
-const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, customTemplate, customColumns = [] }, ref) => {
+const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, customTemplate, customColumns = [], isFocusMode = false }, ref) => {
     const [layoutMode, setLayoutMode] = useState('grid');
     const [renderedHtml, setRenderedHtml] = useState('');
 
@@ -359,7 +359,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
 
     if (customTemplate && renderedHtml) {
         return (
-            <div className="flex-1 bg-neutral-300 p-4 overflow-auto flex justify-center items-start">
+            <div className={`flex-1 p-4 overflow-auto flex justify-center items-start ${isFocusMode ? 'bg-neutral-100' : 'bg-neutral-300'}`}>
                 <div
                     ref={ref}
                     className="bg-white text-black shadow-2xl flex flex-col"
@@ -377,7 +377,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
     }
 
     return (
-        <div className="flex-1 bg-neutral-300 p-4 overflow-auto flex justify-center items-start">
+        <div className={`flex-1 p-4 overflow-auto flex justify-center items-start ${isFocusMode ? 'bg-neutral-100' : 'bg-neutral-300'}`}>
             {/* A4 Paper Container - Strict dimensions */}
             <div
                 ref={ref}

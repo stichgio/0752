@@ -584,7 +584,7 @@ export default function App() {
         <div className="flex h-screen w-full bg-neutral-900 overflow-hidden font-sans text-sm">
 
             {/* Sidebar */}
-            <aside className={`bg-neutral-950 text-white w-96 flex flex-col border-r border-neutral-800 transition-all duration-300 ${isFocusMode ? 'w-0 overflow-hidden opacity-0 pointer-events-none' : ''} ${isSidebarOpen ? 'translate-x-0' : '-translate-x-96 absolute z-50 h-full'}`}>
+            <aside className={`bg-neutral-950 text-white flex flex-col transition-all duration-300 ${isFocusMode ? 'w-0 overflow-hidden opacity-0 border-none' : 'w-96 border-r border-neutral-800'} ${isSidebarOpen ? 'translate-x-0' : '-translate-x-96 absolute z-50 h-full'}`}>
                 <div className="p-4 bg-black border-b border-neutral-800 flex items-center gap-4">
 
 
@@ -1006,6 +1006,7 @@ export default function App() {
                         logoRight={logoRight}
                         customTemplate={customTemplate}
                         customColumns={customColumns}
+                        isFocusMode={isFocusMode}
                     />
                 )}
 
@@ -1030,8 +1031,8 @@ export default function App() {
                             <ChevronRight size={80} strokeWidth={1.5} />
                         </button>
 
-                        {/* Exit hint */}
-                        <div className="fixed top-4 right-4 z-[100] text-white/30 text-xs font-mono pointer-events-none select-none">
+                        {/* Focus Mode Hint */}
+                        <div className="fixed top-4 right-4 z-[100] text-white/50 text-xs font-mono pointer-events-none select-none">
                             MODO FOCUS (CTRL + .)
                         </div>
 
@@ -1041,7 +1042,7 @@ export default function App() {
                         </div>
                     </>
                 )}
-            </main>
+            </main >
 
             {/* Custom Column Modal - Nothing Tech Style */}
             {
@@ -1114,15 +1115,17 @@ export default function App() {
             }
 
             {/* PDF Loading Modal */}
-            {isPdfLoading && (
-                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-                    <div className="bg-[#111] border border-[#333] rounded-lg p-8 flex flex-col items-center min-w-[300px]">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D71921] mx-auto"></div>
-                        <p className="mt-4 text-[#eee] font-mono text-center">{pdfLoadingMessage}</p>
-                        <p className="mt-2 text-[#666] text-xs">Por favor espere...</p>
+            {
+                isPdfLoading && (
+                    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+                        <div className="bg-[#111] border border-[#333] rounded-lg p-8 flex flex-col items-center min-w-[300px]">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D71921] mx-auto"></div>
+                            <p className="mt-4 text-[#eee] font-mono text-center">{pdfLoadingMessage}</p>
+                            <p className="mt-2 text-[#666] text-xs">Por favor espere...</p>
+                        </div>
                     </div>
-                </div>
-            )}
+                )
+            }
 
         </div >
     );

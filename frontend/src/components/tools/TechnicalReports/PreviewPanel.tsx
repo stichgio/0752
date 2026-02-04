@@ -157,7 +157,7 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
         <div className="h-full overflow-auto bg-[#111] p-8 rounded-lg border border-[#333]">
             <div
                 id="technical-report-preview"
-                className="mx-auto !bg-white !text-black shadow-lg"
+                className="!bg-white !text-black mx-auto shadow-lg"
                 style={{
                     ...styles.page,
                     transform: `scale(${zoom / 100})`,
