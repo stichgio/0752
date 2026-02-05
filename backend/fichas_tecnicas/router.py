@@ -48,7 +48,7 @@ def parse_csv_file(content: bytes) -> List[Dict[str, Any]]:
             rows = temp_rows
         else:
             raise ValueError("Too few columns with semicolon")
-    except:
+    except Exception:
         reader = csv.DictReader(io.StringIO(decoded), delimiter=',')
         rows = list(reader)
 
@@ -129,7 +129,7 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
                                      cell_value = "{:.1f}".format(cell_value)
                                 elif fmt == '0' or fmt == '#':
                                     cell_value = "{:.0f}".format(cell_value)
-                            except:
+                            except (ValueError, TypeError):
                                 pass # Fallback to standard conversion
 
                         row_dict[key] = cell_value
@@ -289,7 +289,7 @@ async def generate_consolidated_pdf(
             try:
                 ids_list = json.loads(ficha_ids)
                 all_fichas = [f for f in all_fichas if f.id in ids_list]
-            except:
+            except (json.JSONDecodeError, TypeError):
                 pass
 
         print(f"[PDF Consolidado] Generando PDF con {len(all_fichas)} fichas...")
@@ -315,7 +315,7 @@ async def generate_consolidated_pdf(
         # STREAMING OPTIMIZADO: Generar PDFs en lotes y merge incremental
         # =====================================================================
         from weasyprint import HTML
-        from pypdf import PdfWriter, PdfReader
+        from pypdf import PdfWriter
         from concurrent.futures import ThreadPoolExecutor
         import gc
 
@@ -374,7 +374,7 @@ async def generate_consolidated_pdf(
                 print(f"[PDF Consolidado] Error en merge: {e}")
                 try:
                     os.remove(pdf_path)
-                except:
+                except OSError:
                     pass
 
         with open(temp_file.name, 'wb') as f:

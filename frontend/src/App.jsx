@@ -1,11 +1,10 @@
-import React, { useState, useRef, useMemo, memo, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import html2canvas from 'html2canvas';
-import { FileSpreadsheet, Image as ImageIcon, Printer, Settings, FileCode, CheckCircle, AlertCircle, RotateCcw, Music, Calculator, FileText, Timer, Play, Pause, Coffee, Brain, ClipboardList, Shrink, Archive, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileSpreadsheet, Image as ImageIcon, Printer, Settings, FileCode, CheckCircle, AlertCircle, RotateCcw, Calculator, FileText, ClipboardList, Shrink, Archive, ChevronLeft, ChevronRight } from 'lucide-react';
 import PreviewPanel from './components/PreviewPanel';
 import PomodoroTimer from './components/PomodoroTimer';
-import FichasTecnicas from './components/tools/FichasTecnicas';
 import { Step } from './components/common';
 
 import { REPORT_FIELDS, TEMPLATE_KEY_MAP, DATE_FIELDS, TEMPLATE_HEADERS } from './constants';
@@ -29,7 +28,6 @@ export default function App() {
     // Selection State
     const [selectedIndex, setSelectedIndex] = useState('');
     const [isSidebarOpen, setSidebarOpen] = useState(true);
-    const [showFichasTool, setShowFichasTool] = useState(false);
 
     // Custom Logos State
     const [logoLeft, setLogoLeft] = useState(null);
@@ -397,29 +395,12 @@ export default function App() {
                 const excelHeader = mappings[key];
                 let value = row[excelHeader];
 
-                // Define which template keys are date fields
-                const dateFields = ['fecha-corte', 'fecha_corte'];
-
-                const templateKeyMap = {
-                    'centro': 'CENTRO', 'nis': 'NIS', 'ot': 'OT',
-                    'direccion': 'DIRECCION', 'localidad': 'LOCALIDAD',
-                    'distrito': 'DISTRITO', 'estado': 'ESTADO',
-                    'tipo-red': 'TIPO RED', 'sector': 'SECTOR',
-                    'actividad': 'ACTIVIDAD', 'contrata': 'CONTRATA',
-                    'subactividad': 'SUBACTIVIDAD', 'cuadrilla': 'CUADRILLA',
-                    'obs-sedapal': 'OBSERVACION SEDAPAL',
-                    'obs-contrata': 'OBSERVACION CONTRATA',
-                    'fecha-corte': 'FECHA CORTE',
-                    'fecha_corte': 'FECHA CORTE',
-                    'direcciones-afectadas': 'DIRECCIONES AFECTADAS'
-                };
-
                 // Apply date formatting if this is a date field
-                if (dateFields.includes(key)) {
+                if (DATE_FIELDS.includes(key)) {
                     value = formatDateValue(value);
                 }
 
-                if (templateKeyMap[key]) rowData[templateKeyMap[key]] = value;
+                if (TEMPLATE_KEY_MAP[key]) rowData[TEMPLATE_KEY_MAP[key]] = value;
             });
 
             // Add custom columns to the row data
@@ -559,16 +540,7 @@ export default function App() {
     };
 
     const handleDownloadTemplate = () => {
-        const templateHeaders = [
-            'ID_ORDEN',
-            'CENTRO', 'NIS', 'OT',
-            'DIRECCION', 'LOCALIDAD', 'DISTRITO', 'ESTADO',
-            'TIPO_RED', 'SECTOR', 'ACTIVIDAD',
-            'CONTRATA', 'SUBACTIVIDAD', 'CUADRILLA',
-            'OBS_SEDAPAL', 'OBS_CONTRATA', 'OBS_FINALES'
-        ];
-
-        const ws = XLSX.utils.aoa_to_sheet([templateHeaders]);
+        const ws = XLSX.utils.aoa_to_sheet([TEMPLATE_HEADERS]);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Plantilla");
         const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
@@ -648,7 +620,6 @@ export default function App() {
                                 />
                             </label>
 
-                            {/* Backend Template Dropdown */}
                             {/* Backend Template Dropdown */}
                             <div className="mt-2">
                                 <label className="block text-xs text-neutral-400 mb-1">O seleccionar existente:</label>
@@ -985,30 +956,17 @@ export default function App() {
 
             {/* Main Preview */}
             <main className="flex-1 flex flex-col h-full overflow-hidden relative">
-                {showFichasTool ? (
-                    <div className="h-full w-full bg-neutral-900">
-                        <div className="p-4 flex items-center justify-between border-b border-neutral-800">
-                            <button onClick={() => setShowFichasTool(false)} className="text-[12px] px-3 py-1 rounded bg-neutral-800 hover:bg-neutral-700">← Volver</button>
-                            <h2 className="text-white font-bold">Fichas Técnicas</h2>
-                            <div />
-                        </div>
-                        <div className="p-4 h-[calc(100%-56px)] overflow-auto">
-                            <FichasTecnicas />
-                        </div>
-                    </div>
-                ) : (
-                    <PreviewPanel
-                        ref={panelRef}
-                        data={data[selectedIndex]}
-                        images={getFilteredImages()}
-                        mappings={mappings}
-                        logoLeft={logoLeft}
-                        logoRight={logoRight}
-                        customTemplate={customTemplate}
-                        customColumns={customColumns}
-                        isFocusMode={isFocusMode}
-                    />
-                )}
+                <PreviewPanel
+                    ref={panelRef}
+                    data={data[selectedIndex]}
+                    images={getFilteredImages()}
+                    mappings={mappings}
+                    logoLeft={logoLeft}
+                    logoRight={logoRight}
+                    customTemplate={customTemplate}
+                    customColumns={customColumns}
+                    isFocusMode={isFocusMode}
+                />
 
                 {/* Focus Mode Navigation Arrows */}
                 {isFocusMode && (
@@ -1130,5 +1088,3 @@ export default function App() {
         </div >
     );
 }
-
-// Step component now imported from ./components/common
