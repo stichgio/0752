@@ -882,7 +882,11 @@
 
             <!-- VIEW: Multiple (Classic Drag & Drop) -->
             <div id="merge-view-multiple">
-                <div class="dropzone" id="merge-dropzone" onclick="document.getElementById('file-input-multi').click()">
+                <div class="dropzone" id="merge-dropzone"
+                    onclick="document.getElementById('file-input-multi').click()"
+                    ondragover="handleDropzoneDragOver(event)"
+                    ondragleave="handleDropzoneDragLeave(event)"
+                    ondrop="handleMergeIntercaladoDropzoneDrop(event)">
                     <i data-lucide="layers" width="32" class="drop-icon"></i>
                     <div style="font-size: 14px; margin-bottom: 4px;">Arrastra tus archivos PDF aquí</div>
                     <div style="font-size: 12px; color: var(--text-dim);">o haz click para seleccionar</div>
@@ -928,7 +932,10 @@
 
             <!-- Dropzone for Normal Merge -->
             <div class="dropzone" id="merge-normal-dropzone"
-                onclick="document.getElementById('file-input-normal').click()">
+                onclick="document.getElementById('file-input-normal').click()"
+                ondragover="handleDropzoneDragOver(event)"
+                ondragleave="handleDropzoneDragLeave(event)"
+                ondrop="handleNormalDropzoneDrop(event)">
                 <i data-lucide="file-plus" width="32" class="drop-icon"></i>
                 <div style="font-size: 14px; margin-bottom: 4px;">Arrastra tus archivos PDF aquí</div>
                 <div style="font-size: 12px; color: var(--text-dim);">o haz click para seleccionar</div>
@@ -962,7 +969,11 @@
             </div>
 
             <!-- Common Upload for Split -->
-            <div class="dropzone" id="split-dropzone" onclick="document.getElementById('file-input-split').click()"
+            <div class="dropzone" id="split-dropzone"
+                onclick="document.getElementById('file-input-split').click()"
+                ondragover="handleDropzoneDragOver(event)"
+                ondragleave="handleDropzoneDragLeave(event)"
+                ondrop="handleSplitDropzoneDrop(event)"
                 style="padding: 24px;">
                 <div id="split-filename" style="font-weight: 500;">Seleccionar PDF Principal</div>
                 <div style="font-size: 10px; color: var(--text-dim);">Click para cambiar archivo</div>
@@ -1046,7 +1057,11 @@
 
             <!-- Upload Section -->
             <div id="organize-upload-section">
-                <div class="dropzone" id="organize-dropzone" onclick="document.getElementById('file-input-organize').click()">
+                <div class="dropzone" id="organize-dropzone"
+                    onclick="document.getElementById('file-input-organize').click()"
+                    ondragover="handleDropzoneDragOver(event)"
+                    ondragleave="handleDropzoneDragLeave(event)"
+                    ondrop="handleOrganizeDropzoneDrop(event)">
                     <i data-lucide="layout-grid" width="32" class="drop-icon"></i>
                     <div style="font-size: 14px; margin-bottom: 4px;">Selecciona un PDF para organizar</div>
                     <div style="font-size: 12px; color: var(--text-dim);">Click para cargar archivo</div>
@@ -1294,6 +1309,87 @@
                 const [movedFile] = state.mergeFiles.splice(multiDraggedIndex, 1);
                 state.mergeFiles.splice(targetIndex, 0, movedFile);
                 renderMultiFileList();
+            }
+        }
+
+        // --- Dropzone Drag & Drop from Explorer ---
+        function handleDropzoneDragOver(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.currentTarget.classList.add('dragover');
+        }
+
+        function handleDropzoneDragLeave(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.currentTarget.classList.remove('dragover');
+        }
+
+        function handleNormalDropzoneDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.currentTarget.classList.remove('dragover');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                // Filter only PDF files
+                const pdfFiles = Array.from(files).filter(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
+                if (pdfFiles.length > 0) {
+                    handleNormalMergeFiles(pdfFiles);
+                } else {
+                    alert('Por favor, arrastra solo archivos PDF.');
+                }
+            }
+        }
+
+        function handleMergeIntercaladoDropzoneDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.currentTarget.classList.remove('dragover');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                // Filter only PDF files
+                const pdfFiles = Array.from(files).filter(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
+                if (pdfFiles.length > 0) {
+                    handleMultiFiles(pdfFiles);
+                } else {
+                    alert('Por favor, arrastra solo archivos PDF.');
+                }
+            }
+        }
+
+        function handleSplitDropzoneDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.currentTarget.classList.remove('dragover');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                // Filter only PDF files and take the first one
+                const pdfFiles = Array.from(files).filter(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
+                if (pdfFiles.length > 0) {
+                    handleSplitFile(pdfFiles[0]);
+                } else {
+                    alert('Por favor, arrastra solo archivos PDF.');
+                }
+            }
+        }
+
+        function handleOrganizeDropzoneDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.currentTarget.classList.remove('dragover');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                // Filter only PDF files and take the first one
+                const pdfFiles = Array.from(files).filter(f => f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf'));
+                if (pdfFiles.length > 0) {
+                    handleOrganizeFile(pdfFiles[0]);
+                } else {
+                    alert('Por favor, arrastra solo archivos PDF.');
+                }
             }
         }
 
