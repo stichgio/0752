@@ -294,12 +294,21 @@ async def tool_merge_pdfs_normal(
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
             input_paths = []
-            # Save uploaded files
-            for file in files:
-                file_path = os.path.join(temp_dir, file.filename)
+            # Save uploaded files with unique names to avoid collisions
+            for idx, file in enumerate(files):
+                # Use index prefix to preserve order and avoid filename collisions
+                safe_filename = f"{idx:04d}_{file.filename}"
+                file_path = os.path.join(temp_dir, safe_filename)
+
+                # Read file content fully (await for async read)
+                content = await file.read()
+                file_size = len(content)
+
                 with open(file_path, "wb") as buffer:
-                    shutil.copyfileobj(file.file, buffer)
+                    buffer.write(content)
+
                 input_paths.append(file_path)
+                print(f"  Saved file {idx}: {file.filename} -> {safe_filename} ({file_size} bytes)")
 
             # Define output path
             output_path = os.path.join(temp_dir, "merged_output.pdf")
