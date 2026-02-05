@@ -97,16 +97,20 @@
 
         /* Info Bar */
         .info-bar {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            display: flex;
+            justify-content: space-between;
             border: 1px solid #ccc;
-            margin-bottom: 3mm;
+            margin-bottom: 2mm;
             flex-shrink: 0;
         }
 
         .info-item {
-            padding: 6px 10px 6px 4px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 1.5mm 2mm;
             border-right: 1px solid #ccc;
+            line-height: 1.2;
         }
 
         .info-item:last-child {
@@ -118,15 +122,12 @@
             font-weight: bold;
             text-transform: uppercase;
             color: #666;
-            margin-bottom: 2px;
-            padding-left: 0;
         }
 
         .info-value {
             font-size: 9pt;
             font-weight: 600;
             color: #000;
-            padding-left: 0;
         }
 
         /* Section Title */
@@ -182,6 +183,7 @@
 
         /* Photo Panel Section */
         .panel-fotografico {
+            flex: 1;
             display: flex;
             flex-direction: column;
             min-height: 0;
@@ -192,7 +194,7 @@
             grid-template-columns: repeat(2, 1fr);
             grid-template-rows: repeat(2, 1fr);
             gap: 2mm;
-            height: 140mm;
+            flex: 1;
             border: 1px solid #0066cc;
             padding: 2mm;
         }
@@ -370,10 +372,6 @@
                     <span class="loc-value">{{ report.data.get('DISTRITO', '-') }}</span>
                 </div>
                 <div class="loc-field">
-                    <span class="loc-label">Código de Componente:</span>
-                    <span class="loc-value">{{ report.data.get('CODIGO COMPONENTE', '-') }}</span>
-                </div>
-                <div class="loc-field">
                     <span class="loc-label">Estado:</span>
                     <span class="loc-value">{{ report.data.get('ESTADO', '-') }}</span>
                 </div>
@@ -401,7 +399,9 @@
 
                 {# Fill remaining cells if less than 4 images #}
                 {% for i in range(report.images|length, 4) %}
-                <div class="photo-cell"></div>
+                <div class="photo-cell">
+                    <div class="photo-placeholder">Sin imagen</div>
+                </div>
                 {% endfor %}
             </div>
             {% else %}
