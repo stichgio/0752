@@ -3,15 +3,14 @@ from fastapi.staticfiles import StaticFiles
 import base64
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, FileResponse
-import pandas as pd
-import io # Keep io as it's used in /upload
+import io
 import shutil
 import os
-import uuid
 import json
 import tempfile
+import traceback
 from typing import List, Optional
-from report_service import run_batch_generation, ReportService
+from report_service import ReportService
 from pdf_tools import merge_pdfs_interleaved, merge_pdfs_sequential, split_pdf, split_pdf_by_ranges
 import zipfile
 from technical_reports.router import router as technical_reports_router
@@ -86,10 +85,8 @@ async def generate_single_pdf(
         # Validate against Pydantic model to ensure defaults (like impulsion) are populated
         try:
             if isinstance(row_data, dict) and 'valvulas' in row_data:
-                # Ensure it's a valid TechnicalReport, populating missing fields with defaults
                 validated = TechnicalReport(**row_data)
                 row_data = validated.dict()
-                print(f"Data validated and normalized successfully. ID: {row_data.get('id')}")
         except Exception as e:
             print(f"Warning: Model validation failed (continuing with raw data): {e}")
 
@@ -214,7 +211,6 @@ async def generate_single_pdf(
     except json.JSONDecodeError as e:
         raise HTTPException(status_code=400, detail=f"Invalid JSON format in 'data' field: {str(e)}")
     except Exception as e:
-        import traceback
         error_trace = traceback.format_exc()
         print(f"PDF Generation Error:\n{error_trace}")
         
@@ -391,7 +387,6 @@ async def tool_split_pdf(
 
     except Exception as e:
         print(f"Split Error: {e}")
-        import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 

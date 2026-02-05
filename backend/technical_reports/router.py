@@ -8,6 +8,7 @@ import io
 import csv
 import os
 import json
+import traceback
 from datetime import datetime
 
 # Para XLSX
@@ -53,7 +54,7 @@ def parse_csv_file(content: bytes) -> List[Dict[str, Any]]:
             print(f"[CSV Parser] Parsed with semicolon delimiter: {len(rows)} rows, {len(rows[0].keys())} columns")
         else:
             raise ValueError("Too few columns with semicolon")
-    except:
+    except Exception:
         # Fallback a coma (,)
         reader = csv.DictReader(io.StringIO(decoded), delimiter=',')
         rows = list(reader)
@@ -944,7 +945,6 @@ async def import_file(file: UploadFile = File(...)):
     except HTTPException:
         raise
     except Exception as e:
-        import traceback
         traceback.print_exc()
         print(f"[ERROR] Importación fallida: {e}")
         raise HTTPException(
@@ -992,7 +992,7 @@ async def generate_consolidated_pdf(
             try:
                 ids_list = json.loads(report_ids)
                 all_reports = [r for r in all_reports if r.id in ids_list]
-            except:
+            except (json.JSONDecodeError, TypeError):
                 pass  # Usar todos si hay error en el parsing
 
         print(f"[PDF Consolidado] Generando PDF con {len(all_reports)} informes...")
@@ -1018,7 +1018,7 @@ async def generate_consolidated_pdf(
         # STREAMING OPTIMIZADO: Generar PDFs en lotes y merge incremental
         # =====================================================================
         from weasyprint import HTML
-        from pypdf import PdfWriter, PdfReader
+        from pypdf import PdfWriter
         from concurrent.futures import ThreadPoolExecutor
         import gc
 
@@ -1080,7 +1080,7 @@ async def generate_consolidated_pdf(
                 print(f"[PDF Consolidado] Error en merge: {e}")
                 try:
                     os.remove(pdf_path)
-                except:
+                except OSError:
                     pass
 
         # Escribir directamente al archivo final
@@ -1126,7 +1126,6 @@ async def generate_consolidated_pdf(
     except HTTPException:
         raise
     except Exception as e:
-        import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Error generando PDF consolidado: {str(e)}")
 

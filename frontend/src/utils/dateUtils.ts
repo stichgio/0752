@@ -66,17 +66,3 @@ export const isDateColumn = (headerName: string): boolean => {
     const headerUpper = String(headerName || '').toUpperCase();
     return headerUpper.includes('FECHA') || headerUpper.includes('DATE');
 };
-
-/**
- * Formatea una fecha Date a string localizado
- */
-export const formatDateLocale = (date: Date): string => {
-    return date.toLocaleString();
-};
-
-/**
- * Obtiene la fecha actual en formato YYYY-MM-DD
- */
-export const getCurrentDateISO = (): string => {
-    return new Date().toISOString().split('T')[0];
-};
