@@ -16,14 +16,16 @@ import os
 
 
 # ── Estilos y constantes ──────────────────────────────────────────────
+# Tamaños ajustados para coincidir con el PDF (px * 0.75 ≈ pt)
+# PDF: base 8.5px, labels 11px, headers 10px, small 9px, table 8px
 
 FONT_NAME = "Arial"
-FONT_SIZE_TITLE = Pt(14)
-FONT_SIZE_SECTION_HEADER = Pt(9)
-FONT_SIZE_LABEL = Pt(9)
-FONT_SIZE_VALUE = Pt(9)
-FONT_SIZE_SMALL = Pt(7.5)
-FONT_SIZE_FOOTER = Pt(7)
+FONT_SIZE_TITLE = Pt(12)
+FONT_SIZE_SECTION_HEADER = Pt(7.5)
+FONT_SIZE_LABEL = Pt(8)
+FONT_SIZE_VALUE = Pt(8)
+FONT_SIZE_SMALL = Pt(6.5)
+FONT_SIZE_FOOTER = Pt(6)
 
 COLOR_HEADER_BG = "E0E0E0"
 COLOR_BORDER = "333333"
@@ -104,7 +106,18 @@ def _remove_paragraph_spacing(paragraph):
     pf = paragraph.paragraph_format
     pf.space_before = Pt(0)
     pf.space_after = Pt(0)
-    pf.line_spacing = Pt(10)
+    pf.line_spacing = Pt(9)
+
+
+def _minimize_spacing(paragraph):
+    """Reduce al mínimo el espaciado de un párrafo (para separadores entre tablas)."""
+    pf = paragraph.paragraph_format
+    pf.space_before = Pt(0)
+    pf.space_after = Pt(1)
+    pf.line_spacing = Pt(2)
+    # Hacer el párrafo casi invisible
+    run = paragraph.add_run("")
+    run.font.size = Pt(1)
 
 
 def _decode_logo_base64(logo_b64: str) -> bytes:
@@ -133,14 +146,14 @@ def generate_ficha_docx(ficha_data: dict, logo_left_b64: str = None, logo_right_
     """
     doc = Document()
 
-    # ── Configurar página A4 con márgenes reducidos ──
+    # ── Configurar página A4 con márgenes reducidos (match PDF: @page margin 5mm + padding 12px) ──
     section = doc.sections[0]
     section.page_width = Cm(21)
     section.page_height = Cm(29.7)
     section.top_margin = Cm(0.5)
     section.bottom_margin = Cm(0.5)
-    section.left_margin = Cm(1.2)
-    section.right_margin = Cm(1.2)
+    section.left_margin = Cm(0.7)
+    section.right_margin = Cm(0.7)
 
     # Ancho útil de la página
     usable_width = section.page_width - section.left_margin - section.right_margin
@@ -157,9 +170,9 @@ def generate_ficha_docx(ficha_data: dict, logo_left_b64: str = None, logo_right_
     header_table = doc.add_table(rows=1, cols=3)
     header_table.alignment = WD_TABLE_ALIGNMENT.CENTER
 
-    # Ancho de columnas
-    header_table.columns[0].width = Cm(5)
-    header_table.columns[1].width = Cm(10)
+    # Ancho de columnas (PDF: logo min-width 230px ≈ 6cm, title flex:1, OS min-width 140px ≈ 3.7cm)
+    header_table.columns[0].width = Cm(5.5)
+    header_table.columns[1].width = Cm(10.5)
     header_table.columns[2].width = Cm(3.6)
 
     # Logo izquierdo
@@ -172,17 +185,17 @@ def generate_ficha_docx(ficha_data: dict, logo_left_b64: str = None, logo_right_
                 logo_stream = io.BytesIO(logo_bytes)
                 p = cell_logo.paragraphs[0]
                 run = p.add_run()
-                run.add_picture(logo_stream, width=Cm(4.5))
+                run.add_picture(logo_stream, width=Cm(4.8))
         except Exception as e:
             print(f"[WordService] Error inserting logo: {e}")
     _remove_paragraph_spacing(cell_logo.paragraphs[0])
 
-    # Título central
+    # Título central (PDF: single line "FICHA TÉCNICA DE EVALUACIÓN DE ACTIVIDADES")
     cell_title = header_table.cell(0, 1)
     cell_title.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
     p_title = cell_title.paragraphs[0]
     p_title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    _add_styled_run(p_title, "FICHA TÉCNICA DE EVALUACIÓN\nDE ACTIVIDADES", bold=True, size=FONT_SIZE_TITLE, color=COLOR_BORDER)
+    _add_styled_run(p_title, "FICHA TÉCNICA DE EVALUACIÓN DE ACTIVIDADES", bold=True, size=FONT_SIZE_TITLE, color=COLOR_BORDER)
     _remove_paragraph_spacing(p_title)
 
     # Número OS
@@ -192,11 +205,11 @@ def generate_ficha_docx(ficha_data: dict, logo_left_b64: str = None, logo_right_
     p_os.alignment = WD_ALIGN_PARAGRAPH.RIGHT
     os_numero = ficha.get("os_numero", "")
     os_display = os_numero.replace("OS-", "").replace("-", "") if os_numero else "00000"
-    _add_styled_run(p_os, os_display, bold=True, size=Pt(14), color=COLOR_RED)
+    _add_styled_run(p_os, os_display, bold=True, size=Pt(12), color=COLOR_RED)
     p_os2 = cell_os.add_paragraph()
     p_os2.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    _add_styled_run(p_os2, "O.S.N° ", bold=True, size=Pt(8))
-    _add_styled_run(p_os2, "________", size=Pt(8))
+    _add_styled_run(p_os2, "O.S.N° ", bold=True, size=Pt(7))
+    _add_styled_run(p_os2, "________", size=Pt(7))
     _remove_paragraph_spacing(p_os)
     _remove_paragraph_spacing(p_os2)
 
@@ -209,7 +222,9 @@ def generate_ficha_docx(ficha_data: dict, logo_left_b64: str = None, logo_right_
                              left={"val": "none", "sz": "0", "color": "FFFFFF"},
                              right={"val": "none", "sz": "0", "color": "FFFFFF"})
 
-    doc.add_paragraph()  # Espaciado
+    # Espaciado mínimo después del header (match PDF margin-bottom: 10px)
+    spacer = doc.add_paragraph()
+    _minimize_spacing(spacer)
 
     # ── INFO: Cliente, Fecha, Dirección, Distrito ──
     _add_info_row(doc, usable_width, [
@@ -260,6 +275,9 @@ def generate_ficha_docx(ficha_data: dict, logo_left_b64: str = None, logo_right_
     # ── FOOTER ──
     _add_footer(doc)
 
+    # ── Reducir espaciado entre todas las tablas ──
+    _reduce_all_table_spacing(doc)
+
     # ── Generar bytes ──
     buffer = io.BytesIO()
     doc.save(buffer)
@@ -268,6 +286,22 @@ def generate_ficha_docx(ficha_data: dict, logo_left_b64: str = None, logo_right_
 
 
 # ── Funciones auxiliares de secciones ──────────────────────────────────
+
+def _reduce_all_table_spacing(doc):
+    """Reduce el espaciado automático que Word agrega entre tablas."""
+    for paragraph in doc.paragraphs:
+        # Solo tocar párrafos vacíos que no son de contenido visible
+        if not paragraph.text.strip():
+            pf = paragraph.paragraph_format
+            # No reducir párrafos que ya tienen _minimize_spacing aplicado
+            if pf.space_before is None:
+                pf.space_before = Pt(0)
+                pf.space_after = Pt(1)
+                pf.line_spacing = Pt(2)
+                for run in paragraph.runs:
+                    if run.font.size is None:
+                        run.font.size = Pt(1)
+
 
 def _format_date(fecha_str: str) -> str:
     """Convierte fecha ISO (YYYY-MM-DD) a DD-MM-YYYY."""
@@ -295,7 +329,7 @@ def _add_info_row(doc, usable_width, fields):
         p = cell_label.paragraphs[0]
         _add_styled_run(p, label, bold=True, size=FONT_SIZE_LABEL)
         _remove_paragraph_spacing(p)
-        table.columns[col_idx].width = Cm(2.2)
+        table.columns[col_idx].width = Cm(2.0)
 
         # Columna valor
         cell_value = table.cell(0, col_idx + 1)
@@ -303,7 +337,7 @@ def _add_info_row(doc, usable_width, fields):
         _add_styled_run(p2, str(value) if value else "", size=FONT_SIZE_VALUE)
         _remove_paragraph_spacing(p2)
 
-        # Borde inferior para el valor
+        # Borde inferior para el valor (match PDF: border-bottom: 1px solid #333)
         _set_cell_border(cell_value,
                          top={"val": "none", "sz": "0", "color": "FFFFFF"},
                          bottom={"val": "single", "sz": "4", "color": COLOR_BORDER},
@@ -341,16 +375,16 @@ def _add_section_header_row(table, row_idx, text, num_cols):
 
 def _add_section_service_diagnostic(doc, usable_width, servicio, diagnostico):
     """Sección Servicio a Efectuar + Diagnóstico lado a lado."""
-    # Tabla principal 2 columnas
+    # Tabla principal 2 columnas (PDF: two equal flex:1 columns)
     table = doc.add_table(rows=6, cols=4)
     _set_table_borders(table, size="6")
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
 
-    # Ancho de columnas
-    table.columns[0].width = Cm(6.5)
+    # Ancho de columnas (PDF: 50/50 split between service and diagnostic)
+    table.columns[0].width = Cm(7.0)
     table.columns[1].width = Cm(1.2)
-    table.columns[2].width = Cm(1)  # Separador visual
-    table.columns[3].width = Cm(10)
+    table.columns[2].width = Cm(0.6)
+    table.columns[3].width = Cm(10.8)
 
     # Header izquierdo: SERVICIO A EFECTUAR
     cell_srv_header = table.cell(0, 0).merge(table.cell(0, 1))
@@ -368,12 +402,12 @@ def _add_section_service_diagnostic(doc, usable_width, servicio, diagnostico):
     _add_styled_run(p, "DIAGNÓSTICO DEL ÁREA A TRATAR", bold=True, size=FONT_SIZE_SECTION_HEADER)
     _remove_paragraph_spacing(p)
 
-    # Servicios
+    # Servicios (match PDF text exactly)
     services = [
         ("1. DESINFECCIÓN", servicio.get("desinfeccion", False)),
         ("2. LIMPIEZA DE AMBIENTES", servicio.get("limpieza_ambientes", False)),
         ("3. LIMPIEZA DE POZOS SÉPTICOS", servicio.get("limpieza_pozos_septicos", False)),
-        ("4. LIMPIEZA Y DESINFECCIÓN DE RESERVORIOS", servicio.get("limpieza_reservorios", False)),
+        ("4. LIMPIEZA Y DESINFECCIÓN DE RESERVORIOS DE AGUA", servicio.get("limpieza_reservorios", False)),
     ]
 
     # Merge celdas del diagnóstico (filas 1-5, columnas 2-3)
@@ -381,6 +415,7 @@ def _add_section_service_diagnostic(doc, usable_width, servicio, diagnostico):
     p_diag = diag_cell.paragraphs[0]
     _add_styled_run(p_diag, diagnostico or "", size=FONT_SIZE_VALUE)
     _remove_paragraph_spacing(p_diag)
+    _set_cell_margins(diag_cell, top=30, bottom=30, start=50, end=50)
 
     for i, (label, checked) in enumerate(services):
         row_idx = i + 1
@@ -389,15 +424,16 @@ def _add_section_service_diagnostic(doc, usable_width, servicio, diagnostico):
         p = cell_name.paragraphs[0]
         _add_styled_run(p, label, size=FONT_SIZE_SMALL)
         _remove_paragraph_spacing(p)
+        _set_cell_margins(cell_name, top=15, bottom=15, start=40, end=20)
 
         # Checkbox
         cell_chk = table.cell(row_idx, 1)
         p = cell_chk.paragraphs[0]
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         if checked:
-            _add_styled_run(p, "☒", size=Pt(10))
+            _add_styled_run(p, "☒", size=Pt(9))
         else:
-            _add_styled_run(p, "☐", size=Pt(10))
+            _add_styled_run(p, "☐", size=Pt(9))
         _remove_paragraph_spacing(p)
 
     # Fila vacía extra (fila 5) para servicios
@@ -424,7 +460,7 @@ def _add_section_with_text(doc, usable_width, title, text, min_height=None):
     p = cell_content.paragraphs[0]
     _add_styled_run(p, text or "", size=FONT_SIZE_VALUE)
     _remove_paragraph_spacing(p)
-    _set_cell_margins(cell_content, top=40, bottom=40, start=60, end=60)
+    _set_cell_margins(cell_content, top=20, bottom=20, start=40, end=40)
 
     if min_height:
         # Asegurar altura mínima con saltos de línea si está vacío
@@ -437,6 +473,13 @@ def _add_section_treatment(doc, usable_width, tratamiento):
     table = doc.add_table(rows=4, cols=5)
     _set_table_borders(table, size="6")
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
+
+    # Ancho de columnas (PDF: 25%, 10%, 30%, 25%, 10%)
+    table.columns[0].width = Cm(4.9)
+    table.columns[1].width = Cm(2.0)
+    table.columns[2].width = Cm(5.8)
+    table.columns[3].width = Cm(4.9)
+    table.columns[4].width = Cm(2.0)
 
     # Header
     _add_section_header_row(table, 0, "TIPOS DE TRATAMIENTO", 5)
@@ -458,12 +501,13 @@ def _add_section_treatment(doc, usable_width, tratamiento):
         p = cell.paragraphs[0]
         _add_styled_run(p, label_l, size=FONT_SIZE_VALUE)
         _remove_paragraph_spacing(p)
+        _set_cell_margins(cell, top=15, bottom=15, start=60, end=20)
 
         cell_chk = table.cell(row_idx, 1)
         p = cell_chk.paragraphs[0]
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         if checked_l is not None:
-            _add_styled_run(p, "☒" if checked_l else "☐", size=Pt(10))
+            _add_styled_run(p, "☒" if checked_l else "☐", size=Pt(9))
         _remove_paragraph_spacing(p)
 
         # Espaciador central
@@ -476,12 +520,13 @@ def _add_section_treatment(doc, usable_width, tratamiento):
         if label_r:
             _add_styled_run(p, label_r, size=FONT_SIZE_VALUE)
         _remove_paragraph_spacing(p)
+        _set_cell_margins(cell, top=15, bottom=15, start=60, end=20)
 
         cell_chk = table.cell(row_idx, 4)
         p = cell_chk.paragraphs[0]
         p.alignment = WD_ALIGN_PARAGRAPH.CENTER
         if checked_r is not None:
-            _add_styled_run(p, "☒" if checked_r else "☐", size=Pt(10))
+            _add_styled_run(p, "☒" if checked_r else "☐", size=Pt(9))
         _remove_paragraph_spacing(p)
 
 
@@ -541,43 +586,55 @@ def _format_cantidad(cantidad) -> str:
 
 def _add_section_personal(doc, usable_width, personal, hora_inicio, hora_termino, num_certificado):
     """Sección Personal Técnico + Horarios + Certificado."""
-    # Personal: 3 filas x 2 columnas
-    table = doc.add_table(rows=5, cols=2)
+    # Personal: header + 3 filas x 2 columnas + time row
+    # Use 6 columns to allow 3 separate time fields in the last row
+    table = doc.add_table(rows=5, cols=6)
     _set_table_borders(table, size="6")
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
 
-    # Header
-    _add_section_header_row(table, 0, "PERSONAL TÉCNICO", 2)
+    # Header (merge all 6 cols)
+    _add_section_header_row(table, 0, "PERSONAL TÉCNICO", 6)
 
-    # 3 filas de personal (2 columnas)
+    # 3 filas de personal (2 columnas, merge 3 cols each)
     for i in range(3):
-        # Columna izquierda
-        cell_l = table.cell(i + 1, 0)
+        # Columna izquierda (merge cols 0-2)
+        cell_l = table.cell(i + 1, 0).merge(table.cell(i + 1, 2))
         p = cell_l.paragraphs[0]
         val_l = personal[i] if i < len(personal) else ""
         _add_styled_run(p, str(val_l) if val_l else "", size=FONT_SIZE_SMALL)
         _remove_paragraph_spacing(p)
-        _set_cell_margins(cell_l, top=20, bottom=20, start=60, end=60)
+        _set_cell_margins(cell_l, top=15, bottom=15, start=40, end=40)
 
-        # Columna derecha
-        cell_r = table.cell(i + 1, 1)
+        # Columna derecha (merge cols 3-5)
+        cell_r = table.cell(i + 1, 3).merge(table.cell(i + 1, 5))
         p = cell_r.paragraphs[0]
         val_r = personal[i + 3] if (i + 3) < len(personal) else ""
         _add_styled_run(p, str(val_r) if val_r else "", size=FONT_SIZE_SMALL)
         _remove_paragraph_spacing(p)
-        _set_cell_margins(cell_r, top=20, bottom=20, start=60, end=60)
+        _set_cell_margins(cell_r, top=15, bottom=15, start=40, end=40)
 
-    # Fila de horarios: merge ambas columnas y crear sub-tabla visual
-    time_cell = table.cell(4, 0).merge(table.cell(4, 1))
-    p = time_cell.paragraphs[0]
-    _add_styled_run(p, "HORA INICIO: ", bold=True, size=FONT_SIZE_SMALL)
-    _add_styled_run(p, str(hora_inicio) if hora_inicio else "      ", size=FONT_SIZE_SMALL)
-    _add_styled_run(p, "       HORA TÉRMINO: ", bold=True, size=FONT_SIZE_SMALL)
-    _add_styled_run(p, str(hora_termino) if hora_termino else "      ", size=FONT_SIZE_SMALL)
-    _add_styled_run(p, "       N° CERTIFICADO: ", bold=True, size=FONT_SIZE_SMALL)
-    _add_styled_run(p, str(num_certificado) if num_certificado else "      ", size=FONT_SIZE_SMALL)
-    _remove_paragraph_spacing(p)
-    _set_cell_margins(time_cell, top=30, bottom=30, start=60, end=60)
+    # Fila de horarios: 3 campos separados con bordes (match PDF: 3 flex fields with border-right)
+    # cols 0-1 = HORA INICIO, cols 2-3 = HORA TÉRMINO, cols 4-5 = N° CERTIFICADO
+    time_cell_1 = table.cell(4, 0).merge(table.cell(4, 1))
+    p1 = time_cell_1.paragraphs[0]
+    _add_styled_run(p1, "HORA INICIO : ", bold=True, size=FONT_SIZE_SMALL)
+    _add_styled_run(p1, str(hora_inicio) if hora_inicio else "", size=FONT_SIZE_SMALL)
+    _remove_paragraph_spacing(p1)
+    _set_cell_margins(time_cell_1, top=20, bottom=20, start=40, end=40)
+
+    time_cell_2 = table.cell(4, 2).merge(table.cell(4, 3))
+    p2 = time_cell_2.paragraphs[0]
+    _add_styled_run(p2, "HORA TÉRMINO : ", bold=True, size=FONT_SIZE_SMALL)
+    _add_styled_run(p2, str(hora_termino) if hora_termino else "", size=FONT_SIZE_SMALL)
+    _remove_paragraph_spacing(p2)
+    _set_cell_margins(time_cell_2, top=20, bottom=20, start=40, end=40)
+
+    time_cell_3 = table.cell(4, 4).merge(table.cell(4, 5))
+    p3 = time_cell_3.paragraphs[0]
+    _add_styled_run(p3, "N° CERTIFICADO : ", bold=True, size=FONT_SIZE_SMALL)
+    _add_styled_run(p3, str(num_certificado) if num_certificado else "", size=FONT_SIZE_SMALL)
+    _remove_paragraph_spacing(p3)
+    _set_cell_margins(time_cell_3, top=20, bottom=20, start=40, end=40)
 
 
 def _add_section_obs_rec(doc, usable_width, obs_rec):
@@ -621,7 +678,10 @@ def _add_section_obs_rec(doc, usable_width, obs_rec):
         _add_styled_run(p, f"{letters[i]} ", bold=True, size=FONT_SIZE_VALUE)
         _add_styled_run(p, obs_items[i] or "", size=FONT_SIZE_VALUE)
         _remove_paragraph_spacing(p)
-        _set_cell_margins(cell, top=15, bottom=15, start=40, end=40)
+        _set_cell_margins(cell, top=10, bottom=10, start=30, end=30)
+        # Borde inferior en cada fila para simular el border-bottom del PDF
+        _set_cell_border(cell,
+                         bottom={"val": "single", "sz": "2", "color": COLOR_BORDER})
 
         # Recomendación
         cell = table.cell(i + 1, 1)
@@ -629,11 +689,14 @@ def _add_section_obs_rec(doc, usable_width, obs_rec):
         _add_styled_run(p, f"{letters[i]} ", bold=True, size=FONT_SIZE_VALUE)
         _add_styled_run(p, rec_items[i] or "", size=FONT_SIZE_VALUE)
         _remove_paragraph_spacing(p)
-        _set_cell_margins(cell, top=15, bottom=15, start=40, end=40)
+        _set_cell_margins(cell, top=10, bottom=10, start=30, end=30)
+        _set_cell_border(cell,
+                         bottom={"val": "single", "sz": "2", "color": COLOR_BORDER})
 
 
 def _add_section_satisfaction(doc, usable_width, satisfaccion):
     """Sección Evaluación de Satisfacción del Cliente."""
+    # Tabla exterior: header + contenido con sub-tabla de 4 opciones
     table = doc.add_table(rows=2, cols=1)
     _set_table_borders(table, size="6")
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
@@ -646,11 +709,11 @@ def _add_section_satisfaction(doc, usable_width, satisfaccion):
     _add_styled_run(p, "EVALUACIÓN DE SATISFACCIÓN DEL CLIENTE", bold=True, size=FONT_SIZE_SECTION_HEADER)
     _remove_paragraph_spacing(p)
 
-    # Opciones de satisfacción
+    # Opciones de satisfacción en una sola línea con indicadores visuales
     cell_content = table.cell(1, 0)
     p = cell_content.paragraphs[0]
     p.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    _set_cell_margins(cell_content, top=60, bottom=60, start=40, end=40)
+    _set_cell_margins(cell_content, top=40, bottom=40, start=30, end=30)
 
     options = [
         ("😊", "Muy Satisfecho", "muy_satisfecho"),
@@ -659,27 +722,39 @@ def _add_section_satisfaction(doc, usable_width, satisfaccion):
         ("☹️", "Insatisfecho", "insatisfecho"),
     ]
 
-    parts = []
-    for emoji, label, key in options:
+    for idx, (emoji_icon, label, key) in enumerate(options):
         is_selected = satisfaccion == key
-        if is_selected:
-            parts.append(f"  ● {label}  ")
-        else:
-            parts.append(f"  ○ {label}  ")
+        separator = "     " if idx < len(options) - 1 else ""
 
-    for emoji_icon, label, key in options:
-        is_selected = satisfaccion == key
         if is_selected:
-            _add_styled_run(p, f"  ● {label}  ", bold=True, size=FONT_SIZE_VALUE, color=COLOR_ACCENT)
+            # Match PDF: bold + dark background effect
+            _add_styled_run(p, f" {emoji_icon} ", size=FONT_SIZE_VALUE)
+            run = _add_styled_run(p, f" {label} ", bold=True, size=FONT_SIZE_VALUE)
+            # Apply highlight/shading via run properties to simulate selected state
+            run.font.color.rgb = RGBColor.from_string(COLOR_ACCENT)
         else:
-            _add_styled_run(p, f"  ○ {label}  ", size=FONT_SIZE_VALUE)
+            _add_styled_run(p, f" {emoji_icon} ", size=FONT_SIZE_VALUE)
+            _add_styled_run(p, f" {label} ", size=FONT_SIZE_VALUE)
+
+        if separator:
+            _add_styled_run(p, separator, size=FONT_SIZE_VALUE)
 
     _remove_paragraph_spacing(p)
 
 
 def _add_signatures(doc):
     """Agrega sección de firmas."""
-    doc.add_paragraph()  # Espaciado
+    # Match PDF: margin: 50px 0 10px 0 ≈ 3.7cm top spacing
+    for _ in range(3):
+        spacer = doc.add_paragraph()
+        _minimize_spacing(spacer)
+
+    # Espaciado adicional para área de firma
+    sig_spacer = doc.add_paragraph()
+    pf = sig_spacer.paragraph_format
+    pf.space_before = Cm(1.5)
+    pf.space_after = Pt(0)
+    pf.line_spacing = Pt(2)
 
     table = doc.add_table(rows=2, cols=3)
     table.alignment = WD_TABLE_ALIGNMENT.CENTER
@@ -710,19 +785,44 @@ def _add_signatures(doc):
 
 
 def _add_footer(doc):
-    """Agrega pie de página con información de contacto."""
-    doc.add_paragraph()  # Espaciado
+    """Agrega pie de página con información de contacto (match PDF: 3-column flex layout)."""
+    spacer = doc.add_paragraph()
+    _minimize_spacing(spacer)
 
-    p = doc.add_paragraph()
-    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    # Tabla de 3 columnas sin bordes (match PDF footer layout)
+    footer_table = doc.add_table(rows=1, cols=3)
+    footer_table.alignment = WD_TABLE_ALIGNMENT.CENTER
+
+    # Columna izquierda: dirección
+    cell_left = footer_table.cell(0, 0)
+    p = cell_left.paragraphs[0]
+    p.alignment = WD_ALIGN_PARAGRAPH.LEFT
     _add_styled_run(p, "📍 Mz J1 lote 20. Urb. Los Precursores. Surco. Lima", size=FONT_SIZE_FOOTER, color=COLOR_ACCENT)
-    _add_styled_run(p, "   |   ", size=FONT_SIZE_FOOTER, color=COLOR_ACCENT)
-    _add_styled_run(p, "✉ operaciones@hidroserviciosaa.com.pe", size=FONT_SIZE_FOOTER, color=COLOR_ACCENT)
-    _add_styled_run(p, "   |   ", size=FONT_SIZE_FOOTER, color=COLOR_ACCENT)
-    _add_styled_run(p, "📞 +51 946 803 367", size=FONT_SIZE_FOOTER, color=COLOR_ACCENT)
     _remove_paragraph_spacing(p)
 
-    p2 = doc.add_paragraph()
-    p2.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    _add_styled_run(p2, "🌐 www.hidroserviciosaa.com.pe", size=FONT_SIZE_FOOTER, color=COLOR_ACCENT)
-    _remove_paragraph_spacing(p2)
+    # Columna central: email + teléfono
+    cell_center = footer_table.cell(0, 1)
+    p_email = cell_center.paragraphs[0]
+    p_email.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    _add_styled_run(p_email, "✉ operaciones@hidroserviciosaa.com.pe", size=FONT_SIZE_FOOTER, color=COLOR_ACCENT)
+    _remove_paragraph_spacing(p_email)
+    p_phone = cell_center.add_paragraph()
+    p_phone.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    _add_styled_run(p_phone, "📞 +51 946 803 367", size=FONT_SIZE_FOOTER, color=COLOR_ACCENT)
+    _remove_paragraph_spacing(p_phone)
+
+    # Columna derecha: website
+    cell_right = footer_table.cell(0, 2)
+    p = cell_right.paragraphs[0]
+    p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    _add_styled_run(p, "🌐 www.hidroserviciosaa.com.pe", size=FONT_SIZE_FOOTER, color=COLOR_ACCENT)
+    _remove_paragraph_spacing(p)
+
+    # Remover bordes de toda la tabla footer
+    for row in footer_table.rows:
+        for cell in row.cells:
+            _set_cell_border(cell,
+                             top={"val": "none", "sz": "0", "color": "FFFFFF"},
+                             bottom={"val": "none", "sz": "0", "color": "FFFFFF"},
+                             left={"val": "none", "sz": "0", "color": "FFFFFF"},
+                             right={"val": "none", "sz": "0", "color": "FFFFFF"})
