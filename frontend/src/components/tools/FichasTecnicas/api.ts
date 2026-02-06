@@ -128,5 +128,46 @@ export const fichasTecnicasApi = {
             }
         );
         return response.data;
+    },
+
+    // ── Word (DOCX) Export ──────────────────────────────────
+
+    generateDOCX: async (fichaId: string, logoLeft?: File | null, logoRight?: File | null) => {
+        const formData = new FormData();
+        formData.append('fichaId', fichaId);
+        if (logoLeft) formData.append('logoLeft', logoLeft);
+        if (logoRight) formData.append('logoRight', logoRight);
+
+        const response = await axios.post(
+            `${API_BASE}/api/fichas-tecnicas/generate-docx`,
+            formData,
+            {
+                headers: { 'Content-Type': 'multipart/form-data' },
+                responseType: 'blob',
+                timeout: 60000
+            }
+        );
+        return response.data;
+    },
+
+    generateConsolidatedDOCX: async (logoLeft?: File | null, logoRight?: File | null, fichaIds?: string[]) => {
+        const formData = new FormData();
+
+        if (logoLeft) formData.append('logoLeft', logoLeft);
+        if (logoRight) formData.append('logoRight', logoRight);
+        if (fichaIds && fichaIds.length > 0) {
+            formData.append('ficha_ids', JSON.stringify(fichaIds));
+        }
+
+        const response = await axios.post(
+            `${API_BASE}/api/fichas-tecnicas/generate-consolidated-docx`,
+            formData,
+            {
+                headers: { 'Content-Type': 'multipart/form-data' },
+                responseType: 'blob',
+                timeout: 300000
+            }
+        );
+        return response.data;
     }
 };

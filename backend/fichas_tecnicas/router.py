@@ -499,6 +499,125 @@ async def generate_pdf(
         raise HTTPException(status_code=500, detail=f"Error generando PDF: {str(e)}")
 
 
+@router.post("/generate-docx")
+async def generate_docx(
+    fichaId: str = Form(...),
+    logoLeft: Optional[UploadFile] = File(None),
+    logoRight: Optional[UploadFile] = File(None),
+):
+    """
+    Genera un documento Word (.docx) para una ficha técnica individual.
+    """
+    import base64
+
+    try:
+        ficha = db.get_ficha(fichaId)
+        if not ficha:
+            raise HTTPException(status_code=404, detail="Ficha no encontrada")
+
+        async def process_logo(logo_file):
+            if not logo_file:
+                return None
+            content = await logo_file.read()
+            encoded = base64.b64encode(content).decode("utf-8")
+            mime = "image/png" if logo_file.filename.lower().endswith(".png") else "image/jpeg"
+            return f"data:{mime};base64,{encoded}"
+
+        logo_left_b64 = await process_logo(logoLeft)
+        logo_right_b64 = await process_logo(logoRight)
+
+        from .word_service import generate_ficha_docx
+        docx_bytes = generate_ficha_docx(ficha.dict(), logo_left_b64, logo_right_b64)
+
+        return Response(
+            content=docx_bytes,
+            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            headers={"Content-Disposition": f"attachment; filename=ficha_tecnica_{fichaId}.docx"}
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error generando DOCX: {str(e)}")
+
+
+@router.post("/generate-consolidated-docx")
+async def generate_consolidated_docx(
+    background_tasks: BackgroundTasks,
+    logoLeft: Optional[UploadFile] = File(None),
+    logoRight: Optional[UploadFile] = File(None),
+    ficha_ids: Optional[str] = Form(None),
+):
+    """
+    Genera un archivo ZIP con todas las fichas técnicas en formato Word (.docx).
+    Cada ficha es un archivo .docx individual dentro del ZIP.
+    """
+    import base64
+    import tempfile
+    import zipfile
+
+    try:
+        all_fichas = db.get_all_fichas()
+
+        if not all_fichas:
+            raise HTTPException(status_code=400, detail="No hay fichas para exportar")
+
+        # Filtrar por IDs si se especificaron
+        if ficha_ids:
+            try:
+                ids_list = json.loads(ficha_ids)
+                all_fichas = [f for f in all_fichas if f.id in ids_list]
+            except (json.JSONDecodeError, TypeError):
+                pass
+
+        print(f"[DOCX Consolidado] Generando {len(all_fichas)} documentos Word...")
+
+        # Procesar logos
+        async def process_logo(logo_file):
+            if not logo_file:
+                return None
+            content = await logo_file.read()
+            encoded = base64.b64encode(content).decode("utf-8")
+            mime = "image/png" if logo_file.filename.lower().endswith(".png") else "image/jpeg"
+            return f"data:{mime};base64,{encoded}"
+
+        logo_left_b64 = await process_logo(logoLeft)
+        logo_right_b64 = await process_logo(logoRight)
+
+        from .word_service import generate_ficha_docx
+
+        # Crear ZIP con todos los DOCX
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, mode='w', compression=zipfile.ZIP_DEFLATED) as zip_file:
+            for i, ficha in enumerate(all_fichas):
+                try:
+                    docx_bytes = generate_ficha_docx(ficha.dict(), logo_left_b64, logo_right_b64)
+                    filename = f"ficha_tecnica_{ficha.id}.docx"
+                    zip_file.writestr(filename, docx_bytes)
+                    print(f"[DOCX Consolidado] {i + 1}/{len(all_fichas)} - {ficha.id}")
+                except Exception as e:
+                    print(f"[DOCX Consolidado] Error con {ficha.id}: {e}")
+
+        zip_buffer.seek(0)
+
+        print(f"[DOCX Consolidado] ✅ Completado! {len(all_fichas)} fichas generadas")
+
+        return Response(
+            content=zip_buffer.getvalue(),
+            media_type="application/zip",
+            headers={"Content-Disposition": f"attachment; filename=fichas_tecnicas_{len(all_fichas)}_docx.zip"}
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Error generando DOCX consolidado: {str(e)}")
+
+
 @router.get("/templates")
 async def list_templates():
     """Listar templates disponibles"""

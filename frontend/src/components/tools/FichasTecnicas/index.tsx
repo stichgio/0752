@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, FileDown, Files } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileDown, Files, FileText } from 'lucide-react';
 import DatabasePanel from './DatabasePanel';
 import PreviewPanel from './PreviewPanel';
 import FormPanel from './FormPanel';
@@ -221,6 +221,70 @@ export default function FichasTecnicas() {
         }
     };
 
+    const handleDownloadDOCX = async () => {
+        if (!selectedFichaId) {
+            alert('Seleccione una ficha para exportar a Word');
+            return;
+        }
+
+        setIsLoading(true);
+        setLoadingMessage('Generando Word...');
+
+        try {
+            const blob = await fichasTecnicasApi.generateDOCX(selectedFichaId, logoLeft, logoRight);
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `ficha_tecnica_${selectedFichaId}.docx`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error: any) {
+            console.error('Error generating DOCX:', error);
+            const msg = error.response?.data?.detail || error.message || 'Error desconocido';
+            alert(`Error generando Word: ${msg}`);
+        } finally {
+            setIsLoading(false);
+            setLoadingMessage('Procesando...');
+        }
+    };
+
+    const handleDownloadConsolidatedDOCX = async () => {
+        if (fichas.length === 0) {
+            alert('No hay fichas para exportar');
+            return;
+        }
+
+        const confirmed = window.confirm(
+            `¿Desea generar documentos Word para las ${fichas.length} fichas?\n\nSe descargará un archivo ZIP con todos los documentos .docx.`
+        );
+
+        if (!confirmed) return;
+
+        setIsLoading(true);
+        setLoadingMessage(`Generando Word consolidado (${fichas.length} fichas)...`);
+
+        try {
+            const blob = await fichasTecnicasApi.generateConsolidatedDOCX(logoLeft, logoRight);
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `fichas_tecnicas_${fichas.length}_docx.zip`;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+        } catch (error: any) {
+            console.error('Error generating consolidated DOCX:', error);
+            const msg = error.response?.data?.detail || error.message || 'Error desconocido';
+            alert(`Error generando Word consolidado: ${msg}`);
+        } finally {
+            setIsLoading(false);
+            setLoadingMessage('Procesando...');
+        }
+    };
+
     const [isFocusMode, setIsFocusMode] = useState(false);
 
     // Toggle Focus Mode with Ctrl + .
@@ -278,6 +342,28 @@ export default function FichasTecnicas() {
                         >
                             <Files size={16} />
                             PDF Consolidado
+                        </button>
+
+                        {/* Separador visual */}
+                        <div className="w-px h-6 bg-[#444]"></div>
+
+                        <button
+                            onClick={handleDownloadDOCX}
+                            disabled={!selectedFichaId || isLoading}
+                            className="btn-secondary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={selectedFichaId ? "Descargar Word de la ficha actual" : "Seleccione una ficha primero"}
+                        >
+                            <FileText size={16} />
+                            Word
+                        </button>
+                        <button
+                            onClick={handleDownloadConsolidatedDOCX}
+                            disabled={fichas.length === 0 || isLoading}
+                            className="btn-secondary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={`Descargar Word consolidado con ${fichas.length} fichas`}
+                        >
+                            <Files size={16} />
+                            Word Consolidado
                         </button>
                     </div>
                 </div>
