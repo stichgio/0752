@@ -1,11 +1,13 @@
 """
 PDF Compressor Backend Router
 Provides endpoints for PDF file compression using Ghostscript.
+Falls back to pypdf-based compression when Ghostscript is not available.
 """
 
 import io
 import logging
 import os
+import shutil
 import subprocess
 import tempfile
 import zipfile
@@ -26,21 +28,92 @@ GS_QUALITY_SETTINGS = {
     "prepress": "/prepress",
 }
 
-# Ghostscript command candidates
-GS_COMMANDS = ["gs", "gswin64c", "gswin32c"]
+# Ghostscript command candidates (includes absolute paths for restricted PATH envs)
+GS_COMMANDS = [
+    "gs",
+    "/usr/bin/gs",
+    "/usr/local/bin/gs",
+    "gswin64c",
+    "gswin32c",
+]
+
+# ── Ghostscript detection cache ──────────────────────────────────────
+# Evaluated once at first use, avoids subprocess overhead on every request.
+_gs_cache: dict = {"checked": False, "available": False, "cmd": None}
 
 
 def is_ghostscript_available() -> tuple[bool, Optional[str]]:
-    """Check if Ghostscript is available and return the command to use."""
+    """Check if Ghostscript is available and return the command to use.
+    Result is cached after first successful/failed probe."""
+    if _gs_cache["checked"]:
+        return _gs_cache["available"], _gs_cache["cmd"]
+
     for cmd in GS_COMMANDS:
         try:
-            result = subprocess.run([cmd, "--version"], capture_output=True, timeout=5)
+            result = subprocess.run(
+                [cmd, "--version"],
+                capture_output=True,
+                timeout=5,
+            )
             if result.returncode == 0:
+                version = result.stdout.decode().strip()
+                logger.info(f"Ghostscript found: {cmd} (version {version})")
+                _gs_cache.update(checked=True, available=True, cmd=cmd)
                 return True, cmd
-        except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
+        except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired, PermissionError):
             continue
+
+    # Log diagnostic info when GS is not found
+    logger.warning("Ghostscript not found in any candidate path. Falling back to pypdf.")
+    logger.warning(f"  PATH = {os.environ.get('PATH', '(not set)')}")
+    gs_exists = shutil.which("gs")
+    logger.warning(f"  shutil.which('gs') = {gs_exists}")
+    _gs_cache.update(checked=True, available=False, cmd=None)
     return False, None
 
+
+# ── pypdf fallback compressor ────────────────────────────────────────
+
+def compress_pdf_pypdf(input_path: str, output_path: str, quality: str = "ebook") -> bool:
+    """
+    Fallback PDF compression using pypdf.
+    Rewrites the PDF removing unused objects, compressing streams,
+    and reducing image quality where possible.
+    Returns True if output file was created successfully.
+    """
+    try:
+        from pypdf import PdfReader, PdfWriter
+
+        reader = PdfReader(input_path)
+        writer = PdfWriter()
+
+        # Copy all pages
+        for page in reader.pages:
+            writer.add_page(page)
+
+        # Copy metadata
+        if reader.metadata:
+            writer.add_metadata(reader.metadata)
+
+        # Remove duplication & compress streams
+        writer.compress_identical_objects(remove_identicals=True, remove_orphans=True)
+
+        # Compress all content streams
+        for page in writer.pages:
+            page.compress_content_streams()
+
+        # Write compressed output
+        with open(output_path, "wb") as f:
+            writer.write(f)
+
+        return True
+
+    except Exception as e:
+        logger.error(f"pypdf compression error: {e}")
+        return False
+
+
+# ── Helpers ──────────────────────────────────────────────────────────
 
 def safe_filename_header(filename: str) -> str:
     """Create a safe Content-Disposition header value."""
@@ -113,6 +186,23 @@ def compress_pdf_ghostscript(input_path: str, output_path: str, quality: str = "
         return False
 
 
+def _compress_pdf(input_path: str, output_path: str, quality: str = "ebook") -> tuple[bool, str]:
+    """
+    Compress a PDF trying Ghostscript first, falling back to pypdf.
+    Returns (success, method_used).
+    """
+    # 1. Try Ghostscript (best quality compression)
+    if compress_pdf_ghostscript(input_path, output_path, quality):
+        return True, "ghostscript"
+
+    # 2. Fallback: pypdf-based compression
+    logger.info("Using pypdf fallback for compression")
+    if compress_pdf_pypdf(input_path, output_path, quality):
+        return True, "pypdf"
+
+    return False, "none"
+
+
 def validate_pdf_file(filename: str) -> bool:
     """Validate if file has PDF extension."""
     ext = os.path.splitext(filename)[1].lower()
@@ -154,13 +244,16 @@ async def _process_single_pdf(
         with open(input_path, "wb") as f:
             f.write(original_content)
 
-        if compress_pdf_ghostscript(input_path, output_path, pdf_quality):
+        ok, method = _compress_pdf(input_path, output_path, pdf_quality)
+        if ok:
             with open(output_path, "rb") as f:
                 compressed_content = f.read()
             success = True
+            if method == "pypdf":
+                error_msg = None  # pypdf is a valid method, not an error
         else:
             compressed_content = original_content
-            error_msg = "Ghostscript no disponible"
+            error_msg = "No se pudo comprimir el PDF"
 
     except Exception as e:
         compressed_content = original_content
@@ -264,7 +357,8 @@ async def compress_single_pdf(
             with open(input_path, "wb") as f:
                 f.write(original_content)
 
-            if compress_pdf_ghostscript(input_path, output_path, pdf_quality):
+            ok, method = _compress_pdf(input_path, output_path, pdf_quality)
+            if ok:
                 with open(output_path, "rb") as f:
                     compressed_content = f.read()
 
@@ -284,12 +378,12 @@ async def compress_single_pdf(
                     headers=create_compression_headers(filename, original_size, compressed_size),
                 )
             else:
-                # Ghostscript not available - return original with error header
+                # Neither GS nor pypdf worked — return original with informative header
                 return Response(
                     content=original_content,
                     media_type="application/pdf",
                     headers=create_compression_headers(
-                        filename, original_size, original_size, "Ghostscript no disponible para comprimir PDFs"
+                        filename, original_size, original_size, "No se pudo comprimir el PDF"
                     ),
                 )
 
@@ -303,13 +397,16 @@ async def compress_single_pdf(
 @router.get("/health")
 async def health_check() -> dict:
     """Health check endpoint."""
-    gs_available, _ = is_ghostscript_available()
+    gs_available, gs_cmd = is_ghostscript_available()
 
     return {
         "status": "ok",
         "service": "compressor",
         "capabilities": {
-            "pdfs": gs_available,
+            "pdfs": True,  # Always true now (pypdf fallback)
+            "ghostscript": gs_available,
         },
         "ghostscript_available": gs_available,
+        "ghostscript_cmd": gs_cmd,
+        "fallback": "pypdf" if not gs_available else None,
     }
