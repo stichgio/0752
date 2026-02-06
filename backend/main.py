@@ -28,6 +28,14 @@ app.add_middleware(
     allow_credentials=False,  # Must be False when using wildcard origins
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=[
+        "X-Original-Size",
+        "X-Compressed-Size",
+        "X-Reduction-Percent",
+        "X-Filename",
+        "X-Error",
+        "Content-Disposition",
+    ],
 )
 
 # Global storage (removed unused legacy globals)
