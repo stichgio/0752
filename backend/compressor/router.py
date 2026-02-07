@@ -22,6 +22,7 @@ router = APIRouter(prefix="/api/compressor", tags=["compressor"])
 
 # Ghostscript quality settings mapping
 GS_QUALITY_SETTINGS = {
+    "aggressive": "/ebook",  # Uses /ebook base + custom DPI overrides below
     "screen": "/screen",
     "ebook": "/ebook",
     "printer": "/printer",
@@ -31,10 +32,17 @@ GS_QUALITY_SETTINGS = {
 # Extra Ghostscript params tuned for stronger compression with acceptable quality.
 # Values are conservative for screen/ebook presets to avoid excessive visual loss.
 GS_COMPRESSION_TUNING = {
+    "aggressive": {"resolution": 110, "jpeg_quality": 45, "mono_resolution": 600},
     "screen": {"resolution": 96, "jpeg_quality": 50, "mono_resolution": 600},
     "ebook": {"resolution": 144, "jpeg_quality": 60, "mono_resolution": 600},
     "printer": {"resolution": 300, "jpeg_quality": 75, "mono_resolution": 1200},
     "prepress": {"resolution": 300, "jpeg_quality": 85, "mono_resolution": 1200},
+}
+
+# Custom DPI overrides per quality level (applied on top of -dPDFSETTINGS)
+# When set, these override the default DPI that the PDFSETTINGS preset uses.
+GS_DPI_OVERRIDES: dict[str, int] = {
+    "aggressive": 100,
 }
 
 # Ghostscript command candidates (includes absolute paths for restricted PATH envs)
@@ -168,38 +176,36 @@ def compress_pdf_ghostscript(input_path: str, output_path: str, quality: str = "
     """
     gs_quality = GS_QUALITY_SETTINGS.get(quality, "/ebook")
     tuning = GS_COMPRESSION_TUNING.get(quality, GS_COMPRESSION_TUNING["ebook"])
+    dpi_override = GS_DPI_OVERRIDES.get(quality)
+    color_resolution = dpi_override or tuning["resolution"]
     available, gs_cmd = is_ghostscript_available()
 
     if not available or not gs_cmd:
         return False
 
     try:
-        subprocess.run(
-            [
-                gs_cmd,
-                "-sDEVICE=pdfwrite",
-                "-dCompatibilityLevel=1.4",
-                f"-dPDFSETTINGS={gs_quality}",
-                "-dDetectDuplicateImages=true",
-                "-dCompressFonts=true",
-                "-dOptimize=true",
-                "-dDownsampleColorImages=true",
-                "-dDownsampleGrayImages=true",
-                "-dDownsampleMonoImages=true",
-                f"-dColorImageResolution={tuning['resolution']}",
-                f"-dGrayImageResolution={tuning['resolution']}",
-                f"-dMonoImageResolution={tuning['mono_resolution']}",
-                f"-dJPEGQ={tuning['jpeg_quality']}",
-                "-dNOPAUSE",
-                "-dQUIET",
-                "-dBATCH",
-                f"-sOutputFile={output_path}",
-                input_path,
-            ],
-            check=True,
-            capture_output=True,
-            timeout=120,
-        )
+        cmd = [
+            gs_cmd,
+            "-sDEVICE=pdfwrite",
+            "-dCompatibilityLevel=1.4",
+            f"-dPDFSETTINGS={gs_quality}",
+            "-dDetectDuplicateImages=true",
+            "-dCompressFonts=true",
+            "-dOptimize=true",
+            "-dDownsampleColorImages=true",
+            "-dDownsampleGrayImages=true",
+            "-dDownsampleMonoImages=true",
+            f"-dColorImageResolution={color_resolution}",
+            f"-dGrayImageResolution={color_resolution}",
+            f"-dMonoImageResolution={tuning['mono_resolution']}",
+            f"-dJPEGQ={tuning['jpeg_quality']}",
+            "-dNOPAUSE",
+            "-dQUIET",
+            "-dBATCH",
+            f"-sOutputFile={output_path}",
+            input_path,
+        ]
+        subprocess.run(cmd, check=True, capture_output=True, timeout=120)
         return True
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
         logger.error(f"Ghostscript error: {e}")
