@@ -22,10 +22,17 @@ router = APIRouter(prefix="/api/compressor", tags=["compressor"])
 
 # Ghostscript quality settings mapping
 GS_QUALITY_SETTINGS = {
+    "aggressive": "/ebook",   # Uses /ebook base + custom DPI overrides below
     "screen": "/screen",
     "ebook": "/ebook",
     "printer": "/printer",
     "prepress": "/prepress",
+}
+
+# Custom DPI overrides per quality level (applied on top of -dPDFSETTINGS)
+# When set, these override the default DPI that the PDFSETTINGS preset uses.
+GS_DPI_OVERRIDES: dict[str, int] = {
+    "aggressive": 100,
 }
 
 # Ghostscript command candidates (includes absolute paths for restricted PATH envs)
@@ -74,11 +81,74 @@ def is_ghostscript_available() -> tuple[bool, Optional[str]]:
 
 # ── pypdf fallback compressor ────────────────────────────────────────
 
+def _reduce_image_quality(page, quality: str) -> None:
+    """Reduce quality of images embedded in a PDF page via pypdf.
+
+    Iterates over /XObject resources and re-encodes any image as JPEG with a
+    quality factor that matches the requested compression level.  This is a
+    best-effort operation — any individual image failure is silently skipped so
+    the rest of the page can still benefit from stream compression.
+    """
+    try:
+        from PIL import Image as PILImage
+    except ImportError:
+        return  # Pillow not available — skip image reduction
+
+    quality_map = {"aggressive": 30, "screen": 40, "ebook": 55, "printer": 75, "prepress": 90}
+    jpeg_quality = quality_map.get(quality, 55)
+
+    try:
+        resources = page.get("/Resources")
+        if not resources:
+            return
+        xobjects = resources.get("/XObject")
+        if not xobjects:
+            return
+        xobj_dict = xobjects.get_object()
+        for name in xobj_dict:
+            obj = xobj_dict[name].get_object()
+            if obj.get("/Subtype") != "/Image":
+                continue
+            try:
+                w = int(obj["/Width"])
+                h = int(obj["/Height"])
+                color_space = obj.get("/ColorSpace", "/DeviceRGB")
+                cs_str = str(color_space)
+
+                data = obj.get_data()
+                if "Gray" in cs_str:
+                    mode, channels = "L", 1
+                elif "CMYK" in cs_str:
+                    mode, channels = "CMYK", 4
+                else:
+                    mode, channels = "RGB", 3
+
+                expected = w * h * channels
+                if len(data) < expected:
+                    continue  # Compressed or unusual format — skip
+
+                img = PILImage.frombytes(mode, (w, h), data[:expected])
+                if mode == "CMYK":
+                    img = img.convert("RGB")
+
+                import io as _io
+                buf = _io.BytesIO()
+                img.save(buf, format="JPEG", quality=jpeg_quality, optimize=True)
+                obj._data = buf.getvalue()
+                from pypdf.generic import ArrayObject, DecodedStreamObject, NameObject, NumberObject
+                obj[NameObject("/Filter")] = NameObject("/DCTDecode")
+                obj[NameObject("/Length")] = NumberObject(len(obj._data))
+            except Exception:
+                continue  # skip problematic images
+    except Exception:
+        return
+
+
 def compress_pdf_pypdf(input_path: str, output_path: str, quality: str = "ebook") -> bool:
     """
     Fallback PDF compression using pypdf.
     Rewrites the PDF removing unused objects, compressing streams,
-    and reducing image quality where possible.
+    reducing image quality, and eliminating duplicates.
     Returns True if output file was created successfully.
     """
     try:
@@ -94,6 +164,10 @@ def compress_pdf_pypdf(input_path: str, output_path: str, quality: str = "ebook"
         # Copy metadata
         if reader.metadata:
             writer.add_metadata(reader.metadata)
+
+        # Reduce embedded image quality (best-effort)
+        for page in writer.pages:
+            _reduce_image_quality(page, quality)
 
         # Remove duplication & compress streams
         writer.compress_identical_objects(remove_identicals=True, remove_orphans=True)
@@ -154,7 +228,7 @@ def create_compression_headers(
 
 def compress_pdf_ghostscript(input_path: str, output_path: str, quality: str = "ebook") -> bool:
     """
-    Compress PDF using Ghostscript.
+    Compress PDF using Ghostscript with advanced optimization flags.
     Returns True if successful.
     """
     gs_quality = GS_QUALITY_SETTINGS.get(quality, "/ebook")
@@ -163,23 +237,42 @@ def compress_pdf_ghostscript(input_path: str, output_path: str, quality: str = "
     if not available or not gs_cmd:
         return False
 
+    cmd = [
+        gs_cmd,
+        "-sDEVICE=pdfwrite",
+        "-dCompatibilityLevel=1.4",
+        f"-dPDFSETTINGS={gs_quality}",
+        "-dNOPAUSE",
+        "-dQUIET",
+        "-dBATCH",
+        # ── Advanced compression flags ──
+        "-dDetectDuplicateImages=true",
+        "-dCompressFonts=true",
+        "-dSubsetFonts=true",
+        "-dColorImageDownsampleType=/Bicubic",
+        "-dGrayImageDownsampleType=/Bicubic",
+        "-dMonoImageDownsampleType=/Bicubic",
+        "-dAutoRotatePages=/None",
+        "-dColorConversionStrategy=/LeaveColorUnchanged",
+        "-dDownsampleColorImages=true",
+        "-dDownsampleGrayImages=true",
+        "-dDownsampleMonoImages=true",
+        "-dOptimize=true",
+    ]
+
+    # Apply custom DPI overrides if defined for this quality level
+    dpi = GS_DPI_OVERRIDES.get(quality)
+    if dpi:
+        cmd.extend([
+            f"-dColorImageResolution={dpi}",
+            f"-dGrayImageResolution={dpi}",
+            f"-dMonoImageResolution={dpi}",
+        ])
+
+    cmd.extend([f"-sOutputFile={output_path}", input_path])
+
     try:
-        subprocess.run(
-            [
-                gs_cmd,
-                "-sDEVICE=pdfwrite",
-                "-dCompatibilityLevel=1.4",
-                f"-dPDFSETTINGS={gs_quality}",
-                "-dNOPAUSE",
-                "-dQUIET",
-                "-dBATCH",
-                f"-sOutputFile={output_path}",
-                input_path,
-            ],
-            check=True,
-            capture_output=True,
-            timeout=120,
-        )
+        subprocess.run(cmd, check=True, capture_output=True, timeout=120)
         return True
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
         logger.error(f"Ghostscript error: {e}")
@@ -290,7 +383,7 @@ async def _process_single_pdf(
 @router.post("/compress")
 async def compress_pdfs(
     files: list[UploadFile] = File(...),
-    pdf_quality: str = Form(default="ebook"),
+    pdf_quality: str = Form(default="aggressive"),
 ) -> Response:
     """
     Compress multiple PDF files.
@@ -333,7 +426,7 @@ async def compress_pdfs(
 @router.post("/compress-single")
 async def compress_single_pdf(
     file: UploadFile = File(...),
-    pdf_quality: str = Form(default="ebook"),
+    pdf_quality: str = Form(default="aggressive"),
 ) -> Response:
     """
     Compress a single PDF file and return it directly.

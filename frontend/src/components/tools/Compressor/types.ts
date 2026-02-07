@@ -4,7 +4,7 @@
 
 export type FileStatus = 'pending' | 'processing' | 'completed' | 'error';
 
-export type PDFQuality = 'screen' | 'ebook' | 'printer' | 'prepress';
+export type PDFQuality = 'aggressive' | 'screen' | 'ebook' | 'printer' | 'prepress';
 
 export interface CompressedFile {
     id: string;
@@ -40,6 +40,7 @@ export interface CompressionResult {
 }
 
 export const PDF_QUALITY_OPTIONS: { value: PDFQuality; label: string; description: string }[] = [
+    { value: 'aggressive', label: 'Agresivo', description: '~100 DPI - Maximo ahorro' },
     { value: 'screen', label: 'Pantalla', description: '~72 DPI - Menor tamaño' },
     { value: 'ebook', label: 'Equilibrado', description: '~150 DPI - Recomendado' },
     { value: 'printer', label: 'Impresion', description: '~300 DPI - Alta calidad' },
@@ -47,7 +48,7 @@ export const PDF_QUALITY_OPTIONS: { value: PDFQuality; label: string; descriptio
 ];
 
 export const DEFAULT_OPTIONS: CompressionOptions = {
-    pdfQuality: 'ebook',
+    pdfQuality: 'aggressive',
 };
 
 export interface Toast {
