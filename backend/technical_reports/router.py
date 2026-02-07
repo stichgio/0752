@@ -9,6 +9,8 @@ import csv
 import os
 import json
 import traceback
+import re
+import unicodedata
 from datetime import datetime
 
 # Para XLSX
@@ -23,6 +25,235 @@ from .database import db
 from .models import TechnicalReport
 
 router = APIRouter(prefix="/api/technical-reports", tags=["technical-reports"])
+
+
+def normalize_header_value(value: str) -> str:
+    """Normaliza headers para comparación con mapeos (sin acentos ni separadores)."""
+    if not value:
+        return ""
+    text = str(value).strip().lower()
+    text = unicodedata.normalize("NFKD", text)
+    text = "".join(ch for ch in text if not unicodedata.combining(ch))
+    return re.sub(r"[\s_\.:\-°]+", "", text)
+
+
+def normalize_csv_key(value: str) -> str:
+    """Normaliza headers de CSV a claves seguras con guiones bajos."""
+    if not value:
+        return ""
+    text = str(value).strip().lower().replace("\ufeff", "")
+    text = unicodedata.normalize("NFKD", text)
+    text = "".join(ch for ch in text if not unicodedata.combining(ch))
+    text = re.sub(r"[^a-z0-9]+", "_", text)
+    return text.strip("_")
+
+
+# 1. Definir Mapeo de Columnas (Humano -> Sistema)
+# IMPORTANTE: Las claves (izquierda) deben estar "NORMALIZADAS":
+# - Todo minúsculas
+# - SIN espacios
+# - SIN guiones bajos (_) ni puntos (.)
+# - SIN paréntesis ni comillas
+COLUMN_MAPPING = {
+    # Identificadores
+    'nroinforme': 'informe_id',
+    'numeroinforme': 'informe_id',
+    'informe': 'informe_id',
+    'id': 'informe_id',
+    'item': 'informe_id',
+    
+    # Centro de Servicio
+    'centrodeservicio': 'cs',
+    'centroservicio': 'cs',
+    'cs': 'cs',
+    'sede': 'cs',
+    'localidad': 'cs',
+    
+    # Datos Generales
+    'contratista': 'contratista',
+    'codigoinfraestructura': 'codigo_infraestructura',
+    'codinfraestructura': 'codigo_infraestructura',
+    'infraestructura': 'codigo_infraestructura',
+    'codigo': 'codigo_infraestructura',
+    'ubicacion': 'ubicacion',
+    'direccion': 'ubicacion',
+    'suministro': 'suministro',
+    'nrosuministro': 'suministro',
+    'numerosuministro': 'suministro',
+    'nis': 'suministro',
+    'tipo': 'tipo',
+    'tipoestructura': 'tipo',
+    'volumen': 'volumen',
+    'volumenm3': 'volumen',
+    'capacidad': 'volumen',
+    
+    # Fechas
+    'dia': 'dia',
+    'mes': 'mes',
+    'año': 'anio',
+    'anio': 'anio',
+    
+    # --- INSPECCIÓN (ESTADOS) ---
+    'cajaregistro': 'caja_registro',
+    'cajaderegistro': 'caja_registro',
+    'marcotapa': 'marco_tapa',
+    'marcoytapa': 'marco_tapa',
+    'marcotapasanitaria': 'marco_tapa',
+    'escalerainterior': 'escalera_interior',
+    'escaleraint': 'escalera_interior',
+    'escaleraexterior': 'escalera_exterior',
+    'escaleraext': 'escalera_exterior',
+    'cubainterior': 'cuba_interior',
+    'cubaint': 'cuba_interior',
+    'cubaexterior': 'cuba_exterior',
+    'cubaext': 'cuba_exterior',
+    'lozafondo': 'loza_fondo',
+    'lozadefondo': 'loza_fondo',
+    'lozatechointerior': 'loza_techo_interior',
+    'lozatechoint': 'loza_techo_interior',
+    'lozatechoexterior': 'loza_techo_exterior',
+    'lozatechoext': 'loza_techo_exterior',
+    'ductoventilacion': 'ducto_ventilacion',
+    'cerkoperimetrico': 'cerco_perimetrico',
+    'descarga': 'descarga',
+    
+    # Observaciones y sugerencias (Inspección)
+    'obscajaregistro': 'obs_caja_registro',
+    'sugcajaregistro': 'sug_caja_registro',
+    'obsmarcotapa': 'obs_marco_tapa',
+    'sugmarcotapa': 'sug_marco_tapa',
+    'obsescalerainterior': 'obs_escalera_int',
+    'sugescalerainterior': 'sug_escalera_int',
+    'obsescaleraexterior': 'obs_escalera_ext',
+    'sugescaleraexterior': 'sug_escalera_ext',
+    'obscubainterior': 'obs_cuba_int',
+    'sugcubainterior': 'sug_cuba_int',
+    'obscubaexterior': 'obs_cuba_ext',
+    'sugcubaexterior': 'sug_cuba_ext',
+    'obslozafondo': 'obs_loza_fondo',
+    'suglozafondo': 'sug_loza_fondo',
+    'obslozatechoint': 'obs_loza_techo_int',
+    'suglozatechoint': 'sug_loza_techo_int',
+    'obslozatechoext': 'obs_loza_techo_ext',
+    'suglozatechoext': 'sug_loza_techo_ext',
+    'obsductoventilacion': 'obs_ducto_vent',
+    'sugductoventilacion': 'sug_ducto_vent',
+    'obscerkoperimetrico': 'obs_cerco',
+    'sugcerkoperimetrico': 'sug_cerco',
+    'obsdescarga': 'obs_descarga',
+    'sugdescarga': 'sug_descarga',
+    
+    # --- VÁLVULAS (CONDUCCIÓN) ---
+    'valvulasconduccion2': 'valvulas_conduccion_2',
+    'valvulasconduccion3': 'valvulas_conduccion_3',
+    'valvulasconduccion4': 'valvulas_conduccion_4',
+    'valvulasconduccion6': 'valvulas_conduccion_6',
+    'valvulasconduccion8': 'valvulas_conduccion_8',
+    'valvulasconduccion10': 'valvulas_conduccion_10',
+    'valvulasconduccion12': 'valvulas_conduccion_12',
+    'valvconduccion2': 'valvulas_conduccion_2',
+    'valvconduccion12': 'valvulas_conduccion_12',
+    
+    # --- VÁLVULAS (IMPULSIÓN) ---
+    'valvulasimpulsion2': 'valvulas_impulsion_2',
+    'valvulasimpulsion3': 'valvulas_impulsion_3',
+    'valvulasimpulsion4': 'valvulas_impulsion_4',
+    'valvulasimpulsion6': 'valvulas_impulsion_6',
+    'valvulasimpulsion8': 'valvulas_impulsion_8',
+    'valvulasimpulsion10': 'valvulas_impulsion_10',
+    'valvulasimpulsion12': 'valvulas_impulsion_12',
+    'valvimpulsion2': 'valvulas_impulsion_2',
+    'valvimpulsion12': 'valvulas_impulsion_12',
+    
+    # --- VÁLVULAS (ADUCCIÓN) ---
+    'valvulasaduccion2': 'valvulas_aduccion_2',
+    'valvulasaduccion3': 'valvulas_aduccion_3',
+    'valvulasaduccion4': 'valvulas_aduccion_4',
+    'valvulasaduccion6': 'valvulas_aduccion_6',
+    'valvulasaduccion8': 'valvulas_aduccion_8',
+    'valvulasaduccion10': 'valvulas_aduccion_10',
+    'valvulasaduccion12': 'valvulas_aduccion_12',
+    'valvaduccion2': 'valvulas_aduccion_2',
+    'valvaduccion12': 'valvulas_aduccion_12',
+    
+    # --- VÁLVULAS (BYPASS) ---
+    'valvulasbypass2': 'valvulas_bypass_2',
+    'valvulasbypass3': 'valvulas_bypass_3',
+    'valvulasbypass4': 'valvulas_bypass_4',
+    'valvulasbypass6': 'valvulas_bypass_6',
+    'valvulasbypass8': 'valvulas_bypass_8',
+    'valvulasbypass10': 'valvulas_bypass_10',
+    'valvulasbypass12': 'valvulas_bypass_12',
+    'valvbypass2': 'valvulas_bypass_2',
+    'valvbypass12': 'valvulas_bypass_12',
+    
+    # --- VÁLVULAS (DESAGÜE) ---
+    'valvulasdesague2': 'valvulas_desague_2',
+    'valvulasdesague3': 'valvulas_desague_3',
+    'valvulasdesague4': 'valvulas_desague_4',
+    'valvulasdesague6': 'valvulas_desague_6',
+    'valvulasdesague8': 'valvulas_desague_8',
+    'valvulasdesague10': 'valvulas_desague_10',
+    'valvulasdesague12': 'valvulas_desague_12',
+    'valvdesague2': 'valvulas_desague_2',
+    'valvdesague12': 'valvulas_desague_12',
+    
+    # Observaciones y sugerencias (Válvulas)
+    'obsvalvulasconduccion': 'obs_valvulas_conduccion',
+    'sugvalvulasconduccion': 'sug_valvulas_conduccion',
+    'obsvalvulasimpulsion': 'obs_valvulas_impulsion',
+    'sugvalvulasimpulsion': 'sug_valvulas_impulsion',
+    'obsvalvulasaduccion': 'obs_valvulas_aduccion',
+    'sugvalvulasaduccion': 'sug_valvulas_aduccion',
+    'obsvalvulasbypass': 'obs_valvulas_bypass',
+    'sugvalvulasbypass': 'sug_valvulas_bypass',
+    'obsvalvulasdesague': 'obs_valvulas_desague',
+    'sugvalvulasdesague': 'sug_valvulas_desague',
+    
+    # --- CANASTILLAS ---
+    'canastillasaduccion2': 'canastillas_aduccion_2',
+    'canastillasaduccion3': 'canastillas_aduccion_3',
+    'canastillasaduccion4': 'canastillas_aduccion_4',
+    'canastillasaduccion6': 'canastillas_aduccion_6',
+    'canastillasaduccion8': 'canastillas_aduccion_8',
+    'canastillasaduccion10': 'canastillas_aduccion_10',
+    'canastillasaduccion12': 'canastillas_aduccion_14', # Map legacy 12 to 14 if needed
+    'canastillasaduccion14': 'canastillas_aduccion_14',
+    'canastaduccion2': 'canastillas_aduccion_2',
+    'canastaduccion14': 'canastillas_aduccion_14',
+
+    # Succión
+    'canastillassuccion2': 'canastillas_succion_2',
+    'canastillassuccion3': 'canastillas_succion_3',
+    'canastillassuccion4': 'canastillas_succion_4',
+    'canastillassuccion6': 'canastillas_succion_6',
+    'canastillassuccion8': 'canastillas_succion_8',
+    'canastillassuccion10': 'canastillas_succion_10',
+    'canastillassuccion14': 'canastillas_succion_14',
+    'canastsuccion2': 'canastillas_succion_2',
+    'canastsuccion14': 'canastillas_succion_14',
+
+    # Desagüe (Canastillas)
+    'canastillasdesague2': 'canastillas_desague_2',
+    'canastillasdesague3': 'canastillas_desague_3',
+    'canastillasdesague4': 'canastillas_desague_4',
+    'canastillasdesague6': 'canastillas_desague_6',
+    'canastillasdesague8': 'canastillas_desague_8',
+    'canastillasdesague10': 'canastillas_desague_10',
+    'canastillasdesague14': 'canastillas_desague_14',
+    
+    # Totales / Operatividad
+    'valvulasoperativas': 'valvulas_operativas',
+    'valvulasnooperativas': 'valvulas_no_operativas',
+    'canastillasoperativas': 'canastillas_operativas',
+    'canastillasnooperativas': 'canastillas_no_operativas',
+
+    # Observaciones y Sugerencias Generales
+    'observaciones': 'observaciones',
+    'observacion': 'observaciones',
+    'sugerencias': 'sugerencias',
+    'sugerencia': 'sugerencias',
+}
 
 
 def parse_csv_file(content: bytes) -> List[Dict[str, Any]]:
@@ -68,9 +299,16 @@ def parse_csv_file(content: bytes) -> List[Dict[str, Any]]:
         
         for k, v in row.items():
             if k:
-                # Limpiar clave: minúsculas, quitar BOM/espacios y reemplazar espacios por guiones bajos
-                clean_key = k.strip().lower().replace('\ufeff', '').replace(' ', '_')
-                cleaned_row[clean_key] = v
+                normalized_key = normalize_header_value(k)
+                if normalized_key in COLUMN_MAPPING:
+                    clean_key = COLUMN_MAPPING[normalized_key]
+                elif "fechacorte" in normalized_key:
+                    clean_key = "FECHA CORTE"
+                else:
+                    clean_key = normalize_csv_key(k)
+
+                if clean_key:
+                    cleaned_row[clean_key] = v
                 
                 # Check fundamental si la fila tiene CONTENIDO
                 if v and str(v).strip() != '':
@@ -164,7 +402,7 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
         'cercoperimetrico': 'cerco_perimetrico',
         'cerco': 'cerco_perimetrico',
         'descarga': 'descarga',
-        'tuberíadescarga': 'descarga',
+        'tuberiadescarga': 'descarga',
 
         # --- MEDIDAS ---
         'medidasdiametro': 'medidas_diametro',
@@ -443,17 +681,8 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
     HEADER_CANDIDATES = ['informe', 'id', 'cs', 'centro servicio', 'contratista', 'codigo']
 
     def normalize_str(s: str) -> str:
-        """Limpia string para facilitar comparaciones (minusculas, sin espacios, sin acentos)"""
-        if not s: return ""
-        s = str(s).lower().strip()
-        # Reemplazos básicos
-        replacements = {
-            'á': 'a', 'é': 'e', 'í': 'i', 'ó': 'o', 'ú': 'u', 'ñ': 'n',
-            ' ': '', '_': '', '.': '', ':': '', '°': ''
-        }
-        for old, new in replacements.items():
-            s = s.replace(old, new)
-        return s
+        """Limpia string para facilitar comparaciones (minusculas, sin espacios, sin acentos)."""
+        return normalize_header_value(s)
 
     try:
         workbook = openpyxl.load_workbook(io.BytesIO(content), data_only=True)
