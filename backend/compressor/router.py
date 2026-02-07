@@ -28,6 +28,15 @@ GS_QUALITY_SETTINGS = {
     "prepress": "/prepress",
 }
 
+# Extra Ghostscript params tuned for stronger compression with acceptable quality.
+# Values are conservative for screen/ebook presets to avoid excessive visual loss.
+GS_COMPRESSION_TUNING = {
+    "screen": {"resolution": 96, "jpeg_quality": 50, "mono_resolution": 600},
+    "ebook": {"resolution": 144, "jpeg_quality": 60, "mono_resolution": 600},
+    "printer": {"resolution": 300, "jpeg_quality": 75, "mono_resolution": 1200},
+    "prepress": {"resolution": 300, "jpeg_quality": 85, "mono_resolution": 1200},
+}
+
 # Ghostscript command candidates (includes absolute paths for restricted PATH envs)
 GS_COMMANDS = [
     "gs",
@@ -158,6 +167,7 @@ def compress_pdf_ghostscript(input_path: str, output_path: str, quality: str = "
     Returns True if successful.
     """
     gs_quality = GS_QUALITY_SETTINGS.get(quality, "/ebook")
+    tuning = GS_COMPRESSION_TUNING.get(quality, GS_COMPRESSION_TUNING["ebook"])
     available, gs_cmd = is_ghostscript_available()
 
     if not available or not gs_cmd:
@@ -170,6 +180,16 @@ def compress_pdf_ghostscript(input_path: str, output_path: str, quality: str = "
                 "-sDEVICE=pdfwrite",
                 "-dCompatibilityLevel=1.4",
                 f"-dPDFSETTINGS={gs_quality}",
+                "-dDetectDuplicateImages=true",
+                "-dCompressFonts=true",
+                "-dOptimize=true",
+                "-dDownsampleColorImages=true",
+                "-dDownsampleGrayImages=true",
+                "-dDownsampleMonoImages=true",
+                f"-dColorImageResolution={tuning['resolution']}",
+                f"-dGrayImageResolution={tuning['resolution']}",
+                f"-dMonoImageResolution={tuning['mono_resolution']}",
+                f"-dJPEGQ={tuning['jpeg_quality']}",
                 "-dNOPAUSE",
                 "-dQUIET",
                 "-dBATCH",
