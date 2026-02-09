@@ -1872,6 +1872,7 @@
             zoom: 0.25,
             pdf: null,
             draggedIndex: null,
+            wasDragging: false,
             // Undo/Redo
             history: [],
             historyIndex: -1,
@@ -1975,21 +1976,33 @@
             if (!confirm(`¿Eliminar ${organizeState.selectedPages.size} páginas seleccionadas?`)) return;
             
             saveOrganizeHistory();
-            
+            const previousCuts = [...organizeState.cutPoints];
+            const activePagesBefore = organizeState.pages.filter(p => !p.deleted);
             const indices = Array.from(organizeState.selectedPages).sort((a, b) => b - a);
+            const toDelete = new Set(indices);
             indices.forEach(index => {
-                const activePages = organizeState.pages.filter(p => !p.deleted);
-                if (index < activePages.length) {
-                    const pageToDelete = activePages[index];
+                if (index < activePagesBefore.length) {
+                    const pageToDelete = activePagesBefore[index];
                     pageToDelete.deleted = true;
                 }
             });
-            
-            // Recalculate cut points
-            organizeState.cutPoints = organizeState.cutPoints.filter(cp => {
-                const activePages = organizeState.pages.filter(p => !p.deleted);
-                return cp < activePages.length - 1;
-            });
+
+            // Recalculate cut points preserving valid boundaries
+            const oldToNew = new Map();
+            let newIdx = 0;
+            for (let oldIdx = 0; oldIdx < activePagesBefore.length; oldIdx++) {
+                if (!toDelete.has(oldIdx)) {
+                    oldToNew.set(oldIdx, newIdx);
+                    newIdx++;
+                }
+            }
+            organizeState.cutPoints = previousCuts
+                .filter(cp => oldToNew.has(cp) && oldToNew.has(cp + 1))
+                .map(cp => oldToNew.get(cp))
+                .sort((a, b) => a - b);
+
+            const remainingActive = organizeState.pages.filter(p => !p.deleted);
+            document.getElementById('organize-total-pages').textContent = remainingActive.length;
             
             organizeState.selectedPages.clear();
             renderOrganizeThumbnails();
@@ -2087,6 +2100,7 @@
             organizeState.pages = [];
             organizeState.cutPoints = [];
             organizeState.zoom = 0.25;
+            organizeState.wasDragging = false;
             organizeState.history = [];
             organizeState.historyIndex = -1;
             organizeState.selectedPages.clear();
@@ -2169,6 +2183,7 @@
                 // Click to select (but not if clicking buttons)
                 wrapper.addEventListener('click', function(e) {
                     if (e.target.closest('button') || e.target.closest('.organize-checkbox')) return;
+                    if (organizeState.wasDragging) return;
                     toggleSelectPage(i);
                 });
                 
@@ -2240,6 +2255,7 @@
         // Drag & Drop handlers
         function handleOrganizeDragStart(e) {
             organizeState.draggedIndex = parseInt(e.currentTarget.dataset.index);
+            organizeState.wasDragging = true;
             e.currentTarget.classList.add('dragging');
             e.dataTransfer.effectAllowed = 'move';
         }
@@ -2313,6 +2329,9 @@
                 el.classList.remove('drag-over');
             });
             organizeState.draggedIndex = null;
+            setTimeout(() => {
+                organizeState.wasDragging = false;
+            }, 100);
         }
 
         function rotateOrganizePage(index) {
@@ -2429,8 +2448,10 @@
                 zoom: 0.25,
                 pdf: null,
                 draggedIndex: null,
+                wasDragging: false,
                 history: [],
                 historyIndex: -1,
+                maxHistory: 20,
                 selectedPages: new Set()
             };
 
