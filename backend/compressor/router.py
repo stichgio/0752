@@ -135,7 +135,7 @@ def _reduce_image_quality(page, quality: str) -> None:
                 buf = _io.BytesIO()
                 img.save(buf, format="JPEG", quality=jpeg_quality, optimize=True)
                 obj._data = buf.getvalue()
-                from pypdf.generic import ArrayObject, DecodedStreamObject, NameObject, NumberObject
+                from pypdf.generic import NameObject, NumberObject
                 obj[NameObject("/Filter")] = NameObject("/DCTDecode")
                 obj[NameObject("/Length")] = NumberObject(len(obj._data))
             except Exception:
@@ -218,10 +218,10 @@ def create_compression_headers(
     else:
         headers["X-Reduction-Percent"] = "0"
 
-    headers["X-Filename"] = filename
+    headers["X-Filename"] = quote(filename, safe="")
 
     if error_msg:
-        headers["X-Error"] = error_msg
+        headers["X-Error"] = quote(error_msg, safe="")
 
     return headers
 

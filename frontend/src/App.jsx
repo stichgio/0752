@@ -2,12 +2,13 @@ import React, { useState, useRef, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import html2canvas from 'html2canvas';
-import { FileSpreadsheet, Image as ImageIcon, Printer, Settings, FileCode, CheckCircle, AlertCircle, RotateCcw, Calculator, FileText, ClipboardList, Shrink, Archive, ChevronLeft, ChevronRight } from 'lucide-react';
+import { FileSpreadsheet, Image as ImageIcon, Printer, Settings, FileCode, CheckCircle, AlertCircle, RotateCcw, Calculator, FileText, ClipboardList, Shrink, Archive, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import PreviewPanel from './components/PreviewPanel';
 import PomodoroTimer from './components/PomodoroTimer';
-import { Step } from './components/common';
+import { Step, LoadingModal } from './components/common';
 
 import { REPORT_FIELDS, TEMPLATE_KEY_MAP, DATE_FIELDS, TEMPLATE_HEADERS } from './constants';
+import { useFocusMode } from './hooks/useFocusMode';
 import { excelSerialToDate, formatDateValue, isDateColumn } from './utils';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
@@ -27,7 +28,7 @@ export default function App() {
 
     // Selection State
     const [selectedIndex, setSelectedIndex] = useState('');
-    const [isSidebarOpen, setSidebarOpen] = useState(true);
+    const [searchOrder, setSearchOrder] = useState('');
 
     // Custom Logos State
     const [logoLeft, setLogoLeft] = useState(null);
@@ -64,27 +65,13 @@ export default function App() {
     const [isPdfLoading, setIsPdfLoading] = useState(false);
     const [pdfLoadingMessage, setPdfLoadingMessage] = useState('');
 
-    // Focus Mode State
-    const [isFocusMode, setIsFocusMode] = useState(false);
-
-
+    // Focus Mode
+    const isFocusMode = useFocusMode();
 
     // Save custom columns to localStorage whenever they change
     useEffect(() => {
         localStorage.setItem('customColumns', JSON.stringify(customColumns));
     }, [customColumns]);
-
-    // Toggle Focus Mode with Ctrl + .
-    useEffect(() => {
-        const handleKeyDown = (e) => {
-            if (e.ctrlKey && e.key === '.') {
-                e.preventDefault();
-                setIsFocusMode(prev => !prev);
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
 
 
 
@@ -556,7 +543,7 @@ export default function App() {
         <div className="flex h-screen w-full bg-neutral-900 overflow-hidden font-sans text-sm">
 
             {/* Sidebar */}
-            <aside className={`bg-neutral-950 text-white flex flex-col transition-all duration-300 ${isFocusMode ? 'w-0 overflow-hidden opacity-0 border-none' : 'w-96 border-r border-neutral-800'} ${isSidebarOpen ? 'translate-x-0' : '-translate-x-96 absolute z-50 h-full'}`}>
+            <aside className={`bg-neutral-950 text-white flex flex-col transition-all duration-300 translate-x-0 ${isFocusMode ? 'w-0 overflow-hidden opacity-0 border-none' : 'w-96 border-r border-neutral-800'}`}>
                 <div className="p-4 bg-black border-b border-neutral-800 flex items-center gap-4">
 
 
@@ -798,6 +785,29 @@ export default function App() {
 
                     {/* Step 5: Select Record */}
                     <Step number="5" title="Seleccionar Orden" disabled={requiresImages ? images.length === 0 : data.length === 0}>
+                        <div className="relative mb-2">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" size={16} />
+                            <input
+                                type="text"
+                                placeholder="Buscar orden..."
+                                value={searchOrder}
+                                onChange={(e) => {
+                                    const term = e.target.value;
+                                    setSearchOrder(term);
+                                    if (term) {
+                                        const matchIdx = data.findIndex((row, idx) => {
+                                            const label = idColumn ? String(row[idColumn]) : `Fila ${idx + 1}`;
+                                            return label.toLowerCase().includes(term.toLowerCase()) || String(idx + 1).includes(term);
+                                        });
+                                        if (matchIdx !== -1) {
+                                            setSelectedIndex(String(matchIdx));
+                                            setExportScope('single');
+                                        }
+                                    }
+                                }}
+                                className="w-full pl-9 pr-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white text-sm focus:border-white outline-none placeholder:text-neutral-500"
+                            />
+                        </div>
                         <select
                             className="w-full bg-white text-black font-bold border border-neutral-300 rounded p-2.5 text-sm focus:outline-none disabled:opacity-50"
                             value={selectedIndex}
@@ -952,7 +962,7 @@ export default function App() {
                     </div>
 
                 </div>
-            </aside >
+            </aside>
 
             {/* Main Preview */}
             <main className="flex-1 flex flex-col h-full overflow-hidden relative">
@@ -1000,7 +1010,7 @@ export default function App() {
                         </div>
                     </>
                 )}
-            </main >
+            </main>
 
             {/* Custom Column Modal - Nothing Tech Style */}
             {
@@ -1073,18 +1083,8 @@ export default function App() {
             }
 
             {/* PDF Loading Modal */}
-            {
-                isPdfLoading && (
-                    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-                        <div className="bg-[#111] border border-[#333] rounded-lg p-8 flex flex-col items-center min-w-[300px]">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#D71921] mx-auto"></div>
-                            <p className="mt-4 text-[#eee] font-mono text-center">{pdfLoadingMessage}</p>
-                            <p className="mt-2 text-[#666] text-xs">Por favor espere...</p>
-                        </div>
-                    </div>
-                )
-            }
+            {isPdfLoading && <LoadingModal message={pdfLoadingMessage} accentColor="#D71921" />}
 
-        </div >
+        </div>
     );
 }

@@ -1,26 +1,6 @@
 import axios from 'axios';
 import { TechnicalReport } from './types';
-
-// Detectar URL del backend automáticamente
-const getApiBase = (): string => {
-    let baseUrl = '';
-
-    // Si hay variable de entorno definida, usarla
-    if (import.meta.env.VITE_API_URL) {
-        baseUrl = import.meta.env.VITE_API_URL;
-    }
-    // En desarrollo local
-    else if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        baseUrl = 'http://localhost:7860'; // Correct port where FastAPI is running
-    }
-    // En producción (HuggingFace Spaces), el backend está en el mismo origen
-    else {
-        baseUrl = window.location.origin;
-    }
-
-    // Asegurarse de quitar /api al final si existe para evitar duplicación
-    return baseUrl.replace(/\/api\/?$/, '');
-};
+import { getApiBase } from '@/utils/apiBase';
 
 const API_BASE = getApiBase();
 

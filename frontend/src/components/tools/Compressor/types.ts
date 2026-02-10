@@ -30,15 +30,6 @@ export interface CompressionStats {
     totalCount: number;
 }
 
-export interface CompressionResult {
-    filename: string;
-    original_size: number;
-    compressed_size: number;
-    reduction_percent: number;
-    success: boolean;
-    error?: string;
-}
-
 export const PDF_QUALITY_OPTIONS: { value: PDFQuality; label: string; description: string }[] = [
     { value: 'aggressive', label: 'Agresivo', description: '~100 DPI - Maximo ahorro' },
     { value: 'screen', label: 'Pantalla', description: '~72 DPI - Menor tamaño' },

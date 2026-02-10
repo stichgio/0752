@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { formatBytes } from '@/utils/formatBytes';
 import {
     ChevronLeft,
     Upload,
@@ -30,14 +31,51 @@ import {
 // CONSTANTES Y UTILIDADES
 // ============================================================================
 const STORAGE_KEY = 'pdf-compressor-options-v1';
+const DEBUG_STORAGE_KEY = 'compressor-debug';
+const MAX_WARN_FILE_SIZE_BYTES = 50 * 1024 * 1024;
+const LOW_REDUCTION_THRESHOLD = 5;
+const ALLOWED_PDF_QUALITIES: readonly PDFQuality[] = ['aggressive', 'screen', 'ebook', 'printer', 'prepress'];
 
-function formatBytes(bytes: number, decimals = 2): string {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const dm = decimals < 0 ? 0 : decimals;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+function isDebugEnabled(): boolean {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem(DEBUG_STORAGE_KEY) === 'true';
+}
+
+function debugLog(message: string, payload?: Record<string, unknown>): void {
+    if (!isDebugEnabled()) return;
+    if (payload) {
+        console.log(`[compressor:debug] ${message}`, payload);
+    } else {
+        console.log(`[compressor:debug] ${message}`);
+    }
+}
+
+async function isPdfBlob(blob: Blob): Promise<boolean> {
+    if (blob.size < 5) return false;
+    const signature = await blob.slice(0, 5).text();
+    return signature === '%PDF-';
+}
+
+function buildCompressionErrorMessage(error: unknown): string {
+    const rawMessage = error instanceof Error ? error.message : 'Error desconocido';
+
+    if (rawMessage.includes('413')) {
+        return 'Archivo demasiado grande. Intenta con un PDF menor o divídelo antes de comprimir.';
+    }
+
+    if (rawMessage.includes('Failed to fetch') || rawMessage.includes('NetworkError')) {
+        return 'No se pudo conectar al servidor. Verifica tu red o vuelve a intentar en unos segundos.';
+    }
+
+    if (rawMessage.includes('tipo de respuesta')) {
+        return 'El servidor devolvió un formato inesperado. Reintenta y, si persiste, activa modo debug.';
+    }
+
+    if (rawMessage.includes('archivo PDF válido')) {
+        return 'La respuesta no parece un PDF válido. Reintenta con otra calidad o revisa el archivo fuente.';
+    }
+
+    return rawMessage;
 }
 
 function generateId(): string {
@@ -122,6 +160,7 @@ export default function Compressor() {
     const [isDragActive, setIsDragActive] = useState(false);
     const [toasts, setToasts] = useState<Toast[]>([]);
     const [processingProgress, setProcessingProgress] = useState({ current: 0, total: 0 });
+    const [processingMessage, setProcessingMessage] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const API_BASE = import.meta.env.VITE_API_URL || '/api';
@@ -187,11 +226,15 @@ export default function Compressor() {
         const fileArray = Array.from(inputFiles);
         const validFiles: File[] = [];
         const invalidFiles: string[] = [];
+        const largeFiles: string[] = [];
 
         fileArray.forEach(file => {
             const ext = file.name.toLowerCase().split('.').pop() || '';
             if (ext === 'pdf') {
                 validFiles.push(file);
+                if (file.size > MAX_WARN_FILE_SIZE_BYTES) {
+                    largeFiles.push(file.name);
+                }
             } else {
                 invalidFiles.push(file.name);
             }
@@ -206,6 +249,14 @@ export default function Compressor() {
         }
 
         if (validFiles.length === 0) return;
+
+        if (largeFiles.length > 0) {
+            addToast(
+                `Advertencia: ${largeFiles.length} PDF(s) superan 50MB. La compresión puede tardar más o fallar por límite del servidor.`,
+                'info',
+                6000
+            );
+        }
 
         const newFiles: CompressedFile[] = validFiles.map(file => ({
             id: generateId(),
@@ -271,6 +322,7 @@ export default function Compressor() {
 
         setIsProcessing(true);
         setProcessingProgress({ current: 0, total: pendingFiles.length });
+        setProcessingMessage('Iniciando compresión...');
 
         setFiles(prev => prev.map(f =>
             f.status === 'pending' ? { ...f, status: 'processing' } : f
@@ -278,15 +330,34 @@ export default function Compressor() {
 
         let successCount = 0;
         let errorCount = 0;
+        let unchangedCount = 0;
+        let lowReductionCount = 0;
+
+        const validatedQuality: PDFQuality = ALLOWED_PDF_QUALITIES.includes(options.pdfQuality)
+            ? options.pdfQuality
+            : 'aggressive';
+
+        if (validatedQuality !== options.pdfQuality) {
+            addToast('Calidad inválida detectada en configuración guardada. Se usará "aggressive".', 'info', 5000);
+        }
 
         for (let i = 0; i < pendingFiles.length; i++) {
             const fileItem = pendingFiles[i];
             setProcessingProgress({ current: i + 1, total: pendingFiles.length });
+            setProcessingMessage(`Procesando ${fileItem.originalName}...`);
 
             try {
                 const formData = new FormData();
                 formData.append('file', fileItem.file);
-                formData.append('pdf_quality', options.pdfQuality);
+                formData.append('pdf_quality', validatedQuality);
+
+                // TODO(manual-test): Activar localStorage.setItem('compressor-debug','true') para depuración detallada
+                debugLog('Enviando solicitud de compresión', {
+                    file: fileItem.originalName,
+                    size: fileItem.originalSize,
+                    pdf_quality: validatedQuality,
+                    endpoint: `${API_BASE}/compressor/compress-single`,
+                });
 
                 const response = await fetch(`${API_BASE}/compressor/compress-single`, {
                     method: 'POST',
@@ -294,14 +365,81 @@ export default function Compressor() {
                 });
 
                 if (!response.ok) {
-                    const errorText = await response.text();
+                    const contentType = response.headers.get('content-type') || '';
+                    let errorText = '';
+
+                    if (contentType.includes('application/json')) {
+                        const errorJson = await response.json();
+                        errorText = typeof errorJson?.detail === 'string'
+                            ? errorJson.detail
+                            : JSON.stringify(errorJson);
+                    } else {
+                        errorText = await response.text();
+                    }
+
                     throw new Error(errorText || `Error ${response.status}`);
                 }
 
+                const responseType = response.headers.get('content-type') || '';
+                if (!responseType.includes('application/pdf') && !responseType.includes('application/octet-stream')) {
+                    debugLog('Content-Type inesperado en respuesta', { responseType, file: fileItem.originalName });
+                    throw new Error(`El servidor devolvió un tipo de respuesta inesperado: ${responseType || 'desconocido'}`);
+                }
+
                 const compressedBlob = await response.blob();
-                const originalSize = parseInt(response.headers.get('X-Original-Size') || '0') || fileItem.originalSize;
-                const compressedSize = parseInt(response.headers.get('X-Compressed-Size') || '0') || compressedBlob.size;
-                const errorHeader = response.headers.get('X-Error');
+                const isValidPdf = await isPdfBlob(compressedBlob);
+                if (!isValidPdf) {
+                    throw new Error('La respuesta del servidor no contiene un archivo PDF válido.');
+                }
+
+                const headerOriginal = response.headers.get('X-Original-Size');
+                const headerCompressed = response.headers.get('X-Compressed-Size');
+                const originalSize = parseInt(headerOriginal || '0', 10) || fileItem.originalSize;
+                const compressedSize = parseInt(headerCompressed || '0', 10) || compressedBlob.size;
+                const rawErrorHeader = response.headers.get('X-Error');
+                const errorHeader = rawErrorHeader ? decodeURIComponent(rawErrorHeader) : null;
+                const missingHeaders = !headerOriginal || !headerCompressed;
+
+                if (missingHeaders) {
+                    debugLog('Headers esperados faltantes, usando fallback', {
+                        file: fileItem.originalName,
+                        headerOriginal,
+                        headerCompressed,
+                        fallbackOriginal: fileItem.originalSize,
+                        fallbackCompressed: compressedBlob.size,
+                    });
+                }
+
+                const reductionPercent = originalSize > 0
+                    ? ((originalSize - compressedSize) / originalSize) * 100
+                    : 0;
+                const isActuallyCompressed = compressedSize < originalSize;
+                const lowReduction = isActuallyCompressed && reductionPercent > 0 && reductionPercent < LOW_REDUCTION_THRESHOLD;
+
+                let fileWarning: string | undefined;
+                if (errorHeader) {
+                    fileWarning = errorHeader;
+                } else if (!isActuallyCompressed) {
+                    fileWarning = 'Sin reducción (archivo ya optimizado o compresión no efectiva).';
+                    unchangedCount++;
+                } else if (lowReduction) {
+                    fileWarning = `Reducción baja (${reductionPercent.toFixed(1)}%). Prueba calidad más agresiva.`;
+                    lowReductionCount++;
+                }
+
+                debugLog('Resultado de compresión', {
+                    file: fileItem.originalName,
+                    originalSize,
+                    compressedSize,
+                    reductionPercent: Number(reductionPercent.toFixed(1)),
+                    isActuallyCompressed,
+                    responseType,
+                    errorHeader,
+                });
+
+                setProcessingMessage(
+                    `${fileItem.originalName}: ${isActuallyCompressed ? `-${reductionPercent.toFixed(1)}%` : 'sin reducción'}`
+                );
 
                 setFiles(prev => prev.map(f =>
                     f.id === fileItem.id
@@ -310,39 +448,61 @@ export default function Compressor() {
                             status: 'completed',
                             compressedBlob,
                             compressedSize,
-                            error: errorHeader || undefined,
+                            error: fileWarning,
                         }
                         : f
                 ));
 
-                if (!errorHeader) {
+                if (isActuallyCompressed && !errorHeader) {
                     successCount++;
                 }
 
             } catch (error) {
-                console.error(`Error compressing ${fileItem.originalName}:`, error);
+                const userErrorMessage = buildCompressionErrorMessage(error);
+                debugLog('Error durante compresión', {
+                    file: fileItem.originalName,
+                    raw: error instanceof Error ? error.message : String(error),
+                    userMessage: userErrorMessage,
+                });
                 errorCount++;
                 setFiles(prev => prev.map(f =>
                     f.id === fileItem.id
                         ? {
                             ...f,
                             status: 'error',
-                            error: error instanceof Error ? error.message : 'Error de conexion',
+                            error: userErrorMessage,
                         }
                         : f
                 ));
+
+                setProcessingMessage(`${fileItem.originalName}: error`);
             }
         }
 
         setIsProcessing(false);
         setProcessingProgress({ current: 0, total: 0 });
+        setProcessingMessage('');
 
-        if (successCount > 0 && errorCount === 0) {
+        if (successCount > 0 && errorCount === 0 && unchangedCount === 0 && lowReductionCount === 0) {
             addToast(`¡${successCount} PDF(s) comprimido(s) exitosamente!`, 'success');
-        } else if (successCount > 0 && errorCount > 0) {
-            addToast(`${successCount} exitoso(s), ${errorCount} error(es)`, 'info');
+        } else if (successCount > 0 && (errorCount > 0 || unchangedCount > 0 || lowReductionCount > 0)) {
+            addToast(
+                `${successCount} comprimido(s), ${unchangedCount} sin reducción, ${lowReductionCount} con reducción baja, ${errorCount} error(es).`,
+                'info',
+                6000
+            );
+        } else if (unchangedCount > 0 && errorCount === 0) {
+            addToast(
+                `Se procesaron ${unchangedCount} PDF(s), pero no hubo reducción real. Prueba otra calidad o divide el archivo.`,
+                'info',
+                6000
+            );
         } else if (errorCount > 0) {
-            addToast(`Error al comprimir ${errorCount} PDF(s)`, 'error');
+            addToast(
+                `Error al comprimir ${errorCount} PDF(s). Revisa conexión, tamaño del archivo y vuelve a intentar.`,
+                'error',
+                7000
+            );
         }
     };
 
@@ -389,6 +549,7 @@ export default function Compressor() {
 
     const handleClearAll = useCallback(() => {
         setFiles([]);
+        setProcessingMessage('');
         addToast('Lista limpiada', 'info', 2000);
     }, [addToast]);
 
@@ -540,6 +701,11 @@ export default function Compressor() {
                                 <span>{processingProgress.current} / {processingProgress.total}</span>
                             </div>
                             <ProgressBar current={processingProgress.current} total={processingProgress.total} />
+                            {processingMessage && (
+                                <p className="text-xs text-[#777] font-mono mt-2 truncate" title={processingMessage}>
+                                    {processingMessage}
+                                </p>
+                            )}
                         </div>
                     )}
 

@@ -5,6 +5,9 @@ import PreviewPanel from './PreviewPanel';
 import FormPanel from './FormPanel';
 import { FichaTecnica } from './types';
 import { fichasTecnicasApi } from './api';
+import LoadingModal from '@/components/common/LoadingModal';
+import { useFocusMode } from '@/hooks/useFocusMode';
+import { downloadBlob } from '@/utils/downloadBlob';
 
 const STORAGE_KEY = 'current_ficha_draft';
 
@@ -150,14 +153,7 @@ export default function FichasTecnicas() {
 
         try {
             const blob = await fichasTecnicasApi.generateConsolidatedPDF(logoLeft, logoRight);
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `fichas_tecnicas_consolidado_${fichas.length}.pdf`;
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            window.URL.revokeObjectURL(url);
+            downloadBlob(blob, `fichas_tecnicas_consolidado_${fichas.length}.pdf`);
         } catch (error: any) {
             console.error('Error generating consolidated PDF:', error);
             const msg = error.response?.data?.detail || error.message || 'Error desconocido';
@@ -179,14 +175,7 @@ export default function FichasTecnicas() {
 
         try {
             const blob = await fichasTecnicasApi.generatePDF(selectedFichaId, logoLeft, logoRight);
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `ficha_tecnica_${selectedFichaId}.pdf`;
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            window.URL.revokeObjectURL(url);
+            downloadBlob(blob, `ficha_tecnica_${selectedFichaId}.pdf`);
         } catch (error: any) {
             console.error('Error generating PDF:', error);
             const msg = error.response?.data?.detail || error.message || 'Error desconocido';
@@ -203,14 +192,7 @@ export default function FichasTecnicas() {
 
         try {
             const blob = await fichasTecnicasApi.generateTemplatePDF(logoLeft, logoRight);
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `plantilla_ficha_tecnica.pdf`;
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            window.URL.revokeObjectURL(url);
+            downloadBlob(blob, `plantilla_ficha_tecnica.pdf`);
         } catch (error: any) {
             console.error('Error generating template PDF:', error);
             const msg = error.response?.data?.detail || error.message || 'Error desconocido';
@@ -232,14 +214,7 @@ export default function FichasTecnicas() {
 
         try {
             const blob = await fichasTecnicasApi.generateDOCX(selectedFichaId, logoLeft, logoRight);
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `ficha_tecnica_${selectedFichaId}.docx`;
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            window.URL.revokeObjectURL(url);
+            downloadBlob(blob, `ficha_tecnica_${selectedFichaId}.docx`);
         } catch (error: any) {
             console.error('Error generating DOCX:', error);
             const msg = error.response?.data?.detail || error.message || 'Error desconocido';
@@ -267,14 +242,7 @@ export default function FichasTecnicas() {
 
         try {
             const blob = await fichasTecnicasApi.generateConsolidatedDOCX(logoLeft, logoRight);
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `fichas_tecnicas_${fichas.length}_docx.zip`;
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            window.URL.revokeObjectURL(url);
+            downloadBlob(blob, `fichas_tecnicas_${fichas.length}_docx.zip`);
         } catch (error: any) {
             console.error('Error generating consolidated DOCX:', error);
             const msg = error.response?.data?.detail || error.message || 'Error desconocido';
@@ -285,19 +253,7 @@ export default function FichasTecnicas() {
         }
     };
 
-    const [isFocusMode, setIsFocusMode] = useState(false);
-
-    // Toggle Focus Mode with Ctrl + .
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.ctrlKey && e.key === '.') {
-                e.preventDefault();
-                setIsFocusMode(prev => !prev);
-            }
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, []);
+    const isFocusMode = useFocusMode();
 
     const currentIndex = fichas.findIndex(f => f.id === selectedFichaId);
     const canPrev = currentIndex > 0;
@@ -424,15 +380,7 @@ export default function FichasTecnicas() {
                     </div>
                 </>
             )}
-            {isLoading && (
-                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-                    <div className="bg-[#111] border border-[#333] rounded-lg p-8 flex flex-col items-center min-w-[300px]">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00a0b0] mx-auto"></div>
-                        <p className="mt-4 text-[#eee] font-mono text-center">{loadingMessage}</p>
-                        <p className="mt-2 text-[#666] text-xs">Por favor espere...</p>
-                    </div>
-                </div>
-            )}
+            {isLoading && <LoadingModal message={loadingMessage} accentColor="#00a0b0" />}
         </div>
     );
 }
