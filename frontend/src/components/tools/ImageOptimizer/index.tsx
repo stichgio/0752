@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { ChevronLeft, Upload, Download, Trash2, Image as ImageIcon, FileDown, Loader2, CheckCircle, AlertCircle, X, Sliders, RotateCcw, Crop, Maximize2, Eye, Move, Check, RotateCw } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 import { ImageFile, CompressionOptions, CompressionStats, OutputFormat, AspectRatio, ASPECT_RATIO_OPTIONS, CropOffset } from './types';
+import { formatBytes } from '@/utils/formatBytes';
 
 // ============================================================================
 // CONFIGURACION POR DEFECTO
@@ -19,15 +20,6 @@ const DEFAULT_OPTIONS: CompressionOptions = {
 // ============================================================================
 // UTILIDADES
 // ============================================================================
-function formatBytes(bytes: number, decimals = 2): string {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const dm = decimals < 0 ? 0 : decimals;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-}
-
 function getOutputMimeType(format: OutputFormat, originalType: string): string {
     switch (format) {
         case 'jpeg': return 'image/jpeg';
