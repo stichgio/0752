@@ -171,6 +171,35 @@ def test_generate_pdf_can_use_published_visual_template_without_contract_change(
     assert "application/pdf" in res.headers.get("content-type", "")
 
 
+def test_delete_template_archives_and_removes_from_published_listings(client, monkeypatch):
+    monkeypatch.setenv("FEATURE_TEMPLATE_EDITOR", "true")
+    create_res = client.post("/api/template-editor/templates", json=_template_payload(name="delete-me-template"))
+    assert create_res.status_code == 200
+    template_id = create_res.json()["id"]
+
+    publish_res = client.post(f"/api/template-editor/templates/{template_id}/publish", json={"author": "qa"})
+    assert publish_res.status_code == 200
+    assert publish_res.json()["status"] == "published"
+
+    delete_res = client.delete(f"/api/template-editor/templates/{template_id}", params={"author": "qa"})
+    assert delete_res.status_code == 200
+    assert delete_res.json()["status"] == "archived"
+
+    get_res = client.get(f"/api/template-editor/templates/{template_id}")
+    assert get_res.status_code == 200
+    assert get_res.json()["status"] == "archived"
+
+    published_res = client.get("/api/template-editor/published")
+    assert published_res.status_code == 200
+    published_templates = published_res.json().get("templates", [])
+    assert all(t["id"] != template_id for t in published_templates)
+
+    legacy_res = client.get("/api/templates")
+    assert legacy_res.status_code == 200
+    legacy_editor_templates = legacy_res.json().get("editorTemplates", [])
+    assert all(t["id"] != template_id for t in legacy_editor_templates)
+
+
 def test_generate_pdf_falls_back_to_legacy_template_resolution_when_not_in_db(client):
     class DummyService:
         async def generate_batch_pdf(self, reports_payload, output_path=None, logo_left=None, logo_right=None, custom_template_str=None, template_name=None):

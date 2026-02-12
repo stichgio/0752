@@ -480,15 +480,21 @@ function CropEditor({ image, aspectRatio, onClose, onSave }: CropEditorProps) {
 // ============================================================================
 export default function ImageOptimizer() {
     const [images, setImages] = useState<ImageFile[]>([]);
+    const imagesRef = useRef<ImageFile[]>([]);
     const [options, setOptions] = useState<CompressionOptions>(DEFAULT_OPTIONS);
     const [isProcessing, setIsProcessing] = useState(false);
     const [isDragActive, setIsDragActive] = useState(false);
     const [previewImage, setPreviewImage] = useState<ImageFile | null>(null);
 
-    // Cleanup previews on unmount
+    // Keep ref in sync with state for cleanup on unmount
+    useEffect(() => {
+        imagesRef.current = images;
+    }, [images]);
+
+    // Cleanup previews on unmount (uses ref to access latest images)
     useEffect(() => {
         return () => {
-            images.forEach(img => {
+            imagesRef.current.forEach(img => {
                 URL.revokeObjectURL(img.preview);
             });
         };
