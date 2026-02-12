@@ -4,7 +4,9 @@ Utilidades para manejo de archivos
 
 import os
 import re
+import shutil
 from pathlib import Path
+from fastapi import UploadFile
 
 
 def safe_filename(filename: str) -> str:
@@ -29,6 +31,16 @@ def safe_filename(filename: str) -> str:
         safe_name = name[:255 - len(ext)] + ext
 
     return safe_name
+
+
+async def save_upload(upload: UploadFile, dest: str) -> int:
+    """
+    Save an UploadFile to disk using streaming (shutil.copyfileobj).
+    Returns the number of bytes written.
+    """
+    with open(dest, "wb") as buffer:
+        shutil.copyfileobj(upload.file, buffer)
+        return buffer.tell()
 
 
 def ensure_directory(path: Path) -> Path:

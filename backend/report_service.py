@@ -30,12 +30,36 @@ except (OSError, ImportError) as e:
     HTML = None
     WEASYPRINT_AVAILABLE = False
 
+from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 import piexif
 import pathlib
 from PIL import Image
 import asyncio
 import httpx
+
+
+class BoundedCache:
+    """Simple LRU cache with max size, using OrderedDict."""
+    def __init__(self, maxsize=100):
+        self._cache = OrderedDict()
+        self._maxsize = maxsize
+
+    def get(self, key):
+        if key in self._cache:
+            self._cache.move_to_end(key)
+            return self._cache[key]
+        return None
+
+    def put(self, key, value):
+        if key in self._cache:
+            self._cache.move_to_end(key)
+        self._cache[key] = value
+        while len(self._cache) > self._maxsize:
+            self._cache.popitem(last=False)
+
+    def clear(self):
+        self._cache.clear()
 
 # ============================================================================
 # CONFIGURACIÓN OPTIMIZADA Y ESTABLE
@@ -227,8 +251,8 @@ class ReportService:
         # Cache de templates adicionales
         self._template_cache = {}
 
-        # ✅ OPTIMIZACIÓN SEGURA: Cache de imágenes
-        self._image_cache = {}
+        # ✅ OPTIMIZACIÓN SEGURA: Cache de imágenes (LRU bounded)
+        self._image_cache = BoundedCache(maxsize=100)
         self._logo_cache = {}
 
         # ✅ OPTIMIZACIÓN SEGURA: Cliente HTTP persistente
@@ -239,6 +263,10 @@ class ReportService:
                 max_keepalive_connections=5
             )
         )
+
+    async def close(self):
+        """Clean up resources. Called during app shutdown."""
+        await self._http_client.aclose()
 
     def get_template(self, template_name):
         """Cargar template con cache"""
@@ -449,11 +477,16 @@ class ReportService:
                     if not content:
                         return None
 
-                    # Cache con hash
-                    file_hash = hashlib.md5(content).hexdigest()
+                    # Cache key: use (path, mtime, size) for local files, MD5 for HTTP/bytes
+                    if f_path and os.path.exists(f_path):
+                        stat = os.stat(f_path)
+                        cache_key = f"local:{f_path}:{stat.st_mtime}:{stat.st_size}"
+                    else:
+                        cache_key = f"md5:{hashlib.md5(content).hexdigest()}"
 
-                    if file_hash in self._image_cache:
-                        cached_result = self._image_cache[file_hash].copy()
+                    cached = self._image_cache.get(cache_key)
+                    if cached is not None:
+                        cached_result = cached.copy()
                         cached_result['data'] = cached_result['data'].copy()
                         cached_result['data']['order'] = file_obj.get("order", idx) if isinstance(file_obj, dict) else idx
                         return cached_result
@@ -510,7 +543,7 @@ class ReportService:
                         "orientation": is_landscape
                     }
 
-                    self._image_cache[file_hash] = result
+                    self._image_cache.put(cache_key, result)
 
                     return result
 

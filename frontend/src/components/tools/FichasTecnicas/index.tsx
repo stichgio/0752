@@ -7,59 +7,32 @@ import { FichaTecnica } from './types';
 import { fichasTecnicasApi } from './api';
 import LoadingModal from '@/components/common/LoadingModal';
 import { useFocusMode } from '@/hooks/useFocusMode';
+import { useLocalDraft } from '@/hooks/useLocalDraft';
+import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { downloadBlob } from '@/utils/downloadBlob';
-
-const STORAGE_KEY = 'current_ficha_draft';
 
 export default function FichasTecnicas() {
     const [fichas, setFichas] = useState<FichaTecnica[]>([]);
-    const [selectedFichaId, setSelectedFichaId] = useState<string | null>(null);
-    const [formData, setFormData] = useState<FichaTecnica | null>(null);
-    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [loadingMessage, setLoadingMessage] = useState('Procesando...');
+    const {
+        formData, setFormData,
+        selectedId: selectedFichaId, setSelectedId: setSelectedFichaId,
+        hasUnsavedChanges, setHasUnsavedChanges,
+    } = useLocalDraft<FichaTecnica>('current_ficha_draft');
+    const { isLoading, loadingMessage, run } = useAsyncAction();
 
     const [logoLeft, setLogoLeft] = useState<File | null>(null);
     const [logoRight, setLogoRight] = useState<File | null>(null);
 
-    // Cargar borrador desde localStorage al iniciar
     useEffect(() => {
         loadFichas();
-        const savedDraft = localStorage.getItem(STORAGE_KEY);
-        if (savedDraft) {
-            try {
-                const parsed = JSON.parse(savedDraft);
-                setFormData(parsed.formData);
-                setSelectedFichaId(parsed.selectedFichaId);
-                setHasUnsavedChanges(parsed.hasUnsavedChanges || false);
-            } catch (e) {
-                console.error('Error loading draft:', e);
-            }
-        }
     }, []);
 
-    // Guardar borrador en localStorage cuando cambia formData
-    useEffect(() => {
-        if (formData) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({
-                formData,
-                selectedFichaId,
-                hasUnsavedChanges
-            }));
-        }
-    }, [formData, selectedFichaId, hasUnsavedChanges]);
-
     const loadFichas = async () => {
-        setIsLoading(true);
-        try {
+        await run(async () => {
             const data = await fichasTecnicasApi.getAllFichas();
             console.log('[FichasTecnicas] Loaded fichas:', data.fichas?.length, 'total:', data.total);
             setFichas(data.fichas || []);
-        } catch (error) {
-            console.error('Error loading fichas:', error);
-        } finally {
-            setIsLoading(false);
-        }
+        });
     };
 
     const handleFichaSelect = async (fichaId: string) => {
@@ -97,42 +70,28 @@ export default function FichasTecnicas() {
     };
 
     const handleImportFile = async (file: File) => {
-        setIsLoading(true);
-        setLoadingMessage('Importando archivo...');
-        try {
+        await run(async () => {
             const result = await fichasTecnicasApi.importFile(file);
             console.log('[FichasTecnicas] Import result:', result);
-
             const freshData = await fichasTecnicasApi.getAllFichas();
             console.log('[FichasTecnicas] Fresh fichas count:', freshData.fichas?.length);
             setFichas(freshData.fichas || []);
-
             alert(`${result.imported_count} fichas importadas`);
-        } catch (error: any) {
-            console.error('Error importing file:', error);
-            const msg = error.response?.data?.detail || error.message || 'Error desconocido';
-            alert(`Error importando archivo: ${msg}`);
-        } finally {
-            setIsLoading(false);
-            setLoadingMessage('Procesando...');
-        }
+        }, {
+            message: 'Importando archivo...',
+            onError: msg => alert(`Error importando archivo: ${msg}`)
+        });
     };
 
     const handleClearAllFichas = async () => {
         if (window.confirm('¿ESTÁ SEGURO? \n\nEsto eliminará TODAS las fichas de la base de datos permanentemente.\nEsta acción no se puede deshacer.')) {
-            setIsLoading(true);
-            try {
+            await run(async () => {
                 await fichasTecnicasApi.deleteAllFichas();
                 await loadFichas();
                 setFormData(null);
                 setSelectedFichaId(null);
                 setHasUnsavedChanges(false);
-            } catch (error) {
-                console.error('Error clearing fichas:', error);
-                alert('Error eliminando fichas');
-            } finally {
-                setIsLoading(false);
-            }
+            }, { onError: msg => alert(`Error eliminando fichas: ${msg}`) });
         }
     };
 
@@ -141,27 +100,21 @@ export default function FichasTecnicas() {
             alert('No hay fichas para exportar');
             return;
         }
-
         const confirmed = window.confirm(
             `¿Desea generar un PDF consolidado con las ${fichas.length} fichas?\n\nEsto puede tomar varios minutos dependiendo de la cantidad de fichas.`
         );
-
         if (!confirmed) return;
 
-        setIsLoading(true);
-        setLoadingMessage(`Generando PDF consolidado (${fichas.length} fichas)...`);
-
-        try {
-            const blob = await fichasTecnicasApi.generateConsolidatedPDF(logoLeft, logoRight);
-            downloadBlob(blob, `fichas_tecnicas_consolidado_${fichas.length}.pdf`);
-        } catch (error: any) {
-            console.error('Error generating consolidated PDF:', error);
-            const msg = error.response?.data?.detail || error.message || 'Error desconocido';
-            alert(`Error generando PDF consolidado: ${msg}`);
-        } finally {
-            setIsLoading(false);
-            setLoadingMessage('Procesando...');
-        }
+        await run(
+            async () => {
+                const blob = await fichasTecnicasApi.generateConsolidatedPDF(logoLeft, logoRight);
+                downloadBlob(blob, `fichas_tecnicas_consolidado_${fichas.length}.pdf`);
+            },
+            {
+                message: `Generando PDF consolidado (${fichas.length} fichas)...`,
+                onError: msg => alert(`Error generando PDF consolidado: ${msg}`)
+            }
+        );
     };
 
     const handleDownloadPDF = async () => {
@@ -169,38 +122,23 @@ export default function FichasTecnicas() {
             handleDownloadTemplatePDF();
             return;
         }
-
-        setIsLoading(true);
-        setLoadingMessage('Generando PDF...');
-
-        try {
-            const blob = await fichasTecnicasApi.generatePDF(selectedFichaId, logoLeft, logoRight);
-            downloadBlob(blob, `ficha_tecnica_${selectedFichaId}.pdf`);
-        } catch (error: any) {
-            console.error('Error generating PDF:', error);
-            const msg = error.response?.data?.detail || error.message || 'Error desconocido';
-            alert(`Error generando PDF: ${msg}`);
-        } finally {
-            setIsLoading(false);
-            setLoadingMessage('Procesando...');
-        }
+        await run(
+            async () => {
+                const blob = await fichasTecnicasApi.generatePDF(selectedFichaId, logoLeft, logoRight);
+                downloadBlob(blob, `ficha_tecnica_${selectedFichaId}.pdf`);
+            },
+            { message: 'Generando PDF...', onError: msg => alert(`Error generando PDF: ${msg}`) }
+        );
     };
 
     const handleDownloadTemplatePDF = async () => {
-        setIsLoading(true);
-        setLoadingMessage('Generando plantilla PDF...');
-
-        try {
-            const blob = await fichasTecnicasApi.generateTemplatePDF(logoLeft, logoRight);
-            downloadBlob(blob, `plantilla_ficha_tecnica.pdf`);
-        } catch (error: any) {
-            console.error('Error generating template PDF:', error);
-            const msg = error.response?.data?.detail || error.message || 'Error desconocido';
-            alert(`Error generando plantilla PDF: ${msg}`);
-        } finally {
-            setIsLoading(false);
-            setLoadingMessage('Procesando...');
-        }
+        await run(
+            async () => {
+                const blob = await fichasTecnicasApi.generateTemplatePDF(logoLeft, logoRight);
+                downloadBlob(blob, `plantilla_ficha_tecnica.pdf`);
+            },
+            { message: 'Generando plantilla PDF...', onError: msg => alert(`Error generando plantilla PDF: ${msg}`) }
+        );
     };
 
     const handleDownloadDOCX = async () => {
@@ -208,21 +146,13 @@ export default function FichasTecnicas() {
             alert('Seleccione una ficha para exportar a Word');
             return;
         }
-
-        setIsLoading(true);
-        setLoadingMessage('Generando Word...');
-
-        try {
-            const blob = await fichasTecnicasApi.generateDOCX(selectedFichaId, logoLeft, logoRight);
-            downloadBlob(blob, `ficha_tecnica_${selectedFichaId}.docx`);
-        } catch (error: any) {
-            console.error('Error generating DOCX:', error);
-            const msg = error.response?.data?.detail || error.message || 'Error desconocido';
-            alert(`Error generando Word: ${msg}`);
-        } finally {
-            setIsLoading(false);
-            setLoadingMessage('Procesando...');
-        }
+        await run(
+            async () => {
+                const blob = await fichasTecnicasApi.generateDOCX(selectedFichaId, logoLeft, logoRight);
+                downloadBlob(blob, `ficha_tecnica_${selectedFichaId}.docx`);
+            },
+            { message: 'Generando Word...', onError: msg => alert(`Error generando Word: ${msg}`) }
+        );
     };
 
     const handleDownloadConsolidatedDOCX = async () => {
@@ -230,27 +160,21 @@ export default function FichasTecnicas() {
             alert('No hay fichas para exportar');
             return;
         }
-
         const confirmed = window.confirm(
             `¿Desea generar documentos Word para las ${fichas.length} fichas?\n\nSe descargará un archivo ZIP con todos los documentos .docx.`
         );
-
         if (!confirmed) return;
 
-        setIsLoading(true);
-        setLoadingMessage(`Generando Word consolidado (${fichas.length} fichas)...`);
-
-        try {
-            const blob = await fichasTecnicasApi.generateConsolidatedDOCX(logoLeft, logoRight);
-            downloadBlob(blob, `fichas_tecnicas_${fichas.length}_docx.zip`);
-        } catch (error: any) {
-            console.error('Error generating consolidated DOCX:', error);
-            const msg = error.response?.data?.detail || error.message || 'Error desconocido';
-            alert(`Error generando Word consolidado: ${msg}`);
-        } finally {
-            setIsLoading(false);
-            setLoadingMessage('Procesando...');
-        }
+        await run(
+            async () => {
+                const blob = await fichasTecnicasApi.generateConsolidatedDOCX(logoLeft, logoRight);
+                downloadBlob(blob, `fichas_tecnicas_${fichas.length}_docx.zip`);
+            },
+            {
+                message: `Generando Word consolidado (${fichas.length} fichas)...`,
+                onError: msg => alert(`Error generando Word consolidado: ${msg}`)
+            }
+        );
     };
 
     const isFocusMode = useFocusMode();

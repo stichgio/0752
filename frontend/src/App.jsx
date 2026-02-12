@@ -46,6 +46,7 @@ export default function App() {
     const [templateStatus, setTemplateStatus] = useState(null); // 'valid' | 'invalid' | null
     const [templateError, setTemplateError] = useState('');
     const [availableTemplates, setAvailableTemplates] = useState([]);
+    const [editorTemplates, setEditorTemplates] = useState([]); // [{id, name}]
 
     // Custom Columns State
     const [customColumns, setCustomColumns] = useState(() => {
@@ -79,12 +80,13 @@ export default function App() {
 
 
 
-    // Fetch available templates on mount
+    // Fetch available templates on mount (file templates + editor templates)
     useEffect(() => {
         fetch(`${API_BASE_URL}/templates`)
             .then(res => res.json())
             .then(data => {
                 if (data.templates) setAvailableTemplates(data.templates);
+                if (data.editorTemplates) setEditorTemplates(data.editorTemplates);
             })
             .catch(err => console.error("Error fetching templates:", err));
     }, []);
@@ -217,6 +219,43 @@ export default function App() {
             console.error(err);
             setTemplateStatus('invalid');
             setTemplateError("Error al cargar la plantilla: " + err.message);
+        }
+    };
+
+    const handleEditorTemplateSelect = async (editorTemplateId) => {
+        if (!editorTemplateId) return;
+
+        try {
+            const res = await fetch(`${API_BASE_URL}/template-editor/templates/${editorTemplateId}`);
+            if (!res.ok) throw new Error("Failed to load editor template");
+            const data = await res.json();
+
+            const versions = data.versions || [];
+            const latest = versions[versions.length - 1];
+            if (!latest || !latest.compiledJinja) {
+                setTemplateStatus('invalid');
+                setTemplateError('La plantilla del editor no tiene HTML compilado.');
+                return;
+            }
+
+            const content = latest.compiledJinja;
+            // Editor templates are always valid (compiled from blocks)
+            setCustomTemplate({ name: data.name, content, isBackendTemplate: false, isEditorTemplate: true });
+            setTemplateStatus('valid');
+            setTemplateError('');
+
+            // Auto-detect if template requires images
+            const templateContent = content.toLowerCase();
+            const hasImageBlocks = templateContent.includes('report.images') ||
+                templateContent.includes('photo-grid') ||
+                templateContent.includes('photo-cell') ||
+                templateContent.includes('panel-fotografico') ||
+                templateContent.includes('photo-section');
+            setRequiresImages(hasImageBlocks);
+        } catch (err) {
+            console.error(err);
+            setTemplateStatus('invalid');
+            setTemplateError("Error al cargar plantilla del editor: " + err.message);
         }
     };
 
@@ -612,16 +651,39 @@ export default function App() {
                                 <label className="block text-xs text-neutral-400 mb-1">O seleccionar existente:</label>
                                 <select
                                     className="w-full bg-neutral-900 border border-neutral-700 rounded p-1.5 text-xs text-white focus:border-white outline-none disabled:opacity-50"
-                                    onChange={handleBackendTemplateSelect}
-                                    value={availableTemplates.includes(customTemplate?.name) ? customTemplate.name : ""}
-                                    disabled={availableTemplates.length === 0}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        if (!val) return;
+                                        if (val.startsWith('editor:')) {
+                                            handleEditorTemplateSelect(val.replace('editor:', ''));
+                                        } else {
+                                            handleBackendTemplateSelect(e);
+                                        }
+                                    }}
+                                    value={
+                                        customTemplate?.isEditorTemplate
+                                            ? `editor:${editorTemplates.find(t => t.name === customTemplate?.name)?.id || ''}`
+                                            : availableTemplates.includes(customTemplate?.name) ? customTemplate.name : ""
+                                    }
+                                    disabled={availableTemplates.length === 0 && editorTemplates.length === 0}
                                 >
                                     <option value="">
-                                        {availableTemplates.length === 0 ? "Sin plantillas (Verificar Backend)" : "-- Elegir Plantilla --"}
+                                        {availableTemplates.length === 0 && editorTemplates.length === 0 ? "Sin plantillas (Verificar Backend)" : "-- Elegir Plantilla --"}
                                     </option>
-                                    {availableTemplates.map(t => (
-                                        <option key={t} value={t}>{t}</option>
-                                    ))}
+                                    {availableTemplates.length > 0 && (
+                                        <optgroup label="Plantillas del Sistema">
+                                            {availableTemplates.map(t => (
+                                                <option key={t} value={t}>{t}</option>
+                                            ))}
+                                        </optgroup>
+                                    )}
+                                    {editorTemplates.length > 0 && (
+                                        <optgroup label="Plantillas del Editor">
+                                            {editorTemplates.map(t => (
+                                                <option key={t.id} value={`editor:${t.id}`}>{t.name}</option>
+                                            ))}
+                                        </optgroup>
+                                    )}
                                 </select>
                             </div>
 
@@ -637,7 +699,9 @@ export default function App() {
                                 }`}>
                                 <span className="text-neutral-400">Plantilla activa:</span>
                                 <span className={customTemplate ? 'text-green-400 font-medium' : 'text-neutral-500'}>
-                                    {customTemplate ? 'Personalizada' : 'Predeterminada'}
+                                    {customTemplate
+                                        ? (customTemplate.isEditorTemplate ? `Editor: ${customTemplate.name}` : 'Personalizada')
+                                        : 'Predeterminada'}
                                 </span>
                             </div>
 
@@ -957,6 +1021,15 @@ export default function App() {
                             >
                                 <span className="font-mono text-xs tracking-wide text-neutral-200 uppercase">Compresor</span>
                                 <Archive className="w-5 h-5 text-neutral-500 group-hover:text-neutral-300" />
+                            </a>
+                            <a
+                                href="/template-editor.html"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="group flex items-center justify-between w-full px-4 py-3 border border-dashed border-neutral-700 hover:border-neutral-500 bg-neutral-900/50 hover:bg-neutral-800/50 rounded-lg transition-all cursor-pointer"
+                            >
+                                <span className="font-mono text-xs tracking-wide text-neutral-200 uppercase">Template Editor</span>
+                                <FileCode className="w-5 h-5 text-neutral-500 group-hover:text-neutral-300" />
                             </a>
                         </div>
                     </div>

@@ -1,9 +1,9 @@
-from fastapi import FastAPI, UploadFile, File, Form, BackgroundTasks, HTTPException, APIRouter
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, UploadFile, File, Form, BackgroundTasks, HTTPException, APIRouter, Request
 from fastapi.staticfiles import StaticFiles
 import base64
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, FileResponse
-import io
 import shutil
 import os
 import json
@@ -18,8 +18,30 @@ from technical_reports.models import TechnicalReport
 from fichas_tecnicas.router import router as fichas_tecnicas_router
 from image_optimizer.router import router as image_optimizer_router
 from compressor.router import router as compressor_router
+from template_editor.router import router as template_editor_router
+from template_editor.service import get_published_template_by_name, get_all_published_templates
+from utils.file_utils import save_upload
 
-app = FastAPI()
+
+# --- Cleanup helper (used by multiple endpoints) ---
+def _cleanup_file(path: str):
+    try:
+        if os.path.exists(path):
+            os.remove(path)
+    except Exception as e:
+        print(f"Error removing temp file {path}: {e}")
+
+
+# --- App Lifespan: singleton ReportService ---
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    app.state.report_service = ReportService()
+    print("[App] ReportService initialized (singleton)")
+    yield
+    await app.state.report_service.close()
+    print("[App] ReportService closed")
+
+app = FastAPI(lifespan=lifespan)
 
 # Enable CORS for frontend (separate deployment on Vercel)
 app.add_middleware(
@@ -38,8 +60,6 @@ app.add_middleware(
     ],
 )
 
-# Global storage (removed unused legacy globals)
-
 # Create API Router with prefix
 api_router = APIRouter(prefix="/api")
 
@@ -48,15 +68,20 @@ app.include_router(technical_reports_router)
 app.include_router(fichas_tecnicas_router)
 app.include_router(image_optimizer_router)
 app.include_router(compressor_router)
+app.include_router(template_editor_router)
 
 @api_router.get("/templates")
 async def list_templates():
     templates_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
     if not os.path.exists(templates_dir):
-        return {"templates": []}
-    
-    templates = [f for f in os.listdir(templates_dir) if f.endswith(".html") and f != "report.html"]
-    return {"templates": templates}
+        file_templates = []
+    else:
+        file_templates = [f for f in os.listdir(templates_dir) if f.endswith(".html") and f != "report.html"]
+
+    # Include published templates from the block editor
+    editor_templates = get_all_published_templates()
+
+    return {"templates": file_templates, "editorTemplates": editor_templates}
 
 @api_router.get("/templates/{filename}")
 async def get_template_content(filename: str):
@@ -64,10 +89,10 @@ async def get_template_content(filename: str):
     safe_filename = os.path.basename(filename)
     templates_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
     file_path = os.path.join(templates_dir, safe_filename)
-    
+
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Template not found")
-        
+
     try:
         with open(file_path, "r", encoding="utf-8") as f:
             content = f.read()
@@ -77,6 +102,7 @@ async def get_template_content(filename: str):
 
 @api_router.post("/generate-pdf")
 async def generate_single_pdf(
+    request: Request,
     background_tasks: BackgroundTasks,
     data: str = Form(...),
     files: List[UploadFile] = File(default=[]),
@@ -89,6 +115,15 @@ async def generate_single_pdf(
     try:
         # Parse JSON data
         row_data = json.loads(data)
+
+        # Compatibility bridge: optionally resolve published visual template without changing API contract.
+        resolved_custom_template = customTemplate
+        resolved_template_name = templateName
+        if templateName and not customTemplate:
+            compiled_template = get_published_template_by_name(templateName)
+            if compiled_template:
+                resolved_custom_template = compiled_template
+                resolved_template_name = None
 
         # Validate against Pydantic model to ensure defaults (like impulsion) are populated
         try:
@@ -104,7 +139,7 @@ async def generate_single_pdf(
                 # Ensure 'valvulas' exists
                 if 'valvulas' not in row_data or not isinstance(row_data['valvulas'], dict):
                      row_data['valvulas'] = {}
-                
+
                 # Ensure 'impulsion' exists in valvulas
                 if 'impulsion' not in row_data['valvulas']:
                     row_data['valvulas']['impulsion'] = {'2':0,'3':0,'4':0,'6':0,'8':0,'10':0,'12':0}
@@ -119,15 +154,15 @@ async def generate_single_pdf(
                              # Add '14' if missing (canastillas use 14" not 12")
                              if '14' not in canastillas[section]:
                                  canastillas[section]['14'] = 0
-                             
+
                 # Ensure 'inspeccion' exists (sometimes missing in very old drafts)
                 if 'inspeccion' not in row_data:
                     row_data['inspeccion'] = {}
-                    
+
         except Exception as e:
             print(f"Error during manual data patching: {e}")
         # --------------------------------------------------
-        
+
         # Helper to process logo
         async def process_logo(logo_file):
             if not logo_file: return None
@@ -145,16 +180,15 @@ async def generate_single_pdf(
         # Create temp directory for images
         with tempfile.TemporaryDirectory() as temp_dir:
             file_map = {}
-            
+
             # Save uploaded images to temp dir
             for file in files:
                 file_path = os.path.join(temp_dir, file.filename)
-                with open(file_path, "wb") as buffer:
-                    shutil.copyfileobj(file.file, buffer)
+                await save_upload(file, file_path)
                 file_map[file.filename] = {"name": file.filename, "path": file_path}
 
-            # Prepare reports list
-            service = ReportService()
+            # Use singleton ReportService
+            service = request.app.state.report_service
             reports_payload = []
 
             # Check if this is a batch request (list) or legacy single (dict)
@@ -163,20 +197,20 @@ async def generate_single_pdf(
                 for item in row_data:
                     r_data = item.get("row_data", {})
                     img_names = item.get("image_filenames", [])
-                    
+
                     # Find matching file objects
                     r_files = []
                     for name in img_names:
                         if name in file_map:
                             r_files.append(file_map[name])
-                            
+
                     reports_payload.append({"data": r_data, "files": r_files})
             else:
                 # Legacy single mode: all files belong to this row
                 # Convert file_map values to list
                 r_files = list(file_map.values())
                 reports_payload.append({"data": row_data, "files": r_files})
-            
+
             # Create a temporary file for output that persists (delete=False)
             # This ensures the large PDF is written to disk, not held in RAM.
             # FileResponse will stream it from disk to the client.
@@ -190,8 +224,8 @@ async def generate_single_pdf(
                     output_path=output_path,
                     logo_left=logo_left_b64,
                     logo_right=logo_right_b64,
-                    custom_template_str=customTemplate,
-                    template_name=templateName
+                    custom_template_str=resolved_custom_template,
+                    template_name=resolved_template_name
                 )
             except Exception:
                 # If generation fails, ensure we clean up the file immediately
@@ -199,29 +233,21 @@ async def generate_single_pdf(
                     os.remove(output_path)
                 raise
 
-            # Cleanup task (runs after response is sent)
-            def cleanup_file(path: str):
-                try:
-                    if os.path.exists(path):
-                        os.remove(path)
-                except Exception as e:
-                    print(f"Error removing temp file {path}: {e}")
-
-            background_tasks.add_task(cleanup_file, output_path)
+            background_tasks.add_task(_cleanup_file, output_path)
 
             # Return FileResponse (streams from disk)
             return FileResponse(
-                output_path, 
-                media_type="application/pdf", 
+                output_path,
+                media_type="application/pdf",
                 filename="report_consolidado.pdf"
             )
-            
+
     except json.JSONDecodeError as e:
         raise HTTPException(status_code=400, detail=f"Invalid JSON format in 'data' field: {str(e)}")
     except Exception as e:
         error_trace = traceback.format_exc()
         print(f"PDF Generation Error:\n{error_trace}")
-        
+
         # Try to provide a user-friendly message for common errors
         error_msg = str(e)
         if "weasyprint" in error_trace.lower():
@@ -231,7 +257,7 @@ async def generate_single_pdf(
 
         # Return 500 with clear details
         raise HTTPException(
-            status_code=500, 
+            status_code=500,
             detail={
                 "message": "Failed to generate PDF",
                 "reason": error_msg,
@@ -243,6 +269,7 @@ async def generate_single_pdf(
 
 @api_router.post("/tools/merge-pdfs")
 async def tool_merge_pdfs(
+    background_tasks: BackgroundTasks,
     files: List[UploadFile] = File(...),
     strict: bool = Form(False)
 ):
@@ -253,39 +280,38 @@ async def tool_merge_pdfs(
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
             input_paths = []
-            # Save uploaded files
+            # Save uploaded files (streaming)
             for file in files:
                 file_path = os.path.join(temp_dir, file.filename)
-                with open(file_path, "wb") as buffer:
-                    shutil.copyfileobj(file.file, buffer)
+                await save_upload(file, file_path)
                 input_paths.append(file_path)
 
-            # Define output path
-            output_path = os.path.join(temp_dir, "merged_output.pdf")
+            # Output to persistent temp file (survives TemporaryDirectory cleanup)
+            final_path = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf").name
 
             # Execute merge
-            result = merge_pdfs_interleaved(
+            merge_pdfs_interleaved(
                 input_paths=input_paths,
-                output_path=output_path,
+                output_path=final_path,
                 strict=strict
             )
 
-            # Read result bytes
-            with open(output_path, "rb") as f:
-                pdf_bytes = f.read()
+        background_tasks.add_task(_cleanup_file, final_path)
+        return FileResponse(
+            final_path,
+            media_type="application/pdf",
+            filename="merged_interleaved.pdf"
+        )
 
-            return Response(
-                content=pdf_bytes,
-                media_type="application/pdf",
-                headers={"Content-Disposition": "attachment; filename=merged_interleaved.pdf"}
-            )
-
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Merge Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.post("/tools/merge-pdfs-normal")
 async def tool_merge_pdfs_normal(
+    background_tasks: BackgroundTasks,
     files: List[UploadFile] = File(...)
 ):
     """
@@ -298,61 +324,52 @@ async def tool_merge_pdfs_normal(
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
             input_paths = []
-            # Save uploaded files with unique names to avoid collisions
+            # Save uploaded files with unique names to avoid collisions (streaming)
             for idx, file in enumerate(files):
-                # Use index prefix to preserve order and avoid filename collisions
                 safe_filename = f"{idx:04d}_{file.filename}"
                 file_path = os.path.join(temp_dir, safe_filename)
-
-                # Read file content fully (await for async read)
-                content = await file.read()
-                file_size = len(content)
-
-                with open(file_path, "wb") as buffer:
-                    buffer.write(content)
-
+                file_size = await save_upload(file, file_path)
                 input_paths.append(file_path)
                 print(f"  Saved file {idx}: {file.filename} -> {safe_filename} ({file_size} bytes)")
 
-            # Define output path
-            output_path = os.path.join(temp_dir, "merged_output.pdf")
+            # Output to persistent temp file
+            final_path = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf").name
 
             # Execute sequential merge
-            result = merge_pdfs_sequential(
+            merge_pdfs_sequential(
                 input_paths=input_paths,
-                output_path=output_path
+                output_path=final_path
             )
 
-            # Read result bytes
-            with open(output_path, "rb") as f:
-                pdf_bytes = f.read()
+        background_tasks.add_task(_cleanup_file, final_path)
+        return FileResponse(
+            final_path,
+            media_type="application/pdf",
+            filename="merged_normal.pdf"
+        )
 
-            return Response(
-                content=pdf_bytes,
-                media_type="application/pdf",
-                headers={"Content-Disposition": "attachment; filename=merged_normal.pdf"}
-            )
-
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Merge Normal Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.post("/tools/split-pdf")
 async def tool_split_pdf(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     mode: str = Form("pages"),  # 'pages' or 'custom'
     pages_per_file: int = Form(1),
     ranges: Optional[str] = Form(None)  # JSON string e.g. "[[1,2], [3,5]]"
 ):
     print(f"Tool Split Request: {file.filename}, mode={mode}, pages={pages_per_file}, ranges={ranges}")
-    
+
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
-            # Save input file
+            # Save input file (streaming)
             input_path = os.path.join(temp_dir, file.filename)
-            with open(input_path, "wb") as buffer:
-                shutil.copyfileobj(file.file, buffer)
-            
+            await save_upload(file, input_path)
+
             output_dir = os.path.join(temp_dir, "split_output")
             os.makedirs(output_dir, exist_ok=True)
 
@@ -379,20 +396,21 @@ async def tool_split_pdf(
                     pages_per_file=pages_per_file
                 )
 
-            # Create ZIP of results
-            zip_io = io.BytesIO()
-            with zipfile.ZipFile(zip_io, mode='w', compression=zipfile.ZIP_DEFLATED) as zip_file:
+            # Create ZIP to persistent temp file (not BytesIO)
+            final_zip = tempfile.NamedTemporaryFile(delete=False, suffix=".zip").name
+            with zipfile.ZipFile(final_zip, mode='w', compression=zipfile.ZIP_DEFLATED) as zip_file:
                 for f_path in output_files:
                     zip_file.write(f_path, arcname=os.path.basename(f_path))
-            
-            zip_io.seek(0)
-            
-            return Response(
-                content=zip_io.read(), 
-                media_type="application/zip",
-                headers={"Content-Disposition": f"attachment; filename={os.path.splitext(file.filename)[0]}_split.zip"}
-            )
 
+        background_tasks.add_task(_cleanup_file, final_zip)
+        return FileResponse(
+            final_zip,
+            media_type="application/zip",
+            filename=f"{os.path.splitext(file.filename)[0]}_split.zip"
+        )
+
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"Split Error: {e}")
         traceback.print_exc()
@@ -422,7 +440,7 @@ if os.path.exists("static"):
         path = os.path.join("static", full_path)
         if os.path.exists(path) and os.path.isfile(path):
             return FileResponse(path)
-        
+
         # Fallback to index.html for React Router
         return FileResponse("static/index.html")
 
