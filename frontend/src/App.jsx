@@ -12,6 +12,27 @@ import { useFocusMode } from './hooks/useFocusMode';
 import { excelSerialToDate, formatDateValue, isDateColumn } from './utils';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const TEMPLATE_STATUS_PRIORITY = { published: 0, draft: 1, archived: 2 };
+
+const normalizeTemplateStatus = (status) => {
+    const normalized = String(status || 'draft').toLowerCase();
+    return TEMPLATE_STATUS_PRIORITY[normalized] !== undefined ? normalized : 'draft';
+};
+
+const normalizeEditorTemplate = (template, fallbackStatus = 'draft') => ({
+    id: String(template?.id || ''),
+    name: String(template?.name || '').trim(),
+    status: normalizeTemplateStatus(template?.status || fallbackStatus),
+});
+
+const sortEditorTemplates = (templates) => (
+    [...templates].sort((a, b) => {
+        const rankA = TEMPLATE_STATUS_PRIORITY[normalizeTemplateStatus(a.status)];
+        const rankB = TEMPLATE_STATUS_PRIORITY[normalizeTemplateStatus(b.status)];
+        if (rankA !== rankB) return rankA - rankB;
+        return a.name.localeCompare(b.name, 'es', { sensitivity: 'base' });
+    })
+);
 
 export default function App() {
     const panelRef = useRef(null);
@@ -46,7 +67,7 @@ export default function App() {
     const [templateStatus, setTemplateStatus] = useState(null); // 'valid' | 'invalid' | null
     const [templateError, setTemplateError] = useState('');
     const [availableTemplates, setAvailableTemplates] = useState([]);
-    const [editorTemplates, setEditorTemplates] = useState([]); // [{id, name}]
+    const [editorTemplates, setEditorTemplates] = useState([]); // [{id, name, status}]
 
     // Custom Columns State
     const [customColumns, setCustomColumns] = useState(() => {
@@ -80,15 +101,57 @@ export default function App() {
 
 
 
-    // Fetch available templates on mount (file templates + editor templates)
+    // Fetch available templates on mount.
+    // Source of truth for editor templates is /api/template-editor/templates (Supabase/local store).
+    // Legacy /api/templates remains as fallback for old deployments.
     useEffect(() => {
-        fetch(`${API_BASE_URL}/templates`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.templates) setAvailableTemplates(data.templates);
-                if (data.editorTemplates) setEditorTemplates(data.editorTemplates);
-            })
-            .catch(err => console.error("Error fetching templates:", err));
+        let cancelled = false;
+
+        const loadTemplates = async () => {
+            try {
+                const [legacyResult, editorResult] = await Promise.allSettled([
+                    fetch(`${API_BASE_URL}/templates`),
+                    fetch(`${API_BASE_URL}/template-editor/templates`),
+                ]);
+
+                let nextAvailableTemplates = [];
+                let legacyEditorTemplates = [];
+                if (legacyResult.status === 'fulfilled' && legacyResult.value.ok) {
+                    const legacyData = await legacyResult.value.json();
+                    nextAvailableTemplates = Array.isArray(legacyData.templates) ? legacyData.templates : [];
+                    legacyEditorTemplates = Array.isArray(legacyData.editorTemplates)
+                        ? legacyData.editorTemplates
+                            .map((item) => normalizeEditorTemplate(item, 'published'))
+                            .filter((item) => item.id && item.name)
+                        : [];
+                }
+
+                let dbEditorTemplates = [];
+                if (editorResult.status === 'fulfilled' && editorResult.value.ok) {
+                    const editorData = await editorResult.value.json();
+                    dbEditorTemplates = Array.isArray(editorData.templates)
+                        ? editorData.templates
+                            .map((item) => normalizeEditorTemplate(item, item?.status || 'draft'))
+                            .filter((item) => item.id && item.name)
+                        : [];
+                }
+
+                const visibleEditorTemplates = dbEditorTemplates.length > 0
+                    ? dbEditorTemplates
+                    : legacyEditorTemplates;
+
+                if (cancelled) return;
+                setAvailableTemplates(nextAvailableTemplates);
+                setEditorTemplates(sortEditorTemplates(visibleEditorTemplates));
+            } catch (err) {
+                console.error("Error fetching templates:", err);
+            }
+        };
+
+        loadTemplates();
+        return () => {
+            cancelled = true;
+        };
     }, []);
 
     // Navigation helpers for Focus Mode
@@ -240,7 +303,15 @@ export default function App() {
 
             const content = latest.compiledJinja;
             // Editor templates are always valid (compiled from blocks)
-            setCustomTemplate({ name: data.name, content, isBackendTemplate: false, isEditorTemplate: true });
+            const listedTemplate = editorTemplates.find((tpl) => tpl.id === editorTemplateId);
+            setCustomTemplate({
+                name: data.name,
+                content,
+                isBackendTemplate: false,
+                isEditorTemplate: true,
+                editorTemplateId,
+                editorTemplateStatus: normalizeTemplateStatus(data.status || listedTemplate?.status),
+            });
             setTemplateStatus('valid');
             setTemplateError('');
 
@@ -662,7 +733,7 @@ export default function App() {
                                     }}
                                     value={
                                         customTemplate?.isEditorTemplate
-                                            ? `editor:${editorTemplates.find(t => t.name === customTemplate?.name)?.id || ''}`
+                                            ? `editor:${customTemplate?.editorTemplateId || editorTemplates.find(t => t.name === customTemplate?.name)?.id || ''}`
                                             : availableTemplates.includes(customTemplate?.name) ? customTemplate.name : ""
                                     }
                                     disabled={availableTemplates.length === 0 && editorTemplates.length === 0}
@@ -680,7 +751,7 @@ export default function App() {
                                     {editorTemplates.length > 0 && (
                                         <optgroup label="Plantillas del Editor">
                                             {editorTemplates.map(t => (
-                                                <option key={t.id} value={`editor:${t.id}`}>{t.name}</option>
+                                                <option key={t.id} value={`editor:${t.id}`}>{`${t.name} [${normalizeTemplateStatus(t.status)}]`}</option>
                                             ))}
                                         </optgroup>
                                     )}
@@ -700,7 +771,7 @@ export default function App() {
                                 <span className="text-neutral-400">Plantilla activa:</span>
                                 <span className={customTemplate ? 'text-green-400 font-medium' : 'text-neutral-500'}>
                                     {customTemplate
-                                        ? (customTemplate.isEditorTemplate ? `Editor: ${customTemplate.name}` : 'Personalizada')
+                                        ? (customTemplate.isEditorTemplate ? `Editor: ${customTemplate.name} (${normalizeTemplateStatus(customTemplate.editorTemplateStatus)})` : 'Personalizada')
                                         : 'Predeterminada'}
                                 </span>
                             </div>

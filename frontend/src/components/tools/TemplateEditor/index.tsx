@@ -109,7 +109,6 @@ export default function TemplateEditor() {
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [publishStatus, setPublishStatus] = useState<PublishStatus>('draft');
-  const [publishVersion, setPublishVersion] = useState(1);
   const [previewHtml, setPreviewHtml] = useState('');
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [history, setHistory] = useState<BlockTemplateDocument[]>([]);
@@ -248,7 +247,6 @@ export default function TemplateEditor() {
     try {
       const data = await templateEditorApi.publishTemplate(templateId, 'block-editor');
       setPublishStatus((data.status as PublishStatus) || 'published');
-      setPublishVersion(data.currentVersion || publishVersion + 1);
       setDirty(false);
       alert('Plantilla publicada. Ahora estará disponible en el generador de reportes.');
     } catch {
@@ -368,7 +366,13 @@ export default function TemplateEditor() {
               </button>
             </div>
             <div className="flex-1 overflow-auto p-6 bg-neutral-50">
-              <div className="mx-auto bg-white rounded-sm shadow-lg max-w-[794px]" style={{ minHeight: 500 }} dangerouslySetInnerHTML={{ __html: previewHtml }} />
+              <iframe
+                srcDoc={previewHtml}
+                sandbox="allow-same-origin"
+                title="Vista Previa"
+                className="mx-auto bg-white rounded-sm shadow-lg block"
+                style={{ width: 794, minHeight: 500, height: '100%', border: 'none' }}
+              />
             </div>
           </div>
         </div>

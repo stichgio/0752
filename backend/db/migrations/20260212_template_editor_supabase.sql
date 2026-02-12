@@ -36,4 +36,3 @@ create index if not exists idx_template_versions_template_id
 
 create index if not exists idx_templates_report_type_status
   on public.templates(report_type, status);
-
