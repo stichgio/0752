@@ -10,29 +10,13 @@ import { Step, LoadingModal } from './components/common';
 import { REPORT_FIELDS, TEMPLATE_KEY_MAP, DATE_FIELDS, TEMPLATE_HEADERS } from './constants';
 import { useFocusMode } from './hooks/useFocusMode';
 import { excelSerialToDate, formatDateValue, isDateColumn } from './utils';
+import {
+    normalizeEditorTemplate,
+    normalizeTemplateStatus,
+    selectEditorTemplatesForDropdown,
+} from './utils/editorTemplateSelector';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
-const TEMPLATE_STATUS_PRIORITY = { published: 0, draft: 1, archived: 2 };
-
-const normalizeTemplateStatus = (status) => {
-    const normalized = String(status || 'draft').toLowerCase();
-    return TEMPLATE_STATUS_PRIORITY[normalized] !== undefined ? normalized : 'draft';
-};
-
-const normalizeEditorTemplate = (template, fallbackStatus = 'draft') => ({
-    id: String(template?.id || ''),
-    name: String(template?.name || '').trim(),
-    status: normalizeTemplateStatus(template?.status || fallbackStatus),
-});
-
-const sortEditorTemplates = (templates) => (
-    [...templates].sort((a, b) => {
-        const rankA = TEMPLATE_STATUS_PRIORITY[normalizeTemplateStatus(a.status)];
-        const rankB = TEMPLATE_STATUS_PRIORITY[normalizeTemplateStatus(b.status)];
-        if (rankA !== rankB) return rankA - rankB;
-        return a.name.localeCompare(b.name, 'es', { sensitivity: 'base' });
-    })
-);
 
 export default function App() {
     const panelRef = useRef(null);
@@ -136,13 +120,14 @@ export default function App() {
                         : [];
                 }
 
-                const visibleEditorTemplates = dbEditorTemplates.length > 0
-                    ? dbEditorTemplates
-                    : legacyEditorTemplates;
+                const visibleEditorTemplates = selectEditorTemplatesForDropdown(
+                    dbEditorTemplates,
+                    legacyEditorTemplates
+                );
 
                 if (cancelled) return;
                 setAvailableTemplates(nextAvailableTemplates);
-                setEditorTemplates(sortEditorTemplates(visibleEditorTemplates));
+                setEditorTemplates(visibleEditorTemplates);
             } catch (err) {
                 console.error("Error fetching templates:", err);
             }

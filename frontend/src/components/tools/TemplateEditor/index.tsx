@@ -190,7 +190,6 @@ export default function TemplateEditor() {
         const created = await templateEditorApi.createTemplate({
           name: doc.name,
           reportType: 'default',
-          document: {} as any, // Not used when templateJson is provided
           author: 'block-editor',
           featureFlag: true,
           templateJson,
@@ -200,7 +199,6 @@ export default function TemplateEditor() {
         await templateEditorApi.updateTemplate(templateId, {
           role: 'admin',
           author: 'block-editor',
-          document: {} as any,
           templateJson,
         });
       }
