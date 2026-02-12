@@ -64,6 +64,7 @@ function documentToTemplateJson(doc: BlockTemplateDocument) {
 }
 
 type PublishStatus = 'draft' | 'published' | 'archived';
+type PublishedTemplateItem = { id: string; name: string };
 
 function StatusPill({ status }: { status: string }) {
   const map: Record<string, string> = {
@@ -113,6 +114,8 @@ export default function TemplateEditor() {
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [history, setHistory] = useState<BlockTemplateDocument[]>([]);
   const [future, setFuture] = useState<BlockTemplateDocument[]>([]);
+  const [publishedTemplates, setPublishedTemplates] = useState<PublishedTemplateItem[]>([]);
+  const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null);
 
   // Load draft from localStorage
   useEffect(() => {
@@ -127,6 +130,21 @@ export default function TemplateEditor() {
       localStorage.removeItem(DRAFT_KEY);
     }
   }, []);
+
+  const loadPublishedTemplates = useCallback(async () => {
+    try {
+      const data = await templateEditorApi.listPublishedTemplates();
+      const templates = Array.isArray(data.templates) ? data.templates : [];
+      setPublishedTemplates(templates);
+    } catch (err) {
+      console.error('Unable to load published templates:', err);
+      setPublishedTemplates([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadPublishedTemplates();
+  }, [loadPublishedTemplates]);
 
   // Auto-save draft
   useEffect(() => {
@@ -245,10 +263,33 @@ export default function TemplateEditor() {
     try {
       const data = await templateEditorApi.publishTemplate(templateId, 'block-editor');
       setPublishStatus((data.status as PublishStatus) || 'published');
+      await loadPublishedTemplates();
       setDirty(false);
       alert('Plantilla publicada. Ahora estará disponible en el generador de reportes.');
     } catch {
       alert('No se pudo publicar. Verifique que FEATURE_TEMPLATE_EDITOR=true en el backend.');
+    }
+  };
+
+  const deletePublishedTemplate = async (publishedTemplateId: string, publishedTemplateName: string) => {
+    if (!window.confirm(`Eliminar plantilla publicada "${publishedTemplateName}"?`)) {
+      return;
+    }
+
+    setDeletingTemplateId(publishedTemplateId);
+    try {
+      await templateEditorApi.deleteTemplate(publishedTemplateId, 'block-editor');
+      await loadPublishedTemplates();
+      if (templateId === publishedTemplateId) {
+        setTemplateId(null);
+        setPublishStatus('draft');
+      }
+      alert('Plantilla eliminada de publicadas.');
+    } catch (err) {
+      console.error('Delete failed:', err);
+      alert('No se pudo eliminar la plantilla publicada.');
+    } finally {
+      setDeletingTemplateId(null);
     }
   };
 
@@ -347,7 +388,13 @@ export default function TemplateEditor() {
 
       {/* ═══ BODY ═══ */}
       <div className="h-[calc(100vh-48px)]">
-        <BlockEditor document={doc} onChange={handleDocChange} />
+        <BlockEditor
+          document={doc}
+          onChange={handleDocChange}
+          publishedTemplates={publishedTemplates}
+          deletingTemplateId={deletingTemplateId}
+          onDeletePublishedTemplate={deletePublishedTemplate}
+        />
       </div>
 
       {/* ═══ Preview Modal ═══ */}

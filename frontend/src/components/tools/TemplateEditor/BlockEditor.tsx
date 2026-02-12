@@ -65,14 +65,25 @@ const CATEGORIES = [
 interface BlockEditorProps {
   document: BlockTemplateDocument;
   onChange: (doc: BlockTemplateDocument) => void;
+  publishedTemplates?: Array<{ id: string; name: string }>;
+  deletingTemplateId?: string | null;
+  onDeletePublishedTemplate?: (templateId: string, templateName: string) => void | Promise<void>;
 }
 
+type PanelMode = 'blocks' | 'plantillas' | 'publicadas';
+
 /* ── BlockEditor ── */
-export default function BlockEditor({ document, onChange }: BlockEditorProps) {
+export default function BlockEditor({
+  document,
+  onChange,
+  publishedTemplates = [],
+  deletingTemplateId = null,
+  onDeletePublishedTemplate,
+}: BlockEditorProps) {
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
-  const [showPresets, setShowPresets] = useState(false);
+  const [panelMode, setPanelMode] = useState<PanelMode>('blocks');
 
   const selectedBlock = useMemo(
     () => document.blocks.find((b) => b.id === selectedBlockId) ?? null,
@@ -134,7 +145,7 @@ export default function BlockEditor({ document, onChange }: BlockEditorProps) {
       blocks,
       updatedAt: new Date().toISOString(),
     });
-    setShowPresets(false);
+    setPanelMode('blocks');
     setSelectedBlockId(null);
   };
 
@@ -171,16 +182,30 @@ export default function BlockEditor({ document, onChange }: BlockEditorProps) {
       <aside className="bg-white/70 backdrop-blur-md border-r border-neutral-200/50 flex flex-col overflow-hidden">
         <div className="p-4 pb-3 border-b border-neutral-100 flex items-center justify-between">
           <h2 className="text-[11px] font-bold uppercase tracking-widest text-neutral-400">Bloques</h2>
-          <button
-            onClick={() => setShowPresets(!showPresets)}
-            className="text-[10px] font-semibold text-violet-600 hover:text-violet-700 transition-colors"
-          >
-            {showPresets ? 'Bloques' : 'Plantillas'}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPanelMode('plantillas')}
+              className={`text-[10px] font-semibold transition-colors ${panelMode === 'plantillas' ? 'text-violet-700' : 'text-violet-500 hover:text-violet-700'}`}
+            >
+              Plantillas
+            </button>
+            <button
+              onClick={() => setPanelMode('publicadas')}
+              className={`text-[10px] font-semibold transition-colors ${panelMode === 'publicadas' ? 'text-violet-700' : 'text-violet-500 hover:text-violet-700'}`}
+            >
+              Publicadas
+            </button>
+            <button
+              onClick={() => setPanelMode('blocks')}
+              className={`text-[10px] font-semibold transition-colors ${panelMode === 'blocks' ? 'text-violet-700' : 'text-violet-500 hover:text-violet-700'}`}
+            >
+              Bloques
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-3 space-y-1">
-          {showPresets ? (
+          {panelMode === 'plantillas' ? (
             /* Preset templates */
             <div className="space-y-2">
               <p className="text-[10px] text-neutral-400 px-1 mb-2">
@@ -206,6 +231,39 @@ export default function BlockEditor({ document, onChange }: BlockEditorProps) {
                     ))}
                   </div>
                 </button>
+              ))}
+            </div>
+          ) : panelMode === 'publicadas' ? (
+            <div className="space-y-2">
+              <p className="text-[10px] text-neutral-400 px-1 mb-2">
+                Plantillas publicadas disponibles para eliminar.
+              </p>
+              {publishedTemplates.length === 0 && (
+                <div className="rounded-xl border border-dashed border-neutral-300 bg-white p-3 text-[11px] text-neutral-400">
+                  No hay plantillas publicadas.
+                </div>
+              )}
+              {publishedTemplates.map((template) => (
+                <div
+                  key={template.id}
+                  className="w-full rounded-xl p-3 bg-white border border-neutral-150 shadow-sm transition-all"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-[12px] font-semibold text-neutral-800 truncate">{template.name}</div>
+                      <div className="text-[10px] text-neutral-400 mt-0.5">Estado: published</div>
+                    </div>
+                    <button
+                      onClick={() => onDeletePublishedTemplate?.(template.id, template.name)}
+                      disabled={deletingTemplateId === template.id}
+                      className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2 py-1 text-[10px] font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Eliminar plantilla publicada"
+                    >
+                      <Trash2 size={10} />
+                      {deletingTemplateId === template.id ? 'Eliminando...' : 'Eliminar'}
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
           ) : (

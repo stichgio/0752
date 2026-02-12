@@ -16,6 +16,7 @@ from .schemas import (
 )
 from .service import (
     create_template,
+    delete_template,
     get_all_editor_templates,
     get_all_published_templates,
     get_preview_html,
@@ -136,3 +137,12 @@ async def rollback_template_endpoint(template_id: str, payload: RollbackTemplate
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     return _model_dump(restored)
+
+
+@router.delete("/templates/{template_id}")
+async def delete_template_endpoint(template_id: str, author: str = "system"):
+    try:
+        deleted = delete_template(template_id, author)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    return _model_dump(deleted)

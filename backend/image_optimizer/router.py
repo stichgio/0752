@@ -33,8 +33,9 @@ async def create_zip_download(files: List[UploadFile] = File(...)):
                 # Read file content
                 content = await file.read()
 
-                # Add to ZIP with original filename
-                zip_file.writestr(file.filename, content)
+                # Add to ZIP with sanitized filename (prevent path traversal)
+                safe_name = os.path.basename(file.filename or "file")
+                zip_file.writestr(safe_name, content)
 
         # Seek to beginning of buffer
         zip_buffer.seek(0)

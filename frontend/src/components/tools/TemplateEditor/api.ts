@@ -45,6 +45,13 @@ export const templateEditorApi = {
     return data;
   },
 
+  deleteTemplate: async (templateId: string, author = 'system') => {
+    const { data } = await apiClient.delete(`/api/template-editor/templates/${templateId}`, {
+      params: { author },
+    });
+    return data;
+  },
+
   updateTemplate: async (templateId: string, payload: { role: 'admin' | 'editor'; author: string; document?: TemplateDocument; templateJson?: any }) => {
     const { data } = await apiClient.put(`/api/template-editor/templates/${templateId}`, {
       role: payload.role,

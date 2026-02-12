@@ -1,5 +1,5 @@
 from collections import defaultdict, deque
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 from typing import Any, Deque, Dict, List, Optional, Tuple
@@ -65,7 +65,7 @@ class BasicRateLimiter:
         self._hits: Dict[str, Deque[datetime]] = defaultdict(deque)
 
     def check(self, key: str) -> bool:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         threshold = now - timedelta(minutes=1)
         queue = self._hits[key]
         while queue and queue[0] < threshold:
@@ -80,7 +80,7 @@ rate_limiter = BasicRateLimiter()
 
 
 def _now_iso() -> str:
-    return datetime.utcnow().isoformat()
+    return datetime.now(timezone.utc).isoformat()
 
 
 def _model_copy_deep(model: Any) -> Any:
@@ -256,6 +256,18 @@ class LocalTemplateStore:
         )
         record.currentVersion = new_version
         record.status = "published"
+        record.updatedAt = now
+        record.updatedBy = author
+        db.update(template_id, record)
+        return record
+
+    def delete_template(self, template_id: str, author: str) -> TemplateEditorRecord:
+        record = db.get(template_id)
+        if not record:
+            raise ValueError("Template not found")
+
+        now = _now_iso()
+        record.status = "archived"
         record.updatedAt = now
         record.updatedBy = author
         db.update(template_id, record)
@@ -458,7 +470,7 @@ class SupabaseTemplateStore:
         draft_compiled_path = _draft_compiled_path(template_id)
         draft_editor_json = self.client.download_text(draft_editor_path)
         draft_compiled_html = self.client.download_text(draft_compiled_path)
-        if not draft_editor_json or draft_compiled_html is None:
+        if draft_editor_json is None or draft_compiled_html is None:
             raise ValueError("Template draft not found. Save a draft before publishing")
 
         draft_checksum = hashlib.sha256(f"{draft_editor_json}\n{draft_compiled_html}".encode("utf-8")).hexdigest()
@@ -529,6 +541,22 @@ class SupabaseTemplateStore:
             {
                 "current_version": int(resolved_target),
                 "status": "published",
+                "updated_by": author,
+                "updated_at": now,
+            },
+        )
+        return self._build_record(updated_row)
+
+    def delete_template(self, template_id: str, author: str) -> TemplateEditorRecord:
+        template_row = self.client.get_template(template_id)
+        if not template_row:
+            raise ValueError("Template not found")
+
+        now = _now_iso()
+        updated_row = self.client.update_template(
+            template_id,
+            {
+                "status": "archived",
                 "updated_by": author,
                 "updated_at": now,
             },
@@ -666,6 +694,10 @@ def publish_template(template_id: str, author: str) -> TemplateEditorRecord:
 
 def rollback_template(template_id: str, target_version: Optional[int], author: str) -> TemplateEditorRecord:
     return _get_editor_store(strict=True).rollback_template(template_id, target_version, author)
+
+
+def delete_template(template_id: str, author: str) -> TemplateEditorRecord:
+    return _get_editor_store(strict=True).delete_template(template_id, author)
 
 
 def get_preview_html(template_id: str) -> Optional[str]:
