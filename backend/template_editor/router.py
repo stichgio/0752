@@ -16,6 +16,7 @@ from .schemas import (
 )
 from .service import (
     create_template,
+    get_all_editor_templates,
     get_all_published_templates,
     get_preview_html,
     get_template,
@@ -48,6 +49,12 @@ async def variable_catalog(report_type: str):
 @router.get("/published")
 async def list_published_templates():
     templates = get_all_published_templates()
+    return {"templates": templates}
+
+
+@router.get("/templates")
+async def list_templates_endpoint():
+    templates = get_all_editor_templates()
     return {"templates": templates}
 
 
@@ -129,4 +136,3 @@ async def rollback_template_endpoint(template_id: str, payload: RollbackTemplate
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     return _model_dump(restored)
-

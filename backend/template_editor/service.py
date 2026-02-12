@@ -280,6 +280,20 @@ class LocalTemplateStore:
                 results.append({"id": item.id, "name": item.name})
         return results
 
+    def list_templates(self) -> List[Dict[str, str]]:
+        results: List[Dict[str, str]] = []
+        for item in db.get_all():
+            status = item.status if item.status in {"draft", "published", "archived"} else "draft"
+            results.append(
+                {
+                    "id": item.id,
+                    "name": item.name,
+                    "status": status,
+                    "updatedAt": item.updatedAt,
+                }
+            )
+        return results
+
 
 class SupabaseTemplateStore:
     def __init__(self, client: SupabaseTemplateClient):
@@ -556,6 +570,23 @@ class SupabaseTemplateStore:
         rows = self.client.list_published_templates()
         return [{"id": str(row["id"]), "name": str(row["name"])} for row in rows]
 
+    def list_templates(self) -> List[Dict[str, str]]:
+        rows = self.client.list_templates()
+        results: List[Dict[str, str]] = []
+        for row in rows:
+            status = str(row.get("status") or "draft")
+            if status not in {"draft", "published", "archived"}:
+                status = "draft"
+            results.append(
+                {
+                    "id": str(row["id"]),
+                    "name": str(row["name"]),
+                    "status": status,
+                    "updatedAt": str(row.get("updated_at") or _now_iso()),
+                }
+            )
+        return results
+
 
 _local_store = LocalTemplateStore()
 _store_override: Optional[Any] = None
@@ -674,3 +705,64 @@ def get_all_published_templates() -> List[Dict[str, str]]:
         results.setdefault(item["name"], item)
     return list(results.values())
 
+
+def _template_status_rank(status: str) -> int:
+    if status == "published":
+        return 0
+    if status == "draft":
+        return 1
+    return 2
+
+
+def _normalize_template_summary(item: Dict[str, Any]) -> Dict[str, str]:
+    status = str(item.get("status") or "draft")
+    if status not in {"draft", "published", "archived"}:
+        status = "draft"
+    return {
+        "id": str(item.get("id") or ""),
+        "name": str(item.get("name") or ""),
+        "status": status,
+        "updatedAt": str(item.get("updatedAt") or item.get("updated_at") or ""),
+    }
+
+
+def _sort_template_summaries(items: List[Dict[str, str]]) -> List[Dict[str, str]]:
+    ordered = sorted(items, key=lambda item: str(item.get("name") or "").lower())
+    ordered = sorted(ordered, key=lambda item: str(item.get("updatedAt") or ""), reverse=True)
+    ordered = sorted(
+        ordered,
+        key=lambda item: _template_status_rank(str(item.get("status") or "draft")),
+    )
+    return ordered
+
+
+def get_all_editor_templates() -> List[Dict[str, str]]:
+    if _store_override is not None:
+        if hasattr(_store_override, "list_templates"):
+            return _sort_template_summaries(
+                [_normalize_template_summary(item) for item in _store_override.list_templates()]
+            )
+        published_fallback = [
+            {**item, "status": "published"} for item in _store_override.get_all_published_templates()
+        ]
+        return _sort_template_summaries(
+            [_normalize_template_summary(item) for item in published_fallback]
+        )
+
+    results: Dict[str, Dict[str, str]] = {}
+    supabase_store = _get_supabase_store(strict=False)
+    if supabase_store:
+        try:
+            for item in supabase_store.list_templates():
+                normalized = _normalize_template_summary(item)
+                if normalized["name"]:
+                    results[normalized["name"]] = normalized
+        except Exception:
+            pass
+
+    for item in _local_store.list_templates():
+        normalized = _normalize_template_summary(item)
+        if normalized["name"]:
+            results.setdefault(normalized["name"], normalized)
+
+    return _sort_template_summaries(list(results.values()))

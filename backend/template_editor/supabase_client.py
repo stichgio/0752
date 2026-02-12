@@ -95,6 +95,15 @@ class SupabaseTemplateClient:
         response = query.order("updated_at", desc=True).execute()
         return self._as_list(response)
 
+    def list_templates(self) -> List[Dict[str, Any]]:
+        response = (
+            self._client.table("templates")
+            .select("*")
+            .order("updated_at", desc=True)
+            .execute()
+        )
+        return self._as_list(response)
+
     def create_template(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         response = self._client.table("templates").insert(payload).execute()
         row = self._first(response)

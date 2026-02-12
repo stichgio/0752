@@ -29,9 +29,9 @@ def reset_template_editor_db():
         template_editor_db._save()
 
 
-def _template_payload():
+def _template_payload(name: str = "visual-tech-template"):
     return {
-        "name": "visual-tech-template",
+        "name": name,
         "reportType": "technical-report",
         "author": "qa",
         "featureFlag": True,
@@ -111,6 +111,38 @@ def test_legacy_template_endpoints_snapshot_baseline(client):
         body = read_res.json()
         assert body["name"] == tpl_name
         assert "<" in body["content"]
+
+
+def test_template_list_includes_editor_status_and_legacy_endpoint_includes_published(client, monkeypatch):
+    monkeypatch.setenv("FEATURE_TEMPLATE_EDITOR", "true")
+
+    draft_res = client.post("/api/template-editor/templates", json=_template_payload(name="selector-draft-template"))
+    assert draft_res.status_code == 200
+    draft_id = draft_res.json()["id"]
+
+    published_res = client.post("/api/template-editor/templates", json=_template_payload(name="selector-published-template"))
+    assert published_res.status_code == 200
+    published_id = published_res.json()["id"]
+
+    publish_res = client.post(f"/api/template-editor/templates/{published_id}/publish", json={"author": "qa"})
+    assert publish_res.status_code == 200
+    assert publish_res.json()["status"] == "published"
+
+    editor_list_res = client.get("/api/template-editor/templates")
+    assert editor_list_res.status_code == 200
+    editor_templates = editor_list_res.json()["templates"]
+    assert isinstance(editor_templates, list)
+    assert any(t["id"] == draft_id and t["status"] == "draft" for t in editor_templates)
+    assert any(t["id"] == published_id and t["status"] == "published" for t in editor_templates)
+
+    published_idx = next(i for i, t in enumerate(editor_templates) if t["id"] == published_id)
+    draft_idx = next(i for i, t in enumerate(editor_templates) if t["id"] == draft_id)
+    assert published_idx < draft_idx
+
+    legacy_list_res = client.get("/api/templates")
+    assert legacy_list_res.status_code == 200
+    legacy_editor_templates = legacy_list_res.json().get("editorTemplates", [])
+    assert any(t["name"] == "selector-published-template" for t in legacy_editor_templates)
 
 
 def test_generate_pdf_can_use_published_visual_template_without_contract_change(client, monkeypatch):

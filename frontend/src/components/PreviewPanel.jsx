@@ -360,17 +360,18 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
     if (customTemplate && renderedHtml) {
         return (
             <div className={`flex-1 p-4 overflow-auto flex justify-center items-start ${isFocusMode ? 'bg-neutral-100' : 'bg-neutral-300'}`}>
-                <div
+                <iframe
                     ref={ref}
-                    className="bg-white text-black shadow-2xl flex flex-col"
+                    srcDoc={renderedHtml}
+                    sandbox="allow-same-origin"
+                    title="Custom Template Preview"
+                    className="bg-white text-black shadow-2xl"
                     style={{
                         width: '210mm',
-                        minHeight: '297mm', // Allow growth or fixed
-                        padding: '0', // Template usually handles padding
-                        boxSizing: 'border-box',
-                        overflow: 'hidden',
+                        minHeight: '297mm',
+                        border: 'none',
+                        display: 'block',
                     }}
-                    dangerouslySetInnerHTML={{ __html: renderedHtml }}
                 />
             </div>
         );
