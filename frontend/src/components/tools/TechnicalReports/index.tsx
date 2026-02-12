@@ -8,59 +8,32 @@ import { technicalReportsApi } from './api';
 import html2canvas from 'html2canvas';
 import LoadingModal from '@/components/common/LoadingModal';
 import { useFocusMode } from '@/hooks/useFocusMode';
+import { useLocalDraft } from '@/hooks/useLocalDraft';
+import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { downloadBlob } from '@/utils/downloadBlob';
-
-const STORAGE_KEY = 'current_report_draft';
 
 export default function TechnicalReports() {
     const [reports, setReports] = useState<TechnicalReport[]>([]);
-    const [selectedReportId, setSelectedReportId] = useState<string | null>(null);
-    const [formData, setFormData] = useState<TechnicalReport | null>(null);
-    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const [loadingMessage, setLoadingMessage] = useState('Procesando...');
+    const {
+        formData, setFormData,
+        selectedId: selectedReportId, setSelectedId: setSelectedReportId,
+        hasUnsavedChanges, setHasUnsavedChanges,
+    } = useLocalDraft<TechnicalReport>('current_report_draft');
+    const { isLoading, loadingMessage, run } = useAsyncAction();
 
     const [logoLeft, setLogoLeft] = useState<File | null>(null);
     const [logoRight, setLogoRight] = useState<File | null>(null);
 
-    // Cargar borrador desde localStorage al iniciar
     useEffect(() => {
         loadReports();
-        const savedDraft = localStorage.getItem(STORAGE_KEY);
-        if (savedDraft) {
-            try {
-                const parsed = JSON.parse(savedDraft);
-                setFormData(parsed.formData);
-                setSelectedReportId(parsed.selectedReportId);
-                setHasUnsavedChanges(parsed.hasUnsavedChanges || false);
-            } catch (e) {
-                console.error('Error loading draft:', e);
-            }
-        }
     }, []);
 
-    // Guardar borrador en localStorage cuando cambia formData
-    useEffect(() => {
-        if (formData) {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify({
-                formData,
-                selectedReportId,
-                hasUnsavedChanges
-            }));
-        }
-    }, [formData, selectedReportId, hasUnsavedChanges]);
-
     const loadReports = async () => {
-        setIsLoading(true);
-        try {
+        await run(async () => {
             const data = await technicalReportsApi.getAllReports();
             console.log('[TechReports] Loaded reports:', data.reports?.length, 'total:', data.total);
             setReports(data.reports || []);
-        } catch (error) {
-            console.error('Error loading reports:', error);
-        } finally {
-            setIsLoading(false);
-        }
+        });
     };
 
     const handleReportSelect = async (reportId: string) => {
@@ -98,90 +71,60 @@ export default function TechnicalReports() {
     };
 
     const handleImportCSV = async (file: File) => {
-        setIsLoading(true);
-        try {
+        await run(async () => {
             const result = await technicalReportsApi.importCSV(file);
             console.log('[TechReports] Import result:', result);
-
-            // Reload reports from server to get fresh data
             const freshData = await technicalReportsApi.getAllReports();
             console.log('[TechReports] Fresh reports count:', freshData.reports?.length);
             setReports(freshData.reports || []);
-
-            alert(`✅ ${result.imported_count} informes importados`);
-        } catch (error: any) {
-            console.error('Error importing file:', error);
-            const msg = error.response?.data?.detail || error.message || 'Error desconocido';
-            alert(`Error importando archivo: ${msg}`);
-        } finally {
-            setIsLoading(false);
-        }
+            alert(`${result.imported_count} informes importados`);
+        }, { onError: msg => alert(`Error importando archivo: ${msg}`) });
     };
 
     const handleClearAllReports = async () => {
-        if (window.confirm('⚠️ ¿ESTÁ SEGURO? \n\nEsto eliminará TODOS los informes de la base de datos permanentemente.\nEsta acción no se puede deshacer.')) {
-            setIsLoading(true);
-            try {
+        if (window.confirm('¿ESTÁ SEGURO? \n\nEsto eliminará TODOS los informes de la base de datos permanentemente.\nEsta acción no se puede deshacer.')) {
+            await run(async () => {
                 await technicalReportsApi.deleteAllReports();
                 await loadReports();
                 setFormData(null);
                 setSelectedReportId(null);
                 setHasUnsavedChanges(false);
-            } catch (error) {
-                console.error('Error clearing reports:', error);
-                alert('Error eliminando informes');
-            } finally {
-                setIsLoading(false);
-            }
+            }, { onError: msg => alert(`Error eliminando informes: ${msg}`) });
         }
     };
 
     const handleDownloadPDF = async () => {
         if (!selectedReportId || !formData) return;
-        setIsLoading(true);
-        setLoadingMessage('Generando PDF...');
-        try {
-            // Pass empty array for images as per new requirement
-            const blob = await technicalReportsApi.generatePDF(formData, [], logoLeft, logoRight);
-            downloadBlob(blob, `informe_${selectedReportId}.pdf`);
-        } catch (error: any) {
-            console.error('Error:', error);
-            const msg = error.response?.data?.detail?.message || error.response?.data?.detail || error.message || 'Error desconocido';
-            alert(`Error generando PDF: ${msg}`);
-        } finally {
-            setIsLoading(false);
-            setLoadingMessage('Procesando...');
-        }
+        await run(
+            async () => {
+                const blob = await technicalReportsApi.generatePDF(formData, [], logoLeft, logoRight);
+                downloadBlob(blob, `informe_${selectedReportId}.pdf`);
+            },
+            { message: 'Generando PDF...', onError: msg => alert(`Error generando PDF: ${msg}`) }
+        );
     };
 
     const handleDownloadImage = async () => {
         const element = document.getElementById('technical-report-preview');
         if (!element || !selectedReportId) return;
 
-        setIsLoading(true);
-        setLoadingMessage('Capturando imagen...');
-        try {
-            // Capture at slightly higher scale for better quality
-            const canvas = await html2canvas(element, {
-                scale: 2,
-                backgroundColor: '#ffffff',
-                useCORS: true // Important for external images/logos
-            });
-
-            const dataUrl = canvas.toDataURL('image/png');
-            const link = document.createElement('a');
-            link.download = `informe_${selectedReportId}.png`;
-            link.href = dataUrl;
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-        } catch (error) {
-            console.error('Error creating image:', error);
-            alert('Error descargando imagen');
-        } finally {
-            setIsLoading(false);
-            setLoadingMessage('Procesando...');
-        }
+        await run(
+            async () => {
+                const canvas = await html2canvas(element, {
+                    scale: 2,
+                    backgroundColor: '#ffffff',
+                    useCORS: true
+                });
+                const dataUrl = canvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.download = `informe_${selectedReportId}.png`;
+                link.href = dataUrl;
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+            },
+            { message: 'Capturando imagen...', onError: msg => alert(`Error descargando imagen: ${msg}`) }
+        );
     };
 
     const handleDownloadConsolidatedPDF = async () => {
@@ -193,23 +136,18 @@ export default function TechnicalReports() {
         const confirmed = window.confirm(
             `¿Desea generar un PDF consolidado con los ${reports.length} informes?\n\nEsto puede tomar varios minutos dependiendo de la cantidad de informes.`
         );
-
         if (!confirmed) return;
 
-        setIsLoading(true);
-        setLoadingMessage(`Generando PDF consolidado (${reports.length} informes)...`);
-
-        try {
-            const blob = await technicalReportsApi.generateConsolidatedPDF(logoLeft, logoRight);
-            downloadBlob(blob, `informes_tecnicos_consolidado_${reports.length}.pdf`);
-        } catch (error: any) {
-            console.error('Error generating consolidated PDF:', error);
-            const msg = error.response?.data?.detail || error.message || 'Error desconocido';
-            alert(`Error generando PDF consolidado: ${msg}`);
-        } finally {
-            setIsLoading(false);
-            setLoadingMessage('Procesando...');
-        }
+        await run(
+            async () => {
+                const blob = await technicalReportsApi.generateConsolidatedPDF(logoLeft, logoRight);
+                downloadBlob(blob, `informes_tecnicos_consolidado_${reports.length}.pdf`);
+            },
+            {
+                message: `Generando PDF consolidado (${reports.length} informes)...`,
+                onError: msg => alert(`Error generando PDF consolidado: ${msg}`)
+            }
+        );
     };
 
     const isFocusMode = useFocusMode();

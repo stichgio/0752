@@ -1,14 +1,5 @@
-# Stage 1: Build Frontend
-FROM node:18-alpine as build-frontend
-WORKDIR /app
-COPY frontend/package.json ./
-# Install dependencies
-RUN npm install
-# Copy source and build
-COPY frontend/ .
-RUN npm run build
-
-# Stage 2: Setup Python Backend - EXTREME OPTIMIZATION
+# Backend-only Dockerfile for Hugging Face Spaces
+# Frontend is deployed separately on Vercel
 FROM python:3.11-slim
 
 # Install system dependencies
@@ -49,9 +40,6 @@ WORKDIR $HOME/app
 
 # Copy the backend code
 COPY --chown=user backend $HOME/app
-
-# Copy Frontend Build from Stage 1
-COPY --from=build-frontend --chown=user /app/dist $HOME/app/static
 
 # Create output folder for PDFs and Jinja2 cache
 RUN mkdir -p $HOME/app/output && chmod 777 $HOME/app/output
