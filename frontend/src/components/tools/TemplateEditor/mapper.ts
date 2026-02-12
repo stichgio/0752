@@ -110,7 +110,8 @@ export function documentToLegacyTemplate(document: TemplateDocument): LegacyTemp
   };
 }
 
-export function legacyTemplateToDocument(templateJson: LegacyTemplateJson, templateId: string, name = 'Visual template'): TemplateDocument {
+export function legacyTemplateToDocument(templateJson: LegacyTemplateJson | null | undefined, templateId: string, name = 'Visual template'): TemplateDocument | null {
+  if (!templateJson || !templateJson.sections) return null;
   const blocks = templateJson.sections.flatMap((section) => section.blocks);
   const elements = blocks.map((block, index) => {
     const layout = (block.metadata?.layout as Record<string, number>) || {};

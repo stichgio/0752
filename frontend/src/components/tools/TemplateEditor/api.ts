@@ -6,7 +6,7 @@ export const templateEditorApi = {
   createTemplate: async (payload: {
     name: string;
     reportType: string;
-    document: TemplateDocument;
+    document?: TemplateDocument;
     author: string;
     featureFlag: boolean;
     templateJson?: any;
@@ -16,16 +16,16 @@ export const templateEditorApi = {
       reportType: payload.reportType,
       author: payload.author,
       featureFlag: payload.featureFlag,
-      templateJson: payload.templateJson ?? documentToLegacyTemplate(payload.document),
+      templateJson: payload.templateJson ?? (payload.document ? documentToLegacyTemplate(payload.document) : undefined),
     };
     const { data } = await apiClient.post('/api/template-editor/templates', body);
     return data;
   },
 
-  validateTemplate: async (templateId: string, payload: { role: 'admin' | 'editor'; document: TemplateDocument; templateJson?: any }) => {
+  validateTemplate: async (templateId: string, payload: { role: 'admin' | 'editor'; document?: TemplateDocument; templateJson?: any }) => {
     const { data } = await apiClient.post(`/api/template-editor/templates/${templateId}/validate`, {
       role: payload.role,
-      templateJson: payload.templateJson ?? documentToLegacyTemplate(payload.document),
+      templateJson: payload.templateJson ?? (payload.document ? documentToLegacyTemplate(payload.document) : undefined),
     });
     return data;
   },
@@ -45,23 +45,32 @@ export const templateEditorApi = {
     return data;
   },
 
-  updateTemplate: async (templateId: string, payload: { role: 'admin' | 'editor'; author: string; document: TemplateDocument; templateJson?: any }) => {
+  updateTemplate: async (templateId: string, payload: { role: 'admin' | 'editor'; author: string; document?: TemplateDocument; templateJson?: any }) => {
     const { data } = await apiClient.put(`/api/template-editor/templates/${templateId}`, {
       role: payload.role,
       author: payload.author,
-      templateJson: payload.templateJson ?? documentToLegacyTemplate(payload.document),
+      templateJson: payload.templateJson ?? (payload.document ? documentToLegacyTemplate(payload.document) : undefined),
     });
     return data;
   },
 
   getTemplateDocument: async (templateId: string) => {
     const { data } = await apiClient.get(`/api/template-editor/templates/${templateId}`);
-    return legacyTemplateToDocument(data.versions?.[data.versions.length - 1]?.templateJson, data.id, data.name);
+    const versions = data.versions || [];
+    const latest = versions[versions.length - 1];
+    if (!latest?.templateJson) return null;
+    return legacyTemplateToDocument(latest.templateJson, data.id, data.name);
   },
 
   getVariableCatalog: async (reportType: string) => {
     const { data } = await apiClient.get('/api/template-editor/variables/catalog', { params: { report_type: reportType } });
     return data as { reportType: string; variables: Record<string, { optional: boolean }> };
+  },
+
+  /** List all templates from the editor (all statuses) */
+  listTemplates: async () => {
+    const { data } = await apiClient.get('/api/template-editor/templates');
+    return data as { templates: Array<{ id: string; name: string; status: string; updatedAt: string }> };
   },
 
   /** List published templates from the editor */
