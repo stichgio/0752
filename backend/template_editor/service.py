@@ -2,6 +2,8 @@ from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
 import hashlib
 import json
+import threading
+import traceback
 from typing import Any, Deque, Dict, List, Optional, Tuple
 from uuid import uuid4
 
@@ -63,17 +65,20 @@ class BasicRateLimiter:
     def __init__(self, requests_per_minute: int = 40):
         self.requests_per_minute = requests_per_minute
         self._hits: Dict[str, Deque[datetime]] = defaultdict(deque)
+        # Protect hit-queue mutation in multi-threaded workers.
+        self._lock = threading.Lock()
 
     def check(self, key: str) -> bool:
         now = datetime.now(timezone.utc)
         threshold = now - timedelta(minutes=1)
-        queue = self._hits[key]
-        while queue and queue[0] < threshold:
-            queue.popleft()
-        if len(queue) >= self.requests_per_minute:
-            return False
-        queue.append(now)
-        return True
+        with self._lock:
+            queue = self._hits[key]
+            while queue and queue[0] < threshold:
+                queue.popleft()
+            if len(queue) >= self.requests_per_minute:
+                return False
+            queue.append(now)
+            return True
 
 
 rate_limiter = BasicRateLimiter()
@@ -121,6 +126,27 @@ def _sanitize_and_compile(template_json: TemplateJson) -> Tuple[TemplateJson, st
         f"{serialized_editor_json}\n{compiled}".encode("utf-8")
     ).hexdigest()
     return sanitized_json, compiled, checksum, serialized_editor_json
+
+
+def _compile_template_json_safe(template_json: TemplateJson, context: str) -> Optional[str]:
+    """Compile helper with shared logging/fallback semantics."""
+    try:
+        return compileTemplateJsonToJinja(template_json)
+    except Exception as exc:
+        print(f"[TemplateEditor] Compilation error in {context}: {exc}")
+        traceback.print_exc()
+        return None
+
+
+def _compile_editor_json_raw_safe(editor_json_raw: str, context: str) -> Optional[str]:
+    """Parse editor JSON and compile to Jinja with shared logging."""
+    try:
+        template_json = TemplateJson(**json.loads(editor_json_raw))
+    except Exception as exc:
+        print(f"[TemplateEditor] Compilation error in {context}: {exc}")
+        traceback.print_exc()
+        return None
+    return _compile_template_json_safe(template_json, context)
 
 
 def _looks_like_duplicate_error(exc: Exception) -> bool:
@@ -277,12 +303,30 @@ class LocalTemplateStore:
         record = db.get(template_id)
         if not record or not record.versions:
             return None
-        return record.versions[-1].compiledJinja
+        latest = record.versions[-1]
+        # Always recompile from templateJson so CSS fixes apply immediately
+        if latest.templateJson:
+            compiled = _compile_template_json_safe(
+                latest.templateJson,
+                f"LocalTemplateStore.get_preview_html ({template_id})",
+            )
+            if compiled is not None:
+                return compiled
+        return latest.compiledJinja
 
     def get_published_template_by_name(self, template_name: str) -> Optional[str]:
         for item in db.get_all():
             if item.name == template_name and item.status == "published" and item.featureFlag and item.versions:
-                return item.versions[-1].compiledJinja
+                latest = item.versions[-1]
+                # Always recompile from templateJson so CSS fixes apply immediately
+                if latest.templateJson:
+                    compiled = _compile_template_json_safe(
+                        latest.templateJson,
+                        f"LocalTemplateStore.get_published_template_by_name ({template_name})",
+                    )
+                    if compiled is not None:
+                        return compiled
+                return latest.compiledJinja
         return None
 
     def get_all_published_templates(self) -> List[Dict[str, str]]:
@@ -525,10 +569,12 @@ class SupabaseTemplateStore:
             raise ValueError("Template not found")
 
         current_version = int(template_row.get("current_version") or 0)
-        resolved_target = target_version
-        if resolved_target is None:
+        # Resolve rollback target explicitly to avoid dead/duplicate checks.
+        if target_version is not None:
+            resolved_target = target_version
+        else:
             resolved_target = current_version - 1
-        if resolved_target is None or resolved_target <= 0:
+        if resolved_target <= 0:
             raise ValueError("No previous version available")
 
         target_row = self.client.get_template_version(template_id, resolved_target)
@@ -568,9 +614,18 @@ class SupabaseTemplateStore:
         if not template_row:
             return None
 
-        draft_html = self.client.download_text(_draft_compiled_path(template_id))
-        if draft_html is not None:
-            return draft_html
+        # Try draft JSON first, recompile for up-to-date CSS
+        draft_json_raw = self.client.download_text(_draft_editor_path(template_id))
+        if draft_json_raw:
+            compiled = _compile_editor_json_raw_safe(
+                draft_json_raw,
+                f"SupabaseTemplateStore.get_preview_html draft ({template_id})",
+            )
+            if compiled is not None:
+                return compiled
+            draft_html = self.client.download_text(_draft_compiled_path(template_id))
+            if draft_html is not None:
+                return draft_html
 
         current_version = int(template_row.get("current_version") or 0)
         if current_version <= 0:
@@ -578,6 +633,15 @@ class SupabaseTemplateStore:
         version_row = self.client.get_template_version(template_id, current_version)
         if not version_row:
             return None
+        # Recompile from stored JSON for up-to-date CSS
+        editor_raw = self.client.download_text(version_row["editor_json_path"])
+        if editor_raw:
+            compiled = _compile_editor_json_raw_safe(
+                editor_raw,
+                f"SupabaseTemplateStore.get_preview_html version ({template_id})",
+            )
+            if compiled is not None:
+                return compiled
         return self.client.download_text(version_row["compiled_html_path"])
 
     def get_published_template_by_name(self, template_name: str) -> Optional[str]:
@@ -589,6 +653,15 @@ class SupabaseTemplateStore:
             version_row = self.client.get_template_version(str(row["id"]), current_version)
             if not version_row:
                 continue
+            # Recompile from stored JSON for up-to-date CSS
+            editor_raw = self.client.download_text(version_row["editor_json_path"])
+            if editor_raw:
+                compiled = _compile_editor_json_raw_safe(
+                    editor_raw,
+                    f"SupabaseTemplateStore.get_published_template_by_name ({template_name})",
+                )
+                if compiled:
+                    return compiled
             compiled = self.client.download_text(version_row["compiled_html_path"])
             if compiled:
                 return compiled
@@ -629,7 +702,7 @@ def set_template_store_override_for_tests(store: Optional[Any]) -> None:
     _supabase_store_key = None
 
 
-def _get_supabase_store(strict: bool) -> Optional[SupabaseTemplateStore]:
+def _get_supabase_store() -> Optional[SupabaseTemplateStore]:
     global _supabase_store_cache, _supabase_store_key
     if not is_supabase_enabled():
         _supabase_store_cache = None
@@ -647,18 +720,17 @@ def _get_supabase_store(strict: bool) -> Optional[SupabaseTemplateStore]:
         _supabase_store_cache = SupabaseTemplateStore(SupabaseTemplateClient(settings))
         _supabase_store_key = key
         return _supabase_store_cache
-    except Exception:
+    except Exception as exc:
         _supabase_store_cache = None
         _supabase_store_key = None
-        if strict:
-            raise
+        print(f"[TemplateEditor] Supabase store init failed, falling back to local store: {exc}")
         return None
 
 
-def _get_editor_store(strict: bool = True) -> Any:
+def _get_editor_store() -> Any:
     if _store_override is not None:
         return _store_override
-    supabase_store = _get_supabase_store(strict=strict)
+    supabase_store = _get_supabase_store()
     if supabase_store:
         return supabase_store
     return _local_store
@@ -677,38 +749,38 @@ def run_validations(template_json: TemplateJson, role: UserRole) -> ValidationRe
 
 
 def create_template(name: str, report_type: str, template_json: TemplateJson, author: str, feature_flag: bool = False) -> TemplateEditorRecord:
-    return _get_editor_store(strict=True).create_template(name, report_type, template_json, author, feature_flag=feature_flag)
+    return _get_editor_store().create_template(name, report_type, template_json, author, feature_flag=feature_flag)
 
 
 def get_template(template_id: str) -> Optional[TemplateEditorRecord]:
-    return _get_editor_store(strict=True).get_template(template_id)
+    return _get_editor_store().get_template(template_id)
 
 
 def update_template(template_id: str, template_json: TemplateJson, author: str, role: UserRole) -> Tuple[TemplateEditorRecord, ValidationResult]:
-    return _get_editor_store(strict=True).update_template(template_id, template_json, author, role)
+    return _get_editor_store().update_template(template_id, template_json, author, role)
 
 
 def publish_template(template_id: str, author: str) -> TemplateEditorRecord:
-    return _get_editor_store(strict=True).publish_template(template_id, author)
+    return _get_editor_store().publish_template(template_id, author)
 
 
 def rollback_template(template_id: str, target_version: Optional[int], author: str) -> TemplateEditorRecord:
-    return _get_editor_store(strict=True).rollback_template(template_id, target_version, author)
+    return _get_editor_store().rollback_template(template_id, target_version, author)
 
 
 def delete_template(template_id: str, author: str) -> TemplateEditorRecord:
-    return _get_editor_store(strict=True).delete_template(template_id, author)
+    return _get_editor_store().delete_template(template_id, author)
 
 
 def get_preview_html(template_id: str) -> Optional[str]:
-    return _get_editor_store(strict=True).get_preview_html(template_id)
+    return _get_editor_store().get_preview_html(template_id)
 
 
 def get_published_template_by_name(template_name: str) -> Optional[str]:
     if _store_override is not None:
         return _store_override.get_published_template_by_name(template_name)
 
-    supabase_store = _get_supabase_store(strict=False)
+    supabase_store = _get_supabase_store()
     if supabase_store:
         try:
             html = supabase_store.get_published_template_by_name(template_name)
@@ -725,7 +797,7 @@ def get_all_published_templates() -> List[Dict[str, str]]:
         return _store_override.get_all_published_templates()
 
     results: Dict[str, Dict[str, str]] = {}
-    supabase_store = _get_supabase_store(strict=False)
+    supabase_store = _get_supabase_store()
     if supabase_store:
         try:
             for item in supabase_store.get_all_published_templates():
@@ -782,7 +854,7 @@ def get_all_editor_templates() -> List[Dict[str, str]]:
         )
 
     results: Dict[str, Dict[str, str]] = {}
-    supabase_store = _get_supabase_store(strict=False)
+    supabase_store = _get_supabase_store()
     if supabase_store:
         try:
             for item in supabase_store.list_templates():

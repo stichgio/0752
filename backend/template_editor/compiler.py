@@ -14,11 +14,37 @@ from .models import EditorBlock, TemplateJson
 TEMPLATE_CSS = """\
 @page { size: A4; margin: 5mm; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { width: 210mm; height: 297mm; overflow: hidden; }
+html, body { width: 210mm; }
 body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 8pt; color: #222; line-height: 1.15; }
 
+/* ── Browser preview (iframe) ── */
+@media screen {
+  html, body { height: 297mm; overflow: hidden; }
+  .page { height: 287mm; }
+  .photo-section { flex: 1; min-height: 0; overflow: hidden; }
+  .photo-grid { flex: 1; height: 100%; }
+  .layout-2 .photo-item { height: 100%; }
+  .layout-4 .photo-item { height: 100%; }
+  .layout-3 { height: 100%; }
+  .layout-3 .top-row { height: calc(50% - 1mm); }
+  .layout-3 .bottom-row { height: calc(50% - 1mm); }
+  .layout-3 .top-row .photo-item { height: 100%; }
+  .layout-3 .bottom-row .photo-item { height: 100%; }
+}
+
+/* ── WeasyPrint (PDF) ── */
+@media print {
+  .page { min-height: 287mm; }
+  .photo-section { min-height: 130mm; }
+  .photo-grid { min-height: 120mm; }
+  .photo-item { height: 9cm; }
+  .layout-3 .top-row .photo-item { height: 9cm; }
+  .layout-3 .bottom-row .photo-item { height: 9cm; width: 50%; }
+  .layout-4 .photo-item { height: 8cm; }
+}
+
 .page {
-    width: 200mm; height: 287mm; padding: 3mm;
+    width: 200mm; padding: 3mm;
     display: flex; flex-direction: column;
     page-break-after: always;
 }
@@ -45,21 +71,19 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 8pt; color: #222; 
 .span3 { grid-column: span 3; }
 
 /* Photo Section */
-.photo-section { flex: 1; border: 2px solid #333; padding: 2mm; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
-.photo-grid { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 2mm; width: 100%; height: 100%; }
-.photo-item { border: 1px solid #ddd; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; height: 7cm; padding: 2mm; }
+.photo-section { border: 2px solid #333; padding: 2mm; display: flex; flex-direction: column; }
+.photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2mm; width: 100%; }
+.photo-item { border: 1px solid #ddd; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; height: 9cm; padding: 2mm; }
 .photo-item img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; display: block; }
-.layout-2 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; align-items: stretch; }
-.layout-2 .photo-item { height: 100%; }
-.layout-3 { display: flex; flex-direction: column; gap: 2mm; width: 100%; height: 100%; }
-.layout-3 .top-row { display: flex; flex-direction: row; gap: 2mm; height: calc(50% - 1mm); }
-.layout-3 .top-row .photo-item { flex: 1; height: 100%; }
-.layout-3 .bottom-row { display: flex; justify-content: center; height: calc(50% - 1mm); }
-.layout-3 .bottom-row .photo-item { width: calc(50% - 1mm); height: 100%; }
-.layout-4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; align-items: stretch; }
-.layout-4 .photo-item { height: 100%; }
-.layout-grid { grid-template-columns: 1fr 1fr; grid-auto-rows: 7cm; }
-.no-photos { flex: 1; display: flex; align-items: center; justify-content: center; border: 1px dashed #ccc; color: #999; font-style: italic; }
+.layout-2 { grid-template-columns: 1fr 1fr; grid-template-rows: auto; }
+.layout-3 { display: flex; flex-direction: column; gap: 2mm; width: 100%; }
+.layout-3 .top-row { display: flex; flex-direction: row; gap: 2mm; }
+.layout-3 .top-row .photo-item { flex: 1; }
+.layout-3 .bottom-row { display: flex; justify-content: center; }
+.layout-3 .bottom-row .photo-item { width: 50%; }
+.layout-4 { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; }
+.layout-grid { grid-template-columns: 1fr 1fr; grid-auto-rows: 9cm; }
+.no-photos { min-height: 60mm; display: flex; align-items: center; justify-content: center; border: 1px dashed #ccc; color: #999; font-style: italic; }
 
 /* Photo labels */
 .photo-container { display: flex; flex-direction: column; align-items: center; }
@@ -174,11 +198,18 @@ def _compile_photo_grid(block: EditorBlock) -> str:
         "{% if img_count == 3 %}"
         '<div class="photo-grid layout-3">'
         '<div class="top-row">'
+        # Guard indexed access to avoid runtime errors with partial image lists.
+        '{% if report.images|length > 0 %}'
         '<div class="photo-item"><img src="{{ report.images[0].path }}" alt="{{ report.images[0].name }}"></div>'
+        '{% endif %}'
+        '{% if report.images|length > 1 %}'
         '<div class="photo-item"><img src="{{ report.images[1].path }}" alt="{{ report.images[1].name }}"></div>'
+        '{% endif %}'
         "</div>"
         '<div class="bottom-row">'
+        '{% if report.images|length > 2 %}'
         '<div class="photo-item"><img src="{{ report.images[2].path }}" alt="{{ report.images[2].name }}"></div>'
+        '{% endif %}'
         "</div>"
         "</div>"
         "{% else %}"

@@ -257,14 +257,44 @@ class TechnicalReportsDB(BaseJsonDB[TechnicalReport]):
                                 "sugerencias_desague": safe_str(row.get('sug_valvulas_desague', ''))
                             },
                             canastillas={
+                                # 'diametros' is legacy and kept for backward compatibility.
+                                # It stores totals per diameter across aduccion/succion/desague.
                                 "diametros": {
-                                    '2': safe_int(row.get('canastillas_aduccion_2', 0)),
-                                    '3': safe_int(row.get('canastillas_aduccion_3', 0)),
-                                    '4': safe_int(row.get('canastillas_aduccion_4', 0)),
-                                    '6': safe_int(row.get('canastillas_aduccion_6', 0)),
-                                    '8': safe_int(row.get('canastillas_aduccion_8', 0)),
-                                    '10': safe_int(row.get('canastillas_aduccion_10', 0)),
-                                    '14': safe_int(row.get('canastillas_aduccion_14', 0))
+                                    '2': (
+                                        safe_int(row.get('canastillas_aduccion_2', 0))
+                                        + safe_int(row.get('canastillas_succion_2', 0))
+                                        + safe_int(row.get('canastillas_desague_2', 0))
+                                    ),
+                                    '3': (
+                                        safe_int(row.get('canastillas_aduccion_3', 0))
+                                        + safe_int(row.get('canastillas_succion_3', 0))
+                                        + safe_int(row.get('canastillas_desague_3', 0))
+                                    ),
+                                    '4': (
+                                        safe_int(row.get('canastillas_aduccion_4', 0))
+                                        + safe_int(row.get('canastillas_succion_4', 0))
+                                        + safe_int(row.get('canastillas_desague_4', 0))
+                                    ),
+                                    '6': (
+                                        safe_int(row.get('canastillas_aduccion_6', 0))
+                                        + safe_int(row.get('canastillas_succion_6', 0))
+                                        + safe_int(row.get('canastillas_desague_6', 0))
+                                    ),
+                                    '8': (
+                                        safe_int(row.get('canastillas_aduccion_8', 0))
+                                        + safe_int(row.get('canastillas_succion_8', 0))
+                                        + safe_int(row.get('canastillas_desague_8', 0))
+                                    ),
+                                    '10': (
+                                        safe_int(row.get('canastillas_aduccion_10', 0))
+                                        + safe_int(row.get('canastillas_succion_10', 0))
+                                        + safe_int(row.get('canastillas_desague_10', 0))
+                                    ),
+                                    '14': (
+                                        safe_int(row.get('canastillas_aduccion_14', 0))
+                                        + safe_int(row.get('canastillas_succion_14', 0))
+                                        + safe_int(row.get('canastillas_desague_14', 0))
+                                    )
                                 },
                                 "aduccion": {
                                     '2': safe_int(row.get('canastillas_aduccion_2', 0)),

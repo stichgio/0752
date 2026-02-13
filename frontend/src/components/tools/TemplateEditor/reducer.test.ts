@@ -81,4 +81,85 @@ describe('template editor reducer', () => {
     const next = editorReducer(state, { type: 'DUPLICATE_SELECTION' });
     expect(next.document.elements).toHaveLength(2);
   });
+
+  it('does not delete locked elements from selection', () => {
+    const state = {
+      ...initialEditorState,
+      selection: ['e1', 'e2'],
+      document: {
+        ...initialEditorState.document,
+        elements: [
+          {
+            id: 'e1',
+            type: 'text' as const,
+            x: 10,
+            y: 10,
+            width: 100,
+            height: 30,
+            zIndex: 1,
+            text: 'locked',
+            style: { fontSize: 12, fontFamily: 'Inter', color: '#111827' },
+            locked: true,
+          },
+          {
+            id: 'e2',
+            type: 'text' as const,
+            x: 10,
+            y: 60,
+            width: 100,
+            height: 30,
+            zIndex: 2,
+            text: 'unlocked',
+            style: { fontSize: 12, fontFamily: 'Inter', color: '#111827' },
+            locked: false,
+          },
+        ],
+      },
+    };
+
+    const next = editorReducer(state, { type: 'DELETE_SELECTION' });
+    expect(next.document.elements).toHaveLength(1);
+    expect(next.document.elements[0].id).toBe('e1');
+  });
+
+  it('does not delete protected elements from selection', () => {
+    const state = {
+      ...initialEditorState,
+      selection: ['p1', 'e2'],
+      document: {
+        ...initialEditorState.document,
+        elements: [
+          {
+            id: 'p1',
+            type: 'protected' as const,
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 50,
+            zIndex: 1,
+            name: 'norma',
+            content: 'A',
+            allowedTokens: ['contratista'],
+            locked: false,
+          },
+          {
+            id: 'e2',
+            type: 'text' as const,
+            x: 10,
+            y: 60,
+            width: 100,
+            height: 30,
+            zIndex: 2,
+            text: 'normal',
+            style: { fontSize: 12, fontFamily: 'Inter', color: '#111827' },
+            locked: false,
+          },
+        ],
+      },
+    };
+
+    const next = editorReducer(state, { type: 'DELETE_SELECTION' });
+    expect(next.document.elements).toHaveLength(1);
+    expect(next.document.elements[0].id).toBe('p1');
+  });
 });

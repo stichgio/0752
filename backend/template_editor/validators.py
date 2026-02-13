@@ -22,6 +22,10 @@ ALLOWED_ATTRIBUTES = {
 
 
 def sanitizeHtml(template_html: str) -> str:
+    """
+    Sanitiza HTML para prevenir XSS.
+    Si bleach no está disponible, aplica sanitización básica manual.
+    """
     if bleach is not None:
         cleaned = bleach.clean(
             template_html,
@@ -30,10 +34,25 @@ def sanitizeHtml(template_html: str) -> str:
             strip=True,
         )
     else:
+        # Fallback defensivo para no dejar el HTML sin sanitizar.
+        import warnings
+        warnings.warn(
+            "La librería 'bleach' no está instalada. Usando sanitización básica. "
+            "Se recomienda instalar bleach: pip install bleach",
+            UserWarning,
+        )
         cleaned = template_html
+
+    # Siempre remover handlers inline y tags de alto riesgo.
     cleaned = re.sub(r"\son[a-zA-Z]+\s*=\s*\"[^\"]*\"", "", cleaned)
     cleaned = re.sub(r"\son[a-zA-Z]+\s*=\s*'[^']*'", "", cleaned)
     cleaned = re.sub(r"<\s*(script|iframe)[^>]*>.*?<\s*/\s*\1\s*>", "", cleaned, flags=re.IGNORECASE | re.DOTALL)
+
+    if bleach is None:
+        # Sanitización adicional en modo fallback.
+        cleaned = re.sub(r"javascript\s*:", "", cleaned, flags=re.IGNORECASE)
+        cleaned = re.sub(r"data\s*:(?!image/)", "blocked:", cleaned, flags=re.IGNORECASE)
+
     return cleaned
 
 

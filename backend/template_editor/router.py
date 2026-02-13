@@ -28,6 +28,7 @@ from .service import (
     run_validations,
     update_template,
 )
+from .supabase_client import SupabaseNotConfiguredError, SupabaseOperationError
 
 router = APIRouter(prefix="/api/template-editor", tags=["template-editor"])
 
@@ -49,13 +50,21 @@ async def variable_catalog(report_type: str):
 
 @router.get("/published")
 async def list_published_templates():
-    templates = get_all_published_templates()
+    try:
+        templates = get_all_published_templates()
+    except (SupabaseNotConfiguredError, SupabaseOperationError) as exc:
+        print(f"[TemplateEditor] Supabase error listing published templates: {exc}")
+        templates = []
     return {"templates": templates}
 
 
 @router.get("/templates")
 async def list_templates_endpoint():
-    templates = get_all_editor_templates()
+    try:
+        templates = get_all_editor_templates()
+    except (SupabaseNotConfiguredError, SupabaseOperationError) as exc:
+        print(f"[TemplateEditor] Supabase error listing templates: {exc}")
+        templates = []
     return {"templates": templates}
 
 
@@ -66,6 +75,12 @@ async def create_template_endpoint(payload: CreateTemplatePayload):
         created = create_template(payload.name, report_type, payload.templateJson, payload.author, feature_flag=payload.featureFlag)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    except (SupabaseNotConfiguredError, SupabaseOperationError) as exc:
+        print(f"[TemplateEditor] Supabase error creating template: {exc}")
+        raise HTTPException(status_code=502, detail=f"Storage backend error: {exc}")
+    except Exception as exc:
+        print(f"[TemplateEditor] Unexpected error creating template: {exc}")
+        raise HTTPException(status_code=500, detail=f"Internal error: {type(exc).__name__}: {exc}")
     return _model_dump(created)
 
 
@@ -83,6 +98,12 @@ async def update_template_endpoint(template_id: str, payload: UpdateTemplatePayl
         updated, validation = update_template(template_id, payload.templateJson, payload.author, payload.role)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
+    except (SupabaseNotConfiguredError, SupabaseOperationError) as exc:
+        print(f"[TemplateEditor] Supabase error updating template: {exc}")
+        raise HTTPException(status_code=502, detail=f"Storage backend error: {exc}")
+    except Exception as exc:
+        print(f"[TemplateEditor] Unexpected error updating template: {exc}")
+        raise HTTPException(status_code=500, detail=f"Internal error: {type(exc).__name__}: {exc}")
     return UpdateTemplateResponse(template=updated, validation=validation)
 
 
@@ -127,6 +148,9 @@ async def publish_template_endpoint(template_id: str, payload: PublishTemplatePa
         published = publish_template(template_id, payload.author)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    except (SupabaseNotConfiguredError, SupabaseOperationError) as exc:
+        print(f"[TemplateEditor] Supabase error publishing template: {exc}")
+        raise HTTPException(status_code=502, detail=f"Storage backend error: {exc}")
     return _model_dump(published)
 
 
@@ -136,6 +160,9 @@ async def rollback_template_endpoint(template_id: str, payload: RollbackTemplate
         restored = rollback_template(template_id, payload.targetVersion, payload.author)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+    except (SupabaseNotConfiguredError, SupabaseOperationError) as exc:
+        print(f"[TemplateEditor] Supabase error rolling back template: {exc}")
+        raise HTTPException(status_code=502, detail=f"Storage backend error: {exc}")
     return _model_dump(restored)
 
 
@@ -145,4 +172,7 @@ async def delete_template_endpoint(template_id: str, author: str = "system"):
         deleted = delete_template(template_id, author)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
+    except (SupabaseNotConfiguredError, SupabaseOperationError) as exc:
+        print(f"[TemplateEditor] Supabase error deleting template: {exc}")
+        raise HTTPException(status_code=502, detail=f"Storage backend error: {exc}")
     return _model_dump(deleted)

@@ -670,7 +670,7 @@ export default function ImageOptimizer() {
         ));
 
         // Procesar imagenes secuencialmente
-        const pendingImages = images.filter(img => img.status === 'pending' || img.status === 'processing');
+        const pendingImages = images.filter(img => img.status === 'pending');
 
         for (const img of pendingImages) {
             const result = await compressImage(img);

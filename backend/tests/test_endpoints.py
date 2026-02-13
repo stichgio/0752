@@ -52,6 +52,19 @@ class TestMergePDFs:
         assert "application/pdf" in response.headers.get("content-type", "")
         assert len(response.content) > 0
 
+    def test_merge_interleaved_rejects_non_pdf_payload(self):
+        valid_pdf = _make_blank_pdf()
+        response = client.post(
+            "/api/tools/merge-pdfs",
+            files=[
+                ("files", ("a.pdf", valid_pdf, "application/pdf")),
+                ("files", ("b.txt", b"not-a-pdf", "text/plain")),
+            ],
+            data={"strict": "false"}
+        )
+        assert response.status_code == 400
+        assert "no es un PDF válido" in response.json()["detail"]
+
     def test_merge_normal_rejects_single_file(self):
         pdf = _make_blank_pdf()
         response = client.post(
@@ -71,6 +84,18 @@ class TestMergePDFs:
         )
         assert response.status_code == 200
         assert "application/pdf" in response.headers.get("content-type", "")
+
+    def test_merge_normal_rejects_non_pdf_payload(self):
+        valid_pdf = _make_blank_pdf()
+        response = client.post(
+            "/api/tools/merge-pdfs-normal",
+            files=[
+                ("files", ("a.pdf", valid_pdf, "application/pdf")),
+                ("files", ("b.txt", b"not-a-pdf", "text/plain")),
+            ],
+        )
+        assert response.status_code == 400
+        assert "no es un PDF válido" in response.json()["detail"]
 
 
 # --- PDF Split Endpoint ---
