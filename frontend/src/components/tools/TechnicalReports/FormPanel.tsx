@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Save, Settings, Upload } from 'lucide-react';
 import { TechnicalReport } from './types';
 
@@ -25,6 +25,23 @@ export default function FormPanel({
     onLogoLeftChange,
     onLogoRightChange
 }: Props) {
+    const [logoLeftUrl, setLogoLeftUrl] = useState<string | null>(null);
+    const [logoRightUrl, setLogoRightUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!logoLeft) { setLogoLeftUrl(null); return; }
+        const url = URL.createObjectURL(logoLeft);
+        setLogoLeftUrl(url);
+        return () => URL.revokeObjectURL(url);
+    }, [logoLeft]);
+
+    useEffect(() => {
+        if (!logoRight) { setLogoRightUrl(null); return; }
+        const url = URL.createObjectURL(logoRight);
+        setLogoRightUrl(url);
+        return () => URL.revokeObjectURL(url);
+    }, [logoRight]);
+
     if (!reportData) {
         return (
             <div className="flex items-center justify-center h-full bg-[#111] rounded-lg shadow border border-[#333]">
@@ -84,8 +101,8 @@ export default function FormPanel({
                         <div className="flex flex-col items-center gap-1">
                             <span className="text-[10px] text-[#888]">Logo Izq</span>
                             <label className="w-full h-12 border border-dashed border-[#444] rounded flex flex-col items-center justify-center cursor-pointer hover:border-[#666] hover:bg-[#222] transition-colors relative overflow-hidden">
-                                {logoLeft ? (
-                                    <img src={URL.createObjectURL(logoLeft)} className="w-full h-full object-contain p-1" />
+                                {logoLeftUrl ? (
+                                    <img src={logoLeftUrl} className="w-full h-full object-contain p-1" />
                                 ) : (
                                     <span className="text-[9px] text-[#666]">Subir</span>
                                 )}
@@ -96,8 +113,8 @@ export default function FormPanel({
                         <div className="flex flex-col items-center gap-1">
                             <span className="text-[10px] text-[#888]">Logo Der</span>
                             <label className="w-full h-12 border border-dashed border-[#444] rounded flex flex-col items-center justify-center cursor-pointer hover:border-[#666] hover:bg-[#222] transition-colors relative overflow-hidden">
-                                {logoRight ? (
-                                    <img src={URL.createObjectURL(logoRight)} className="w-full h-full object-contain p-1" />
+                                {logoRightUrl ? (
+                                    <img src={logoRightUrl} className="w-full h-full object-contain p-1" />
                                 ) : (
                                     <span className="text-[9px] text-[#666]">Subir</span>
                                 )}

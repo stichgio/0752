@@ -93,4 +93,18 @@ export const templateEditorApi = {
     const latest = versions[versions.length - 1];
     return latest?.compiledJinja || '';
   },
+
+  /** Get the raw TemplateEditorRecord for a template (includes versions + templateJson) */
+  getTemplateRaw: async (templateId: string) => {
+    const { data } = await apiClient.get(`/api/template-editor/templates/${templateId}`);
+    return data as {
+      id: string;
+      name: string;
+      status: string;
+      currentVersion: number;
+      versions: Array<{ version: number; status: string; templateJson: any; compiledJinja: string }>;
+      createdAt: string;
+      updatedAt: string;
+    };
+  },
 };

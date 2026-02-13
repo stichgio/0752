@@ -32,6 +32,28 @@ def _cleanup_file(path: str):
         print(f"Error removing temp file {path}: {e}")
 
 
+def _validate_pdf_file(file: UploadFile) -> bool:
+    """Valida PDF por magic number sin consumir el stream de forma permanente."""
+    try:
+        # Preserve current position to avoid side effects before save_upload.
+        current_pos = file.file.tell()
+        file.file.seek(0)
+        header = file.file.read(5)
+        file.file.seek(current_pos)
+        return header == b"%PDF-"
+    except Exception:
+        return False
+
+
+def _validate_pdf_uploads(files: List[UploadFile], min_files: int = 2) -> None:
+    """Validación compartida para endpoints de merge sin alterar contrato de API."""
+    if len(files) < min_files:
+        raise HTTPException(status_code=400, detail="Se requieren al menos 2 archivos PDF")
+    for file in files:
+        if not _validate_pdf_file(file):
+            raise HTTPException(status_code=400, detail=f"El archivo '{file.filename}' no es un PDF válido")
+
+
 # --- App Lifespan: singleton ReportService ---
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -274,8 +296,7 @@ async def tool_merge_pdfs(
     strict: bool = Form(False)
 ):
     print(f"Tool Merge Request: {len(files)} files, strict={strict}")
-    if len(files) < 2:
-        raise HTTPException(status_code=400, detail="Se requieren al menos 2 archivos PDF")
+    _validate_pdf_uploads(files)
 
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -318,8 +339,7 @@ async def tool_merge_pdfs_normal(
     Merge normal (secuencial) - Une PDFs uno después del otro sin intercalar.
     """
     print(f"Tool Merge Normal Request: {len(files)} files")
-    if len(files) < 2:
-        raise HTTPException(status_code=400, detail="Se requieren al menos 2 archivos PDF")
+    _validate_pdf_uploads(files)
 
     try:
         with tempfile.TemporaryDirectory() as temp_dir:

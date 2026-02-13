@@ -1,9 +1,12 @@
 import os
 import sys
 
+import pytest
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from template_editor.compiler import compileTemplateJsonToJinja
+import template_editor.validators as validators_module
+from template_editor.compiler import _compile_photo_grid, compileTemplateJsonToJinja
 from template_editor.models import EditorBlock, EditorSection, ProtectionRules, TemplateJson
 from template_editor.validators import sanitizeHtml, validateProtectedBlocks, validateVariables
 
@@ -60,3 +63,21 @@ def test_sanitize_html_removes_scripts_and_handlers():
     assert "onclick" not in cleaned
     assert "script" not in cleaned.lower()
     assert "iframe" not in cleaned.lower()
+
+
+def test_compile_photo_grid_adds_safe_guards_for_indexed_images():
+    block = EditorBlock(id="pg1", type="photo-grid", metadata={"showLabels": False})
+    html = _compile_photo_grid(block)
+    assert "{% if report.images|length > 0 %}" in html
+    assert "{% if report.images|length > 1 %}" in html
+    assert "{% if report.images|length > 2 %}" in html
+
+
+def test_sanitize_html_fallback_removes_javascript_and_suspicious_data_urls(monkeypatch):
+    monkeypatch.setattr(validators_module, "bleach", None)
+    dirty = '<img src="javascript:alert(1)" onerror="alert(2)"><img src="data:text/html;base64,PHNjcmlwdA==">'
+    with pytest.warns(UserWarning):
+        cleaned = sanitizeHtml(dirty)
+    assert "javascript:" not in cleaned.lower()
+    assert "onerror" not in cleaned.lower()
+    assert "data:text/html" not in cleaned.lower()

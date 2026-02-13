@@ -362,7 +362,10 @@ export default function FormPanel({
                                 placeholder={`Técnico ${idx + 1}`}
                                 value={persona}
                                 onChange={(e) => {
-                                    const newPersonal = [...fichaData.personal_tecnico];
+                                    const currentPersonal = Array.isArray(fichaData.personal_tecnico)
+                                        ? fichaData.personal_tecnico
+                                        : ['', '', '', '', '', ''];
+                                    const newPersonal = [...currentPersonal];
                                     newPersonal[idx] = e.target.value;
                                     handleInputChange('personal_tecnico', newPersonal);
                                 }}

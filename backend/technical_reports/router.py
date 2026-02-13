@@ -999,21 +999,24 @@ def transform_flat_to_nested(flat_data: Dict[str, Any]) -> Dict[str, Any]:
     obs_sug_mapping = {
         'caja_registro': ('obs_caja_registro', 'sug_caja_registro'),
         'marco_tapa': ('obs_marco_tapa', 'sug_marco_tapa'),
-        'escalera_int': ('obs_escalera_int', 'sug_escalera_int'),
-        'escalera_ext': ('obs_escalera_ext', 'sug_escalera_ext'),
-        'cuba_int': ('obs_cuba_int', 'sug_cuba_int'),
-        'cuba_ext': ('obs_cuba_ext', 'sug_cuba_ext'),
+        # Use the same keys as inspeccion_estados to keep field names consistent.
+        'escalera_interior': ('obs_escalera_int', 'sug_escalera_int'),
+        'escalera_exterior': ('obs_escalera_ext', 'sug_escalera_ext'),
+        'cuba_interior': ('obs_cuba_int', 'sug_cuba_int'),
+        'cuba_exterior': ('obs_cuba_ext', 'sug_cuba_ext'),
         'loza_fondo': ('obs_loza_fondo', 'sug_loza_fondo'),
-        'loza_techo_int': ('obs_loza_techo_int', 'sug_loza_techo_int'),
-        'loza_techo_ext': ('obs_loza_techo_ext', 'sug_loza_techo_ext'),
-        'ducto': ('obs_ducto', 'sug_ducto'),
-        'cerco': ('obs_cerco', 'sug_cerco'),
+        'loza_techo_interior': ('obs_loza_techo_int', 'sug_loza_techo_int'),
+        'loza_techo_exterior': ('obs_loza_techo_ext', 'sug_loza_techo_ext'),
+        'ducto_ventilacion': ('obs_ducto', 'sug_ducto'),
+        'cerco_perimetrico': ('obs_cerco', 'sug_cerco'),
         'descarga': ('obs_descarga', 'sug_descarga')
     }
     
-    for field_suffix, (obs_key, sug_key) in obs_sug_mapping.items():
-        inspeccion[f'observaciones_{field_suffix}'] = safe_str(flat_data.get(obs_key, ''))
-        inspeccion[f'sugerencias_{field_suffix}'] = safe_str(flat_data.get(sug_key, ''))
+    for estado in inspeccion_estados:
+        if estado in obs_sug_mapping:
+            obs_key, sug_key = obs_sug_mapping[estado]
+            inspeccion[f'observaciones_{estado}'] = safe_str(flat_data.get(obs_key, ''))
+            inspeccion[f'sugerencias_{estado}'] = safe_str(flat_data.get(sug_key, ''))
     
     result['inspeccion'] = inspeccion
     

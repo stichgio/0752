@@ -96,8 +96,10 @@ export function editorReducer(state: EditorState, action: Action): EditorState {
       return markDirty(state, next);
     }
     case 'MOVE_SELECTION': {
+      // Use a set for O(1) membership checks while preserving behavior.
+      const selectionIds = new Set(state.selection);
       const next = state.document.elements.map((element) => {
-        if (!state.selection.includes(element.id) || element.locked) return element;
+        if (!selectionIds.has(element.id) || element.locked) return element;
         const x = element.x + action.payload.dx;
         const y = element.y + action.payload.dy;
         return clampElement({ ...element, x, y });
@@ -105,15 +107,23 @@ export function editorReducer(state: EditorState, action: Action): EditorState {
       return markDirty(state, next);
     }
     case 'DELETE_SELECTION': {
+      // Use a set for O(1) membership checks while preserving behavior.
+      const selectionIds = new Set(state.selection);
       const next = state.document.elements.filter((element) => {
-        if (!state.selection.includes(element.id)) return true;
+        // Keep any element that is not selected.
+        if (!selectionIds.has(element.id)) return true;
+        // Protected elements are never deletable.
         if (element.type === 'protected') return true;
-        return element.locked;
+        // Locked elements are not deletable; only unlocked selected elements are removed.
+        if (element.locked) return true;
+        return false;
       });
       return { ...markDirty(state, next), selection: [] };
     }
     case 'DUPLICATE_SELECTION': {
-      const selected = state.document.elements.filter((element) => state.selection.includes(element.id));
+      // Use a set for O(1) membership checks while preserving order from elements array.
+      const selectionIds = new Set(state.selection);
+      const selected = state.document.elements.filter((element) => selectionIds.has(element.id));
       const clones = selected.map((element, index) => ({
         ...element,
         id: `${element.id}_copy_${Date.now()}_${index}`,

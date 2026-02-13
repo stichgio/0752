@@ -1,14 +1,14 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
-  AlignEndVertical, BarChart3, ChevronDown, ChevronRight, ChevronUp,
-  Copy, GripVertical, Heading, Image, LayoutTemplate,
+  AlignEndVertical, BarChart3, BookOpen, ChevronDown, ChevronUp,
+  Copy, GripVertical, Heading, Image, Layers, LayoutTemplate,
   Minus, Grid3X3, PenTool, Plus, Table, Table2, Trash2, Type, X,
 } from 'lucide-react';
 import type {
   BlockConfig, BlockPaletteItem, BlockTemplateDocument, BlockType,
   DataGridConfig, FooterConfig, HeaderConfig, InfoBarConfig,
   PhotoGridConfig, SectionTitleConfig, SignaturesConfig, SpacerConfig,
-  TableConfig, TemplateBlock, TextConfig, FieldDef, SignatureDef,
+  TableConfig, TemplateBlock, TextConfig, FieldDef,
 } from './blockTypes';
 import { BLOCK_PALETTE, PRESET_TEMPLATES, blockId, createBlock } from './blocks';
 
@@ -68,6 +68,8 @@ interface BlockEditorProps {
   publishedTemplates?: Array<{ id: string; name: string }>;
   deletingTemplateId?: string | null;
   onDeletePublishedTemplate?: (templateId: string, templateName: string) => void | Promise<void>;
+  onLoadTemplate?: (template: { id: string; name: string; status: string }) => void | Promise<void>;
+  loadingTemplateId?: string | null;
 }
 
 type PanelMode = 'blocks' | 'plantillas' | 'publicadas';
@@ -79,6 +81,8 @@ export default function BlockEditor({
   publishedTemplates = [],
   deletingTemplateId = null,
   onDeletePublishedTemplate,
+  onLoadTemplate,
+  loadingTemplateId = null,
 }: BlockEditorProps) {
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
@@ -179,29 +183,27 @@ export default function BlockEditor({
   return (
     <div className="h-full grid" style={{ gridTemplateColumns: '280px 1fr 340px' }}>
       {/* ── LEFT: Palette ── */}
-      <aside className="bg-white/70 backdrop-blur-md border-r border-neutral-200/50 flex flex-col overflow-hidden">
-        <div className="p-4 pb-3 border-b border-neutral-100 flex items-center justify-between">
-          <h2 className="text-[11px] font-bold uppercase tracking-widest text-neutral-400">Bloques</h2>
-          <div className="flex items-center gap-2">
+      <aside className="bg-white border-r border-neutral-200/70 flex flex-col overflow-hidden shadow-[1px_0_8px_rgba(0,0,0,0.04)]">
+        {/* Tabs with icons */}
+        <div className="flex border-b border-neutral-100 shrink-0">
+          {([
+            { mode: 'blocks'     as PanelMode, label: 'Elementos',  icon: <Layers size={15} /> },
+            { mode: 'plantillas' as PanelMode, label: 'Plantillas', icon: <LayoutTemplate size={15} /> },
+            { mode: 'publicadas' as PanelMode, label: 'Publicadas', icon: <BookOpen size={15} /> },
+          ]).map(({ mode, label, icon }) => (
             <button
-              onClick={() => setPanelMode('plantillas')}
-              className={`text-[10px] font-semibold transition-colors ${panelMode === 'plantillas' ? 'text-violet-700' : 'text-violet-500 hover:text-violet-700'}`}
+              key={mode}
+              onClick={() => setPanelMode(mode)}
+              className={`flex-1 flex flex-col items-center gap-1 py-3 text-[9px] font-semibold transition-all border-b-2 ${
+                panelMode === mode
+                  ? 'text-violet-600 border-violet-500 bg-violet-50/60'
+                  : 'text-neutral-400 border-transparent hover:text-neutral-600 hover:bg-neutral-50'
+              }`}
             >
-              Plantillas
+              {icon}
+              {label}
             </button>
-            <button
-              onClick={() => setPanelMode('publicadas')}
-              className={`text-[10px] font-semibold transition-colors ${panelMode === 'publicadas' ? 'text-violet-700' : 'text-violet-500 hover:text-violet-700'}`}
-            >
-              Publicadas
-            </button>
-            <button
-              onClick={() => setPanelMode('blocks')}
-              className={`text-[10px] font-semibold transition-colors ${panelMode === 'blocks' ? 'text-violet-700' : 'text-violet-500 hover:text-violet-700'}`}
-            >
-              Bloques
-            </button>
-          </div>
+          ))}
         </div>
 
         <div className="flex-1 overflow-y-auto p-3 space-y-1">
@@ -236,35 +238,46 @@ export default function BlockEditor({
           ) : panelMode === 'publicadas' ? (
             <div className="space-y-2">
               <p className="text-[10px] text-neutral-400 px-1 mb-2">
-                Plantillas publicadas disponibles para eliminar.
+                Plantillas publicadas. Puedes cargarlas para editar o eliminarlas.
               </p>
               {publishedTemplates.length === 0 && (
                 <div className="rounded-xl border border-dashed border-neutral-300 bg-white p-3 text-[11px] text-neutral-400">
                   No hay plantillas publicadas.
                 </div>
               )}
-              {publishedTemplates.map((template) => (
-                <div
-                  key={template.id}
-                  className="w-full rounded-xl p-3 bg-white border border-neutral-150 shadow-sm transition-all"
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <div className="text-[12px] font-semibold text-neutral-800 truncate">{template.name}</div>
-                      <div className="text-[10px] text-neutral-400 mt-0.5">Estado: published</div>
+              {publishedTemplates.map((template) => {
+                const isDeleting = deletingTemplateId === template.id;
+                const isLoading  = loadingTemplateId === template.id;
+                return (
+                  <div
+                    key={template.id}
+                    className="w-full rounded-xl p-3 bg-white border border-neutral-150 shadow-sm transition-all"
+                  >
+                    <div className="text-[12px] font-semibold text-neutral-800 truncate mb-2">{template.name}</div>
+                    <div className="flex items-center gap-1.5">
+                      {onLoadTemplate && (
+                        <button
+                          onClick={() => onLoadTemplate({ id: template.id, name: template.name, status: 'published' })}
+                          disabled={isLoading || isDeleting}
+                          className="flex-1 inline-flex items-center justify-center gap-1 rounded-md border border-blue-200 px-2 py-1 text-[10px] font-semibold text-blue-600 hover:bg-blue-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Cargar para editar"
+                        >
+                          {isLoading ? 'Cargando…' : 'Editar'}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => onDeletePublishedTemplate?.(template.id, template.name)}
+                        disabled={isDeleting || isLoading}
+                        className="flex-1 inline-flex items-center justify-center gap-1 rounded-md border border-red-200 px-2 py-1 text-[10px] font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Eliminar plantilla publicada"
+                      >
+                        <Trash2 size={10} />
+                        {isDeleting ? 'Eliminando…' : 'Eliminar'}
+                      </button>
                     </div>
-                    <button
-                      onClick={() => onDeletePublishedTemplate?.(template.id, template.name)}
-                      disabled={deletingTemplateId === template.id}
-                      className="inline-flex items-center gap-1 rounded-md border border-red-200 px-2 py-1 text-[10px] font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Eliminar plantilla publicada"
-                    >
-                      <Trash2 size={10} />
-                      {deletingTemplateId === template.id ? 'Eliminando...' : 'Eliminar'}
-                    </button>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             /* Block palette by category */
@@ -272,9 +285,9 @@ export default function BlockEditor({
               const items = BLOCK_PALETTE.filter((item) => item.category === cat.id);
               if (items.length === 0) return null;
               return (
-                <div key={cat.id} className="mb-3">
-                  <div className="text-[9px] font-bold uppercase tracking-widest text-neutral-400 px-1 mb-1.5">{cat.label}</div>
-                  <div className="space-y-1">
+                <div key={cat.id} className="mb-4">
+                  <div className="text-[9px] font-bold uppercase tracking-widest text-neutral-400 px-1 mb-2">{cat.label}</div>
+                  <div className="grid grid-cols-2 gap-1.5">
                     {items.map((item, i) => (
                       <button
                         key={`${item.type}-${i}`}
@@ -282,19 +295,16 @@ export default function BlockEditor({
                         onDragStart={() => setPaletteDragItem(item)}
                         onDragEnd={() => setPaletteDragItem(null)}
                         onClick={() => addBlock(item)}
-                        className="w-full flex items-center gap-2.5 rounded-lg p-2.5 bg-white border border-neutral-150 hover:border-neutral-300 shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:shadow-md transition-all cursor-grab active:cursor-grabbing active:scale-[0.98] group"
+                        className="flex flex-col items-center gap-1.5 rounded-xl p-2.5 bg-white border border-neutral-100 hover:border-violet-200 hover:shadow-md shadow-sm transition-all cursor-grab active:cursor-grabbing active:scale-[0.96] group text-center"
+                        title={item.description}
                       >
                         <div
-                          className="w-8 h-8 rounded-lg flex items-center justify-center text-white shrink-0"
+                          className="w-10 h-10 rounded-xl flex items-center justify-center text-white"
                           style={{ backgroundColor: BLOCK_COLORS[item.type] || '#888' }}
                         >
-                          {ICON_MAP[item.icon] || <Type size={16} />}
+                          {ICON_MAP[item.icon] || <Type size={18} />}
                         </div>
-                        <div className="text-left flex-1 min-w-0">
-                          <div className="text-[11px] font-semibold text-neutral-700 group-hover:text-neutral-900">{item.label}</div>
-                          <div className="text-[9px] text-neutral-400 truncate">{item.description}</div>
-                        </div>
-                        <Plus size={12} className="text-neutral-300 group-hover:text-neutral-500 shrink-0" />
+                        <div className="text-[10px] font-semibold text-neutral-600 group-hover:text-neutral-900 leading-tight">{item.label}</div>
                       </button>
                     ))}
                   </div>
@@ -307,8 +317,8 @@ export default function BlockEditor({
 
       {/* ── CENTER: Canvas ── */}
       <main
-        className="relative overflow-auto bg-[#f0f0f3]"
-        style={{ backgroundImage: 'radial-gradient(circle, #d4d4d8 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }}
+        className="relative overflow-auto bg-[#ecedf2]"
+        style={{ backgroundImage: 'radial-gradient(circle, #c4c5cc 0.6px, transparent 0.6px)', backgroundSize: '20px 20px' }}
         onDragOver={(e) => e.preventDefault()}
         onDrop={handlePaletteDrop}
       >
@@ -333,65 +343,67 @@ export default function BlockEditor({
                 onDragEnd={handleDragEnd}
                 onClick={() => setSelectedBlockId(block.id)}
                 className={`
-                  group relative rounded-lg border-2 transition-all duration-150 mb-1.5 cursor-pointer
+                  group relative rounded-xl border-2 transition-all duration-150 mb-2 cursor-pointer bg-white overflow-visible
                   ${selectedBlockId === block.id
-                    ? 'border-blue-500 shadow-[0_0_0_2px_rgba(59,130,246,0.2)]'
-                    : 'border-transparent hover:border-neutral-200'}
-                  ${dragOverIdx === idx ? 'border-t-4 border-t-blue-400' : ''}
+                    ? 'border-violet-500 shadow-[0_0_0_3px_rgba(139,92,246,0.15),0_4px_12px_rgba(0,0,0,0.08)]'
+                    : 'border-transparent hover:border-violet-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)]'}
+                  ${dragOverIdx === idx ? 'border-t-[3px] border-t-violet-400' : ''}
                 `}
               >
-                {/* Block toolbar */}
-                <div className={`absolute -left-9 top-1/2 -translate-y-1/2 flex flex-col gap-0.5 transition-opacity ${selectedBlockId === block.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-60'}`}>
-                  <button
-                    className="p-0.5 rounded hover:bg-neutral-100 text-neutral-400 cursor-grab active:cursor-grabbing"
-                    onMouseDown={(e) => e.stopPropagation()}
-                  >
-                    <GripVertical size={14} />
-                  </button>
+                {/* Drag handle — left edge */}
+                <div className={`absolute -left-6 top-1/2 -translate-y-1/2 z-10 transition-opacity cursor-grab active:cursor-grabbing ${
+                  selectedBlockId === block.id ? 'opacity-50' : 'opacity-0 group-hover:opacity-30'
+                }`}>
+                  <GripVertical size={14} className="text-neutral-500" />
                 </div>
 
-                {/* Block type indicator */}
-                <div className="flex items-center gap-2 px-3 py-1.5 border-b border-neutral-100">
-                  <div
-                    className="w-2 h-2 rounded-full shrink-0"
+                {/* Block type badge — top left overlay */}
+                <div className={`absolute top-2 left-2.5 z-10 transition-opacity pointer-events-none ${
+                  selectedBlockId === block.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                }`}>
+                  <span
+                    className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[8px] font-bold text-white shadow-sm"
                     style={{ backgroundColor: BLOCK_COLORS[block.type] || '#888' }}
-                  />
-                  <span className="text-[9px] font-bold uppercase tracking-wider text-neutral-400">
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-white/50 inline-block" />
                     {BLOCK_LABELS[block.type] || block.type}
                   </span>
-                  <div className="ml-auto flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={(e) => { e.stopPropagation(); moveBlock(block.id, 'up'); }} className="p-0.5 rounded hover:bg-neutral-100 text-neutral-400" title="Subir"><ChevronUp size={12} /></button>
-                    <button onClick={(e) => { e.stopPropagation(); moveBlock(block.id, 'down'); }} className="p-0.5 rounded hover:bg-neutral-100 text-neutral-400" title="Bajar"><ChevronDown size={12} /></button>
-                    <button onClick={(e) => { e.stopPropagation(); duplicateBlock(block.id); }} className="p-0.5 rounded hover:bg-neutral-100 text-neutral-400" title="Duplicar"><Copy size={12} /></button>
-                    <button onClick={(e) => { e.stopPropagation(); removeBlock(block.id); }} className="p-0.5 rounded hover:bg-red-50 text-neutral-400 hover:text-red-500" title="Eliminar"><Trash2 size={12} /></button>
-                  </div>
                 </div>
 
-                {/* Block preview */}
-                <div className="p-3">
+                {/* Action toolbar — top right overlay */}
+                <div className={`absolute top-2 right-2 z-10 flex items-center gap-0.5 bg-white/95 rounded-lg shadow-md border border-neutral-100 p-0.5 backdrop-blur-sm transition-all ${
+                  selectedBlockId === block.id ? 'opacity-100 translate-y-0' : 'opacity-0 group-hover:opacity-100 -translate-y-0.5 group-hover:translate-y-0'
+                }`}>
+                  <button onClick={(e) => { e.stopPropagation(); moveBlock(block.id, 'up'); }} className="p-1 rounded-md hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors" title="Subir"><ChevronUp size={12} /></button>
+                  <button onClick={(e) => { e.stopPropagation(); moveBlock(block.id, 'down'); }} className="p-1 rounded-md hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors" title="Bajar"><ChevronDown size={12} /></button>
+                  <div className="w-px h-3 bg-neutral-200 mx-0.5" />
+                  <button onClick={(e) => { e.stopPropagation(); duplicateBlock(block.id); }} className="p-1 rounded-md hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors" title="Duplicar"><Copy size={12} /></button>
+                  <button onClick={(e) => { e.stopPropagation(); removeBlock(block.id); }} className="p-1 rounded-md hover:bg-red-50 text-neutral-400 hover:text-red-500 transition-colors" title="Eliminar"><Trash2 size={12} /></button>
+                </div>
+
+                {/* Block preview — no header bar */}
+                <div className="px-4 py-3.5">
                   <BlockPreview block={block} />
                 </div>
-
-                {/* Puzzle connector visual */}
-                {idx < document.blocks.length - 1 && (
-                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-6 h-3 bg-neutral-200 rounded-b-full z-10 opacity-0 group-hover:opacity-50 transition-opacity" />
-                )}
               </div>
             ))}
 
             {/* Empty state */}
             {document.blocks.length === 0 && (
               <div className="flex-1 flex flex-col items-center justify-center text-neutral-300 min-h-[400px]">
-                <LayoutTemplate size={40} className="mb-3 text-neutral-200" />
-                <p className="text-[13px] font-medium text-neutral-400">Arrastra bloques desde la paleta</p>
-                <p className="text-[11px] text-neutral-300 mt-1">o selecciona una plantilla pre-armada</p>
+                <div className="w-16 h-16 rounded-2xl bg-neutral-50 border-2 border-dashed border-neutral-200 flex items-center justify-center mb-4">
+                  <LayoutTemplate size={26} className="text-neutral-300" />
+                </div>
+                <p className="text-[14px] font-semibold text-neutral-400">Diseña tu plantilla</p>
+                <p className="text-[11px] text-neutral-400 mt-1.5">Arrastra elementos desde el panel izquierdo</p>
+                <p className="text-[10px] text-neutral-300 mt-0.5">o elige una plantilla pre-armada</p>
               </div>
             )}
 
             {/* Drop zone at bottom */}
             {document.blocks.length > 0 && (
               <div
-                className="mt-2 border-2 border-dashed border-neutral-200 rounded-lg p-4 text-center text-neutral-300 text-[11px] hover:border-blue-300 hover:text-blue-400 transition-colors"
+                className="mt-3 border-2 border-dashed border-neutral-200 rounded-xl p-4 text-center text-neutral-400 text-[11px] font-medium hover:border-violet-300 hover:text-violet-400 hover:bg-violet-50/30 transition-all"
                 onDragOver={(e) => { e.preventDefault(); setDragOverIdx(document.blocks.length); }}
                 onDrop={() => {
                   if (dragIdx !== null) handleDrop(document.blocks.length);
@@ -406,18 +418,38 @@ export default function BlockEditor({
       </main>
 
       {/* ── RIGHT: Inspector ── */}
-      <aside className="bg-white/70 backdrop-blur-md border-l border-neutral-200/50 flex flex-col overflow-hidden">
-        <div className="p-4 pb-3 border-b border-neutral-100">
-          <h2 className="text-[11px] font-bold uppercase tracking-widest text-neutral-400">
-            {selectedBlock ? `Propiedades: ${BLOCK_LABELS[selectedBlock.type] || selectedBlock.type}` : 'Inspector'}
-          </h2>
+      <aside className="bg-white border-l border-neutral-200/70 flex flex-col overflow-hidden shadow-[-1px_0_8px_rgba(0,0,0,0.04)]">
+        <div className="shrink-0 border-b border-neutral-100 min-h-[56px] flex items-center px-4 py-3 transition-colors"
+          style={selectedBlock ? { borderBottomColor: `${BLOCK_COLORS[selectedBlock.type]}28` } : {}}
+        >
+          {selectedBlock ? (
+            <div className="flex items-center gap-2.5">
+              <div
+                className="w-8 h-8 rounded-xl flex items-center justify-center text-white shrink-0 shadow-sm"
+                style={{ backgroundColor: BLOCK_COLORS[selectedBlock.type] || '#888' }}
+              >
+                {ICON_MAP[BLOCK_PALETTE.find(p => p.type === selectedBlock.type)?.icon ?? ''] ?? <Type size={14} />}
+              </div>
+              <div>
+                <div className="text-[13px] font-semibold text-neutral-800">{BLOCK_LABELS[selectedBlock.type] || selectedBlock.type}</div>
+                <div className="text-[9px] text-neutral-400 uppercase tracking-wider font-medium mt-0.5">Propiedades</div>
+              </div>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Grid3X3 size={15} className="text-neutral-300" />
+              <h2 className="text-[12px] font-semibold text-neutral-400">Inspector</h2>
+            </div>
+          )}
         </div>
         <div className="flex-1 overflow-y-auto">
           {!selectedBlock ? (
-            <div className="flex flex-col items-center justify-center h-48 text-neutral-300">
-              <Grid3X3 size={28} className="mb-2" />
-              <p className="text-[12px] text-neutral-400 font-medium">Selecciona un bloque</p>
-              <p className="text-[10px] text-neutral-300 mt-0.5">para editar sus propiedades</p>
+            <div className="flex flex-col items-center justify-center h-48 text-neutral-300 px-4">
+              <div className="w-12 h-12 rounded-2xl bg-neutral-50 flex items-center justify-center mb-3">
+                <Grid3X3 size={20} className="text-neutral-300" />
+              </div>
+              <p className="text-[12px] text-neutral-400 font-semibold text-center">Selecciona un bloque</p>
+              <p className="text-[10px] text-neutral-300 mt-1 text-center">Haz clic en cualquier elemento del canvas para editar sus propiedades</p>
             </div>
           ) : (
             <BlockInspector
@@ -605,7 +637,7 @@ function InspInput({ value, onChange, placeholder, type = 'text' }: { value: str
       value={value}
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full h-8 rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 text-[12px] text-neutral-800 focus:outline-none focus:ring-1 focus:ring-blue-300 focus:bg-white transition-all"
+      className="w-full h-8 rounded-lg border border-neutral-200 bg-white px-2.5 text-[12px] text-neutral-800 focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-300 transition-all"
     />
   );
 }
@@ -613,10 +645,10 @@ function InspInput({ value, onChange, placeholder, type = 'text' }: { value: str
 function InspSection({ title, children }: { title: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(true);
   return (
-    <div className="border-b border-neutral-100">
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center gap-2 px-4 py-3 text-[10px] font-bold uppercase tracking-widest text-neutral-400 hover:text-neutral-600">
-        {open ? <ChevronDown size={10} /> : <ChevronRight size={10} />}
-        {title}
+    <div className="border-b border-neutral-100 last:border-0">
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between px-4 py-3 text-[11px] font-semibold text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50/60 transition-colors">
+        <span>{title}</span>
+        <ChevronDown size={13} className={`text-neutral-400 transition-transform duration-200 ${open ? '' : '-rotate-90'}`} />
       </button>
       {open && <div className="px-4 pb-4 space-y-3">{children}</div>}
     </div>
@@ -625,7 +657,7 @@ function InspSection({ title, children }: { title: string; children: React.React
 
 /* ── Field List Editor (reused by info-bar, data-grid) ── */
 
-function FieldListEditor({ fields, onChange, labels }: { fields: FieldDef[]; onChange: (fields: FieldDef[]) => void; labels?: { label: string; variable: string } }) {
+function FieldListEditor({ fields, onChange }: { fields: FieldDef[]; onChange: (fields: FieldDef[]) => void }) {
   const addField = () => onChange([...fields, { label: 'NUEVO', variable: 'NUEVO' }]);
   const removeField = (idx: number) => onChange(fields.filter((_, i) => i !== idx));
   const updateField = (idx: number, key: 'label' | 'variable', value: string) => {
