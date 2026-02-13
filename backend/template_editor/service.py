@@ -496,9 +496,9 @@ class SupabaseTemplateStore:
         self._write_draft(template_id, serialized_editor_json, compiled)
 
         now = _now_iso()
-        next_status = str(template_row.get("status") or "draft")
-        if next_status not in {"published", "archived"}:
-            next_status = "draft"
+        current_status = str(template_row.get("status") or "draft")
+        # Saving from editor must persist as draft (unless explicitly archived).
+        next_status = "archived" if current_status == "archived" else "draft"
         updated_row = self.client.update_template(
             template_id,
             {"updated_by": author, "updated_at": now, "status": next_status},

@@ -329,15 +329,20 @@ export default function TemplateEditor() {
           templateJson,
         });
         setTemplateId(created.id);
+        // Keep UI status aligned with backend after save.
+        setPublishStatus((created?.status as PublishStatus) || 'draft');
         toast('Plantilla creada y guardada', 'ok');
       } else {
-        await templateEditorApi.updateTemplate(templateId, {
+        const updated = await templateEditorApi.updateTemplate(templateId, {
           role: 'admin',
           author: 'block-editor',
           templateJson,
         });
+        // Saving should keep template as draft until explicit publish action.
+        setPublishStatus((updated?.template?.status as PublishStatus) || 'draft');
         toast('Cambios guardados', 'ok');
       }
+      await loadPublishedTemplates();
       setDirty(false);
     } catch (err: any) {
       const detail = err?.response?.data?.detail || err?.message || 'Error desconocido';
@@ -345,7 +350,7 @@ export default function TemplateEditor() {
     } finally {
       setSaving(false);
     }
-  }, [doc, reportType, templateId, toast]);
+  }, [doc, reportType, templateId, toast, loadPublishedTemplates]);
 
   // Mantener saveRef actualizado
   useEffect(() => { saveRef.current = save; }, [save]);
