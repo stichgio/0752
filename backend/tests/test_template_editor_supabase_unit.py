@@ -184,3 +184,19 @@ def test_supabase_store_can_resolve_published_template_by_name():
     assert compiled is not None
     assert "<!DOCTYPE html>" in compiled
 
+
+def test_supabase_store_update_after_publish_sets_template_back_to_draft():
+    store = SupabaseTemplateStore(FakeSupabaseTemplateClient())
+    created = store.create_template(
+        name="draft-after-save-template",
+        report_type="technical-report",
+        template_json=_sample_json(),
+        author="qa",
+        feature_flag=True,
+    )
+    published = store.publish_template(created.id, author="qa")
+    assert published.status == "published"
+
+    updated, validation = store.update_template(created.id, _sample_json("<p>{{cs|lower}}</p>"), author="qa", role="admin")
+    assert validation.valid is True
+    assert updated.status == "draft"

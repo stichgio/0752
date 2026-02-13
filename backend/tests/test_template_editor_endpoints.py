@@ -200,6 +200,35 @@ def test_delete_template_archives_and_removes_from_published_listings(client, mo
     assert all(t["id"] != template_id for t in legacy_editor_templates)
 
 
+def test_saving_published_template_moves_it_back_to_draft_until_republished(client, monkeypatch):
+    monkeypatch.setenv("FEATURE_TEMPLATE_EDITOR", "true")
+    create_res = client.post("/api/template-editor/templates", json=_template_payload(name="save-draft-behavior-template"))
+    assert create_res.status_code == 200
+    template_id = create_res.json()["id"]
+
+    publish_res = client.post(f"/api/template-editor/templates/{template_id}/publish", json={"author": "qa"})
+    assert publish_res.status_code == 200
+    assert publish_res.json()["status"] == "published"
+
+    published_before = client.get("/api/template-editor/published")
+    assert published_before.status_code == 200
+    assert any(t["id"] == template_id for t in published_before.json().get("templates", []))
+
+    update_payload = _template_payload(name="save-draft-behavior-template")
+    update_payload["templateJson"]["sections"][0]["blocks"][0]["content"] = "<p>{{cs|lower}}</p>"
+    update_res = client.put(f"/api/template-editor/templates/{template_id}", json=update_payload)
+    assert update_res.status_code == 200
+    assert update_res.json()["template"]["status"] == "draft"
+
+    get_res = client.get(f"/api/template-editor/templates/{template_id}")
+    assert get_res.status_code == 200
+    assert get_res.json()["status"] == "draft"
+
+    published_after = client.get("/api/template-editor/published")
+    assert published_after.status_code == 200
+    assert all(t["id"] != template_id for t in published_after.json().get("templates", []))
+
+
 def test_generate_pdf_falls_back_to_legacy_template_resolution_when_not_in_db(client):
     class DummyService:
         async def generate_batch_pdf(self, reports_payload, output_path=None, logo_left=None, logo_right=None, custom_template_str=None, template_name=None):

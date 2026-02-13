@@ -89,42 +89,80 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
             // 2. Variable Replacements
             const emptyPixel = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E";
 
+            const imageCount = images.length;
+
             // Handle specific logic for photos and logos before generic stripping
             const photosIfRegex = /\{%\s*if\s+report\.images\s+and\s+report\.images\|length\s*>\s*0\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
-            html = html.replace(photosIfRegex, (match, ifContent, elseContent) => images.length > 0 ? ifContent : elseContent);
+            html = html.replace(photosIfRegex, (match, ifContent, elseContent) => imageCount > 0 ? ifContent : elseContent);
 
             // Handle nested if/elif/else blocks based on image count (for adaptive grids)
             // Pattern: {% if report.images|length == X %}...{% elif report.images|length == Y %}...{% else %}...{% endif %}
             const imageCountIfElifRegex = /\{%\s*if\s+report\.images\|length\s*==\s*(\d+)\s*%\}([\s\S]*?)\{%\s*elif\s+report\.images\|length\s*==\s*(\d+)\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
             html = html.replace(imageCountIfElifRegex, (match, count1, content1, count2, content2, elseContent) => {
-                if (images.length === parseInt(count1)) return content1;
-                if (images.length === parseInt(count2)) return content2;
+                if (imageCount === parseInt(count1, 10)) return content1;
+                if (imageCount === parseInt(count2, 10)) return content2;
                 return elseContent;
             });
 
             // Handle simple if/else based on image count (without elif)
             const imageCountIfElseRegex = /\{%\s*if\s+report\.images\|length\s*==\s*(\d+)\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
             html = html.replace(imageCountIfElseRegex, (match, count, ifContent, elseContent) => {
-                return images.length === parseInt(count) ? ifContent : elseContent;
+                return imageCount === parseInt(count, 10) ? ifContent : elseContent;
             });
 
             // Handle if without else based on image count
             const imageCountIfOnlyRegex = /\{%\s*if\s+report\.images\|length\s*==\s*(\d+)\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
             html = html.replace(imageCountIfOnlyRegex, (match, count, content) => {
-                return images.length === parseInt(count) ? content : '';
+                return imageCount === parseInt(count, 10) ? content : '';
             });
 
             // Handle if image count < X patterns
             const imageCountLtRegex = /\{%\s*if\s+report\.images\|length\s*<\s*(\d+)\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
             html = html.replace(imageCountLtRegex, (match, count, content) => {
-                return images.length < parseInt(count) ? content : '';
+                return imageCount < parseInt(count, 10) ? content : '';
             });
 
             // Handle if image count != X and != Y patterns (for else-like conditions)
             const imageCountNotAndRegex = /\{%\s*if\s+report\.images\|length\s*!=\s*(\d+)\s+and\s+report\.images\|length\s*!=\s*(\d+)\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
             html = html.replace(imageCountNotAndRegex, (match, count1, count2, content) => {
-                return (images.length !== parseInt(count1) && images.length !== parseInt(count2)) ? content : '';
+                return (imageCount !== parseInt(count1, 10) && imageCount !== parseInt(count2, 10)) ? content : '';
             });
+
+            // Handle templates that compute image count in a variable:
+            // {% set img_count = report.images|length %}
+            // {% if img_count == 3 %}...{% else %}...{% endif %}
+            html = html.replace(/\{%\s*set\s+img_count\s*=\s*report\.images\|length\s*%\}/g, '');
+
+            const imageCountVarIfElifRegex = /\{%\s*if\s+img_count\s*==\s*(\d+)\s*%\}([\s\S]*?)\{%\s*elif\s+img_count\s*==\s*(\d+)\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            html = html.replace(imageCountVarIfElifRegex, (match, count1, content1, count2, content2, elseContent) => {
+                if (imageCount === parseInt(count1, 10)) return content1;
+                if (imageCount === parseInt(count2, 10)) return content2;
+                return elseContent;
+            });
+
+            const imageCountVarIfElseRegex = /\{%\s*if\s+img_count\s*==\s*(\d+)\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            html = html.replace(imageCountVarIfElseRegex, (match, count, ifContent, elseContent) => (
+                imageCount === parseInt(count, 10) ? ifContent : elseContent
+            ));
+
+            const imageCountVarIfOnlyRegex = /\{%\s*if\s+img_count\s*==\s*(\d+)\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            html = html.replace(imageCountVarIfOnlyRegex, (match, count, content) => (
+                imageCount === parseInt(count, 10) ? content : ''
+            ));
+
+            const imageCountInlineExprRegex = /\{\{\s*img_count\s+if\s+img_count\s+in\s+\[([^\]]+)\]\s+else\s+([^}]+?)\s*\}\}/g;
+            html = html.replace(imageCountInlineExprRegex, (match, allowedRaw, fallbackRaw) => {
+                const allowed = String(allowedRaw)
+                    .split(',')
+                    .map((value) => parseInt(value.trim(), 10))
+                    .filter((value) => Number.isFinite(value));
+                const fallback = String(fallbackRaw).trim().replace(/^['"]|['"]$/g, '');
+                return allowed.includes(imageCount) ? String(imageCount) : fallback;
+            });
+
+            // Resolve outer image presence block after inner img_count conditions are resolved.
+            const reportImagesIfElseRegex = /\{%\s*if\s+report\.images\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            html = html.replace(reportImagesIfElseRegex, (match, ifContent, elseContent) => (imageCount > 0 ? ifContent : elseContent));
 
             const logoLeftRegex = /\{%\s*if\s+logo_left\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
             html = html.replace(logoLeftRegex, (match, ifPart, elsePart) => logoLeft ? ifPart : elsePart);
