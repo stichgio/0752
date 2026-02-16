@@ -14,39 +14,27 @@ from .models import EditorBlock, TemplateJson
 TEMPLATE_CSS = """\
 @page { size: A4; margin: 5mm; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
-html, body { width: 210mm; }
+html, body { margin: 0; padding: 0; }
 body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 8pt; color: #222; line-height: 1.15; }
-
-/* ── Browser preview (iframe) ── */
-@media screen {
-  html, body { height: 297mm; overflow: hidden; }
-  .page { height: 287mm; }
-  .photo-section { flex: 1; min-height: 0; overflow: hidden; }
-  .photo-grid { flex: 1; height: 100%; }
-  .layout-2 .photo-item { height: 100%; }
-  .layout-4 .photo-item { height: 100%; }
-  .layout-3 { height: 100%; }
-  .layout-3 .top-row { height: calc(50% - 1mm); }
-  .layout-3 .bottom-row { height: calc(50% - 1mm); }
-  .layout-3 .top-row .photo-item { height: 100%; }
-  .layout-3 .bottom-row .photo-item { height: 100%; }
-}
 
 /* ── WeasyPrint (PDF) ── */
 @media print {
-  .page { min-height: 287mm; }
-  .photo-section { min-height: 130mm; }
-  .photo-grid { min-height: 120mm; }
-  .photo-item { height: 9cm; }
-  .layout-3 .top-row .photo-item { height: 9cm; }
-  .layout-3 .bottom-row .photo-item { height: 9cm; width: 50%; }
-  .layout-4 .photo-item { height: 8cm; }
+  html, body { width: 210mm; height: 297mm; overflow: hidden; }
+  .page { page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+/* ── Browser preview (iframe) ── */
+@media screen {
+  html, body { width: 100%; height: auto; background: transparent; overflow: visible; }
+  .page { margin: 0 auto; background: white; }
 }
 
 .page {
-    width: 200mm; padding: 3mm;
+    width: 200mm; height: 287mm; padding: 3mm;
     display: flex; flex-direction: column;
-    page-break-after: always;
+    overflow: hidden;
 }
 
 /* Header */
@@ -71,23 +59,57 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 8pt; color: #222; 
 .span3 { grid-column: span 3; }
 
 /* Photo Section */
-.photo-section { border: 2px solid #333; padding: 2mm; display: flex; flex-direction: column; }
-.photo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2mm; width: 100%; }
-.photo-item { border: 1px solid #ddd; background: #fff; display: flex; align-items: center; justify-content: center; overflow: hidden; height: 9cm; padding: 2mm; }
-.photo-item img { max-width: 100%; max-height: 100%; width: auto; height: auto; object-fit: contain; display: block; }
-.layout-2 { grid-template-columns: 1fr 1fr; grid-template-rows: auto; }
-.layout-3 { display: flex; flex-direction: column; gap: 2mm; width: 100%; }
-.layout-3 .top-row { display: flex; flex-direction: row; gap: 2mm; }
-.layout-3 .top-row .photo-item { flex: 1; }
-.layout-3 .bottom-row { display: flex; justify-content: center; }
-.layout-3 .bottom-row .photo-item { width: 50%; }
-.layout-4 { grid-template-columns: 1fr 1fr; grid-template-rows: auto auto; }
-.layout-grid { grid-template-columns: 1fr 1fr; grid-auto-rows: 9cm; }
-.no-photos { min-height: 60mm; display: flex; align-items: center; justify-content: center; border: 1px dashed #ccc; color: #999; font-style: italic; }
+.photo-section {
+    position: relative;
+    flex: 1;
+    border: 1.2px solid #6d4cff;
+    border-radius: 3mm;
+    padding: 3.2mm 2mm 2mm 2mm;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    background: #f7f6ff;
+}
+.photo-tag {
+    position: absolute;
+    top: 0.6mm;
+    left: 2.4mm;
+    display: inline-flex;
+    align-items: center;
+    padding: 0.6mm 2.2mm;
+    border-radius: 999px;
+    font-size: 7pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #8a4b00;
+    background: #ffbe3b;
+}
+.photo-frame {
+    flex: 1;
+    min-height: 0;
+    border: 1px solid #d8dce5;
+    border-radius: 2mm;
+    padding: 1.7mm;
+    background: #ffffff;
+    display: flex;
+}
+.photo-grid { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 2mm; width: 100%; height: 100%; }
+.photo-item { border: 1px solid #ddd; border-radius: 1.4mm; background: #f3f4f6; display: flex; align-items: center; justify-content: center; overflow: hidden; width: 100%; height: 100%; padding: 0; }
+.photo-item img { width: 100%; height: 100%; object-fit: contain; object-position: center; display: block; }
+.layout-2 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; align-items: stretch; }
+.layout-3 { display: flex; flex-direction: column; gap: 2mm; width: 100%; height: 100%; }
+.layout-3 .top-row { display: flex; flex-direction: row; gap: 2mm; height: calc(50% - 1mm); }
+.layout-3 .top-row .photo-item { flex: 1; height: 100%; }
+.layout-3 .bottom-row { display: flex; justify-content: center; height: calc(50% - 1mm); }
+.layout-3 .bottom-row .photo-item { width: calc(50% - 1mm); height: 100%; }
+.layout-4 { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(2, 1fr); align-items: stretch; }
+.layout-grid { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(2, 1fr); }
+.no-photos { flex: 1; display: flex; align-items: center; justify-content: center; border: 1px dashed #ccc; color: #999; font-style: italic; border-radius: 1.2mm; }
 
 /* Photo labels */
-.photo-container { display: flex; flex-direction: column; align-items: center; }
-.photo-label { font-weight: bold; font-size: 10pt; text-transform: uppercase; margin-top: 2mm; }
+.photo-container { display: flex; flex-direction: column; align-items: center; gap: 1.3mm; }
+.photo-label { font-weight: 700; font-size: 7.5pt; text-transform: uppercase; margin-top: 0; letter-spacing: 0.02em; }
 
 /* Text block */
 .text-block { margin: 2mm 0; }
@@ -187,12 +209,16 @@ def _compile_data_grid(block: EditorBlock) -> str:
 def _compile_photo_grid(block: EditorBlock) -> str:
     show_labels = _get_meta(block, "showLabels", False)
     labels = _get_meta(block, "labels", [])
+    panel_title = str(_get_meta(block, "panelTitle", "") or "").strip()
+    tag_html = f'<span class="photo-tag">{panel_title}</span>' if panel_title else ""
 
     if show_labels and labels:
-        return _compile_labeled_photos(labels)
+        return _compile_labeled_photos(labels, tag_html)
 
     return (
         '<div class="photo-section">'
+        f"{tag_html}"
+        '<div class="photo-frame">'
         "{% if report.images %}"
         "{% set img_count = report.images|length %}"
         "{% if img_count == 3 %}"
@@ -223,10 +249,11 @@ def _compile_photo_grid(block: EditorBlock) -> str:
         '<div class="no-photos">No se encontraron imágenes asociadas a esta orden.</div>'
         "{% endif %}"
         "</div>"
+        "</div>"
     )
 
 
-def _compile_labeled_photos(labels: List[str]) -> str:
+def _compile_labeled_photos(labels: List[str], tag_html: str = "") -> str:
     """Labeled photo grid where each position has a name (ANTES, DURANTE, etc.)."""
     photo_cells: List[str] = []
     for i, label in enumerate(labels):
@@ -251,9 +278,12 @@ def _compile_labeled_photos(labels: List[str]) -> str:
 
     return (
         '<div class="photo-section">'
+        f"{tag_html}"
+        '<div class="photo-frame">'
         '<div class="photo-grid layout-4">'
         + "".join(photo_cells)
         + '</div>'
+        '</div>'
         '</div>'
     )
 

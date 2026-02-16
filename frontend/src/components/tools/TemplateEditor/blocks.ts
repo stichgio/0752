@@ -128,7 +128,7 @@ export const BLOCK_PALETTE: BlockPaletteItem[] = [
     description: 'Grid de fotos (2, 3 o 4 imágenes)',
     icon: 'Image',
     category: 'media',
-    defaultConfig: { maxPhotos: 'auto', showLabels: false } satisfies PhotoGridConfig,
+    defaultConfig: { maxPhotos: 'auto', showLabels: false, panelTitle: 'Panel Fotos' } satisfies PhotoGridConfig,
   },
   {
     type: 'photo-grid',
@@ -140,6 +140,7 @@ export const BLOCK_PALETTE: BlockPaletteItem[] = [
       maxPhotos: 4,
       showLabels: true,
       labels: ['ANTES', 'DURANTE', 'DESPUÉS', 'RESIDUOS'],
+      panelTitle: 'Panel Fotos',
     } satisfies PhotoGridConfig,
   },
 
@@ -251,7 +252,7 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
       },
       {
         id: 'pg1', type: 'photo-grid',
-        config: { maxPhotos: 'auto', showLabels: false } satisfies PhotoGridConfig,
+        config: { maxPhotos: 'auto', showLabels: false, panelTitle: 'Panel Fotos' } satisfies PhotoGridConfig,
       },
     ],
   },
@@ -286,6 +287,7 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
           maxPhotos: 4,
           showLabels: true,
           labels: ['ANTES', 'DURANTE', 'DESPUÉS', 'RESIDUOS'],
+          panelTitle: 'Panel Fotos',
         } satisfies PhotoGridConfig,
       },
       {

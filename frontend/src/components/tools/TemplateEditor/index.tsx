@@ -1,7 +1,7 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Circle, Eye, FileCode2, FileJson, FolderOpen, Grid3X3,
-  Loader2, Plus, Redo2, Save, Send, Undo2, X,
+  Circle, Clock3, Eye, FileCode2, FileJson, FolderOpen, Grid3X3,
+  Keyboard, Loader2, Plus, Redo2, Save, Search, Send, Undo2, X,
 } from 'lucide-react';
 import { templateEditorApi } from './api';
 import type {
@@ -178,6 +178,27 @@ function ToolbarSeparator() {
   return <div className="w-px h-5 bg-neutral-200 mx-0.5" />;
 }
 
+function isEditableTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  const tag = target.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+  return Boolean(target.closest('[contenteditable="true"]'));
+}
+
+function formatDateLabel(value: string, includeTime = false): string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '--';
+  return date.toLocaleString('es-PE', includeTime
+    ? { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }
+    : { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function formatShortId(id: string): string {
+  if (id.length <= 12) return id;
+  return `${id.slice(0, 6)}...${id.slice(-4)}`;
+}
+
 /* ═══ Main ═══ */
 export default function TemplateEditor() {
   const [doc,             setDoc]             = useState<BlockTemplateDocument>(createEmptyDocument);
@@ -201,6 +222,8 @@ export default function TemplateEditor() {
   const [allTemplates,       setAllTemplates]       = useState<Array<{ id: string; name: string; status: string; updatedAt: string }>>([]);
   const [loadingTemplates,   setLoadingTemplates]   = useState(false);
   const [loadingTemplateId,  setLoadingTemplateId]  = useState<string | null>(null);
+  const [openPanelQuery,     setOpenPanelQuery]     = useState('');
+  const [sessionSavedAt,     setSessionSavedAt]     = useState<string | null>(null);
 
   /* ── Toast helper ── */
   const toast = useCallback((msg: string, type: Toast['type'] = 'info') => {
@@ -220,6 +243,7 @@ export default function TemplateEditor() {
           if (s.templateId)    setTemplateId(s.templateId);
           if (s.publishStatus) setPublishStatus(s.publishStatus);
           if (s.reportType)    setReportType(s.reportType);
+          if (s.sessionSavedAt) setSessionSavedAt(s.sessionSavedAt);
           return;
         }
       }
@@ -237,7 +261,15 @@ export default function TemplateEditor() {
   /* ── Session persistence: auto-save ── */
   useEffect(() => {
     const t = window.setTimeout(() => {
-      localStorage.setItem(SESSION_KEY, JSON.stringify({ doc, templateId, publishStatus, reportType }));
+      const now = new Date().toISOString();
+      localStorage.setItem(SESSION_KEY, JSON.stringify({
+        doc,
+        templateId,
+        publishStatus,
+        reportType,
+        sessionSavedAt: now,
+      }));
+      setSessionSavedAt(now);
     }, 1500);
     return () => window.clearTimeout(t);
   }, [doc, templateId, publishStatus, reportType]);
@@ -253,6 +285,24 @@ export default function TemplateEditor() {
   }, []);
 
   useEffect(() => { void loadPublishedTemplates(); }, [loadPublishedTemplates]);
+
+  const visibleTemplates = useMemo(() => {
+    const term = openPanelQuery.trim().toLowerCase();
+    const ordered = [...allTemplates].sort(
+      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+    );
+    if (!term) return ordered;
+    return ordered.filter((tpl) =>
+      `${tpl.name} ${tpl.status} ${tpl.id}`.toLowerCase().includes(term)
+    );
+  }, [allTemplates, openPanelQuery]);
+
+  const autosaveLabel = useMemo(() => {
+    if (saving) return 'Guardando cambios...';
+    if (dirty) return 'Cambios pendientes';
+    if (!sessionSavedAt) return 'Sin cambios pendientes';
+    return `Autoguardado ${new Date(sessionSavedAt).toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' })}`;
+  }, [dirty, saving, sessionSavedAt]);
 
   /* ── Warn on unsaved changes ── */
   useEffect(() => {
@@ -302,18 +352,36 @@ export default function TemplateEditor() {
     const handler = (e: KeyboardEvent) => {
       const isCmd = e.ctrlKey || e.metaKey;
       if (!isCmd) return;
-      if (e.key.toLowerCase() === 'z') {
+      const key = e.key.toLowerCase();
+      const editingField = isEditableTarget(e.target);
+      if (key === 's') {
+        e.preventDefault();
+        saveRef.current();
+        return;
+      }
+      if (editingField) return;
+      if (key === 'z') {
         e.preventDefault();
         if (e.shiftKey) redoRef.current(); else undoRef.current();
       }
-      if (e.key.toLowerCase() === 's') {
+      if (key === 'y') {
         e.preventDefault();
-        saveRef.current();
+        redoRef.current();
       }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, []); // adjuntar una sola vez
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (showPreviewModal) setShowPreviewModal(false);
+      if (showOpenPanel) setShowOpenPanel(false);
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [showOpenPanel, showPreviewModal]);
 
   /* ── Save ── */
   const save = useCallback(async () => {
@@ -434,6 +502,7 @@ export default function TemplateEditor() {
   /* ── Open template panel ── */
   const openLoadPanel = useCallback(async () => {
     setShowOpenPanel(true);
+    setOpenPanelQuery('');
     setLoadingTemplates(true);
     try {
       const data = await templateEditorApi.listTemplates();
@@ -506,15 +575,17 @@ export default function TemplateEditor() {
   /* ═══ Render ═══ */
   return (
     <div
-      className="h-screen overflow-hidden bg-[#f5f5f7] text-neutral-900"
-      style={{ fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif' }}
+      data-template-editor
+      className="h-screen overflow-hidden text-neutral-900 flex flex-col bg-[radial-gradient(circle_at_top,#f8faff_0%,#edf1ff_42%,#eff2f7_100%)]"
+      style={{ fontFamily: '"Manrope", "Segoe UI", sans-serif' }}
     >
       {/* ═══ TOP BAR ═══ */}
-      <header className="h-14 bg-white border-b border-neutral-200/70 px-4 flex items-center justify-between z-50 relative shadow-[0_1px_3px_rgba(0,0,0,0.06)]">
+      <header className="border-b border-neutral-200/80 bg-white/90 backdrop-blur px-3 py-2 shadow-[0_1px_3px_rgba(15,23,42,0.08)] z-50 flex flex-col gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
         {/* Left */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 min-w-0">
           <div className="flex items-center gap-2 shrink-0">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center shadow-sm">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center shadow-sm">
               <Grid3X3 size={14} className="text-white" />
             </div>
             <span className="text-[13px] font-bold tracking-tight text-neutral-900 hidden xl:inline">Template Builder</span>
@@ -530,7 +601,7 @@ export default function TemplateEditor() {
           </ToolbarBtn>
           <ToolbarSeparator />
           <input
-            className="h-8 w-52 rounded-lg bg-neutral-50 border border-neutral-200 px-3 text-[13px] text-neutral-800 font-medium focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-300 focus:bg-white transition-all placeholder:text-neutral-400"
+            className="h-8 w-48 sm:w-64 rounded-lg bg-neutral-50 border border-neutral-200 px-3 text-[13px] text-neutral-800 font-medium focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-300 focus:bg-white transition-all placeholder:text-neutral-400"
             value={doc.name}
             onChange={(e) => handleDocChange({ ...doc, name: e.target.value })}
             placeholder="Nombre de la plantilla"
@@ -542,31 +613,32 @@ export default function TemplateEditor() {
         </div>
 
         {/* Center: undo/redo */}
-        <div className="absolute left-1/2 -translate-x-1/2 flex items-center gap-0.5 bg-neutral-100 rounded-xl p-1 border border-neutral-200/60">
+        <div className="flex items-center gap-0.5 bg-neutral-100 rounded-xl p-1 border border-neutral-200/60">
           <ToolbarBtn onClick={undo} disabled={history.length === 0} title="Deshacer (Ctrl+Z)">
             <Undo2 size={15} />
           </ToolbarBtn>
-          <ToolbarBtn onClick={redo} disabled={future.length === 0} title="Rehacer (Ctrl+Shift+Z)">
+          <ToolbarBtn onClick={redo} disabled={future.length === 0} title="Rehacer (Ctrl+Shift+Z / Ctrl+Y)">
             <Redo2 size={15} />
           </ToolbarBtn>
         </div>
 
         {/* Right: actions */}
-        <div className="flex items-center gap-1.5">
+        <div className="flex flex-wrap items-center justify-end gap-1.5">
           <select
             value={reportType}
             onChange={(e) => { setReportType(e.target.value); setDirty(true); }}
             className="h-8 rounded-lg bg-neutral-50 border border-neutral-200 px-2 text-[11px] text-neutral-600 font-medium focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-300 transition-all cursor-pointer hidden xl:block"
+            style={{ colorScheme: 'light' }}
             title="Tipo de reporte"
           >
-            <option value="generic">Genérico</option>
-            <option value="technical_report">Informe Técnico</option>
-            <option value="ficha_tecnica">Ficha Técnica</option>
+            <option value="generic">Generico</option>
+            <option value="technical_report">Informe Tecnico</option>
+            <option value="ficha_tecnica">Ficha Tecnica</option>
           </select>
           <ToolbarSeparator />
           <ToolbarBtn onClick={save} disabled={saving} title="Guardar (Ctrl+S)">
             {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-            <span className="ml-1.5 hidden lg:inline text-[12px]">{saving ? 'Guardando…' : 'Guardar'}</span>
+            <span className="ml-1.5 hidden lg:inline text-[12px]">{saving ? 'Guardando...' : 'Guardar'}</span>
           </ToolbarBtn>
           <ToolbarBtn onClick={preview} disabled={previewLoading || !templateId} title="Vista previa con datos de muestra">
             {previewLoading ? <Loader2 size={14} className="animate-spin" /> : <Eye size={14} />}
@@ -595,10 +667,26 @@ export default function TemplateEditor() {
             Publicar
           </button>
         </div>
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] text-neutral-500">
+          <span className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white/90 px-2.5 py-1">
+            <Clock3 size={11} />
+            {autosaveLabel}
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white/90 px-2.5 py-1">
+            Bloques: <b className="text-neutral-700">{doc.blocks.length}</b>
+          </span>
+          <span className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white/90 px-2.5 py-1">
+            ID: {templateId ? formatShortId(templateId) : 'sin guardar'}
+          </span>
+          <span className="hidden lg:inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white/90 px-2.5 py-1">
+            <Keyboard size={11} /> Ctrl+S guardar | Ctrl+Z deshacer
+          </span>
+        </div>
       </header>
 
       {/* ═══ BODY ═══ */}
-      <div className="h-[calc(100vh-56px)]">
+      <div className="flex-1 min-h-0 overflow-x-auto">
         <BlockEditor
           document={doc}
           onChange={handleDocChange}
@@ -613,42 +701,63 @@ export default function TemplateEditor() {
       {/* ═══ Open Templates Panel ═══ */}
       {showOpenPanel && (
         <div
-          className="fixed inset-0 z-[100] flex items-start justify-center pt-20 bg-black/30 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex items-start justify-center pt-14 sm:pt-20 bg-black/30 backdrop-blur-sm"
           onClick={() => setShowOpenPanel(false)}
         >
           <div
-            className="bg-white rounded-2xl shadow-2xl w-[500px] max-h-[65vh] flex flex-col overflow-hidden"
+            className="bg-white rounded-2xl shadow-2xl w-[560px] max-w-[calc(100vw-24px)] max-h-[78vh] flex flex-col overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-neutral-100">
               <div>
-                <span className="text-[13px] font-semibold text-neutral-800">Abrir Plantilla</span>
-                <p className="text-[10px] text-neutral-400 mt-0.5">Selecciona una plantilla para cargarla en el editor</p>
+                <span className="text-[13px] font-semibold text-neutral-800">Abrir plantilla</span>
+                <p className="text-[10px] text-neutral-400 mt-0.5">Selecciona una plantilla del backend para cargarla en el editor</p>
               </div>
-              <button
-                onClick={() => setShowOpenPanel(false)}
-                className="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-400"
-              >
-                <X size={15} />
-              </button>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] text-neutral-400">{visibleTemplates.length} resultados</span>
+                <button
+                  onClick={() => setShowOpenPanel(false)}
+                  className="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-400"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            </div>
+            <div className="px-4 py-3 border-b border-neutral-100">
+              <div className="relative">
+                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+                <input
+                  value={openPanelQuery}
+                  onChange={(e) => setOpenPanelQuery(e.target.value)}
+                  placeholder="Buscar por nombre, estado o ID..."
+                  className="w-full h-9 rounded-xl border border-neutral-200 bg-neutral-50 pl-9 pr-3 text-[12px] focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-300"
+                />
+              </div>
             </div>
             <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
               {loadingTemplates ? (
                 <div className="flex items-center justify-center h-32 text-neutral-400">
                   <Loader2 size={20} className="animate-spin mr-2" />
-                  <span className="text-[12px]">Cargando plantillas…</span>
+                  <span className="text-[12px]">Cargando plantillas...</span>
                 </div>
-              ) : allTemplates.length === 0 ? (
-                <div className="flex items-center justify-center h-32 text-neutral-400 text-[12px]">
-                  No hay plantillas guardadas en el backend
+              ) : visibleTemplates.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-32 text-neutral-400 text-[12px] px-6 text-center">
+                  <span>{allTemplates.length === 0 ? 'No hay plantillas guardadas en el backend.' : 'No hay coincidencias con ese criterio.'}</span>
+                  {openPanelQuery.trim() && (
+                    <span className="text-[11px] mt-1 text-neutral-500">Prueba con otro termino de busqueda.</span>
+                  )}
                 </div>
               ) : (
-                allTemplates.map((tpl) => (
+                visibleTemplates.map((tpl) => (
                   <button
                     key={tpl.id}
                     onClick={() => loadTemplate(tpl)}
                     disabled={loadingTemplateId === tpl.id}
-                    className="w-full text-left rounded-xl px-4 py-3 hover:bg-neutral-50 border border-neutral-100 hover:border-neutral-200 transition-all group disabled:opacity-50"
+                    className={`w-full text-left rounded-xl px-4 py-3 border transition-all group disabled:opacity-50 ${
+                      templateId === tpl.id
+                        ? 'border-violet-300 bg-violet-50/50'
+                        : 'border-neutral-100 hover:border-neutral-200 hover:bg-neutral-50'
+                    }`}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">
@@ -656,13 +765,14 @@ export default function TemplateEditor() {
                         <div className="text-[10px] text-neutral-400 mt-0.5">
                           <StatusPill status={tpl.status} />
                           <span className="ml-1.5">
-                            {new Date(tpl.updatedAt).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })}
+                            {formatDateLabel(tpl.updatedAt, true)}
                           </span>
                         </div>
+                        <div className="text-[10px] text-neutral-400 font-mono mt-1 truncate">{tpl.id}</div>
                       </div>
                       {loadingTemplateId === tpl.id
                         ? <Loader2 size={14} className="animate-spin text-neutral-400 shrink-0" />
-                        : <span className="text-[11px] text-neutral-400 group-hover:text-blue-500 transition-colors shrink-0">Abrir →</span>
+                        : <span className="text-[11px] text-neutral-400 group-hover:text-blue-500 transition-colors shrink-0">Abrir -&gt;</span>
                       }
                     </div>
                   </button>
@@ -687,7 +797,7 @@ export default function TemplateEditor() {
               <div className="flex items-center gap-2">
                 <Eye size={16} className="text-neutral-500" />
                 <span className="text-[13px] font-semibold text-neutral-800">Vista Previa</span>
-                <span className="text-[10px] text-neutral-400">— variables rellenadas con datos de muestra</span>
+                <span className="text-[10px] text-neutral-400">Variables rellenadas con datos de muestra</span>
               </div>
               <button
                 onClick={() => setShowPreviewModal(false)}
@@ -700,7 +810,7 @@ export default function TemplateEditor() {
               {previewLoading ? (
                 <div className="flex items-center justify-center h-full text-neutral-400">
                   <Loader2 size={24} className="animate-spin mr-3" />
-                  <span className="text-[13px]">Generando preview…</span>
+                  <span className="text-[13px]">Generando preview...</span>
                 </div>
               ) : (
                 <iframe
@@ -708,7 +818,7 @@ export default function TemplateEditor() {
                   sandbox="allow-same-origin"
                   title="Vista Previa"
                   className="mx-auto bg-white rounded-sm shadow-lg block"
-                  style={{ width: 794, minHeight: 500, height: '100%', border: 'none' }}
+                  style={{ width: 'min(100%, 794px)', minHeight: 500, height: '100%', border: 'none' }}
                 />
               )}
             </div>
