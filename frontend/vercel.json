@@ -1,0 +1,30 @@
+{
+    "buildCommand": "npm run build",
+    "outputDirectory": "dist",
+    "rewrites": [
+        {
+            "source": "/technical-reports",
+            "destination": "/technical-reports.html"
+        },
+        {
+            "source": "/fichas-tecnicas",
+            "destination": "/fichas-tecnicas.html"
+        },
+        {
+            "source": "/image-optimizer",
+            "destination": "/image-optimizer.html"
+        },
+        {
+            "source": "/compressor",
+            "destination": "/compressor.html"
+        },
+        {
+            "source": "/template-editor",
+            "destination": "/template-editor.html"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "/index.html"
+        }
+    ]
+}
