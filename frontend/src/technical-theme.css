@@ -1,0 +1,252 @@
+:root {
+    --bg-color: #0d0d0d;
+    --card-bg: #111;
+    --border: #333;
+    --accent: #D71921;
+    --text-main: #eee;
+    --text-dim: #888;
+    --font-mono: 'Roboto Mono', monospace;
+    --font-dot: 'DotGothic16', monospace;
+    --radius: 6px;
+}
+
+/* Scoped Theme Wrapper */
+.technical-theme {
+    background-color: var(--bg-color);
+    background-image: radial-gradient(#222 1px, transparent 0);
+    background-size: 20px 20px;
+    font-family: var(--font-mono);
+    color: var(--text-main);
+    /* Ensure it takes full height if standalone, or fits container */
+    min-height: 100%;
+}
+
+/* Apply to body if this class is on body (standalone) */
+body.technical-theme {
+    min-height: 100vh;
+}
+
+/* Base Overrides - Scoped */
+.technical-theme .bg-gray-50,
+.technical-theme.bg-gray-50,
+.technical-theme .bg-gray-100 {
+    background-color: transparent !important;
+}
+
+.technical-theme .bg-white {
+    background-color: var(--card-bg) !important;
+    border-color: var(--border) !important;
+}
+
+.technical-theme .border-gray-200,
+.technical-theme .border-gray-300,
+.technical-theme .border-gray-100 {
+    border-color: var(--border) !important;
+}
+
+.technical-theme .text-gray-900,
+.technical-theme .text-gray-800,
+.technical-theme .text-gray-700 {
+    color: var(--text-main) !important;
+}
+
+.technical-theme .text-gray-600,
+.technical-theme .text-gray-500,
+.technical-theme .text-gray-400 {
+    color: var(--text-dim) !important;
+}
+
+/* Form Elements */
+.technical-theme input,
+.technical-theme select,
+.technical-theme textarea {
+    background-color: #000 !important;
+    color: var(--text-main) !important;
+    border-color: var(--border) !important;
+    font-family: var(--font-mono) !important;
+}
+
+.technical-theme input:focus,
+.technical-theme select:focus,
+.technical-theme textarea:focus {
+    border-color: var(--accent) !important;
+    ring-color: var(--accent) !important;
+    outline: none !important;
+    box-shadow: 0 0 0 1px var(--accent) !important;
+}
+
+/* Buttons */
+.technical-theme .btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    transition: all 0.2s;
+}
+
+.technical-theme .btn-secondary:hover:not(:disabled) {
+    color: var(--text-main);
+    background: #1a1a1a;
+    border-color: var(--text-dim);
+}
+
+.technical-theme .btn-primary,
+.technical-theme .bg-blue-600 {
+    background-color: var(--accent) !important;
+    color: white;
+    border: 1px solid var(--accent);
+    transition: all 0.2s;
+}
+
+.technical-theme .btn-primary:hover:not(:disabled),
+.technical-theme .hover\:bg-blue-700:hover {
+    background-color: #b6acad !important;
+}
+
+/* Specific component fixes */
+.technical-theme .hover\:bg-gray-50:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+.technical-theme .hover\:bg-gray-100:hover {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+}
+
+/* Checkboxes/Buttons in FormPanel */
+.technical-theme .bg-gray-200 {
+    background-color: #222 !important;
+    color: var(--text-dim) !important;
+}
+
+.technical-theme .hover\:bg-gray-300:hover {
+    background-color: #333 !important;
+}
+
+/* Scrollbars */
+.technical-theme ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.technical-theme ::-webkit-scrollbar-track {
+    background: #111;
+}
+
+.technical-theme ::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 4px;
+}
+
+.technical-theme ::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Typography Headings */
+.technical-theme h1,
+.technical-theme h2,
+.technical-theme h3,
+.technical-theme h4,
+.technical-theme h5,
+.technical-theme h6 {
+    font-family: var(--font-dot);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Scrollbar personalizado para lista de reportes */
+.technical-theme .overflow-y-auto::-webkit-scrollbar {
+    width: 6px;
+}
+
+.technical-theme .overflow-y-auto::-webkit-scrollbar-track {
+    background: #111;
+    border-radius: 3px;
+}
+
+.technical-theme .overflow-y-auto::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 3px;
+}
+
+.technical-theme .overflow-y-auto::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Preview Panel Protection - Prevent dark theme from affecting white preview */
+.technical-theme .ficha-preview-container,
+.technical-theme .ficha-preview-container * {
+    background-color: inherit;
+    color: inherit;
+}
+
+.technical-theme .ficha-preview-container {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+}
+
+.technical-theme .ficha-preview-container input,
+.technical-theme .ficha-preview-container select,
+.technical-theme .ficha-preview-container textarea {
+    background-color: #ffffff !important;
+    color: #333333 !important;
+    border-color: #333333 !important;
+}
+
+/* Button Active/Click Effects */
+.technical-theme .btn-primary:active:not(:disabled),
+.technical-theme .btn-secondary:active:not(:disabled),
+.technical-theme .btn-red:active:not(:disabled) {
+    transform: scale(0.95);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.technical-theme .btn-primary {
+    background: linear-gradient(to bottom, var(--accent), #a01118);
+    border: 1px solid var(--accent);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+
+.technical-theme .btn-primary:hover:not(:disabled) {
+    background: linear-gradient(to bottom, #ef4444, var(--accent));
+    box-shadow: 0 2px 8px rgba(215, 25, 33, 0.4);
+}
+
+.technical-theme .btn-secondary {
+    background: linear-gradient(to bottom, #1a1a1a, #0d0d0d);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+
+.technical-theme .btn-secondary:hover:not(:disabled) {
+    background: linear-gradient(to bottom, #2a2a2a, #1a1a1a);
+    border-color: #555;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.technical-theme .btn-red {
+    background: linear-gradient(to bottom, #dc2626, #b91c1c);
+    border: 1px solid #dc2626;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+
+.technical-theme .btn-red:hover:not(:disabled) {
+    background: linear-gradient(to bottom, #ef4444, #dc2626);
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
+}
