@@ -106,7 +106,7 @@ export default function TechnicalReports() {
 
     const handleDownloadImage = async () => {
         const element = document.getElementById('technical-report-preview');
-        if (!element || !selectedReportId) return;
+        if (!element || !selectedReportId || !formData) return;
 
         await run(
             async () => {

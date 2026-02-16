@@ -317,6 +317,10 @@ export default function TemplateEditor() {
 
   /* ── Save ── */
   const save = useCallback(async () => {
+    if (doc.blocks.length === 0) {
+      toast('Agrega al menos un bloque antes de guardar', 'info');
+      return;
+    }
     setSaving(true);
     try {
       const templateJson = documentToTemplateJson(doc, reportType);
@@ -357,6 +361,10 @@ export default function TemplateEditor() {
 
   /* ── Preview ── */
   const preview = useCallback(async () => {
+    if (doc.blocks.length === 0) {
+      toast('No hay bloques para previsualizar', 'info');
+      return;
+    }
     if (!templateId) {
       toast('Guarda la plantilla primero para ver el preview', 'info');
       return;

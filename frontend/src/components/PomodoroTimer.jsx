@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo, useEffect, memo } from 'react';
-import { RotateCcw, Play, Pause } from 'lucide-react';
+import { Zap, RotateCcw, Play, Pause } from 'lucide-react';
 
 // Memoized Progress Bar component
 const PomodoroProgressBar = memo(({ activeCount }) => (
@@ -97,69 +97,82 @@ const PomodoroTimer = () => {
         return Math.floor(progress * 20);
     }, [pomodoroTime, totalSeconds]);
 
+    const [isOpen, setIsOpen] = useState(false);
 
     return (
-        <div className="flex-1 min-w-0 flex flex-col items-center justify-center bg-[#050505] border border-[#222] rounded-xl p-4 relative overflow-hidden group">
-            {/* Ambient Background Glow */}
-            <div className={`absolute inset-0 bg-red-900/5 transition-opacity duration-1000 ${isPomodoroActive ? 'opacity-100' : 'opacity-0'}`} />
 
-            <div className="relative z-10 w-full flex items-center justify-between gap-4">
+        <div className="relative cursor-pointer group z-[100]">
+            {/* Trigger Icon (Logo) */}
+            <div
+                className={`p-2 transition-all duration-300 rounded-lg ${isPomodoroActive ? 'text-red-500 bg-red-500/10' : 'text-white hover:text-red-500'}`}
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                <Zap size={20} className={isPomodoroActive ? 'fill-red-500 animate-pulse' : 'fill-white'} />
+            </div>
 
-                {/* Timer Display - Left Side */}
-                <div className="flex flex-col items-start pl-2">
-                    <span
-                        className={`text-[42px] leading-none font-['DotGothic16'] tracking-wider transition-colors duration-300 ${isPomodoroActive ? 'text-[#ff3333] drop-shadow-[0_0_8px_rgba(255,0,0,0.5)]' : 'text-[#e0e0e0]'
-                            }`}
-                    >
-                        {formatTime(pomodoroTime)}
-                    </span>
-                    <div className="flex gap-[3px] mt-2 opacity-60">
-                        <PomodoroProgressBar activeCount={progressBarActiveCount} />
-                    </div>
-                </div>
+            {/* Timer Dropdown */}
+            <div className={`absolute top-10 left-0 w-80 h-48 bg-black border border-neutral-800 shadow-2xl rounded-xl transition-all duration-300 origin-top-left flex flex-col p-4 z-[100] transform ${isOpen ? 'opacity-100 visible translate-y-2 pointer-events-auto' : 'opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-2 group-hover:pointer-events-auto'} pointer-events-none`}>
+                {/* Ambient Background Glow */}
+                <div className={`absolute inset-0 bg-red-900/5 transition-opacity duration-1000 pointer-events-none ${isPomodoroActive ? 'opacity-100' : 'opacity-0'}`} />
 
-                {/* Right Side: Controls & Modes */}
-                <div className="flex flex-col items-end gap-3">
+                <div className="relative z-10 w-full flex items-center justify-between gap-4 h-full">
 
-                    {/* Mode Selectors */}
-                    <div className="flex gap-1">
-                        {[
-                            { id: 'work', label: 'WORK' },
-                            { id: 'short', label: 'SHRT' },
-                            { id: 'long', label: 'LONG' }
-                        ].map(mode => (
-                            <button
-                                key={mode.id}
-                                onClick={() => changePomodoroMode(mode.id)}
-                                className={`px-2 py-[2px] text-[10px] rounded-sm transition-all duration-200 font-['DotGothic16'] tracking-wide border ${pomodoroMode === mode.id
-                                    ? 'bg-[#D71921] border-[#D71921] text-white shadow-[0_0_10px_rgba(215,25,33,0.3)]'
-                                    : 'bg-transparent border-[#333] text-[#555] hover:border-[#555] hover:text-[#888]'
-                                    }`}
-                            >
-                                {mode.label}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Play Controls */}
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={resetPomodoro}
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-[#444] hover:text-[#888] hover:bg-[#1a1a1a] transition-all"
-                            title="Reset"
-                        >
-                            <RotateCcw size={14} />
-                        </button>
-
-                        <button
-                            onClick={togglePomodoro}
-                            className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 border ${isPomodoroActive
-                                ? 'bg-[#D71921] border-[#D71921] text-white shadow-[0_0_15px_rgba(215,25,33,0.4)] hover:shadow-[0_0_20px_rgba(215,25,33,0.6)]'
-                                : 'bg-[#111] border-[#333] text-white hover:border-white'
+                    {/* Timer Display - Left Side */}
+                    <div className="flex flex-col items-start pl-2">
+                        <span
+                            className={`text-[42px] leading-none font-['DotGothic16'] tracking-wider transition-colors duration-300 ${isPomodoroActive ? 'text-[#ff3333] drop-shadow-[0_0_8px_rgba(255,0,0,0.5)]' : 'text-[#e0e0e0]'
                                 }`}
                         >
-                            {isPomodoroActive ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-1" />}
-                        </button>
+                            {formatTime(pomodoroTime)}
+                        </span>
+                        <div className="flex gap-[3px] mt-2 opacity-60">
+                            <PomodoroProgressBar activeCount={progressBarActiveCount} />
+                        </div>
+                    </div>
+
+                    {/* Right Side: Controls & Modes */}
+                    <div className="flex flex-col items-end gap-3">
+
+                        {/* Mode Selectors */}
+                        <div className="flex gap-1">
+                            {[
+                                { id: 'work', label: 'WORK' },
+                                { id: 'short', label: 'SHRT' },
+                                { id: 'long', label: 'LONG' }
+                            ].map(mode => (
+                                <button
+                                    key={mode.id}
+                                    onClick={(e) => { e.stopPropagation(); changePomodoroMode(mode.id); }}
+                                    className={`px-2 py-[2px] text-[10px] rounded-sm transition-all duration-200 font-['DotGothic16'] tracking-wide border ${pomodoroMode === mode.id
+                                        ? 'bg-[#D71921] border-[#D71921] text-white shadow-[0_0_10px_rgba(215,25,33,0.3)]'
+                                        : 'bg-transparent border-[#333] text-[#555] hover:border-[#555] hover:text-[#888]'
+                                        }`}
+                                >
+                                    {mode.label}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Play Controls */}
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); resetPomodoro(); }}
+                                className="w-8 h-8 rounded-full flex items-center justify-center text-[#444] hover:text-[#888] hover:bg-[#1a1a1a] transition-all"
+                                title="Reset"
+                            >
+                                <RotateCcw size={14} />
+                            </button>
+
+                            <button
+                                onClick={(e) => { e.stopPropagation(); togglePomodoro(); }}
+                                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 border ${isPomodoroActive
+                                    ? 'bg-[#D71921] border-[#D71921] text-white shadow-[0_0_15px_rgba(215,25,33,0.4)] hover:shadow-[0_0_20px_rgba(215,25,33,0.6)]'
+                                    : 'bg-[#111] border-[#333] text-white hover:border-white'
+                                    }`}
+                            >
+                                {isPomodoroActive ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-1" />}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>

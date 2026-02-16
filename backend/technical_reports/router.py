@@ -48,16 +48,50 @@ def normalize_csv_key(value: str) -> str:
     return text.strip("_")
 
 
+# Mapeo de meses para sincronización de fechas desde Excel
+MESES = {
+    1: 'ENERO', 2: 'FEBRERO', 3: 'MARZO', 4: 'ABRIL',
+    5: 'MAYO', 6: 'JUNIO', 7: 'JULIO', 8: 'AGOSTO',
+    9: 'SEPTIEMBRE', 10: 'OCTUBRE', 11: 'NOVIEMBRE', 12: 'DICIEMBRE'
+}
+
+
+def _resolve_mes(val) -> str:
+    """Convierte valor de mes a nombre español. Maneja int, float, str numérico y nombre directo."""
+    if val is None:
+        return 'Enero'
+    if isinstance(val, str):
+        stripped = val.strip()
+        if not stripped:
+            return 'Enero'
+        try:
+            num = int(float(stripped))
+            if 1 <= num <= 12:
+                return MESES[num]
+        except (ValueError, TypeError):
+            pass
+        return stripped
+    try:
+        num = int(float(val))
+        if 1 <= num <= 12:
+            return MESES[num]
+    except (ValueError, TypeError):
+        pass
+    return str(val)
+
+
 # 1. Definir Mapeo de Columnas (Humano -> Sistema)
 # IMPORTANTE: Las claves (izquierda) deben estar "NORMALIZADAS":
 # - Todo minúsculas
 # - SIN espacios
 # - SIN guiones bajos (_) ni puntos (.)
 # - SIN paréntesis ni comillas
+# FUENTE ÚNICA DE VERDAD: usado tanto por CSV como por XLSX
 COLUMN_MAPPING = {
     # Identificadores
     'nroinforme': 'informe_id',
     'numeroinforme': 'informe_id',
+    'informeid': 'informe_id',
     'informe': 'informe_id',
     'id': 'informe_id',
     'item': 'informe_id',
@@ -114,34 +148,115 @@ COLUMN_MAPPING = {
     'lozatechoexterior': 'loza_techo_exterior',
     'lozatechoext': 'loza_techo_exterior',
     'ductoventilacion': 'ducto_ventilacion',
-    'cerkoperimetrico': 'cerco_perimetrico',
+    'ductodeventilacion': 'ducto_ventilacion',
+    'ventilacion': 'ducto_ventilacion',
+    'cercoperimetrico': 'cerco_perimetrico',
+    'cerco': 'cerco_perimetrico',
     'descarga': 'descarga',
-    
-    # Observaciones y sugerencias (Inspección)
+    'tuberiadescarga': 'descarga',
+
+    # --- MEDIDAS ---
+    'medidasdiametro': 'medidas_diametro',
+    'diametro': 'medidas_diametro',
+    'diametrom': 'medidas_diametro',
+    'medidasdiametrointerno': 'medidas_diametro_interno',
+    'diametrointerno': 'medidas_diametro_interno',
+    'diametrointernom': 'medidas_diametro_interno',
+    'medidasalturautil': 'medidas_altura_util',
+    'alturautil': 'medidas_altura_util',
+    'alturautilm': 'medidas_altura_util',
+    'medidasalturatotal': 'medidas_altura_total',
+    'alturatotal': 'medidas_altura_total',
+    'alturatotalm': 'medidas_altura_total',
+
+    # --- INSPECCIÓN (OBSERVACIONES Y SUGERENCIAS) ---
     'obscajaregistro': 'obs_caja_registro',
+    'observacionescajaregistro': 'obs_caja_registro',
+    'observacionescajaderegistro': 'obs_caja_registro',
     'sugcajaregistro': 'sug_caja_registro',
+    'sugerenciascajaregistro': 'sug_caja_registro',
+    'sugerenciascajaderegistro': 'sug_caja_registro',
+
     'obsmarcotapa': 'obs_marco_tapa',
+    'observacionesmarcotapa': 'obs_marco_tapa',
+    'observacionesmarcoytapa': 'obs_marco_tapa',
+    'observacionesmarcoytapasanitaria': 'obs_marco_tapa',
     'sugmarcotapa': 'sug_marco_tapa',
+    'sugerenciasmarcotapa': 'sug_marco_tapa',
+    'sugerenciasmarcoytapa': 'sug_marco_tapa',
+    'sugerenciasmarcoytapasanitaria': 'sug_marco_tapa',
+
     'obsescalerainterior': 'obs_escalera_int',
+    'observacionesescalerainterior': 'obs_escalera_int',
+    'obsescaleraint': 'obs_escalera_int',
     'sugescalerainterior': 'sug_escalera_int',
+    'sugerenciasescalerainterior': 'sug_escalera_int',
+    'sugescaleraint': 'sug_escalera_int',
+
     'obsescaleraexterior': 'obs_escalera_ext',
+    'observacionesescaleraexterior': 'obs_escalera_ext',
+    'obsescaleraext': 'obs_escalera_ext',
     'sugescaleraexterior': 'sug_escalera_ext',
+    'sugerenciasescaleraexterior': 'sug_escalera_ext',
+    'sugescaleraext': 'sug_escalera_ext',
+
     'obscubainterior': 'obs_cuba_int',
+    'observacionescubainterior': 'obs_cuba_int',
+    'obscubaint': 'obs_cuba_int',
     'sugcubainterior': 'sug_cuba_int',
+    'sugerenciascubainterior': 'sug_cuba_int',
+    'sugcubaint': 'sug_cuba_int',
+
     'obscubaexterior': 'obs_cuba_ext',
+    'observacionescubaexterior': 'obs_cuba_ext',
+    'obscubaext': 'obs_cuba_ext',
     'sugcubaexterior': 'sug_cuba_ext',
+    'sugerenciascubaexterior': 'sug_cuba_ext',
+    'sugcubaext': 'sug_cuba_ext',
+
     'obslozafondo': 'obs_loza_fondo',
+    'observacioneslozafondo': 'obs_loza_fondo',
+    'observacioneslozadefondo': 'obs_loza_fondo',
     'suglozafondo': 'sug_loza_fondo',
+    'sugerenciaslozafondo': 'sug_loza_fondo',
+    'sugerenciaslozadefondo': 'sug_loza_fondo',
+
     'obslozatechoint': 'obs_loza_techo_int',
+    'obslozatechointerior': 'obs_loza_techo_int',
+    'observacioneslozatechointerior': 'obs_loza_techo_int',
     'suglozatechoint': 'sug_loza_techo_int',
+    'suglozatechointerior': 'sug_loza_techo_int',
+    'sugerenciaslozatechointerior': 'sug_loza_techo_int',
+
     'obslozatechoext': 'obs_loza_techo_ext',
+    'obslozatechoexterior': 'obs_loza_techo_ext',
+    'observacioneslozatechoexterior': 'obs_loza_techo_ext',
     'suglozatechoext': 'sug_loza_techo_ext',
+    'suglozatechoexterior': 'sug_loza_techo_ext',
+    'sugerenciaslozatechoexterior': 'sug_loza_techo_ext',
+
     'obsductoventilacion': 'obs_ducto',
+    'observacionesductoventilacion': 'obs_ducto',
+    'observacionesductodeventilacion': 'obs_ducto',
+    'obsducto': 'obs_ducto',
     'sugductoventilacion': 'sug_ducto',
-    'obscerkoperimetrico': 'obs_cerco',
-    'sugcerkoperimetrico': 'sug_cerco',
+    'sugerenciasductoventilacion': 'sug_ducto',
+    'sugerenciasductodeventilacion': 'sug_ducto',
+    'sugducto': 'sug_ducto',
+
+    'obscercoperimetrico': 'obs_cerco',
+    'observacionescercoperimetrico': 'obs_cerco',
+    'obscerco': 'obs_cerco',
+    'sugcercoperimetrico': 'sug_cerco',
+    'sugerenciascercoperimetrico': 'sug_cerco',
+    'sugcerco': 'sug_cerco',
+
     'obsdescarga': 'obs_descarga',
+    'observacionesdescarga': 'obs_descarga',
+    'observacionestuberiadescarga': 'obs_descarga',
     'sugdescarga': 'sug_descarga',
+    'sugerenciasdescarga': 'sug_descarga',
+    'sugerenciastuberiadescarga': 'sug_descarga',
     
     # --- VÁLVULAS (CONDUCCIÓN) ---
     'valvulasconduccion2': 'valvulas_conduccion_2',
@@ -152,7 +267,19 @@ COLUMN_MAPPING = {
     'valvulasconduccion10': 'valvulas_conduccion_10',
     'valvulasconduccion12': 'valvulas_conduccion_12',
     'valvconduccion2': 'valvulas_conduccion_2',
+    'valvconduccion3': 'valvulas_conduccion_3',
+    'valvconduccion4': 'valvulas_conduccion_4',
+    'valvconduccion6': 'valvulas_conduccion_6',
+    'valvconduccion8': 'valvulas_conduccion_8',
+    'valvconduccion10': 'valvulas_conduccion_10',
     'valvconduccion12': 'valvulas_conduccion_12',
+    'valvcond2': 'valvulas_conduccion_2',
+    'valvcond3': 'valvulas_conduccion_3',
+    'valvcond4': 'valvulas_conduccion_4',
+    'valvcond6': 'valvulas_conduccion_6',
+    'valvcond8': 'valvulas_conduccion_8',
+    'valvcond10': 'valvulas_conduccion_10',
+    'valvcond12': 'valvulas_conduccion_12',
     
     # --- VÁLVULAS (IMPULSIÓN) ---
     'valvulasimpulsion2': 'valvulas_impulsion_2',
@@ -163,7 +290,19 @@ COLUMN_MAPPING = {
     'valvulasimpulsion10': 'valvulas_impulsion_10',
     'valvulasimpulsion12': 'valvulas_impulsion_12',
     'valvimpulsion2': 'valvulas_impulsion_2',
+    'valvimpulsion3': 'valvulas_impulsion_3',
+    'valvimpulsion4': 'valvulas_impulsion_4',
+    'valvimpulsion6': 'valvulas_impulsion_6',
+    'valvimpulsion8': 'valvulas_impulsion_8',
+    'valvimpulsion10': 'valvulas_impulsion_10',
     'valvimpulsion12': 'valvulas_impulsion_12',
+    'valvimp2': 'valvulas_impulsion_2',
+    'valvimp3': 'valvulas_impulsion_3',
+    'valvimp4': 'valvulas_impulsion_4',
+    'valvimp6': 'valvulas_impulsion_6',
+    'valvimp8': 'valvulas_impulsion_8',
+    'valvimp10': 'valvulas_impulsion_10',
+    'valvimp12': 'valvulas_impulsion_12',
     
     # --- VÁLVULAS (ADUCCIÓN) ---
     'valvulasaduccion2': 'valvulas_aduccion_2',
@@ -174,6 +313,11 @@ COLUMN_MAPPING = {
     'valvulasaduccion10': 'valvulas_aduccion_10',
     'valvulasaduccion12': 'valvulas_aduccion_12',
     'valvaduccion2': 'valvulas_aduccion_2',
+    'valvaduccion3': 'valvulas_aduccion_3',
+    'valvaduccion4': 'valvulas_aduccion_4',
+    'valvaduccion6': 'valvulas_aduccion_6',
+    'valvaduccion8': 'valvulas_aduccion_8',
+    'valvaduccion10': 'valvulas_aduccion_10',
     'valvaduccion12': 'valvulas_aduccion_12',
     
     # --- VÁLVULAS (BYPASS) ---
@@ -185,6 +329,11 @@ COLUMN_MAPPING = {
     'valvulasbypass10': 'valvulas_bypass_10',
     'valvulasbypass12': 'valvulas_bypass_12',
     'valvbypass2': 'valvulas_bypass_2',
+    'valvbypass3': 'valvulas_bypass_3',
+    'valvbypass4': 'valvulas_bypass_4',
+    'valvbypass6': 'valvulas_bypass_6',
+    'valvbypass8': 'valvulas_bypass_8',
+    'valvbypass10': 'valvulas_bypass_10',
     'valvbypass12': 'valvulas_bypass_12',
     
     # --- VÁLVULAS (DESAGÜE) ---
@@ -196,19 +345,49 @@ COLUMN_MAPPING = {
     'valvulasdesague10': 'valvulas_desague_10',
     'valvulasdesague12': 'valvulas_desague_12',
     'valvdesague2': 'valvulas_desague_2',
+    'valvdesague3': 'valvulas_desague_3',
+    'valvdesague4': 'valvulas_desague_4',
+    'valvdesague6': 'valvulas_desague_6',
+    'valvdesague8': 'valvulas_desague_8',
+    'valvdesague10': 'valvulas_desague_10',
     'valvdesague12': 'valvulas_desague_12',
     
-    # Observaciones y sugerencias (Válvulas)
+    # --- VÁLVULAS (OBSERVACIONES Y SUGERENCIAS) ---
     'obsvalvulasconduccion': 'obs_valvulas_conduccion',
+    'observacionesconduccion': 'obs_valvulas_conduccion',
+    'observacionesvalvulasconduccion': 'obs_valvulas_conduccion',
     'sugvalvulasconduccion': 'sug_valvulas_conduccion',
+    'sugerenciasconduccion': 'sug_valvulas_conduccion',
+    'sugerenciasvalvulasconduccion': 'sug_valvulas_conduccion',
+
     'obsvalvulasimpulsion': 'obs_valvulas_impulsion',
+    'observacionesimpulsion': 'obs_valvulas_impulsion',
+    'observacionesvalvulasimpulsion': 'obs_valvulas_impulsion',
     'sugvalvulasimpulsion': 'sug_valvulas_impulsion',
+    'sugerenciasimpulsion': 'sug_valvulas_impulsion',
+    'sugerenciasvalvulasimpulsion': 'sug_valvulas_impulsion',
+
     'obsvalvulasaduccion': 'obs_valvulas_aduccion',
+    'observacionesaduccion': 'obs_valvulas_aduccion',
+    'observacionesvalvulasaduccion': 'obs_valvulas_aduccion',
     'sugvalvulasaduccion': 'sug_valvulas_aduccion',
+    'sugerenciasaduccion': 'sug_valvulas_aduccion',
+    'sugerenciasvalvulasaduccion': 'sug_valvulas_aduccion',
+
     'obsvalvulasbypass': 'obs_valvulas_bypass',
+    'observacionesbypass': 'obs_valvulas_bypass',
+    'observacionesvalvulasbypass': 'obs_valvulas_bypass',
+    'observacionespass': 'obs_valvulas_bypass',
     'sugvalvulasbypass': 'sug_valvulas_bypass',
+    'sugerenciasbypass': 'sug_valvulas_bypass',
+    'sugerenciasvalvulasbypass': 'sug_valvulas_bypass',
+
     'obsvalvulasdesague': 'obs_valvulas_desague',
+    'observacionesdesague': 'obs_valvulas_desague',
+    'observacionesvalvulasdesague': 'obs_valvulas_desague',
     'sugvalvulasdesague': 'sug_valvulas_desague',
+    'sugerenciasdesague': 'sug_valvulas_desague',
+    'sugerenciasvalvulasdesague': 'sug_valvulas_desague',
     
     # --- CANASTILLAS ---
     'canastillasaduccion2': 'canastillas_aduccion_2',
@@ -241,7 +420,31 @@ COLUMN_MAPPING = {
     'canastillasdesague8': 'canastillas_desague_8',
     'canastillasdesague10': 'canastillas_desague_10',
     'canastillasdesague14': 'canastillas_desague_14',
-    
+
+    # --- CANASTILLAS (OBSERVACIONES Y SUGERENCIAS) ---
+    'obscanastillasaduccion': 'obs_canastillas_aduccion',
+    'observacionescanastillaaduccion': 'obs_canastillas_aduccion',
+    'observacionescanastillasaduccion': 'obs_canastillas_aduccion',
+    'sugcanastillasaduccion': 'sug_canastillas_aduccion',
+    'sugerenciascanastillaaduccion': 'sug_canastillas_aduccion',
+    'sugerenciascanastillasaduccion': 'sug_canastillas_aduccion',
+
+    'obscanastillassuccion': 'obs_canastillas_succion',
+    'observacionescanastillasuccion': 'obs_canastillas_succion',
+    'observacionescanastillassuccion': 'obs_canastillas_succion',
+    'observacionessuccion': 'obs_canastillas_succion',
+    'sugcanastillassuccion': 'sug_canastillas_succion',
+    'sugerenciascanastillasuccion': 'sug_canastillas_succion',
+    'sugerenciascanastillassuccion': 'sug_canastillas_succion',
+    'sugerenciassuccion': 'sug_canastillas_succion',
+
+    'obscanastillasdesague': 'obs_canastillas_desague',
+    'observacionescanastilladesague': 'obs_canastillas_desague',
+    'observacionescanastillasdesague': 'obs_canastillas_desague',
+    'sugcanastillasdesague': 'sug_canastillas_desague',
+    'sugerenciascanastilladesague': 'sug_canastillas_desague',
+    'sugerenciascanastillasdesague': 'sug_canastillas_desague',
+
     # Totales / Operatividad
     'valvulasoperativas': 'valvulas_operativas',
     'valvulasnooperativas': 'valvulas_no_operativas',
@@ -330,352 +533,9 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
     """
     if not XLSX_SUPPORTED:
         raise ValueError("Soporte XLSX no disponible. Instale openpyxl: pip install openpyxl")
-    
-    # 1. Definir Mapeo de Columnas (Humano -> Sistema)
-    # IMPORTANTE: Las claves (izquierda) deben estar "NORMALIZADAS":
-    # - Todo minúsculas
-    # - SIN espacios
-    # - SIN guiones bajos (_) ni puntos (.)
-    # - SIN paréntesis ni comillas
-    COLUMN_MAPPING = {
-        # Identificadores
-        'nroinforme': 'informe_id',
-        'numeroinforme': 'informe_id',
-        'informe': 'informe_id',
-        'id': 'informe_id',
-        'item': 'informe_id',
-        
-        # Centro de Servicio
-        'centrodeservicio': 'cs',
-        'centroservicio': 'cs',
-        'cs': 'cs',
-        'sede': 'cs',
-        'localidad': 'cs',
-        
-        # Datos Generales
-        'contratista': 'contratista',
-        'codigoinfraestructura': 'codigo_infraestructura',
-        'codinfraestructura': 'codigo_infraestructura',
-        'infraestructura': 'codigo_infraestructura',
-        'codigo': 'codigo_infraestructura',
-        'ubicacion': 'ubicacion',
-        'direccion': 'ubicacion',
-        'suministro': 'suministro',
-        'nrosuministro': 'suministro',
-        'numerosuministro': 'suministro',
-        'nis': 'suministro',
-        'tipo': 'tipo',
-        'tipoestructura': 'tipo',
-        'volumen': 'volumen',
-        'volumenm3': 'volumen',
-        'capacidad': 'volumen',
-        
-        # Fechas
-        'dia': 'dia',
-        'mes': 'mes',
-        'año': 'anio',
-        'anio': 'anio',
-        
-        # --- INSPECCIÓN (ESTADOS) ---
-        'cajaregistro': 'caja_registro',
-        'cajaderegistro': 'caja_registro',
-        'marcotapa': 'marco_tapa',
-        'marcoytapa': 'marco_tapa',
-        'marcotapasanitaria': 'marco_tapa',
-        'escalerainterior': 'escalera_interior',
-        'escaleraint': 'escalera_interior',
-        'escaleraexterior': 'escalera_exterior',
-        'escaleraext': 'escalera_exterior',
-        'cubainterior': 'cuba_interior',
-        'cubaint': 'cuba_interior',
-        'cubaexterior': 'cuba_exterior',
-        'cubaext': 'cuba_exterior',
-        'lozafondo': 'loza_fondo',
-        'lozadefondo': 'loza_fondo',
-        'lozatechointerior': 'loza_techo_interior',
-        'lozatechoint': 'loza_techo_interior',
-        'lozatechoexterior': 'loza_techo_exterior',
-        'lozatechoext': 'loza_techo_exterior',
-        'ductoventilacion': 'ducto_ventilacion',
-        'ductodeventilacion': 'ducto_ventilacion',
-        'ventilacion': 'ducto_ventilacion',
-        'cercoperimetrico': 'cerco_perimetrico',
-        'cerco': 'cerco_perimetrico',
-        'descarga': 'descarga',
-        'tuberiadescarga': 'descarga',
 
-        # --- MEDIDAS ---
-        'medidasdiametro': 'medidas_diametro',
-        'diametro': 'medidas_diametro',
-        'diametrom': 'medidas_diametro', # Con unidad
-        'medidasdiametrointerno': 'medidas_diametro_interno',
-        'diametrointerno': 'medidas_diametro_interno',
-        'diametrointernom': 'medidas_diametro_interno', # Con unidad
-        'medidasalturautil': 'medidas_altura_util',
-        'alturautil': 'medidas_altura_util',
-        'alturautilm': 'medidas_altura_util', # Con unidad
-        'medidasalturatotal': 'medidas_altura_total',
-        'alturatotal': 'medidas_altura_total',
-        'alturatotalm': 'medidas_altura_total', # Con unidad
+    # Usa el COLUMN_MAPPING del módulo (fuente única de verdad)
 
-        # --- VÁLVULAS (OBSERVACIONES Y SUGERENCIAS) ---
-        'obsvalvulasconduccion': 'obs_valvulas_conduccion',
-        'observacionesconduccion': 'obs_valvulas_conduccion',
-        'observacionesvalvulasconduccion': 'obs_valvulas_conduccion', # Explicit full name
-        'sugvalvulasconduccion': 'sug_valvulas_conduccion',
-        'sugerenciasconduccion': 'sug_valvulas_conduccion',
-        'sugerenciasvalvulasconduccion': 'sug_valvulas_conduccion', # Explicit full name
-        
-        'obsvalvulasimpulsion': 'obs_valvulas_impulsion',
-        'observacionesimpulsion': 'obs_valvulas_impulsion',
-        'observacionesvalvulasimpulsion': 'obs_valvulas_impulsion', # Explicit full name
-        'sugvalvulasimpulsion': 'sug_valvulas_impulsion',
-        'sugerenciasimpulsion': 'sug_valvulas_impulsion',
-        'sugerenciasvalvulasimpulsion': 'sug_valvulas_impulsion', # Explicit full name
-        
-        'obsvalvulasaduccion': 'obs_valvulas_aduccion',
-        'observacionesaduccion': 'obs_valvulas_aduccion',
-        'observacionesvalvulasaduccion': 'obs_valvulas_aduccion', # Explicit full name
-        'sugvalvulasaduccion': 'sug_valvulas_aduccion',
-        'sugerenciasaduccion': 'sug_valvulas_aduccion',
-        'sugerenciasvalvulasaduccion': 'sug_valvulas_aduccion', # Explicit full name
-        
-        'obsvalvulasbypass': 'obs_valvulas_bypass',
-        'observacionesbypass': 'obs_valvulas_bypass',
-        'observacionesvalvulasbypass': 'obs_valvulas_bypass', # Explicit full name
-        'sugvalvulasbypass': 'sug_valvulas_bypass',
-        'sugerenciasbypass': 'sug_valvulas_bypass',
-        'sugerenciasvalvulasbypass': 'sug_valvulas_bypass', # Explicit full name
-        'observacionespass': 'obs_valvulas_bypass', # Posible error de tipeo "By Pass" -> "Pass"
-
-        'obsvalvulasdesague': 'obs_valvulas_desague',
-        'observacionesdesague': 'obs_valvulas_desague', # Cuidado: puede chocar con canastillas o inspeccion
-        'observacionesvalvulasdesague': 'obs_valvulas_desague',
-        'sugvalvulasdesague': 'sug_valvulas_desague',
-        'sugerenciasdesague': 'sug_valvulas_desague',
-        'sugerenciasvalvulasdesague': 'sug_valvulas_desague',
-
-        # --- CANASTILLAS (OBSERVACIONES Y SUGERENCIAS) ---
-        'obscanastillasaduccion': 'obs_canastillas_aduccion',
-        'observacionescanastillaaduccion': 'obs_canastillas_aduccion',
-        'observacionescanastillasaduccion': 'obs_canastillas_aduccion', # Plural
-        'sugcanastillasaduccion': 'sug_canastillas_aduccion',
-        'sugerenciascanastillaaduccion': 'sug_canastillas_aduccion',
-        'sugerenciascanastillasaduccion': 'sug_canastillas_aduccion', # Plural
-        
-        'obscanastillassuccion': 'obs_canastillas_succion',
-        'observacionescanastillasuccion': 'obs_canastillas_succion',
-        'observacionescanastillassuccion': 'obs_canastillas_succion', # Plural
-        'observacionessuccion': 'obs_canastillas_succion',
-        'sugcanastillassuccion': 'sug_canastillas_succion',
-        'sugerenciascanastillasuccion': 'sug_canastillas_succion',
-        'sugerenciascanastillassuccion': 'sug_canastillas_succion', # Plural
-        'sugerenciassuccion': 'sug_canastillas_succion',
-
-        'obscanastillasdesague': 'obs_canastillas_desague',
-        'observacionescanastilladesague': 'obs_canastillas_desague',
-        'observacionescanastillasdesague': 'obs_canastillas_desague', # Plural
-        'sugcanastillasdesague': 'sug_canastillas_desague',
-        'sugerenciascanastilladesague': 'sug_canastillas_desague',
-        'sugerenciascanastillasdesague': 'sug_canastillas_desague', # Plural
-
-        # --- INSPECCIÓN (OBSERVACIONES Y SUGERENCIAS) ---
-        'obscajaregistro': 'obs_caja_registro',  # Coincide con Excel normalizado
-        'observacionescajaregistro': 'obs_caja_registro',
-        'observacionescajaderegistro': 'obs_caja_registro', # With 'de'
-        'sugcajaregistro': 'sug_caja_registro',  # Coincide con Excel normalizado
-        'sugerenciascajaregistro': 'sug_caja_registro',
-        'sugerenciascajaderegistro': 'sug_caja_registro', # With 'de'
-
-        'obsmarcotapa': 'obs_marco_tapa',  # Coincide con Excel normalizado
-        'observacionesmarcotapa': 'obs_marco_tapa',
-        'observacionesmarcoytapa': 'obs_marco_tapa', # With 'y'
-        'observacionesmarcoytapasanitaria': 'obs_marco_tapa',
-        'sugmarcotapa': 'sug_marco_tapa',  # Coincide con Excel normalizado
-        'sugerenciasmarcotapa': 'sug_marco_tapa',
-        'sugerenciasmarcoytapa': 'sug_marco_tapa', # With 'y'
-        'sugerenciasmarcoytapasanitaria': 'sug_marco_tapa',
-
-        'obsescalerainterior': 'obs_escalera_int',
-        'observacionesescalerainterior': 'obs_escalera_int',
-        'obsescaleraint': 'obs_escalera_int',  # Abreviado (del Excel)
-        'sugescalerainterior': 'sug_escalera_int',
-        'sugerenciasescalerainterior': 'sug_escalera_int',
-        'sugescaleraint': 'sug_escalera_int',  # Abreviado (del Excel)
-
-        'obsescaleraexterior': 'obs_escalera_ext',
-        'observacionesescaleraexterior': 'obs_escalera_ext',
-        'obsescaleraext': 'obs_escalera_ext',  # Abreviado (del Excel)
-        'sugescaleraexterior': 'sug_escalera_ext',
-        'sugerenciasescaleraexterior': 'sug_escalera_ext',
-        'sugescaleraext': 'sug_escalera_ext',  # Abreviado (del Excel)
-
-        'obscubainterior': 'obs_cuba_int',
-        'observacionescubainterior': 'obs_cuba_int',
-        'obscubaint': 'obs_cuba_int',  # Abreviado (del Excel)
-        'sugcubainterior': 'sug_cuba_int',
-        'sugerenciascubainterior': 'sug_cuba_int',
-        'sugcubaint': 'sug_cuba_int',  # Abreviado (del Excel)
-
-        'obscubaexterior': 'obs_cuba_ext',
-        'observacionescubaexterior': 'obs_cuba_ext',
-        'obscubaext': 'obs_cuba_ext',  # Abreviado (del Excel)
-        'sugcubaexterior': 'sug_cuba_ext',
-        'sugerenciascubaexterior': 'sug_cuba_ext',
-        'sugcubaext': 'sug_cuba_ext',  # Abreviado (del Excel)
-        
-        'obslozafondo': 'obs_loza_fondo',  # Coincide con Excel normalizado
-        'observacioneslozafondo': 'obs_loza_fondo',
-        'observacioneslozadefondo': 'obs_loza_fondo', # With 'de'
-        'suglozafondo': 'sug_loza_fondo',  # Coincide con Excel normalizado
-        'sugerenciaslozafondo': 'sug_loza_fondo',
-        'sugerenciaslozadefondo': 'sug_loza_fondo', # With 'de'
-
-        'obslozatechointerior': 'obs_loza_techo_int',
-        'observacioneslozatechointerior': 'obs_loza_techo_int',
-        'obslozatechoint': 'obs_loza_techo_int',  # Abreviado (del Excel)
-        'suglozatechointerior': 'sug_loza_techo_int',
-        'sugerenciaslozatechointerior': 'sug_loza_techo_int',
-        'suglozatechoint': 'sug_loza_techo_int',  # Abreviado (del Excel)
-
-        'obslozatechoexterior': 'obs_loza_techo_ext',
-        'observacioneslozatechoexterior': 'obs_loza_techo_ext',
-        'obslozatechoext': 'obs_loza_techo_ext',  # Abreviado (del Excel)
-        'suglozatechoexterior': 'sug_loza_techo_ext',
-        'sugerenciaslozatechoexterior': 'sug_loza_techo_ext',
-        'suglozatechoext': 'sug_loza_techo_ext',  # Abreviado (del Excel)
-
-        'obsductoventilacion': 'obs_ducto',
-        'observacionesductoventilacion': 'obs_ducto',
-        'observacionesductodeventilacion': 'obs_ducto', # With 'de'
-        'obsducto': 'obs_ducto',  # Abreviado (del Excel)
-        'sugductoventilacion': 'sug_ducto',
-        'sugerenciasductoventilacion': 'sug_ducto',
-        'sugerenciasductodeventilacion': 'sug_ducto', # With 'de'
-        'sugducto': 'sug_ducto',  # Abreviado (del Excel)
-
-        'obscercoperimetrico': 'obs_cerco',
-        'observacionescercoperimetrico': 'obs_cerco',
-        'obscerco': 'obs_cerco',  # Abreviado (del Excel)
-        'sugcercoperimetrico': 'sug_cerco',
-        'sugerenciascercoperimetrico': 'sug_cerco',
-        'sugcerco': 'sug_cerco',  # Abreviado (del Excel)
-
-        'obsdescarga': 'obs_descarga',  # Ya está correcto
-        'observacionesdescarga': 'obs_descarga',
-        'observacionestuberiadescarga': 'obs_descarga', # Alias common
-        'sugdescarga': 'sug_descarga',  # Ya está correcto
-        'sugerenciasdescarga': 'sug_descarga',
-        'sugerenciastuberiadescarga': 'sug_descarga', # Alias common
-
-        # --- VÁLVULAS (DIÁMETROS) ---
-        # Conducción
-        'valvulasconduccion2': 'valvulas_conduccion_2',
-        'valvulasconduccion3': 'valvulas_conduccion_3',
-        'valvulasconduccion4': 'valvulas_conduccion_4',
-        'valvulasconduccion6': 'valvulas_conduccion_6',
-        'valvulasconduccion8': 'valvulas_conduccion_8',
-        'valvulasconduccion10': 'valvulas_conduccion_10',
-        'valvulasconduccion12': 'valvulas_conduccion_12',
-        # Variaciones cortas
-        'valvcond2': 'valvulas_conduccion_2',
-        'valvcond3': 'valvulas_conduccion_3',
-        'valvcond4': 'valvulas_conduccion_4',
-        'valvcond6': 'valvulas_conduccion_6',
-        'valvcond8': 'valvulas_conduccion_8',
-        'valvcond10': 'valvulas_conduccion_10',
-        'valvcond12': 'valvulas_conduccion_12',
-
-        # Impulsión
-        'valvulasimpulsion2': 'valvulas_impulsion_2',
-        'valvulasimpulsion3': 'valvulas_impulsion_3',
-        'valvulasimpulsion4': 'valvulas_impulsion_4',
-        'valvulasimpulsion6': 'valvulas_impulsion_6',
-        'valvulasimpulsion8': 'valvulas_impulsion_8',
-        'valvulasimpulsion10': 'valvulas_impulsion_10',
-        'valvulasimpulsion12': 'valvulas_impulsion_12',
-        # Variaciones cortas
-        'valvimp2': 'valvulas_impulsion_2',
-        'valvimp3': 'valvulas_impulsion_3',
-        'valvimp4': 'valvulas_impulsion_4',
-        'valvimp6': 'valvulas_impulsion_6',
-        'valvimp8': 'valvulas_impulsion_8',
-        'valvimp10': 'valvulas_impulsion_10',
-        'valvimp12': 'valvulas_impulsion_12',
-
-        # Aducción
-        'valvulasaduccion2': 'valvulas_aduccion_2',
-        'valvulasaduccion3': 'valvulas_aduccion_3',
-        'valvulasaduccion4': 'valvulas_aduccion_4',
-        'valvulasaduccion6': 'valvulas_aduccion_6',
-        'valvulasaduccion8': 'valvulas_aduccion_8',
-        'valvulasaduccion10': 'valvulas_aduccion_10',
-        'valvulasaduccion12': 'valvulas_aduccion_12',
-        
-        # Bypass
-        'valvulasbypass2': 'valvulas_bypass_2',
-        'valvulasbypass3': 'valvulas_bypass_3',
-        'valvulasbypass4': 'valvulas_bypass_4',
-        'valvulasbypass6': 'valvulas_bypass_6',
-        'valvulasbypass8': 'valvulas_bypass_8',
-        'valvulasbypass10': 'valvulas_bypass_10',
-        'valvulasbypass12': 'valvulas_bypass_12',
-
-        # Desagüe (Válvulas)
-        'valvulasdesague2': 'valvulas_desague_2',
-        'valvulasdesague3': 'valvulas_desague_3',
-        'valvulasdesague4': 'valvulas_desague_4',
-        'valvulasdesague6': 'valvulas_desague_6',
-        'valvulasdesague8': 'valvulas_desague_8',
-        'valvulasdesague10': 'valvulas_desague_10',
-        'valvulasdesague12': 'valvulas_desague_12',
-
-        # --- CANASTILLAS ---
-        # Aducción
-        'canastillasaduccion2': 'canastillas_aduccion_2',
-        'canastillasaduccion3': 'canastillas_aduccion_3',
-        'canastillasaduccion4': 'canastillas_aduccion_4',
-        'canastillasaduccion6': 'canastillas_aduccion_6',
-        'canastillasaduccion8': 'canastillas_aduccion_8',
-        'canastillasaduccion10': 'canastillas_aduccion_10',
-        'canastillasaduccion12': 'canastillas_aduccion_14', # Map legacy 12 to 14 if needed
-        'canastillasaduccion14': 'canastillas_aduccion_14',
-        'canastaduccion2': 'canastillas_aduccion_2',
-        'canastaduccion14': 'canastillas_aduccion_14',
-
-        # Succión
-        'canastillassuccion2': 'canastillas_succion_2',
-        'canastillassuccion3': 'canastillas_succion_3',
-        'canastillassuccion4': 'canastillas_succion_4',
-        'canastillassuccion6': 'canastillas_succion_6',
-        'canastillassuccion8': 'canastillas_succion_8',
-        'canastillassuccion10': 'canastillas_succion_10',
-        'canastillassuccion14': 'canastillas_succion_14',
-        'canastsuccion2': 'canastillas_succion_2',
-        'canastsuccion14': 'canastillas_succion_14',
-
-        # Desagüe (Canastillas)
-        'canastillasdesague2': 'canastillas_desague_2',
-        'canastillasdesague3': 'canastillas_desague_3',
-        'canastillasdesague4': 'canastillas_desague_4',
-        'canastillasdesague6': 'canastillas_desague_6',
-        'canastillasdesague8': 'canastillas_desague_8',
-        'canastillasdesague10': 'canastillas_desague_10',
-        'canastillasdesague14': 'canastillas_desague_14',
-        
-        # Totales / Operatividad
-        'valvulasoperativas': 'valvulas_operativas',
-        'valvulasnooperativas': 'valvulas_no_operativas',
-        'canastillasoperativas': 'canastillas_operativas',
-        'canastillasnooperativas': 'canastillas_no_operativas',
-
-        # Observaciones y Sugerencias Generales
-        'observaciones': 'observaciones',
-        'observacion': 'observaciones',
-        'sugerencias': 'sugerencias',
-        'sugerencia': 'sugerencias',
-    }
-    
     # Lista de columnas CLAVE para identificar la fila de headers
     # Si una fila tiene al menos una de estas, es candidata a ser header
     HEADER_CANDIDATES = ['informe', 'id', 'cs', 'centro servicio', 'contratista', 'codigo']
@@ -771,23 +631,19 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
                     key = headers[col_idx]
                     # Ignorar columnas no mapeadas o vacias
                     if not key.startswith("_col_") and cell_value is not None:
-                        # FIX: Handle datetime objects to prevent timezone shifts (UTC vs Local)
+                        # Handle datetime/date objects: extract components for dia/mes/anio
                         if hasattr(cell_value, 'strftime'):
                             try:
-                                # HACK: Add safety margin for dates that are exactly at midnight
-                                # If server is UTC and local is UTC-5, 00:00:00 becomes previous day
-                                # Moving to noon (12:00:00) prevents this shift for reasonable timezones
-                                if hasattr(cell_value, 'hour') and cell_value.hour == 0 and cell_value.minute == 0:
-                                    from datetime import timedelta
-                                    # Create a new safe date object (don't modify original cell if possible/needed)
-                                    safe_date = cell_value + timedelta(hours=12)
-                                    row_dict[key] = safe_date.strftime('%d/%m/%y')
-                                    print(f"[DEBUG DATE] Original: {cell_value} -> Safe: {safe_date} -> Str: {row_dict[key]}")
+                                if key == 'dia':
+                                    row_dict[key] = cell_value.day
+                                elif key == 'mes':
+                                    row_dict[key] = MESES.get(cell_value.month, str(cell_value.month))
+                                elif key == 'anio':
+                                    row_dict[key] = cell_value.year
                                 else:
-                                    # Already has time or is just date, just format
                                     row_dict[key] = cell_value.strftime('%d/%m/%y')
                             except Exception as e:
-                                print(f"[DATE ERROR] Could not fix date {cell_value}: {e}")
+                                print(f"[DATE ERROR] Could not format date {cell_value}: {e}")
                                 row_dict[key] = str(cell_value)
                         else:
                             row_dict[key] = cell_value
@@ -872,7 +728,7 @@ def transform_flat_to_nested(flat_data: Dict[str, Any]) -> Dict[str, Any]:
     result['metadata'] = {
         'informe_id': safe_int(flat_data.get('informe_id', 0)),
         'dia': safe_int(flat_data.get('dia', 1)),
-        'mes': safe_str(flat_data.get('mes', 'Enero')),
+        'mes': _resolve_mes(flat_data.get('mes', 'Enero')),
         'anio': safe_int(flat_data.get('anio', 2024)),
         'pagina': safe_str(flat_data.get('pagina', '1 de 2'))
     }
@@ -996,27 +852,29 @@ def transform_flat_to_nested(flat_data: Dict[str, Any]) -> Dict[str, Any]:
         inspeccion[estado] = normalize_status(flat_data.get(estado))
     
     # Observaciones y sugerencias de inspección
+    # Tupla: (flat_data_obs_key, flat_data_sug_key, model_obs_field, model_sug_field)
+    # Los nombres de campo del modelo usan abreviaturas (_int, _ext, _ducto, _cerco)
+    # mientras que los estados usan nombres completos (_interior, _exterior, etc.)
     obs_sug_mapping = {
-        'caja_registro': ('obs_caja_registro', 'sug_caja_registro'),
-        'marco_tapa': ('obs_marco_tapa', 'sug_marco_tapa'),
-        # Use the same keys as inspeccion_estados to keep field names consistent.
-        'escalera_interior': ('obs_escalera_int', 'sug_escalera_int'),
-        'escalera_exterior': ('obs_escalera_ext', 'sug_escalera_ext'),
-        'cuba_interior': ('obs_cuba_int', 'sug_cuba_int'),
-        'cuba_exterior': ('obs_cuba_ext', 'sug_cuba_ext'),
-        'loza_fondo': ('obs_loza_fondo', 'sug_loza_fondo'),
-        'loza_techo_interior': ('obs_loza_techo_int', 'sug_loza_techo_int'),
-        'loza_techo_exterior': ('obs_loza_techo_ext', 'sug_loza_techo_ext'),
-        'ducto_ventilacion': ('obs_ducto', 'sug_ducto'),
-        'cerco_perimetrico': ('obs_cerco', 'sug_cerco'),
-        'descarga': ('obs_descarga', 'sug_descarga')
+        'caja_registro': ('obs_caja_registro', 'sug_caja_registro', 'observaciones_caja_registro', 'sugerencias_caja_registro'),
+        'marco_tapa': ('obs_marco_tapa', 'sug_marco_tapa', 'observaciones_marco_tapa', 'sugerencias_marco_tapa'),
+        'escalera_interior': ('obs_escalera_int', 'sug_escalera_int', 'observaciones_escalera_int', 'sugerencias_escalera_int'),
+        'escalera_exterior': ('obs_escalera_ext', 'sug_escalera_ext', 'observaciones_escalera_ext', 'sugerencias_escalera_ext'),
+        'cuba_interior': ('obs_cuba_int', 'sug_cuba_int', 'observaciones_cuba_int', 'sugerencias_cuba_int'),
+        'cuba_exterior': ('obs_cuba_ext', 'sug_cuba_ext', 'observaciones_cuba_ext', 'sugerencias_cuba_ext'),
+        'loza_fondo': ('obs_loza_fondo', 'sug_loza_fondo', 'observaciones_loza_fondo', 'sugerencias_loza_fondo'),
+        'loza_techo_interior': ('obs_loza_techo_int', 'sug_loza_techo_int', 'observaciones_loza_techo_int', 'sugerencias_loza_techo_int'),
+        'loza_techo_exterior': ('obs_loza_techo_ext', 'sug_loza_techo_ext', 'observaciones_loza_techo_ext', 'sugerencias_loza_techo_ext'),
+        'ducto_ventilacion': ('obs_ducto', 'sug_ducto', 'observaciones_ducto', 'sugerencias_ducto'),
+        'cerco_perimetrico': ('obs_cerco', 'sug_cerco', 'observaciones_cerco', 'sugerencias_cerco'),
+        'descarga': ('obs_descarga', 'sug_descarga', 'observaciones_descarga', 'sugerencias_descarga')
     }
-    
+
     for estado in inspeccion_estados:
         if estado in obs_sug_mapping:
-            obs_key, sug_key = obs_sug_mapping[estado]
-            inspeccion[f'observaciones_{estado}'] = safe_str(flat_data.get(obs_key, ''))
-            inspeccion[f'sugerencias_{estado}'] = safe_str(flat_data.get(sug_key, ''))
+            obs_key, sug_key, obs_field, sug_field = obs_sug_mapping[estado]
+            inspeccion[obs_field] = safe_str(flat_data.get(obs_key, ''))
+            inspeccion[sug_field] = safe_str(flat_data.get(sug_key, ''))
     
     result['inspeccion'] = inspeccion
     

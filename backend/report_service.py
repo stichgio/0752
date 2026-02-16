@@ -384,13 +384,21 @@ class ReportService:
                 order = int(order_str) if order_str else 0
 
                 images.append({
-                    "path": pathlib.Path(full_path).as_uri(),
+                    "path": self._path_to_uri(full_path),
                     "name": file,
                     "order": order,
                     **metadata
                 })
 
         return sorted(images, key=lambda x: x["order"])
+
+    @staticmethod
+    def _path_to_uri(full_path):
+        try:
+            return pathlib.Path(full_path).as_uri()
+        except Exception:
+            normalized = os.path.abspath(full_path).replace('\\', '/')
+            return f"file:///{normalized}"
 
     def _convert_to_base64_uri(self, image_bytes, mime_type="image/jpeg"):
         """Convert image bytes to base64 data URI"""
