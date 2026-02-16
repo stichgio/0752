@@ -1,8 +1,8 @@
 """
 Modelos Pydantic para Informes Técnicos
 """
-from pydantic import BaseModel
-from typing import Dict, Literal, Optional
+from pydantic import BaseModel, model_validator
+from typing import Any, Dict, Literal, Optional
 from datetime import datetime
 
 class ReportMetadata(BaseModel):
@@ -109,14 +109,46 @@ class TechnicalReport(BaseModel):
     id: str
     metadata: ReportMetadata
     header: ReportHeader
-    inspeccion: InspeccionDescripcion
-    valvulas: ValvulasData
-    canastillas: CanastillasData
+    inspeccion: InspeccionDescripcion = InspeccionDescripcion()
+    valvulas: ValvulasData = ValvulasData()
+    canastillas: CanastillasData = CanastillasData()
     medidas: Optional[MedidasData] = None
     observaciones: str = ""
     sugerencias: str = ""
     status: Literal['draft', 'completed'] = 'draft'
     last_modified: str
+
+    @model_validator(mode='before')
+    @classmethod
+    def patch_legacy_data(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Normaliza datos legacy/incompletos ANTES de la validación de campos.
+        Reemplaza el bloque MANUAL PATCHING que estaba en main.py.
+        """
+        # --- valvulas: asegurar que sea dict para que ValvulasData pueda instanciarse ---
+        valvulas = values.get('valvulas')
+        if not isinstance(valvulas, dict):
+            values['valvulas'] = {}
+        else:
+            # impulsion: si falta, dejar que ValvulasData ponga su default;
+            # solo asegurar que las keys de observaciones existan si hay datos parciales
+            if 'impulsion' not in valvulas:
+                valvulas.setdefault('observaciones_impulsion', '')
+                valvulas.setdefault('sugerencias_impulsion', '')
+
+        # --- canastillas: asegurar '14' en cada sección de diámetros ---
+        canastillas = values.get('canastillas')
+        if isinstance(canastillas, dict):
+            for section in ('diametros', 'aduccion', 'succion', 'desague'):
+                section_data = canastillas.get(section)
+                if isinstance(section_data, dict):
+                    section_data.setdefault('14', 0)
+
+        # --- inspeccion: asegurar que sea dict ---
+        if not isinstance(values.get('inspeccion'), dict):
+            values['inspeccion'] = {}
+
+        return values
 
     class Config:
         extra = "allow"

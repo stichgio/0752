@@ -51,6 +51,8 @@ export interface PhotoGridConfig {
   showLabels: boolean;
   /** Named labels per position (ANTES, DURANTE, etc.) */
   labels?: string[];
+  /** Visual badge text shown over the photo panel */
+  panelTitle?: string;
 }
 
 export interface TextConfig {
