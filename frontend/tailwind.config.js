@@ -11,6 +11,7 @@ export default {
             fontFamily: {
                 sans: ['Inter', 'sans-serif'],
                 display: ['Outfit', 'sans-serif'],
+                mono: ['"DotGothic16"', '"Roboto Mono"', 'monospace'],
             },
             colors: {
                 primary: {

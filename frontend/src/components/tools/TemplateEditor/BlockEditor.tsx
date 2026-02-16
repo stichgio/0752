@@ -1,8 +1,9 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   AlignEndVertical, BarChart3, BookOpen, ChevronDown, ChevronUp,
   Copy, GripVertical, Heading, Image, Layers, LayoutTemplate,
-  Minus, Grid3X3, PenTool, Plus, Table, Table2, Trash2, Type, X,
+  Lock, Minus, Grid3X3, PenTool, Plus, Search, Sparkles,
+  Table, Table2, Trash2, Type, Unlock, Wand2, X,
 } from 'lucide-react';
 import type {
   BlockConfig, BlockPaletteItem, BlockTemplateDocument, BlockType,
@@ -72,7 +73,29 @@ interface BlockEditorProps {
   loadingTemplateId?: string | null;
 }
 
-type PanelMode = 'blocks' | 'plantillas' | 'publicadas';
+type PanelMode = 'blocks' | 'constructor' | 'plantillas' | 'publicadas';
+
+type ConstructorMode = 'append' | 'replace';
+
+interface ConstructorStep {
+  id: string;
+  title: string;
+  description: string;
+  enabled: boolean;
+  options: string[];
+  selectedOption: string;
+}
+
+function findPaletteItemByLabel(label: string): BlockPaletteItem | null {
+  const normalize = (v: string) =>
+    v
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .trim();
+  const target = normalize(label);
+  return BLOCK_PALETTE.find((item) => normalize(item.label) === target) ?? null;
+}
 
 /* ── BlockEditor ── */
 export default function BlockEditor({
@@ -88,6 +111,84 @@ export default function BlockEditor({
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [dragOverIdx, setDragOverIdx] = useState<number | null>(null);
   const [panelMode, setPanelMode] = useState<PanelMode>('blocks');
+  const [blockSearch, setBlockSearch] = useState('');
+  const [constructorMode, setConstructorMode] = useState<ConstructorMode>('append');
+  const [constructorName, setConstructorName] = useState(document.name || 'Nueva Plantilla');
+  const [constructorMainTitle, setConstructorMainTitle] = useState('PANEL FOTOGRAFICO');
+  const [constructorSectionTitle, setConstructorSectionTitle] = useState('DETALLES DE LA ACTIVIDAD');
+  const [constructorSectionNumber, setConstructorSectionNumber] = useState('1.0');
+  const [constructorFooter, setConstructorFooter] = useState('');
+  const [constructorSteps, setConstructorSteps] = useState<ConstructorStep[]>([
+    {
+      id: 'header',
+      title: 'Cabecera',
+      description: 'Titulo y logos del reporte.',
+      enabled: true,
+      options: ['Encabezado', 'Texto Libre'],
+      selectedOption: 'Encabezado',
+    },
+    {
+      id: 'identificacion',
+      title: 'Identificacion',
+      description: 'Datos principales de orden y centro.',
+      enabled: true,
+      options: ['Barra de Info', 'Grilla de Datos (4 col)'],
+      selectedOption: 'Barra de Info',
+    },
+    {
+      id: 'seccion',
+      title: 'Titulo de seccion',
+      description: 'Subtitulo que separa bloques de contenido.',
+      enabled: true,
+      options: ['Titulo de Seccion', 'Espaciador'],
+      selectedOption: 'Titulo de Seccion',
+    },
+    {
+      id: 'detalle',
+      title: 'Detalle tecnico',
+      description: 'Campos descriptivos o tabla de datos.',
+      enabled: true,
+      options: ['Grilla de Datos (6 col)', 'Tabla', 'Texto Libre'],
+      selectedOption: 'Grilla de Datos (6 col)',
+    },
+    {
+      id: 'evidencia',
+      title: 'Evidencia visual',
+      description: 'Bloque fotografico para evidencia.',
+      enabled: true,
+      options: ['Panel Fotografico', 'Fotos con Etiquetas'],
+      selectedOption: 'Panel Fotografico',
+    },
+    {
+      id: 'cierre',
+      title: 'Cierre',
+      description: 'Firmas o pie para cerrar el documento.',
+      enabled: true,
+      options: ['Firmas', 'Pie de Pagina', 'Espaciador'],
+      selectedOption: 'Firmas',
+    },
+  ]);
+
+  const filteredPalette = useMemo(() => {
+    const term = blockSearch.trim().toLowerCase();
+    if (!term) return BLOCK_PALETTE;
+    return BLOCK_PALETTE.filter((item) => {
+      const haystack = `${item.label} ${item.description} ${item.type}`.toLowerCase();
+      return haystack.includes(term);
+    });
+  }, [blockSearch]);
+
+  const documentHealth = useMemo(() => {
+    const hasHeader = document.blocks.some((b) => b.type === 'header');
+    const hasData = document.blocks.some((b) => b.type === 'data-grid' || b.type === 'table');
+    const hasPhotos = document.blocks.some((b) => b.type === 'photo-grid');
+    const hasClosing = document.blocks.some((b) => b.type === 'signatures' || b.type === 'footer');
+    return { hasHeader, hasData, hasPhotos, hasClosing };
+  }, [document.blocks]);
+
+  useEffect(() => {
+    setConstructorName(document.name || 'Nueva Plantilla');
+  }, [document.name]);
 
   const selectedBlock = useMemo(
     () => document.blocks.find((b) => b.id === selectedBlockId) ?? null,
@@ -101,13 +202,21 @@ export default function BlockEditor({
     [document, onChange],
   );
 
-  const addBlock = (item: BlockPaletteItem) => {
+  const addBlock = (item: BlockPaletteItem, insertIdx?: number) => {
     const block = createBlock(item);
-    updateBlocks([...document.blocks, block]);
+    if (typeof insertIdx === 'number' && insertIdx >= 0 && insertIdx <= document.blocks.length) {
+      const next = [...document.blocks];
+      next.splice(insertIdx, 0, block);
+      updateBlocks(next);
+    } else {
+      updateBlocks([...document.blocks, block]);
+    }
     setSelectedBlockId(block.id);
   };
 
   const removeBlock = (id: string) => {
+    const target = document.blocks.find((b) => b.id === id);
+    if (target?.locked) return;
     updateBlocks(document.blocks.filter((b) => b.id !== id));
     if (selectedBlockId === id) setSelectedBlockId(null);
   };
@@ -128,6 +237,7 @@ export default function BlockEditor({
   const moveBlock = (id: string, dir: 'up' | 'down') => {
     const idx = document.blocks.findIndex((b) => b.id === id);
     if (idx === -1) return;
+    if (document.blocks[idx].locked) return;
     const newIdx = dir === 'up' ? idx - 1 : idx + 1;
     if (newIdx < 0 || newIdx >= document.blocks.length) return;
     const next = [...document.blocks];
@@ -136,7 +246,15 @@ export default function BlockEditor({
   };
 
   const updateBlockConfig = (id: string, config: BlockConfig) => {
+    const target = document.blocks.find((b) => b.id === id);
+    if (target?.locked) return;
     updateBlocks(document.blocks.map((b) => (b.id === id ? { ...b, config } : b)));
+  };
+
+  const toggleBlockLock = (id: string) => {
+    updateBlocks(
+      document.blocks.map((b) => (b.id === id ? { ...b, locked: !b.locked } : b))
+    );
   };
 
   const loadPreset = (presetId: string) => {
@@ -153,14 +271,75 @@ export default function BlockEditor({
     setSelectedBlockId(null);
   };
 
+  const updateConstructorStep = (stepId: string, patch: Partial<ConstructorStep>) => {
+    setConstructorSteps((prev) => prev.map((step) => (step.id === stepId ? { ...step, ...patch } : step)));
+  };
+
+  const runBlockConstructor = () => {
+    const generated: TemplateBlock[] = [];
+
+    for (const step of constructorSteps) {
+      if (!step.enabled) continue;
+      const item = findPaletteItemByLabel(step.selectedOption);
+      if (!item) continue;
+      const block = createBlock(item);
+
+      if (block.type === 'header') {
+        const cfg = block.config as HeaderConfig;
+        block.config = { ...cfg, title: constructorMainTitle || cfg.title };
+      }
+
+      if (block.type === 'section-title') {
+        const cfg = block.config as SectionTitleConfig;
+        block.config = {
+          ...cfg,
+          number: constructorSectionNumber || cfg.number,
+          text: constructorSectionTitle || cfg.text,
+        };
+      }
+
+      if (block.type === 'footer' && constructorFooter.trim()) {
+        const cfg = block.config as FooterConfig;
+        block.config = { ...cfg, content: constructorFooter.trim() };
+      }
+
+      generated.push(block);
+    }
+
+    if (generated.length === 0) return;
+
+    if (constructorMode === 'replace' && document.blocks.length > 0) {
+      const confirmed = window.confirm('Esto reemplazara los bloques actuales. Deseas continuar?');
+      if (!confirmed) return;
+    }
+
+    const nextBlocks = constructorMode === 'replace'
+      ? generated
+      : [...document.blocks, ...generated];
+
+    onChange({
+      ...document,
+      name: constructorName.trim() || document.name,
+      blocks: nextBlocks,
+      updatedAt: new Date().toISOString(),
+    });
+
+    setPanelMode('blocks');
+    setSelectedBlockId(generated[0]?.id ?? null);
+  };
+
   /* Drag-reorder handlers */
-  const handleDragStart = (idx: number) => setDragIdx(idx);
+  const handleDragStart = (idx: number) => {
+    if (document.blocks[idx]?.locked) return;
+    setDragIdx(idx);
+  };
   const handleDragOver = (e: React.DragEvent, idx: number) => {
     e.preventDefault();
     setDragOverIdx(idx);
   };
   const handleDrop = (idx: number) => {
     if (dragIdx === null || dragIdx === idx) { setDragIdx(null); setDragOverIdx(null); return; }
+    if (document.blocks[dragIdx]?.locked) { setDragIdx(null); setDragOverIdx(null); return; }
     const next = [...document.blocks];
     const [moved] = next.splice(dragIdx, 1);
     next.splice(idx, 0, moved);
@@ -188,6 +367,7 @@ export default function BlockEditor({
         <div className="flex border-b border-neutral-100 shrink-0">
           {([
             { mode: 'blocks'     as PanelMode, label: 'Elementos',  icon: <Layers size={15} /> },
+            { mode: 'constructor' as PanelMode, label: 'Constructor', icon: <Wand2 size={15} /> },
             { mode: 'plantillas' as PanelMode, label: 'Plantillas', icon: <LayoutTemplate size={15} /> },
             { mode: 'publicadas' as PanelMode, label: 'Publicadas', icon: <BookOpen size={15} /> },
           ]).map(({ mode, label, icon }) => (
@@ -206,8 +386,117 @@ export default function BlockEditor({
           ))}
         </div>
 
-        <div className="flex-1 overflow-y-auto p-3 space-y-1">
-          {panelMode === 'plantillas' ? (
+        <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          {panelMode === 'constructor' ? (
+            <div className="space-y-3">
+              <div className="rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50 to-indigo-50 p-3">
+                <div className="flex items-center gap-2 text-violet-700">
+                  <Sparkles size={14} />
+                  <span className="text-[12px] font-semibold">Constructor de bloques</span>
+                </div>
+                <p className="text-[10px] text-violet-700/80 mt-1">
+                  Crea una base de plantilla en segundos y luego ajusta cada bloque en el inspector.
+                </p>
+              </div>
+
+              <div className="space-y-2 rounded-xl border border-neutral-200 bg-white p-3">
+                <div>
+                  <label className="block text-[10px] font-semibold uppercase tracking-wide text-neutral-500 mb-1">Nombre sugerido</label>
+                  <input
+                    value={constructorName}
+                    onChange={(e) => setConstructorName(e.target.value)}
+                    className="w-full h-8 rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 text-[12px] focus:outline-none focus:ring-2 focus:ring-violet-300"
+                    placeholder="Ej. Informe tecnico - Norte"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setConstructorMode('append')}
+                    className={`rounded-lg py-1.5 text-[11px] font-semibold ${constructorMode === 'append' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
+                  >
+                    Agregar al final
+                  </button>
+                  <button
+                    onClick={() => setConstructorMode('replace')}
+                    className={`rounded-lg py-1.5 text-[11px] font-semibold ${constructorMode === 'replace' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
+                  >
+                    Reemplazar todo
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                {constructorSteps.map((step) => (
+                  <div key={step.id} className="rounded-xl border border-neutral-200 bg-white p-3 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="text-[11px] font-semibold text-neutral-800">{step.title}</p>
+                        <p className="text-[10px] text-neutral-400">{step.description}</p>
+                      </div>
+                      <label className="inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={step.enabled}
+                          onChange={(e) => updateConstructorStep(step.id, { enabled: e.target.checked })}
+                          className="sr-only peer"
+                        />
+                        <span className="w-8 h-4 rounded-full bg-neutral-300 peer-checked:bg-violet-500 relative after:content-[''] after:absolute after:w-3 after:h-3 after:bg-white after:rounded-full after:top-0.5 after:left-0.5 peer-checked:after:translate-x-4 after:transition-transform" />
+                      </label>
+                    </div>
+                    <select
+                      value={step.selectedOption}
+                      onChange={(e) => updateConstructorStep(step.id, { selectedOption: e.target.value })}
+                      disabled={!step.enabled}
+                      className="w-full h-8 rounded-lg border border-neutral-200 bg-neutral-50 px-2 text-[11px] text-neutral-700 focus:outline-none focus:ring-2 focus:ring-violet-300 disabled:opacity-50"
+                    >
+                      {step.options.map((opt) => (
+                        <option key={opt} value={opt}>{opt}</option>
+                      ))}
+                    </select>
+                    {step.id === 'header' && step.enabled && step.selectedOption === 'Encabezado' && (
+                      <input
+                        value={constructorMainTitle}
+                        onChange={(e) => setConstructorMainTitle(e.target.value)}
+                        className="w-full h-7 rounded-md border border-neutral-200 bg-neutral-50 px-2 text-[11px]"
+                        placeholder="Titulo principal"
+                      />
+                    )}
+                    {step.id === 'seccion' && step.enabled && step.selectedOption === 'Titulo de Seccion' && (
+                      <div className="grid grid-cols-[70px_1fr] gap-1.5">
+                        <input
+                          value={constructorSectionNumber}
+                          onChange={(e) => setConstructorSectionNumber(e.target.value)}
+                          className="h-7 rounded-md border border-neutral-200 bg-neutral-50 px-2 text-[11px]"
+                          placeholder="1.0"
+                        />
+                        <input
+                          value={constructorSectionTitle}
+                          onChange={(e) => setConstructorSectionTitle(e.target.value)}
+                          className="h-7 rounded-md border border-neutral-200 bg-neutral-50 px-2 text-[11px]"
+                          placeholder="Titulo de seccion"
+                        />
+                      </div>
+                    )}
+                    {step.id === 'cierre' && step.enabled && step.selectedOption === 'Pie de Pagina' && (
+                      <input
+                        value={constructorFooter}
+                        onChange={(e) => setConstructorFooter(e.target.value)}
+                        className="w-full h-7 rounded-md border border-neutral-200 bg-neutral-50 px-2 text-[11px]"
+                        placeholder="Texto de pie"
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <button
+                onClick={runBlockConstructor}
+                className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 text-white py-2.5 text-[12px] font-semibold hover:bg-violet-700 transition-colors"
+              >
+                <Wand2 size={14} /> Construir bloques
+              </button>
+            </div>
+          ) : panelMode === 'plantillas' ? (
             /* Preset templates */
             <div className="space-y-2">
               <p className="text-[10px] text-neutral-400 px-1 mb-2">
@@ -281,8 +570,26 @@ export default function BlockEditor({
             </div>
           ) : (
             /* Block palette by category */
-            CATEGORIES.map((cat) => {
-              const items = BLOCK_PALETTE.filter((item) => item.category === cat.id);
+            <>
+              <div className="rounded-xl border border-neutral-200 bg-white p-2.5 space-y-2">
+                <div className="relative">
+                  <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-neutral-400" />
+                  <input
+                    value={blockSearch}
+                    onChange={(e) => setBlockSearch(e.target.value)}
+                    placeholder="Buscar bloque..."
+                    className="w-full h-8 rounded-lg border border-neutral-200 bg-neutral-50 pl-8 pr-2 text-[11px] focus:outline-none focus:ring-2 focus:ring-violet-300"
+                  />
+                </div>
+                <div className="text-[10px] text-neutral-500 leading-relaxed">
+                  Bloques: <b>{document.blocks.length}</b>
+                  <span className={`ml-2 ${documentHealth.hasHeader ? 'text-emerald-600' : 'text-amber-500'}`}>{documentHealth.hasHeader ? 'cabecera OK' : 'falta cabecera'}</span>
+                  <span className={`ml-2 ${documentHealth.hasData ? 'text-emerald-600' : 'text-amber-500'}`}>{documentHealth.hasData ? 'datos OK' : 'falta datos'}</span>
+                  <span className={`ml-2 ${documentHealth.hasPhotos ? 'text-emerald-600' : 'text-amber-500'}`}>{documentHealth.hasPhotos ? 'fotos OK' : 'sin fotos'}</span>
+                </div>
+              </div>
+              {CATEGORIES.map((cat) => {
+              const items = filteredPalette.filter((item) => item.category === cat.id);
               if (items.length === 0) return null;
               return (
                 <div key={cat.id} className="mb-4">
@@ -310,7 +617,13 @@ export default function BlockEditor({
                   </div>
                 </div>
               );
-            })
+              })}
+              {filteredPalette.length === 0 && (
+                <div className="rounded-xl border border-dashed border-neutral-300 bg-white p-3 text-[11px] text-neutral-400 text-center">
+                  No se encontraron bloques con ese criterio.
+                </div>
+              )}
+            </>
           )}
         </div>
       </aside>
@@ -336,7 +649,7 @@ export default function BlockEditor({
             {document.blocks.map((block, idx) => (
               <div
                 key={block.id}
-                draggable
+                draggable={!block.locked}
                 onDragStart={() => handleDragStart(idx)}
                 onDragOver={(e) => handleDragOver(e, idx)}
                 onDrop={() => handleDrop(idx)}
@@ -348,10 +661,11 @@ export default function BlockEditor({
                     ? 'border-violet-500 shadow-[0_0_0_3px_rgba(139,92,246,0.15),0_4px_12px_rgba(0,0,0,0.08)]'
                     : 'border-transparent hover:border-violet-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)]'}
                   ${dragOverIdx === idx ? 'border-t-[3px] border-t-violet-400' : ''}
+                  ${block.locked ? 'bg-neutral-50/80' : ''}
                 `}
               >
                 {/* Drag handle — left edge */}
-                <div className={`absolute -left-6 top-1/2 -translate-y-1/2 z-10 transition-opacity cursor-grab active:cursor-grabbing ${
+                <div className={`absolute -left-6 top-1/2 -translate-y-1/2 z-10 transition-opacity ${block.locked ? 'cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'} ${
                   selectedBlockId === block.id ? 'opacity-50' : 'opacity-0 group-hover:opacity-30'
                 }`}>
                   <GripVertical size={14} className="text-neutral-500" />
@@ -367,6 +681,7 @@ export default function BlockEditor({
                   >
                     <span className="w-1.5 h-1.5 rounded-full bg-white/50 inline-block" />
                     {BLOCK_LABELS[block.type] || block.type}
+                    {block.locked && <Lock size={9} className="ml-0.5" />}
                   </span>
                 </div>
 
@@ -374,11 +689,33 @@ export default function BlockEditor({
                 <div className={`absolute top-2 right-2 z-10 flex items-center gap-0.5 bg-white/95 rounded-lg shadow-md border border-neutral-100 p-0.5 backdrop-blur-sm transition-all ${
                   selectedBlockId === block.id ? 'opacity-100 translate-y-0' : 'opacity-0 group-hover:opacity-100 -translate-y-0.5 group-hover:translate-y-0'
                 }`}>
-                  <button onClick={(e) => { e.stopPropagation(); moveBlock(block.id, 'up'); }} className="p-1 rounded-md hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors" title="Subir"><ChevronUp size={12} /></button>
-                  <button onClick={(e) => { e.stopPropagation(); moveBlock(block.id, 'down'); }} className="p-1 rounded-md hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors" title="Bajar"><ChevronDown size={12} /></button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); moveBlock(block.id, 'up'); }}
+                    disabled={block.locked}
+                    className="p-1 rounded-md hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    title={block.locked ? 'Bloque bloqueado' : 'Subir'}
+                  ><ChevronUp size={12} /></button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); moveBlock(block.id, 'down'); }}
+                    disabled={block.locked}
+                    className="p-1 rounded-md hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    title={block.locked ? 'Bloque bloqueado' : 'Bajar'}
+                  ><ChevronDown size={12} /></button>
                   <div className="w-px h-3 bg-neutral-200 mx-0.5" />
                   <button onClick={(e) => { e.stopPropagation(); duplicateBlock(block.id); }} className="p-1 rounded-md hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors" title="Duplicar"><Copy size={12} /></button>
-                  <button onClick={(e) => { e.stopPropagation(); removeBlock(block.id); }} className="p-1 rounded-md hover:bg-red-50 text-neutral-400 hover:text-red-500 transition-colors" title="Eliminar"><Trash2 size={12} /></button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); toggleBlockLock(block.id); }}
+                    className="p-1 rounded-md hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors"
+                    title={block.locked ? 'Desbloquear' : 'Bloquear'}
+                  >
+                    {block.locked ? <Unlock size={12} /> : <Lock size={12} />}
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); removeBlock(block.id); }}
+                    disabled={block.locked}
+                    className="p-1 rounded-md hover:bg-red-50 text-neutral-400 hover:text-red-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    title={block.locked ? 'Desbloquea para eliminar' : 'Eliminar'}
+                  ><Trash2 size={12} /></button>
                 </div>
 
                 {/* Block preview — no header bar */}
@@ -423,7 +760,8 @@ export default function BlockEditor({
           style={selectedBlock ? { borderBottomColor: `${BLOCK_COLORS[selectedBlock.type]}28` } : {}}
         >
           {selectedBlock ? (
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-between w-full gap-2.5">
+              <div className="flex items-center gap-2.5">
               <div
                 className="w-8 h-8 rounded-xl flex items-center justify-center text-white shrink-0 shadow-sm"
                 style={{ backgroundColor: BLOCK_COLORS[selectedBlock.type] || '#888' }}
@@ -434,6 +772,15 @@ export default function BlockEditor({
                 <div className="text-[13px] font-semibold text-neutral-800">{BLOCK_LABELS[selectedBlock.type] || selectedBlock.type}</div>
                 <div className="text-[9px] text-neutral-400 uppercase tracking-wider font-medium mt-0.5">Propiedades</div>
               </div>
+              </div>
+              <button
+                onClick={() => toggleBlockLock(selectedBlock.id)}
+                className="inline-flex items-center gap-1 rounded-md border border-neutral-200 px-2 py-1 text-[10px] font-semibold text-neutral-600 hover:bg-neutral-50"
+                title={selectedBlock.locked ? 'Desbloquear bloque' : 'Bloquear bloque'}
+              >
+                {selectedBlock.locked ? <Unlock size={11} /> : <Lock size={11} />}
+                {selectedBlock.locked ? 'Desbloquear' : 'Bloquear'}
+              </button>
             </div>
           ) : (
             <div className="flex items-center gap-2">
@@ -452,10 +799,17 @@ export default function BlockEditor({
               <p className="text-[10px] text-neutral-300 mt-1 text-center">Haz clic en cualquier elemento del canvas para editar sus propiedades</p>
             </div>
           ) : (
-            <BlockInspector
-              block={selectedBlock}
-              onChange={(config) => updateBlockConfig(selectedBlock.id, config)}
-            />
+            <>
+              {selectedBlock.locked && (
+                <div className="mx-4 mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[10px] text-amber-700">
+                  Este bloque esta protegido. Desbloquealo para editar propiedades.
+                </div>
+              )}
+              <BlockInspector
+                block={selectedBlock}
+                onChange={(config) => updateBlockConfig(selectedBlock.id, config)}
+              />
+            </>
           )}
         </div>
       </aside>

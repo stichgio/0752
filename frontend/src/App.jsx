@@ -6,6 +6,7 @@ import { FileSpreadsheet, Image as ImageIcon, Printer, Settings, FileCode, Check
 import PreviewPanel from './components/PreviewPanel';
 import PomodoroTimer from './components/PomodoroTimer';
 import { Step, LoadingModal } from './components/common';
+import DashboardLayout from './components/DashboardLayout';
 
 import { REPORT_FIELDS, TEMPLATE_KEY_MAP, DATE_FIELDS, TEMPLATE_HEADERS } from './constants';
 import { useFocusMode } from './hooks/useFocusMode';
@@ -437,9 +438,12 @@ export default function App() {
     };
 
     const getFilteredImages = () => {
-        if (!selectedIndex && selectedIndex !== 0) return [];
+        if (selectedIndex === '' || selectedIndex === null || selectedIndex === undefined) return [];
 
-        const row = data[selectedIndex];
+        const index = Number(selectedIndex);
+        if (Number.isNaN(index) || index < 0 || index >= data.length) return [];
+
+        const row = data[index];
         if (!row || !idColumn) return [];
 
         const recordId = String(row[idColumn]);
@@ -629,591 +633,517 @@ export default function App() {
         const dataBlob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
         saveAs(dataBlob, 'Plantilla_Importacion.xlsx');
     };
-
     const handlePrint = () => {
         window.print();
     };
 
     return (
-        <div className="flex h-screen w-full bg-neutral-900 overflow-hidden font-sans text-sm">
+        <DashboardLayout>
+            <div className="flex h-full w-full bg-neutral-900 overflow-hidden font-sans text-sm">
 
-            {/* Sidebar */}
-            <aside className={`bg-neutral-950 text-white flex flex-col transition-all duration-300 translate-x-0 ${isFocusMode ? 'w-0 overflow-hidden opacity-0 border-none' : 'w-96 border-r border-neutral-800'}`}>
-                <div className="p-4 bg-black border-b border-neutral-800 flex items-center gap-4">
-
-
-                    {/* Pomodoro Timer Section - Isolated Component */}
-                    <PomodoroTimer />
-
-                </div>
+                {/* Sidebar */}
+                <aside className={`bg-neutral-950 text-white flex flex-col transition-all duration-300 translate-x-0 ${isFocusMode ? 'w-0 overflow-hidden opacity-0 border-none' : 'w-96 border-r border-neutral-800'}`}>
 
 
 
-                <div className="flex-1 overflow-y-auto p-4 space-y-6">
 
-                    {/* Step 0: Logos */}
-                    <Step number="0" title="Logos y Cabecera" icon={<Settings size={16} />}>
-                        <div className="grid grid-cols-2 gap-2">
-                            <div className="text-center">
-                                <label className="block text-xs text-neutral-400 mb-1">Logo Izq</label>
-                                <div className="border border-dashed border-neutral-700 h-16 rounded flex items-center justify-center cursor-pointer hover:bg-neutral-800 relative overflow-hidden"
-                                    onClick={() => document.getElementById('logoLeftInput').click()}>
-                                    {logoLeft ? <img src={logoLeft} className="h-full object-contain" /> : <div className="text-xs text-neutral-500">Subir Logo</div>}
-                                </div>
-                                <input id="logoLeftInput" type="file" hidden accept="image/*" onChange={(e) => handleLogoUpload(e, 'left')} />
-                            </div>
-                            <div className="text-center">
-                                <label className="block text-xs text-neutral-400 mb-1">Logo Der</label>
-                                <div className="border border-dashed border-neutral-700 h-16 rounded flex items-center justify-center cursor-pointer hover:bg-neutral-800 relative overflow-hidden"
-                                    onClick={() => document.getElementById('logoRightInput').click()}>
-                                    {logoRight ? <img src={logoRight} className="h-full object-contain" /> : <div className="text-xs text-neutral-500">Subir Logo</div>}
-                                </div>
-                                <input id="logoRightInput" type="file" hidden accept="image/*" onChange={(e) => handleLogoUpload(e, 'right')} />
-                            </div>
-                        </div>
-                    </Step>
+                    <div className="flex-1 overflow-y-auto p-4 space-y-6">
 
-                    {/* Step 1: Custom Template */}
-                    <Step number="1" title="Cargar Plantilla" icon={<FileCode size={16} />}>
-                        <div className="space-y-2">
-                            {/* Upload Button */}
-                            <label className="block w-full cursor-pointer group">
-                                <div className={`border border-dashed rounded-lg p-3 text-center transition-colors ${templateStatus === 'valid' ? 'border-green-500 bg-green-500/10' :
-                                    templateStatus === 'invalid' ? 'border-red-500 bg-red-500/10' :
-                                        'border-neutral-700 hover:bg-neutral-900'
-                                    }`}>
-                                    <div className="flex items-center justify-center gap-2">
-                                        {templateStatus === 'valid' && <CheckCircle size={14} className="text-green-500" />}
-                                        {templateStatus === 'invalid' && <AlertCircle size={14} className="text-red-500" />}
-                                        <span className={`text-xs transition-colors ${templateStatus === 'valid' ? 'text-green-400' :
-                                            templateStatus === 'invalid' ? 'text-red-400' :
-                                                'text-neutral-400 group-hover:text-white'
-                                            }`}>
-                                            {customTemplate ? customTemplate.name : 'Subir Plantilla HTML'}
-                                        </span>
+                        {/* Step 0: Logos */}
+                        <Step number="0" title="Logos y Cabecera" icon={<Settings size={16} />}>
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="text-center">
+                                    <label className="block text-xs text-neutral-400 mb-1">Logo Izq</label>
+                                    <div className="border border-dashed border-neutral-700 h-16 rounded flex items-center justify-center cursor-pointer hover:bg-neutral-800 relative overflow-hidden"
+                                        onClick={() => document.getElementById('logoLeftInput').click()}>
+                                        {logoLeft ? <img src={logoLeft} className="h-full object-contain" /> : <div className="text-xs text-neutral-500">Subir Logo</div>}
                                     </div>
+                                    <input id="logoLeftInput" type="file" hidden accept="image/*" onChange={(e) => handleLogoUpload(e, 'left')} />
                                 </div>
-                                <input
-                                    id="templateInput"
-                                    type="file"
-                                    hidden
-                                    accept=".html"
-                                    onChange={handleTemplateUpload}
-                                />
-                            </label>
-
-                            {/* Backend Template Dropdown */}
-                            <div className="mt-2">
-                                <label className="block text-xs text-neutral-400 mb-1">O seleccionar existente:</label>
-                                <select
-                                    className="w-full bg-neutral-900 border border-neutral-700 rounded p-1.5 text-xs text-white focus:border-white outline-none disabled:opacity-50"
-                                    onChange={(e) => {
-                                        const val = e.target.value;
-                                        if (!val) return;
-                                        if (val.startsWith('editor:')) {
-                                            handleEditorTemplateSelect(val.replace('editor:', ''));
-                                        } else {
-                                            handleBackendTemplateSelect(e);
-                                        }
-                                    }}
-                                    value={
-                                        customTemplate?.isEditorTemplate
-                                            ? `editor:${customTemplate?.editorTemplateId || editorTemplates.find(t => t.name === customTemplate?.name)?.id || ''}`
-                                            : availableTemplates.includes(customTemplate?.name) ? customTemplate.name : ""
-                                    }
-                                    disabled={availableTemplates.length === 0 && editorTemplates.length === 0}
-                                >
-                                    <option value="">
-                                        {availableTemplates.length === 0 && editorTemplates.length === 0 ? "Sin plantillas (Verificar Backend)" : "-- Elegir Plantilla --"}
-                                    </option>
-                                    {availableTemplates.length > 0 && (
-                                        <optgroup label="Plantillas del Sistema">
-                                            {availableTemplates.map(t => (
-                                                <option key={t} value={t}>{t}</option>
-                                            ))}
-                                        </optgroup>
-                                    )}
-                                    {editorTemplates.length > 0 && (
-                                        <optgroup label="Plantillas del Editor">
-                                            {editorTemplates.map(t => (
-                                                <option key={t.id} value={`editor:${t.id}`}>{`${t.name} [${normalizeTemplateStatus(t.status)}]`}</option>
-                                            ))}
-                                        </optgroup>
-                                    )}
-                                </select>
+                                <div className="text-center">
+                                    <label className="block text-xs text-neutral-400 mb-1">Logo Der</label>
+                                    <div className="border border-dashed border-neutral-700 h-16 rounded flex items-center justify-center cursor-pointer hover:bg-neutral-800 relative overflow-hidden"
+                                        onClick={() => document.getElementById('logoRightInput').click()}>
+                                        {logoRight ? <img src={logoRight} className="h-full object-contain" /> : <div className="text-xs text-neutral-500">Subir Logo</div>}
+                                    </div>
+                                    <input id="logoRightInput" type="file" hidden accept="image/*" onChange={(e) => handleLogoUpload(e, 'right')} />
+                                </div>
                             </div>
+                        </Step>
 
-                            {/* Error Message */}
-                            {templateStatus === 'invalid' && templateError && (
-                                <div className="text-[10px] text-red-400 px-1">
-                                    ⚠️ {templateError}
-                                </div>
-                            )}
-
-                            {/* Active Template Indicator */}
-                            <div className={`flex items-center justify-between p-2 rounded text-[10px] ${customTemplate ? 'bg-green-500/10 border border-green-500/30' : 'bg-neutral-800 border border-neutral-700'
-                                }`}>
-                                <span className="text-neutral-400">Plantilla activa:</span>
-                                <span className={customTemplate ? 'text-green-400 font-medium' : 'text-neutral-500'}>
-                                    {customTemplate
-                                        ? (customTemplate.isEditorTemplate ? `Editor: ${customTemplate.name} (${normalizeTemplateStatus(customTemplate.editorTemplateStatus)})` : 'Personalizada')
-                                        : 'Predeterminada'}
-                                </span>
-                            </div>
-
-                            {/* Reset Button */}
-                            {customTemplate && (
-                                <button
-                                    onClick={handleResetTemplate}
-                                    className="w-full flex items-center justify-center gap-2 border border-dashed border-neutral-700 hover:border-neutral-500 rounded p-2 text-center hover:bg-neutral-800 transition-all text-[10px] text-neutral-400 hover:text-white"
-                                >
-                                    <RotateCcw size={12} />
-                                    Usar Plantilla Predeterminada
-                                </button>
-                            )}
-
-                            {/* Images Required Toggle */}
-                            <div className={`flex items-center justify-between p-2 rounded border transition-colors ${requiresImages
-                                ? 'bg-neutral-800 border-neutral-700'
-                                : 'bg-amber-500/10 border-amber-500/30'
-                                }`}>
-                                <div className="flex items-center gap-2">
-                                    <ImageIcon size={12} className={requiresImages ? 'text-neutral-400' : 'text-amber-400'} />
-                                    <span className="text-[10px] text-neutral-300">Requiere imágenes</span>
-                                </div>
-                                <label className="relative inline-flex items-center cursor-pointer">
+                        {/* Step 1: Custom Template */}
+                        <Step number="1" title="Cargar Plantilla" icon={<FileCode size={16} />}>
+                            <div className="space-y-2">
+                                {/* Upload Button */}
+                                <label className="block w-full cursor-pointer group">
+                                    <div className={`border border-dashed rounded-lg p-3 text-center transition-colors ${templateStatus === 'valid' ? 'border-green-500 bg-green-500/10' :
+                                        templateStatus === 'invalid' ? 'border-red-500 bg-red-500/10' :
+                                            'border-neutral-700 hover:bg-neutral-900'
+                                        }`}>
+                                        <div className="flex items-center justify-center gap-2">
+                                            {templateStatus === 'valid' && <CheckCircle size={14} className="text-green-500" />}
+                                            {templateStatus === 'invalid' && <AlertCircle size={14} className="text-red-500" />}
+                                            <span className={`text-xs transition-colors ${templateStatus === 'valid' ? 'text-green-400' :
+                                                templateStatus === 'invalid' ? 'text-red-400' :
+                                                    'text-neutral-400 group-hover:text-white'
+                                                }`}>
+                                                {customTemplate ? customTemplate.name : 'Subir Plantilla HTML'}
+                                            </span>
+                                        </div>
+                                    </div>
                                     <input
-                                        type="checkbox"
-                                        checked={requiresImages}
-                                        onChange={(e) => setRequiresImages(e.target.checked)}
-                                        className="sr-only peer"
+                                        id="templateInput"
+                                        type="file"
+                                        hidden
+                                        accept=".html"
+                                        onChange={handleTemplateUpload}
                                     />
-                                    <div className="w-8 h-4 bg-neutral-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-green-600"></div>
                                 </label>
-                            </div>
-                            {!requiresImages && (
-                                <div className="text-[9px] text-amber-400/80 px-1">
-                                    ⚠️ Esta plantilla no requiere imágenes (ej: certificados)
+
+                                {/* Backend Template Dropdown */}
+                                <div className="mt-2">
+                                    <label className="block text-xs text-neutral-400 mb-1">O seleccionar existente:</label>
+                                    <select
+                                        className="w-full bg-neutral-900 border border-neutral-700 rounded p-1.5 text-xs text-white focus:border-white outline-none disabled:opacity-50"
+                                        onChange={(e) => {
+                                            const val = e.target.value;
+                                            if (!val) return;
+                                            if (val.startsWith('editor:')) {
+                                                handleEditorTemplateSelect(val.replace('editor:', ''));
+                                            } else {
+                                                handleBackendTemplateSelect(e);
+                                            }
+                                        }}
+                                        value={
+                                            customTemplate?.isEditorTemplate
+                                                ? `editor:${customTemplate?.editorTemplateId || editorTemplates.find(t => t.name === customTemplate?.name)?.id || ''}`
+                                                : availableTemplates.includes(customTemplate?.name) ? customTemplate.name : ""
+                                        }
+                                        disabled={availableTemplates.length === 0 && editorTemplates.length === 0}
+                                    >
+                                        <option value="">
+                                            {availableTemplates.length === 0 && editorTemplates.length === 0 ? "Sin plantillas (Verificar Backend)" : "-- Elegir Plantilla --"}
+                                        </option>
+                                        {availableTemplates.length > 0 && (
+                                            <optgroup label="Plantillas del Sistema">
+                                                {availableTemplates.map(t => (
+                                                    <option key={t} value={t}>{t}</option>
+                                                ))}
+                                            </optgroup>
+                                        )}
+                                        {editorTemplates.length > 0 && (
+                                            <optgroup label="Plantillas del Editor">
+                                                {editorTemplates.map(t => (
+                                                    <option key={t.id} value={`editor:${t.id}`}>{`${t.name} [${normalizeTemplateStatus(t.status)}]`}</option>
+                                                ))}
+                                            </optgroup>
+                                        )}
+                                    </select>
                                 </div>
-                            )}
-                        </div>
-                    </Step>
 
-                    {/* Step 2: Upload Data */}
-                    <Step number="2" title="Cargar Datos" icon={<FileSpreadsheet size={16} />}>
-                        <label className="block w-full cursor-pointer group">
-                            <div className="border border-dashed border-neutral-700 rounded-lg p-3 text-center hover:bg-neutral-900 transition-colors">
-                                <div className="text-neutral-400 text-xs group-hover:text-white transition-colors">
-                                    {headers.length > 0 ? `${data.length} registros cargados` : 'Seleccionar Excel / CSV'}
+                                {/* Error Message */}
+                                {templateStatus === 'invalid' && templateError && (
+                                    <div className="text-[10px] text-red-400 px-1">
+                                        ⚠️ {templateError}
+                                    </div>
+                                )}
+
+                                {/* Active Template Indicator */}
+                                <div className={`flex items-center justify-between p-2 rounded text-[10px] ${customTemplate ? 'bg-green-500/10 border border-green-500/30' : 'bg-neutral-800 border border-neutral-700'
+                                    }`}>
+                                    <span className="text-neutral-400">Plantilla activa:</span>
+                                    <span className={customTemplate ? 'text-green-400 font-medium' : 'text-neutral-500'}>
+                                        {customTemplate
+                                            ? (customTemplate.isEditorTemplate ? `Editor: ${customTemplate.name} (${normalizeTemplateStatus(customTemplate.editorTemplateStatus)})` : 'Personalizada')
+                                            : 'Predeterminada'}
+                                    </span>
                                 </div>
-                            </div>
-                            <input type="file" hidden accept=".csv,.xlsx,.xls" onChange={handleFileUpload} />
-                        </label>
-                    </Step>
 
-                    {/* Step 3: Mapping */}
-                    <Step number="3" title="Mapeo de Columnas" icon={<Settings size={16} />}>
-                        <div className={`transition-all duration-300 ${headers.length === 0 ? 'opacity-30 pointer-events-none' : ''}`}>
-                            <div className="mb-3">
-                                <label className="block text-neutral-400 text-sm mb-1.5 font-semibold">Columna ID (Clave)</label>
-                                <select
-                                    className="w-full bg-neutral-900 border border-neutral-700 rounded p-2 text-sm text-white focus:border-white outline-none"
-                                    value={idColumn}
-                                    onChange={e => setIdColumn(e.target.value)}
-                                >
-                                    <option value="">-- Seleccionar ID --</option>
-                                    {headers.map(h => <option key={h} value={h}>{h}</option>)}
-                                </select>
-                            </div>
+                                {/* Reset Button */}
+                                {customTemplate && (
+                                    <button
+                                        onClick={handleResetTemplate}
+                                        className="w-full flex items-center justify-center gap-2 border border-dashed border-neutral-700 hover:border-neutral-500 rounded p-2 text-center hover:bg-neutral-800 transition-all text-[10px] text-neutral-400 hover:text-white"
+                                    >
+                                        <RotateCcw size={12} />
+                                        Usar Plantilla Predeterminada
+                                    </button>
+                                )}
 
-                            <div className="space-y-2 border-t border-neutral-800 pt-3 max-h-56 overflow-y-auto pr-1">
-                                {/* Predefined Fields */}
-                                {REPORT_FIELDS.map(field => (
-                                    <div key={field.id} className="grid grid-cols-2 gap-2 items-center">
-                                        <span className="text-neutral-500 text-xs uppercase font-medium">{field.label}</span>
-                                        <select
-                                            className={`bg-neutral-900 border border-neutral-700 rounded px-2 py-1.5 text-xs text-white outline-none ${mappings[field.id] ? 'border-l-2 border-l-green-500' : ''}`}
-                                            value={mappings[field.id] || ''}
-                                            onChange={(e) => setMappings({ ...mappings, [field.id]: e.target.value })}
-                                        >
-                                            <option value="">Ignorar</option>
-                                            {headers.map(h => <option key={h} value={h}>{h}</option>)}
-                                        </select>
+                                {/* Images Required Toggle */}
+                                <div className={`flex items-center justify-between p-2 rounded border transition-colors ${requiresImages
+                                    ? 'bg-neutral-800 border-neutral-700'
+                                    : 'bg-amber-500/10 border-amber-500/30'
+                                    }`}>
+                                    <div className="flex items-center gap-2">
+                                        <ImageIcon size={12} className={requiresImages ? 'text-neutral-400' : 'text-amber-400'} />
+                                        <span className="text-[10px] text-neutral-300">Requiere imágenes</span>
                                     </div>
-                                ))}
-
-                                {/* Custom Columns */}
-                                {customColumns.map(col => (
-                                    <div key={col.id} className="grid grid-cols-[1fr_auto_auto] gap-2 items-center bg-neutral-800/50 rounded px-2 py-1">
-                                        <span className="text-white text-xs uppercase font-medium">{col.name}</span>
-                                        <select
-                                            className={`bg-neutral-900 border border-neutral-700 rounded px-2 py-1.5 text-xs text-white outline-none ${mappings[col.id] ? 'border-l-2 border-l-neutral-500' : ''}`}
-                                            value={mappings[col.id] || col.mappedTo || ''}
-                                            onChange={(e) => setMappings({ ...mappings, [col.id]: e.target.value })}
-                                        >
-                                            <option value="">Ignorar</option>
-                                            {headers.map(h => <option key={h} value={h}>{h}</option>)}
-                                        </select>
-                                        <button
-                                            onClick={() => removeCustomColumn(col.id)}
-                                            className="text-red-400 hover:text-red-300 text-xs px-1 hover:bg-red-500/20 rounded transition-colors"
-                                            title="Eliminar columna personalizada"
-                                        >
-                                            ✕
-                                        </button>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={requiresImages}
+                                            onChange={(e) => setRequiresImages(e.target.checked)}
+                                            className="sr-only peer"
+                                        />
+                                        <div className="w-8 h-4 bg-neutral-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-green-600"></div>
+                                    </label>
+                                </div>
+                                {!requiresImages && (
+                                    <div className="text-[9px] text-amber-400/80 px-1">
+                                        ⚠️ Esta plantilla no requiere imágenes (ej: certificados)
                                     </div>
-                                ))}
+                                )}
                             </div>
+                        </Step>
 
-                            {/* Add Custom Column Button */}
-                            <button
-                                onClick={() => setShowColumnModal(true)}
-                                disabled={headers.length === 0}
-                                className="w-full mt-3 border border-dashed border-white/70 hover:border-white text-white/70 hover:text-white rounded p-2.5 text-center hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <span>+</span> Agregar Columna Personalizada
-                            </button>
-                        </div>
-
-                        <button
-                            onClick={handleDownloadTemplate}
-                            className="w-full mt-3 border border-dashed border-neutral-700 hover:border-neutral-500 rounded p-2.5 text-center hover:bg-neutral-800 transition-all flex items-center justify-center gap-2 text-xs text-neutral-400 hover:text-white"
-                        >
-                            <span>📥</span> Descargar Plantilla Excel
-                        </button>
-                    </Step>
-
-                    {/* Step 4: Images */}
-                    <Step number="4" title={requiresImages ? "Cargar Imágenes" : "Imágenes (Opcional)"} disabled={!idColumn || !requiresImages} icon={<ImageIcon size={16} />}>
-                        {requiresImages ? (
+                        {/* Step 2: Upload Data */}
+                        <Step number="2" title="Cargar Datos" icon={<FileSpreadsheet size={16} />}>
                             <label className="block w-full cursor-pointer group">
                                 <div className="border border-dashed border-neutral-700 rounded-lg p-3 text-center hover:bg-neutral-900 transition-colors">
                                     <div className="text-neutral-400 text-xs group-hover:text-white transition-colors">
-                                        {images.length > 0 ? `${images.length} imágenes` : 'Subir Carpeta de Fotos'}
+                                        {headers.length > 0 ? `${data.length} registros cargados` : 'Seleccionar Excel / CSV'}
                                     </div>
                                 </div>
-                                <input type="file" hidden multiple accept="image/*" onChange={handleImageUpload} />
+                                <input type="file" hidden accept=".csv,.xlsx,.xls" onChange={handleFileUpload} />
                             </label>
-                        ) : (
-                            <div className="border border-dashed border-neutral-700/50 rounded-lg p-3 text-center bg-neutral-800/30">
-                                <div className="text-neutral-500 text-xs">
-                                    No requerido para esta plantilla
-                                </div>
-                            </div>
-                        )}
-                    </Step>
+                        </Step>
 
-                    {/* Step 5: Select Record */}
-                    <Step number="5" title="Seleccionar Orden" disabled={requiresImages ? images.length === 0 : data.length === 0}>
-                        <div className="relative mb-2">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" size={16} />
-                            <input
-                                type="text"
-                                placeholder="Buscar orden..."
-                                value={searchOrder}
-                                onChange={(e) => {
-                                    const term = e.target.value;
-                                    setSearchOrder(term);
-                                    if (term) {
-                                        const matchIdx = data.findIndex((row, idx) => {
-                                            const label = idColumn ? String(row[idColumn]) : `Fila ${idx + 1}`;
-                                            return label.toLowerCase().includes(term.toLowerCase()) || String(idx + 1).includes(term);
-                                        });
-                                        if (matchIdx !== -1) {
-                                            setSelectedIndex(String(matchIdx));
-                                            setExportScope('single');
-                                        }
-                                    }
-                                }}
-                                className="w-full pl-9 pr-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white text-sm focus:border-white outline-none placeholder:text-neutral-500"
-                            />
-                        </div>
-                        <select
-                            className="w-full bg-white text-black font-bold border border-neutral-300 rounded p-2.5 text-sm focus:outline-none disabled:opacity-50"
-                            value={selectedIndex}
-                            onChange={e => {
-                                setSelectedIndex(e.target.value);
-                                setExportScope('single');
-                            }}
-                            disabled={exportScope === 'all'}
-                        >
-                            <option value="">-- Seleccionar Fila --</option>
-                            {data.map((row, idx) => (
-                                <option key={idx} value={idx}>
-                                    {idx + 1}. {idColumn ? row[idColumn] : `Fila ${idx + 1}`}
-                                </option>
-                            ))}
-                        </select>
-
-                        {/* EXPORT OPTIONS */}
-                        <div className="bg-neutral-900 border border-neutral-800 rounded p-3 mt-3">
-                            <h4 className="text-xs uppercase text-neutral-500 font-bold mb-3">Opciones de Exportación</h4>
-
-                            <div className="flex gap-2 mb-3">
-                                <button
-                                    className={`flex-1 py-1.5 px-3 rounded text-xs font-medium transition-colors ${exportScope === 'single' ? 'bg-black text-white border border-white' : 'bg-neutral-800 text-neutral-400'}`}
-                                    onClick={() => setExportScope('single')}
-                                >
-                                    Solo Actual
-                                </button>
-                                <button
-                                    className={`flex-1 py-1.5 px-3 rounded text-xs font-medium transition-colors ${exportScope === 'all' ? 'bg-black text-white border border-white' : 'bg-neutral-800 text-neutral-400'}`}
-                                    onClick={() => setExportScope('all')}
-                                >
-                                    Todo ({data.length})
-                                </button>
-                            </div>
-
-                            {exportScope === 'all' && (
-                                <div className="flex flex-col gap-2">
-                                    <label className="flex items-center gap-2 cursor-pointer">
-                                        <input
-                                            type="radio"
-                                            name="format"
-                                            checked={exportFormat === 'consolidated'}
-                                            onChange={() => setExportFormat('consolidated')}
-                                            className="text-blue-500 bg-neutral-800 border-neutral-600"
-                                        />
-                                        <span className="text-white text-xs">PDF Consolidado (1 Archivo)</span>
-                                    </label>
-                                    <label className="flex items-center gap-2 cursor-pointer opacity-50">
-                                        <input
-                                            type="radio"
-                                            name="format"
-                                            checked={exportFormat === 'individual'}
-                                            onChange={() => setExportFormat('individual')}
-                                            className="text-blue-500 bg-neutral-800 border-neutral-600"
-                                        />
-                                        <span className="text-white text-xs">PDFs Individuales (ZIP)</span>
-                                    </label>
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="grid grid-cols-1 gap-2 mt-4">
-                            <button
-                                onClick={handleBackendDownload}
-                                disabled={exportScope === 'single' && selectedIndex === ''}
-                                className="flex items-center justify-center gap-2 bg-black hover:bg-neutral-900 border border-neutral-700 text-white font-bold p-3 rounded disabled:opacity-50 transition-colors shadow-lg text-sm"
-                            >
-                                <Printer size={18} /> Descargar PDF
-                            </button>
-                            <div className="grid grid-cols-2 gap-2">
-                                <button
-                                    onClick={handlePrint}
-                                    disabled={selectedIndex === ''}
-                                    className="flex items-center justify-center gap-2 bg-neutral-800 hover:bg-neutral-700 text-white p-2.5 rounded disabled:opacity-50 transition-colors text-xs"
-                                >
-                                    Impresión Rápida
-                                </button>
-                                <button
-                                    onClick={handleDownload}
-                                    disabled={selectedIndex === ''}
-                                    className="flex items-center justify-center gap-2 bg-neutral-800 hover:bg-neutral-700 text-white p-2.5 rounded disabled:opacity-50 transition-colors text-xs"
-                                >
-                                    PNG Screenshot
-                                </button>
-                            </div>
-                        </div>
-                    </Step>
-
-                    {/* TOOLS Section - Retro Style */}
-                    <div className="mt-6 pt-4 border-t border-neutral-800">
-                        <div className="flex items-center gap-3 mb-4 text-neutral-300">
-                            <span className="text-white text-xl">⚙</span>
-                            <h3 className="font-mono font-bold text-base tracking-wider uppercase">TOOLS</h3>
-                        </div>
-                        <div className="space-y-2">
-                            <a
-                                href="/calculator.html"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="group flex items-center justify-between w-full px-4 py-3 border border-dashed border-neutral-700 hover:border-neutral-500 bg-neutral-900/50 hover:bg-neutral-800/50 rounded-lg transition-all cursor-pointer"
-                            >
-                                <span className="font-mono text-xs tracking-wide text-neutral-200 uppercase">Calculadora</span>
-                                <Calculator className="w-5 h-5 text-neutral-500 group-hover:text-neutral-300" />
-                            </a>
-                            <a
-                                href="/pdf-tools.html"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="group flex items-center justify-between w-full px-4 py-3 border border-dashed border-neutral-700 hover:border-neutral-500 bg-neutral-900/50 hover:bg-neutral-800/50 rounded-lg transition-all cursor-pointer"
-                            >
-                                <span className="font-mono text-xs tracking-wide text-neutral-200 uppercase">PDF Tools</span>
-                                <FileText className="w-5 h-5 text-neutral-500 group-hover:text-neutral-300" />
-                            </a>
-                            <a
-                                href="/technical-reports.html"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="group flex items-center justify-between w-full px-4 py-3 border border-dashed border-neutral-700 hover:border-neutral-500 bg-neutral-900/50 hover:bg-neutral-800/50 rounded-lg transition-all cursor-pointer"
-                            >
-                                <span className="font-mono text-xs tracking-wide text-neutral-200 uppercase">Informes Técnicos</span>
-                                <ClipboardList className="w-5 h-5 text-neutral-500 group-hover:text-neutral-300" />
-                            </a>
-                            <a
-                                href="/fichas-tecnicas.html"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="group flex items-center justify-between w-full px-4 py-3 border border-dashed border-neutral-700 hover:border-neutral-500 bg-neutral-900/50 hover:bg-neutral-800/50 rounded-lg transition-all cursor-pointer"
-                            >
-                                <span className="font-mono text-xs tracking-wide text-neutral-200 uppercase">Fichas Técnicas</span>
-                                <FileSpreadsheet className="w-5 h-5 text-neutral-500 group-hover:text-neutral-300" />
-                            </a>
-                            <a
-                                href="/image-optimizer.html"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="group flex items-center justify-between w-full px-4 py-3 border border-dashed border-neutral-700 hover:border-neutral-500 bg-neutral-900/50 hover:bg-neutral-800/50 rounded-lg transition-all cursor-pointer"
-                            >
-                                <span className="font-mono text-xs tracking-wide text-neutral-200 uppercase">Optimizador de Imagenes</span>
-                                <Shrink className="w-5 h-5 text-neutral-500 group-hover:text-neutral-300" />
-                            </a>
-                            <a
-                                href="/compressor.html"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="group flex items-center justify-between w-full px-4 py-3 border border-dashed border-neutral-700 hover:border-neutral-500 bg-neutral-900/50 hover:bg-neutral-800/50 rounded-lg transition-all cursor-pointer"
-                            >
-                                <span className="font-mono text-xs tracking-wide text-neutral-200 uppercase">Compresor</span>
-                                <Archive className="w-5 h-5 text-neutral-500 group-hover:text-neutral-300" />
-                            </a>
-                            <a
-                                href="/template-editor.html"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="group flex items-center justify-between w-full px-4 py-3 border border-dashed border-neutral-700 hover:border-neutral-500 bg-neutral-900/50 hover:bg-neutral-800/50 rounded-lg transition-all cursor-pointer"
-                            >
-                                <span className="font-mono text-xs tracking-wide text-neutral-200 uppercase">Template Editor</span>
-                                <FileCode className="w-5 h-5 text-neutral-500 group-hover:text-neutral-300" />
-                            </a>
-                        </div>
-                    </div>
-
-                </div>
-            </aside>
-
-            {/* Main Preview */}
-            <main className="flex-1 flex flex-col h-full overflow-hidden relative">
-                <PreviewPanel
-                    ref={panelRef}
-                    data={data[selectedIndex]}
-                    images={getFilteredImages()}
-                    mappings={mappings}
-                    logoLeft={logoLeft}
-                    logoRight={logoRight}
-                    customTemplate={customTemplate}
-                    customColumns={customColumns}
-                    isFocusMode={isFocusMode}
-                />
-
-                {/* Focus Mode Navigation Arrows */}
-                {isFocusMode && (
-                    <>
-                        <button
-                            onClick={goToPrevRow}
-                            disabled={!canPrevRow}
-                            className={`fixed left-4 top-1/2 -translate-y-1/2 p-2 transition-colors z-[100] outline-none ${!canPrevRow ? 'text-gray-700 opacity-50 cursor-not-allowed' : 'text-red-600 hover:text-red-500 opacity-80 hover:opacity-100'}`}
-                            title="Registro Anterior"
-                        >
-                            <ChevronLeft size={80} strokeWidth={1.5} />
-                        </button>
-
-                        <button
-                            onClick={goToNextRow}
-                            disabled={!canNextRow}
-                            className={`fixed right-4 top-1/2 -translate-y-1/2 p-2 transition-colors z-[100] outline-none ${!canNextRow ? 'text-gray-700 opacity-50 cursor-not-allowed' : 'text-red-600 hover:text-red-500 opacity-80 hover:opacity-100'}`}
-                            title="Siguiente Registro"
-                        >
-                            <ChevronRight size={80} strokeWidth={1.5} />
-                        </button>
-
-                        {/* Focus Mode Hint */}
-                        <div className="fixed top-4 right-4 z-[100] text-white/50 text-xs font-mono pointer-events-none select-none">
-                            MODO FOCUS (CTRL + .)
-                        </div>
-
-                        {/* Current position indicator */}
-                        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] text-white/50 text-sm font-mono bg-black/50 px-4 py-2 rounded-full">
-                            {selectedIndex !== '' ? `${parseInt(selectedIndex) + 1} / ${data.length}` : 'Sin registro seleccionado'}
-                        </div>
-                    </>
-                )}
-            </main>
-
-            {/* Custom Column Modal - Nothing Tech Style */}
-            {
-                showColumnModal && (
-                    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-                        <div className="bg-[#0a0a0a] border border-white/20 rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl">
-                            <h3 className="text-white font-mono font-bold text-base mb-5 flex items-center gap-2 tracking-wide">
-                                <span className="text-white">+</span> Agregar Columna Personalizada
-                            </h3>
-
-                            {columnError && (
-                                <div className="bg-white/5 border border-white/30 text-white text-xs rounded p-2 mb-4 flex items-center gap-2">
-                                    <AlertCircle size={14} />
-                                    {columnError}
-                                </div>
-                            )}
-
-                            <div className="space-y-5">
-                                <div>
-                                    <label className="block text-white/60 text-xs mb-2 font-mono uppercase tracking-wider">
-                                        Nombre de la Columna
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={newColumnName}
-                                        onChange={(e) => setNewColumnName(e.target.value)}
-                                        placeholder="Ej: FECHA CORTE, OBSERVACIONES EXTRA"
-                                        className="w-full bg-white text-black border-0 rounded p-3 text-sm font-mono focus:ring-2 focus:ring-white/50 outline-none placeholder:text-neutral-400"
-                                    />
-                                    <p className="text-white/40 text-[10px] mt-1.5 font-mono">
-                                        Este nombre aparecerá en el reporte generado
-                                    </p>
-                                </div>
-
-                                <div>
-                                    <label className="block text-white/60 text-xs mb-2 font-mono uppercase tracking-wider">
-                                        Columna del CSV a Mapear
-                                    </label>
+                        {/* Step 3: Mapping */}
+                        <Step number="3" title="Mapeo de Columnas" icon={<Settings size={16} />}>
+                            <div className={`transition-all duration-300 ${headers.length === 0 ? 'opacity-30 pointer-events-none' : ''}`}>
+                                <div className="mb-3">
+                                    <label className="block text-neutral-400 text-sm mb-1.5 font-semibold">Columna ID (Clave)</label>
                                     <select
-                                        value={newColumnMapping}
-                                        onChange={(e) => setNewColumnMapping(e.target.value)}
-                                        className="w-full bg-[#1a1a1a] border border-white/20 rounded p-3 text-sm text-white font-mono focus:border-white/50 outline-none cursor-pointer"
+                                        className="w-full bg-neutral-900 border border-neutral-700 rounded p-2 text-sm text-white focus:border-white outline-none"
+                                        value={idColumn}
+                                        onChange={e => setIdColumn(e.target.value)}
                                     >
-                                        <option value="">-- Seleccionar Columna --</option>
+                                        <option value="">-- Seleccionar ID --</option>
                                         {headers.map(h => <option key={h} value={h}>{h}</option>)}
                                     </select>
-                                    <p className="text-white/40 text-[10px] mt-1.5 font-mono">
-                                        Los datos de esta columna se agregarán al reporte
-                                    </p>
+                                </div>
+
+                                <div className="space-y-2 border-t border-neutral-800 pt-3 max-h-56 overflow-y-auto pr-1">
+                                    {/* Predefined Fields */}
+                                    {REPORT_FIELDS.map(field => (
+                                        <div key={field.id} className="grid grid-cols-2 gap-2 items-center">
+                                            <span className="text-neutral-500 text-xs uppercase font-medium">{field.label}</span>
+                                            <select
+                                                className={`bg-neutral-900 border border-neutral-700 rounded px-2 py-1.5 text-xs text-white outline-none ${mappings[field.id] ? 'border-l-2 border-l-green-500' : ''}`}
+                                                value={mappings[field.id] || ''}
+                                                onChange={(e) => setMappings({ ...mappings, [field.id]: e.target.value })}
+                                            >
+                                                <option value="">Ignorar</option>
+                                                {headers.map(h => <option key={h} value={h}>{h}</option>)}
+                                            </select>
+                                        </div>
+                                    ))}
+
+                                    {/* Custom Columns */}
+                                    {customColumns.map(col => (
+                                        <div key={col.id} className="grid grid-cols-[1fr_auto_auto] gap-2 items-center bg-neutral-800/50 rounded px-2 py-1">
+                                            <span className="text-white text-xs uppercase font-medium">{col.name}</span>
+                                            <select
+                                                className={`bg-neutral-900 border border-neutral-700 rounded px-2 py-1.5 text-xs text-white outline-none ${mappings[col.id] ? 'border-l-2 border-l-neutral-500' : ''}`}
+                                                value={mappings[col.id] || col.mappedTo || ''}
+                                                onChange={(e) => setMappings({ ...mappings, [col.id]: e.target.value })}
+                                            >
+                                                <option value="">Ignorar</option>
+                                                {headers.map(h => <option key={h} value={h}>{h}</option>)}
+                                            </select>
+                                            <button
+                                                onClick={() => removeCustomColumn(col.id)}
+                                                className="text-red-400 hover:text-red-300 text-xs px-1 hover:bg-red-500/20 rounded transition-colors"
+                                                title="Eliminar columna personalizada"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                {/* Add Custom Column Button */}
+                                <button
+                                    onClick={() => setShowColumnModal(true)}
+                                    disabled={headers.length === 0}
+                                    className="w-full mt-3 border border-dashed border-white/70 hover:border-white text-white/70 hover:text-white rounded p-2.5 text-center hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <span>+</span> Agregar Columna Personalizada
+                                </button>
+                            </div>
+
+                            <button
+                                onClick={handleDownloadTemplate}
+                                className="w-full mt-3 border border-dashed border-neutral-700 hover:border-neutral-500 rounded p-2.5 text-center hover:bg-neutral-800 transition-all flex items-center justify-center gap-2 text-xs text-neutral-400 hover:text-white"
+                            >
+                                <span>📥</span> Descargar Plantilla Excel
+                            </button>
+                        </Step>
+
+                        {/* Step 4: Images */}
+                        <Step number="4" title={requiresImages ? "Cargar Imágenes" : "Imágenes (Opcional)"} disabled={!idColumn || !requiresImages} icon={<ImageIcon size={16} />}>
+                            {requiresImages ? (
+                                <label className="block w-full cursor-pointer group">
+                                    <div className="border border-dashed border-neutral-700 rounded-lg p-3 text-center hover:bg-neutral-900 transition-colors">
+                                        <div className="text-neutral-400 text-xs group-hover:text-white transition-colors">
+                                            {images.length > 0 ? `${images.length} imágenes` : 'Subir Carpeta de Fotos'}
+                                        </div>
+                                    </div>
+                                    <input type="file" hidden multiple accept="image/*" onChange={handleImageUpload} />
+                                </label>
+                            ) : (
+                                <div className="border border-dashed border-neutral-700/50 rounded-lg p-3 text-center bg-neutral-800/30">
+                                    <div className="text-neutral-500 text-xs">
+                                        No requerido para esta plantilla
+                                    </div>
+                                </div>
+                            )}
+                        </Step>
+
+                        {/* Step 5: Select Record */}
+                        <Step number="5" title="Seleccionar Orden" disabled={requiresImages ? images.length === 0 : data.length === 0}>
+                            <div className="relative mb-2">
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-500" size={16} />
+                                <input
+                                    type="text"
+                                    placeholder="Buscar orden..."
+                                    value={searchOrder}
+                                    onChange={(e) => {
+                                        const term = e.target.value;
+                                        setSearchOrder(term);
+                                        if (term) {
+                                            const matchIdx = data.findIndex((row, idx) => {
+                                                const label = idColumn ? String(row[idColumn]) : `Fila ${idx + 1}`;
+                                                return label.toLowerCase().includes(term.toLowerCase()) || String(idx + 1).includes(term);
+                                            });
+                                            if (matchIdx !== -1) {
+                                                setSelectedIndex(String(matchIdx));
+                                                setExportScope('single');
+                                            }
+                                        }
+                                    }}
+                                    className="w-full pl-9 pr-3 py-2 bg-neutral-900 border border-neutral-700 rounded text-white text-sm focus:border-white outline-none placeholder:text-neutral-500"
+                                />
+                            </div>
+                            <select
+                                className="w-full bg-white text-black font-bold border border-neutral-300 rounded p-2.5 text-sm focus:outline-none disabled:opacity-50"
+                                value={selectedIndex}
+                                onChange={e => {
+                                    setSelectedIndex(e.target.value);
+                                    setExportScope('single');
+                                }}
+                                disabled={exportScope === 'all'}
+                            >
+                                <option value="">-- Seleccionar Fila --</option>
+                                {data.map((row, idx) => (
+                                    <option key={idx} value={idx}>
+                                        {idx + 1}. {idColumn ? row[idColumn] : `Fila ${idx + 1}`}
+                                    </option>
+                                ))}
+                            </select>
+
+                            {/* EXPORT OPTIONS */}
+                            <div className="bg-neutral-900 border border-neutral-800 rounded p-3 mt-3">
+                                <h4 className="text-xs uppercase text-neutral-500 font-bold mb-3">Opciones de Exportación</h4>
+
+                                <div className="flex gap-2 mb-3">
+                                    <button
+                                        className={`flex-1 py-1.5 px-3 rounded text-xs font-medium transition-colors ${exportScope === 'single' ? 'bg-black text-white border border-white' : 'bg-neutral-800 text-neutral-400'}`}
+                                        onClick={() => setExportScope('single')}
+                                    >
+                                        Solo Actual
+                                    </button>
+                                    <button
+                                        className={`flex-1 py-1.5 px-3 rounded text-xs font-medium transition-colors ${exportScope === 'all' ? 'bg-black text-white border border-white' : 'bg-neutral-800 text-neutral-400'}`}
+                                        onClick={() => setExportScope('all')}
+                                    >
+                                        Todo ({data.length})
+                                    </button>
+                                </div>
+
+                                {exportScope === 'all' && (
+                                    <div className="flex flex-col gap-2">
+                                        <label className="flex items-center gap-2 cursor-pointer">
+                                            <input
+                                                type="radio"
+                                                name="format"
+                                                checked={exportFormat === 'consolidated'}
+                                                onChange={() => setExportFormat('consolidated')}
+                                                className="text-blue-500 bg-neutral-800 border-neutral-600"
+                                            />
+                                            <span className="text-white text-xs">PDF Consolidado (1 Archivo)</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer opacity-50">
+                                            <input
+                                                type="radio"
+                                                name="format"
+                                                checked={exportFormat === 'individual'}
+                                                onChange={() => setExportFormat('individual')}
+                                                className="text-blue-500 bg-neutral-800 border-neutral-600"
+                                            />
+                                            <span className="text-white text-xs">PDFs Individuales (ZIP)</span>
+                                        </label>
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-2 mt-4">
+                                <button
+                                    onClick={handleBackendDownload}
+                                    disabled={exportScope === 'single' && selectedIndex === ''}
+                                    className="flex items-center justify-center gap-2 bg-black hover:bg-neutral-900 border border-neutral-700 text-white font-bold p-3 rounded disabled:opacity-50 transition-colors shadow-lg text-sm"
+                                >
+                                    <Printer size={18} /> Descargar PDF
+                                </button>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        onClick={handlePrint}
+                                        disabled={selectedIndex === ''}
+                                        className="flex items-center justify-center gap-2 bg-neutral-800 hover:bg-neutral-700 text-white p-2.5 rounded disabled:opacity-50 transition-colors text-xs"
+                                    >
+                                        Impresión Rápida
+                                    </button>
+                                    <button
+                                        onClick={handleDownload}
+                                        disabled={selectedIndex === ''}
+                                        className="flex items-center justify-center gap-2 bg-neutral-800 hover:bg-neutral-700 text-white p-2.5 rounded disabled:opacity-50 transition-colors text-xs"
+                                    >
+                                        PNG Screenshot
+                                    </button>
                                 </div>
                             </div>
+                        </Step>
 
-                            <div className="flex gap-3 mt-6">
-                                <button
-                                    onClick={resetColumnModal}
-                                    className="flex-1 border border-white/30 text-white/60 hover:text-white hover:border-white/60 rounded py-2.5 text-sm font-mono transition-colors"
-                                >
-                                    Cancelar
-                                </button>
-                                <button
-                                    onClick={addCustomColumn}
-                                    className="flex-1 bg-white hover:bg-white/90 text-black rounded py-2.5 text-sm font-mono font-semibold transition-colors"
-                                >
-                                    Agregar Columna
-                                </button>
+
+
+                    </div>
+                </aside>
+
+                {/* Main Preview */}
+                <main className="flex-1 flex flex-col h-full overflow-hidden relative">
+                    <PreviewPanel
+                        ref={panelRef}
+                        data={data[selectedIndex]}
+                        images={getFilteredImages()}
+                        mappings={mappings}
+                        logoLeft={logoLeft}
+                        logoRight={logoRight}
+                        customTemplate={customTemplate}
+                        customColumns={customColumns}
+                        isFocusMode={isFocusMode}
+                    />
+
+                    {/* Focus Mode Navigation Arrows */}
+                    {isFocusMode && (
+                        <>
+                            <button
+                                onClick={goToPrevRow}
+                                disabled={!canPrevRow}
+                                className={`fixed left-4 top-1/2 -translate-y-1/2 p-2 transition-colors z-[100] outline-none ${!canPrevRow ? 'text-gray-700 opacity-50 cursor-not-allowed' : 'text-red-600 hover:text-red-500 opacity-80 hover:opacity-100'}`}
+                                title="Registro Anterior"
+                            >
+                                <ChevronLeft size={80} strokeWidth={1.5} />
+                            </button>
+
+                            <button
+                                onClick={goToNextRow}
+                                disabled={!canNextRow}
+                                className={`fixed right-4 top-1/2 -translate-y-1/2 p-2 transition-colors z-[100] outline-none ${!canNextRow ? 'text-gray-700 opacity-50 cursor-not-allowed' : 'text-red-600 hover:text-red-500 opacity-80 hover:opacity-100'}`}
+                                title="Siguiente Registro"
+                            >
+                                <ChevronRight size={80} strokeWidth={1.5} />
+                            </button>
+
+                            {/* Focus Mode Hint */}
+                            <div className="fixed top-4 right-4 z-[100] text-white/50 text-xs font-mono pointer-events-none select-none">
+                                MODO FOCUS (CTRL + .)
+                            </div>
+
+                            {/* Current position indicator */}
+                            <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] text-white/50 text-sm font-mono bg-black/50 px-4 py-2 rounded-full">
+                                {selectedIndex !== '' ? `${parseInt(selectedIndex) + 1} / ${data.length}` : 'Sin registro seleccionado'}
+                            </div>
+                        </>
+                    )}
+                </main>
+
+                {/* Custom Column Modal - Nothing Tech Style */}
+                {
+                    showColumnModal && (
+                        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+                            <div className="bg-[#0a0a0a] border border-white/20 rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl">
+                                <h3 className="text-white font-mono font-bold text-base mb-5 flex items-center gap-2 tracking-wide">
+                                    <span className="text-white">+</span> Agregar Columna Personalizada
+                                </h3>
+
+                                {columnError && (
+                                    <div className="bg-white/5 border border-white/30 text-white text-xs rounded p-2 mb-4 flex items-center gap-2">
+                                        <AlertCircle size={14} />
+                                        {columnError}
+                                    </div>
+                                )}
+
+                                <div className="space-y-5">
+                                    <div>
+                                        <label className="block text-white/60 text-xs mb-2 font-mono uppercase tracking-wider">
+                                            Nombre de la Columna
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={newColumnName}
+                                            onChange={(e) => setNewColumnName(e.target.value)}
+                                            placeholder="Ej: FECHA CORTE, OBSERVACIONES EXTRA"
+                                            className="w-full bg-white text-black border-0 rounded p-3 text-sm font-mono focus:ring-2 focus:ring-white/50 outline-none placeholder:text-neutral-400"
+                                        />
+                                        <p className="text-white/40 text-[10px] mt-1.5 font-mono">
+                                            Este nombre aparecerá en el reporte generado
+                                        </p>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-white/60 text-xs mb-2 font-mono uppercase tracking-wider">
+                                            Columna del CSV a Mapear
+                                        </label>
+                                        <select
+                                            value={newColumnMapping}
+                                            onChange={(e) => setNewColumnMapping(e.target.value)}
+                                            className="w-full bg-[#1a1a1a] border border-white/20 rounded p-3 text-sm text-white font-mono focus:border-white/50 outline-none cursor-pointer"
+                                        >
+                                            <option value="">-- Seleccionar Columna --</option>
+                                            {headers.map(h => <option key={h} value={h}>{h}</option>)}
+                                        </select>
+                                        <p className="text-white/40 text-[10px] mt-1.5 font-mono">
+                                            Los datos de esta columna se agregarán al reporte
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-3 mt-6">
+                                    <button
+                                        onClick={resetColumnModal}
+                                        className="flex-1 border border-white/30 text-white/60 hover:text-white hover:border-white/60 rounded py-2.5 text-sm font-mono transition-colors"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        onClick={addCustomColumn}
+                                        className="flex-1 bg-white hover:bg-white/90 text-black rounded py-2.5 text-sm font-mono font-semibold transition-colors"
+                                    >
+                                        Agregar Columna
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )
-            }
+                    )
+                }
 
-            {/* PDF Loading Modal */}
-            {isPdfLoading && <LoadingModal message={pdfLoadingMessage} accentColor="#D71921" />}
 
-        </div>
+
+                {/* PDF Loading Modal */}
+                {isPdfLoading && <LoadingModal message={pdfLoadingMessage} accentColor="#D71921" />}
+
+            </div>
+        </DashboardLayout>
     );
 }
