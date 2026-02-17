@@ -89,7 +89,7 @@ interface BlockEditorProps {
 type PanelMode = 'blocks' | 'constructor' | 'plantillas' | 'publicadas';
 
 type ConstructorMode = 'append' | 'replace';
-type ConstructorBlockKind = 'photo-grid' | 'data-grid';
+type ConstructorBlockKind = BlockType;
 
 const PHOTO_LABEL_PRESETS: Record<2 | 3 | 4, string[]> = {
   2: ['ANTES', 'DESPUES'],
@@ -157,14 +157,51 @@ export default function BlockEditor({
   const [blockSearch, setBlockSearch] = useState('');
   const [constructorMode, setConstructorMode] = useState<ConstructorMode>('append');
   const [constructorName, setConstructorName] = useState(document.name || 'Nueva Plantilla');
-  const [constructorBlockKind, setConstructorBlockKind] = useState<ConstructorBlockKind>('photo-grid');
-  const [constructorPhotoTitle, setConstructorPhotoTitle] = useState('Panel Fotos');
-  const [constructorPhotoCount, setConstructorPhotoCount] = useState<2 | 3 | 4>(4);
-  const [constructorPhotoShowLabels, setConstructorPhotoShowLabels] = useState(true);
-  const [constructorPhotoLabels, setConstructorPhotoLabels] = useState<string[]>([...PHOTO_LABEL_PRESETS[4]]);
-  const [constructorDataColumns, setConstructorDataColumns] = useState<4 | 6>(6);
-  const [constructorDataFields, setConstructorDataFields] = useState<FieldDef[]>(() => cloneFields(DATA_FIELD_PRESETS[6]));
+  const [constructorBlockKind, setConstructorBlockKind] = useState<ConstructorBlockKind>('header');
+  const [constructorConfig, setConstructorConfig] = useState<BlockConfig>(
+    () => deepClone(BLOCK_PALETTE[0].defaultConfig)
+  );
   const [savedBlocks, setSavedBlocks] = useState<SavedBlockItem[]>([]);
+  const [constructorErrors, setConstructorErrors] = useState<string[]>([]);
+
+  /* ── Puzzle UX state ── */
+  const [paletteInsertIdx, setPaletteInsertIdx] = useState<number | null>(null);
+  const [paletteDragItem, setPaletteDragItem] = useState<BlockPaletteItem | null>(null);
+  const [quickAddIdx, setQuickAddIdx] = useState<number | null>(null);
+  const [successBlockId, setSuccessBlockId] = useState<string | null>(null);
+  const [shakeBlockId, setShakeBlockId] = useState<string | null>(null);
+
+  /* ── Validation for Constructor ── */
+  const validateConstructor = useCallback(() => {
+    const errors: string[] = [];
+    if (constructorBlockKind === 'photo-grid') {
+      const cfg = constructorConfig as PhotoGridConfig;
+      if (!cfg.panelTitle?.trim()) errors.push('El título del panel es obligatorio.');
+    } else if (constructorBlockKind === 'data-grid') {
+      const cfg = constructorConfig as DataGridConfig;
+      if (!cfg.fields?.length) errors.push('Debe haber al menos un campo en la grilla.');
+      if (cfg.fields?.some(f => !f.label.trim())) errors.push('Todas las etiquetas de los campos deben tener texto.');
+      if (cfg.fields?.some(f => !f.variable.trim())) errors.push('Todas las variables deben tener un ID interno.');
+    } else if (constructorBlockKind === 'header') {
+      const cfg = constructorConfig as HeaderConfig;
+      if (!cfg.title?.trim()) errors.push('El título del encabezado es obligatorio.');
+    } else if (constructorBlockKind === 'info-bar') {
+      const cfg = constructorConfig as InfoBarConfig;
+      if (!cfg.fields?.length) errors.push('Debe haber al menos un campo en la barra.');
+    } else if (constructorBlockKind === 'table') {
+      const cfg = constructorConfig as TableConfig;
+      if (!cfg.headers?.length) errors.push('Debe haber al menos una columna en la tabla.');
+    } else if (constructorBlockKind === 'signatures') {
+      const cfg = constructorConfig as SignaturesConfig;
+      if (!cfg.signatures?.length) errors.push('Debe haber al menos una firma.');
+    }
+    // section-title, text, footer, spacer → always valid with defaults
+    setConstructorErrors(errors);
+    if (errors.length > 0) {
+      setTimeout(() => setConstructorErrors([]), 5000);
+    }
+    return errors.length === 0;
+  }, [constructorBlockKind, constructorConfig]);
 
   /* ── Canvas UX state ── */
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
@@ -200,6 +237,16 @@ export default function BlockEditor({
     return { hasHeader, hasData, hasPhotos, hasClosing };
   }, [document.blocks]);
 
+  const isDragging = dragIdx !== null || paletteDragItem !== null;
+
+  const nextSuggestion = useMemo((): BlockType | null => {
+    if (!documentHealth.hasHeader) return 'header';
+    if (!documentHealth.hasData) return 'data-grid';
+    if (!documentHealth.hasPhotos) return 'photo-grid';
+    if (!documentHealth.hasClosing) return 'signatures';
+    return null;
+  }, [documentHealth]);
+
   useEffect(() => {
     setConstructorName(document.name || 'Nueva Plantilla');
   }, [document.name]);
@@ -210,16 +257,13 @@ export default function BlockEditor({
     setDeleteConfirmId(null);
   }, [panelMode]);
 
+  /* Reset constructorConfig when block kind changes */
   useEffect(() => {
-    setConstructorPhotoLabels((prev) => {
-      const target = PHOTO_LABEL_PRESETS[constructorPhotoCount];
-      const next = Array.from({ length: constructorPhotoCount }, (_, idx) => {
-        const current = prev[idx]?.trim();
-        return current || target[idx];
-      });
-      return next;
-    });
-  }, [constructorPhotoCount]);
+    const paletteItem = BLOCK_PALETTE.find(p => p.type === constructorBlockKind);
+    if (paletteItem) {
+      setConstructorConfig(deepClone(paletteItem.defaultConfig));
+    }
+  }, [constructorBlockKind]);
 
   useEffect(() => {
     try {
@@ -271,7 +315,10 @@ export default function BlockEditor({
     }
     setSelectedBlockId(block.id);
     setRecentlyAddedId(block.id);
+    setSuccessBlockId(block.id);
+    setQuickAddIdx(null);
     setTimeout(() => setRecentlyAddedId(null), 500);
+    setTimeout(() => setSuccessBlockId(null), 800);
   };
 
   const addSavedBlockToCanvas = (item: SavedBlockItem, insertIdx?: number) => {
@@ -322,7 +369,11 @@ export default function BlockEditor({
 
   const requestDeleteBlock = (id: string) => {
     const target = document.blocks.find((b) => b.id === id);
-    if (target?.locked) return;
+    if (target?.locked) {
+      setShakeBlockId(id);
+      setTimeout(() => setShakeBlockId(null), 500);
+      return;
+    }
     setDeleteConfirmId(id);
     if (deleteConfirmTimer.current) clearTimeout(deleteConfirmTimer.current);
     deleteConfirmTimer.current = setTimeout(() => setDeleteConfirmId(null), 3000);
@@ -419,108 +470,41 @@ export default function BlockEditor({
     setSelectedBlockId(generated[0]?.id ?? null);
   };
 
-  const applyPhotoReference = (count: 2 | 3 | 4 = 4) => {
-    setConstructorBlockKind('photo-grid');
-    setConstructorPhotoCount(count);
-    setConstructorPhotoShowLabels(true);
-    setConstructorPhotoTitle('Panel Fotos');
-    setConstructorPhotoLabels([...PHOTO_LABEL_PRESETS[count]]);
+  const applyConstructorPreset = (type: BlockType) => {
+    setConstructorBlockKind(type);
+    const paletteItem = BLOCK_PALETTE.find(p => p.type === type);
+    if (paletteItem) setConstructorConfig(deepClone(paletteItem.defaultConfig));
   };
 
-  const applyDataReference = (columns: 4 | 6 = 6) => {
-    setConstructorBlockKind('data-grid');
-    setConstructorDataColumns(columns);
-    setConstructorDataFields(cloneFields(DATA_FIELD_PRESETS[columns]));
-  };
-
-  const buildProfessionalConstructorBlock = (): TemplateBlock | null => {
-    if (constructorBlockKind === 'photo-grid') {
-      const baseItem = BLOCK_PALETTE.find((item) => item.type === 'photo-grid');
-      if (!baseItem) return null;
-
-      const block = createBlock(baseItem);
-      const labels = constructorPhotoLabels
-        .slice(0, constructorPhotoCount)
-        .map((label, idx) => (label.trim() || `FOTO ${idx + 1}`).toUpperCase());
-
-      block.config = {
-        ...(block.config as PhotoGridConfig),
-        maxPhotos: constructorPhotoCount,
-        showLabels: constructorPhotoShowLabels,
-        labels,
-        panelTitle: constructorPhotoTitle.trim() || 'Panel Fotos',
-      };
-      return block;
-    }
-
-    const baseItem = BLOCK_PALETTE.find(
-      (item) => item.type === 'data-grid' && (item.defaultConfig as DataGridConfig).columns === constructorDataColumns
-    ) ?? BLOCK_PALETTE.find((item) => item.type === 'data-grid');
-    if (!baseItem) return null;
-
-    const parsedFields = constructorDataFields
-      .map((field, idx) => {
-        const label = field.label.trim() || `CAMPO ${idx + 1}`;
-        const variable = field.variable.trim() || normalizeVariableToken(label);
-        return { label: label.toUpperCase(), variable };
-      })
-      .filter((field) => field.label.length > 0 && field.variable.length > 0);
-
-    const block = createBlock(baseItem);
-    block.config = {
-      ...(block.config as DataGridConfig),
-      columns: constructorDataColumns,
-      fields: parsedFields.length > 0 ? parsedFields : cloneFields(DATA_FIELD_PRESETS[constructorDataColumns]),
-      spanFields: constructorDataColumns === 4 ? [] : undefined,
+  const buildConstructorBlock = (): TemplateBlock | null => {
+    const paletteItem = BLOCK_PALETTE.find(p => p.type === constructorBlockKind);
+    if (!paletteItem) return null;
+    return {
+      id: blockId(constructorBlockKind),
+      type: constructorBlockKind,
+      config: deepClone(constructorConfig),
+      locked: false,
     };
-    return block;
   };
 
-  const addProfessionalConstructorBlock = () => {
-    const block = buildProfessionalConstructorBlock();
+  const addConstructorBlock = () => {
+    const block = buildConstructorBlock();
     if (!block) return;
     applyConstructorResult([block]);
   };
 
   const constructorPreviewBlock = useMemo<TemplateBlock | null>(() => {
-    const block = buildProfessionalConstructorBlock();
-    if (!block) return null;
-    return { ...block, id: 'constructor-preview' };
-  }, [
-    constructorBlockKind,
-    constructorPhotoTitle,
-    constructorPhotoCount,
-    constructorPhotoShowLabels,
-    constructorPhotoLabels,
-    constructorDataColumns,
-    constructorDataFields,
-  ]);
+    return {
+      id: 'constructor-preview',
+      type: constructorBlockKind,
+      config: deepClone(constructorConfig),
+      locked: false,
+    };
+  }, [constructorBlockKind, constructorConfig]);
 
   const updateConstructorPreviewConfig = useCallback((config: BlockConfig) => {
-    if (constructorBlockKind === 'photo-grid') {
-      const cfg = config as PhotoGridConfig;
-      const nextCount = cfg.maxPhotos === 'auto' ? 4 : cfg.maxPhotos;
-      const count: 2 | 3 | 4 = nextCount === 2 || nextCount === 3 || nextCount === 4 ? nextCount : 4;
-      const preset = PHOTO_LABEL_PRESETS[count];
-
-      setConstructorBlockKind('photo-grid');
-      setConstructorPhotoCount(count);
-      setConstructorPhotoShowLabels(cfg.showLabels ?? true);
-      setConstructorPhotoTitle(cfg.panelTitle?.trim() || 'Panel Fotos');
-      setConstructorPhotoLabels(
-        Array.from({ length: count }, (_, idx) => cfg.labels?.[idx]?.trim() || preset[idx]),
-      );
-      return;
-    }
-
-    const cfg = config as DataGridConfig;
-    const columns: 4 | 6 = cfg.columns === 4 ? 4 : 6;
-    const nextFields = cfg.fields && cfg.fields.length > 0 ? cfg.fields : DATA_FIELD_PRESETS[columns];
-
-    setConstructorBlockKind('data-grid');
-    setConstructorDataColumns(columns);
-    setConstructorDataFields(cloneFields(nextFields));
-  }, [constructorBlockKind]);
+    setConstructorConfig(deepClone(config));
+  }, []);
 
   /* Drag-reorder handlers */
   const handleDragStart = (e: React.DragEvent, idx: number) => {
@@ -555,12 +539,12 @@ export default function BlockEditor({
   const handleDragEnd = () => { setDragIdx(null); setDragOverIdx(null); };
 
   /* Palette drag into canvas */
-  const [paletteDragItem, setPaletteDragItem] = useState<BlockPaletteItem | null>(null);
   const handlePaletteDrop = (e: React.DragEvent) => {
     e.preventDefault();
     if (paletteDragItem) {
-      addBlock(paletteDragItem);
+      addBlock(paletteDragItem, paletteInsertIdx ?? undefined);
       setPaletteDragItem(null);
+      setPaletteInsertIdx(null);
     }
   };
 
@@ -616,6 +600,13 @@ export default function BlockEditor({
       @keyframes beSlideDown { from { opacity: 0; transform: translateY(-8px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
       @keyframes beDuplicateGlow { 0% { box-shadow: 0 0 0 0 rgba(139,92,246,0.4); } 40% { box-shadow: 0 0 0 6px rgba(139,92,246,0.18); } 100% { box-shadow: 0 0 0 0 rgba(139,92,246,0); } }
       @keyframes beFadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+      @keyframes puzzleSnap { 0% { opacity:0; transform: translateY(-6px) scale(1.01); } 50% { transform: translateY(2px) scale(0.995); } 100% { opacity:1; transform: translateY(0) scale(1); } }
+      @keyframes placementGlow { 0% { box-shadow: 0 0 0 0 rgba(16,185,129,0.45); } 50% { box-shadow: 0 0 0 8px rgba(16,185,129,0.12); } 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0); } }
+      @keyframes beShake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(-4px); } 40% { transform: translateX(4px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(2px); } }
+      @keyframes dropZonePulse { 0%,100% { opacity: 0.7; } 50% { opacity: 1; } }
+      .puzzle-connector { position: relative; }
+      .puzzle-connector::after { content: ''; position: absolute; bottom: -7px; left: 50%; transform: translateX(-50%); width: 36px; height: 7px; background: inherit; border-radius: 0 0 10px 10px; z-index: 5; }
+      .puzzle-notch::before { content: ''; position: absolute; top: -1px; left: 50%; transform: translateX(-50%); width: 40px; height: 7px; background: #eef1f7; border-radius: 0 0 12px 12px; z-index: 4; }
     `}</style>
       <div className="h-full min-w-[1020px] grid grid-cols-[280px_minmax(740px,1fr)_340px]">
         {/* ── LEFT: Palette ── */}
@@ -632,8 +623,8 @@ export default function BlockEditor({
                 key={mode}
                 onClick={() => setPanelMode(mode)}
                 className={`flex-1 flex flex-col items-center gap-1 py-3 text-[9px] font-semibold transition-all border-b-2 ${panelMode === mode
-                    ? 'text-violet-600 border-violet-500 bg-violet-50/60'
-                    : 'text-neutral-400 border-transparent hover:text-neutral-600 hover:bg-neutral-50'
+                  ? 'text-violet-600 border-violet-500 bg-violet-50/60'
+                  : 'text-neutral-400 border-transparent hover:text-neutral-600 hover:bg-neutral-50'
                   }`}
               >
                 {icon}
@@ -651,179 +642,43 @@ export default function BlockEditor({
                     <span className="text-[12px] font-semibold">Constructor de bloques</span>
                   </div>
                   <p className="text-[10px] text-violet-700/80 mt-1">
-                    El armado del bloque ahora se realiza en el preview central para mayor visibilidad.
-                  </p>
-                </div>
-                <div className="rounded-xl border border-neutral-200 bg-white p-3">
-                  <p className="text-[11px] font-semibold text-neutral-700">Barras laterales para configuracion</p>
-                  <p className="text-[10px] text-neutral-500 mt-1.5 leading-relaxed">
-                    Usa el inspector derecho para editar propiedades del bloque (fuente, alineacion, color, logos, etc.).
-                    El constructor visual esta en el preview central.
+                    Selecciona el tipo de bloque, configura sus propiedades en el panel derecho
+                    y visualiza el preview en el centro.
                   </p>
                 </div>
 
-                <div className="hidden space-y-2 rounded-xl border border-neutral-200 bg-white p-3">
-                  <div>
-                    <label className="block text-[10px] font-semibold uppercase tracking-wide text-neutral-500 mb-1">Nombre sugerido</label>
-                    <input
-                      value={constructorName}
-                      onChange={(e) => setConstructorName(e.target.value)}
-                      className="w-full h-8 rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 text-[12px] focus:outline-none focus:ring-2 focus:ring-violet-300"
-                      placeholder="Ej. Informe tecnico - Norte"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => setConstructorMode('append')}
-                      className={`rounded-lg py-1.5 text-[11px] font-semibold ${constructorMode === 'append' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
-                    >
-                      Agregar al final
-                    </button>
-                    <button
-                      onClick={() => setConstructorMode('replace')}
-                      className={`rounded-lg py-1.5 text-[11px] font-semibold ${constructorMode === 'replace' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
-                    >
-                      Reemplazar todo
-                    </button>
-                  </div>
-                </div>
-
-                <div className="hidden rounded-xl border border-violet-200 bg-white p-3 space-y-3 shadow-sm">
-                  <div className="flex items-center justify-between gap-2">
-                    <div>
-                      <p className="text-[11px] font-semibold text-neutral-800">Bloque profesional desde cero</p>
-                      <p className="text-[10px] text-neutral-400 mt-0.5">Configura estructura y agrega el bloque al canvas.</p>
-                    </div>
-                    <div className="flex items-center gap-1">
+                <div className="rounded-xl border border-neutral-200 bg-white p-3 space-y-2">
+                  <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wide">Selecciona el Tipo de Bloque</p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {BLOCK_PALETTE.filter((item, idx, arr) => arr.findIndex(p => p.type === item.type) === idx).map((item) => (
                       <button
-                        onClick={() => applyPhotoReference(4)}
-                        className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-700 hover:bg-amber-100"
+                        key={item.type}
+                        onClick={() => applyConstructorPreset(item.type)}
+                        className={`relative flex flex-col items-center gap-1.5 rounded-xl px-2 py-2.5 border-2 transition-all text-center ${constructorBlockKind === item.type ? 'border-violet-500 bg-violet-50 text-violet-900 shadow-sm' : 'border-transparent bg-neutral-50 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700'}`}
                       >
-                        Ref Fotos
-                      </button>
-                      <button
-                        onClick={() => applyDataReference(6)}
-                        className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700 hover:bg-emerald-100"
-                      >
-                        Ref Datos
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={() => setConstructorBlockKind('photo-grid')}
-                      className={`rounded-lg px-2 py-2 text-[11px] font-semibold border transition-colors ${constructorBlockKind === 'photo-grid' ? 'border-violet-400 bg-violet-50 text-violet-700' : 'border-neutral-200 bg-neutral-50 text-neutral-600 hover:bg-neutral-100'}`}
-                    >
-                      Panel Fotos
-                    </button>
-                    <button
-                      onClick={() => setConstructorBlockKind('data-grid')}
-                      className={`rounded-lg px-2 py-2 text-[11px] font-semibold border transition-colors ${constructorBlockKind === 'data-grid' ? 'border-violet-400 bg-violet-50 text-violet-700' : 'border-neutral-200 bg-neutral-50 text-neutral-600 hover:bg-neutral-100'}`}
-                    >
-                      Grilla Datos
-                    </button>
-                  </div>
-
-                  {constructorBlockKind === 'photo-grid' ? (
-                    <div className="space-y-2.5">
-                      <div>
-                        <label className="block text-[10px] font-semibold uppercase tracking-wide text-neutral-500 mb-1">Titulo panel</label>
-                        <input
-                          value={constructorPhotoTitle}
-                          onChange={(e) => setConstructorPhotoTitle(e.target.value)}
-                          className="w-full h-8 rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 text-[12px] focus:outline-none focus:ring-2 focus:ring-violet-300"
-                          placeholder="Panel Fotos"
-                        />
-                      </div>
-                      <div className="grid grid-cols-3 gap-1.5">
-                        {([2, 3, 4] as const).map((count) => (
-                          <button
-                            key={count}
-                            onClick={() => setConstructorPhotoCount(count)}
-                            className={`rounded-md py-1.5 text-[10px] font-semibold ${constructorPhotoCount === count ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
-                          >
-                            {count} slots
-                          </button>
-                        ))}
-                      </div>
-                      <label className="flex items-center gap-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={constructorPhotoShowLabels}
-                          onChange={(e) => setConstructorPhotoShowLabels(e.target.checked)}
-                          className="rounded"
-                        />
-                        <span className="text-[11px] text-neutral-600">Mostrar etiquetas</span>
-                      </label>
-                      {constructorPhotoShowLabels && (
-                        <div className="space-y-1.5">
-                          <label className="block text-[10px] font-semibold uppercase tracking-wide text-neutral-500">Etiquetas por slot</label>
-                          {Array.from({ length: constructorPhotoCount }).map((_, idx) => (
-                            <input
-                              key={idx}
-                              value={constructorPhotoLabels[idx] || ''}
-                              onChange={(e) => {
-                                const next = [...constructorPhotoLabels];
-                                next[idx] = e.target.value;
-                                setConstructorPhotoLabels(next);
-                              }}
-                              className="w-full h-7 rounded-md border border-neutral-200 bg-neutral-50 px-2 text-[11px] focus:outline-none focus:ring-1 focus:ring-violet-300"
-                              placeholder={`Etiqueta ${idx + 1}`}
-                            />
-                          ))}
+                        <div
+                          className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-white"
+                          style={{ backgroundColor: constructorBlockKind === item.type ? (BLOCK_COLORS[item.type] || '#888') : '#d4d4d8' }}
+                        >
+                          {ICON_MAP[item.icon] || <Type size={14} />}
                         </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="space-y-2.5">
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          onClick={() => applyDataReference(4)}
-                          className={`rounded-md py-1.5 text-[10px] font-semibold ${constructorDataColumns === 4 ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
-                        >
-                          2 columnas
-                        </button>
-                        <button
-                          onClick={() => applyDataReference(6)}
-                          className={`rounded-md py-1.5 text-[10px] font-semibold ${constructorDataColumns === 6 ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
-                        >
-                          3 columnas
-                        </button>
-                      </div>
-                      <div>
-                        <label className="block text-[10px] font-semibold uppercase tracking-wide text-neutral-500 mb-1">Campos</label>
-                        <FieldListEditor fields={constructorDataFields} onChange={setConstructorDataFields} />
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-2.5">
-                    <p className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wide mb-2">Preview del bloque</p>
-                    <div className="rounded-lg border border-neutral-200 bg-white p-2.5">
-                      {constructorPreviewBlock ? <BlockPreview block={constructorPreviewBlock} /> : <p className="text-[11px] text-neutral-400">Sin configuracion.</p>}
-                    </div>
+                        <div className="text-[9px] font-bold leading-tight">{BLOCK_LABELS[item.type] || item.type}</div>
+                        {constructorBlockKind === item.type && <div className="absolute top-1 right-1 text-violet-500"><Check size={10} strokeWidth={3} /></div>}
+                      </button>
+                    ))}
                   </div>
-
-                  <button
-                    onClick={addProfessionalConstructorBlock}
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 text-white py-2.5 text-[12px] font-semibold hover:bg-violet-700 transition-colors"
-                  >
-                    <Plus size={14} /> Agregar bloque al canvas
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (!constructorPreviewBlock) return;
-                      saveBlockAsReusable(constructorPreviewBlock);
-                    }}
-                    disabled={!constructorPreviewBlock}
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-violet-200 bg-violet-50 text-violet-700 py-2.5 text-[12px] font-semibold hover:bg-violet-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <BookmarkPlus size={14} /> Guardar en Elementos
-                  </button>
                 </div>
 
-
+                <div className="rounded-xl border border-neutral-200 bg-white p-3">
+                  <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wide mb-2">Nombre plantilla</p>
+                  <input
+                    value={constructorName}
+                    onChange={(e) => setConstructorName(e.target.value)}
+                    className="w-full h-8 rounded-lg border border-neutral-200 bg-neutral-50 px-2.5 text-[12px] focus:outline-none focus:ring-2 focus:ring-violet-300"
+                    placeholder="Ej. Informe tecnico"
+                  />
+                  <p className="text-[9px] text-neutral-400 mt-1">Se aplica al guardar la plantilla.</p>
+                </div>
               </div>
             ) : panelMode === 'plantillas' ? (
               /* Preset templates */
@@ -956,15 +811,17 @@ export default function BlockEditor({
                         <div key={item.id} className="relative group">
                           <button
                             draggable
-                            onDragStart={() => setPaletteDragItem({
-                              type: item.type,
-                              label: item.name,
-                              description: item.description,
-                              icon: item.icon,
-                              category: item.category,
-                              defaultConfig: deepClone(item.config),
-                            })}
-                            onDragEnd={() => setPaletteDragItem(null)}
+                            onDragStart={(e) => {
+                              const pi = { type: item.type, label: item.name, description: item.description, icon: item.icon, category: item.category, defaultConfig: deepClone(item.config) } as BlockPaletteItem;
+                              setPaletteDragItem(pi);
+                              const ghost = window.document.createElement('div');
+                              ghost.style.cssText = 'position:fixed;top:-999px;width:180px;padding:8px 12px;background:#fff;border-radius:10px;border:2px solid ' + (BLOCK_COLORS[item.type] || '#888') + ';box-shadow:0 8px 24px rgba(0,0,0,0.15);display:flex;align-items:center;gap:8px;';
+                              ghost.innerHTML = '<div style="width:24px;height:24px;border-radius:6px;background:' + (BLOCK_COLORS[item.type] || '#888') + ';"></div><span style="font-size:11px;font-weight:600;color:#333;">' + item.name + '</span>';
+                              window.document.body.appendChild(ghost);
+                              e.dataTransfer.setDragImage(ghost, 90, 20);
+                              setTimeout(() => { try { window.document.body.removeChild(ghost); } catch {} }, 0);
+                            }}
+                            onDragEnd={() => { setPaletteDragItem(null); setPaletteInsertIdx(null); }}
                             onClick={() => addSavedBlockToCanvas(item)}
                             className="w-full flex flex-col items-center gap-1.5 rounded-xl p-2.5 bg-white border border-neutral-100 hover:border-violet-200 hover:shadow-md shadow-sm transition-all cursor-grab active:cursor-grabbing active:scale-[0.96] text-center"
                             title={item.description}
@@ -1000,8 +857,16 @@ export default function BlockEditor({
                           <button
                             key={`${item.type}-${i}`}
                             draggable
-                            onDragStart={() => setPaletteDragItem(item)}
-                            onDragEnd={() => setPaletteDragItem(null)}
+                            onDragStart={(e) => {
+                              setPaletteDragItem(item);
+                              const ghost = window.document.createElement('div');
+                              ghost.style.cssText = 'position:fixed;top:-999px;width:180px;padding:8px 12px;background:#fff;border-radius:10px;border:2px solid ' + (BLOCK_COLORS[item.type] || '#888') + ';box-shadow:0 8px 24px rgba(0,0,0,0.15);display:flex;align-items:center;gap:8px;';
+                              ghost.innerHTML = '<div style="width:24px;height:24px;border-radius:6px;background:' + (BLOCK_COLORS[item.type] || '#888') + ';"></div><span style="font-size:11px;font-weight:600;color:#333;">' + item.label + '</span>';
+                              window.document.body.appendChild(ghost);
+                              e.dataTransfer.setDragImage(ghost, 90, 20);
+                              setTimeout(() => { try { window.document.body.removeChild(ghost); } catch {} }, 0);
+                            }}
+                            onDragEnd={() => { setPaletteDragItem(null); setPaletteInsertIdx(null); }}
                             onClick={() => addBlock(item)}
                             className="flex flex-col items-center gap-1.5 rounded-xl p-2.5 bg-white border border-neutral-100 hover:border-violet-200 hover:shadow-md shadow-sm transition-all cursor-grab active:cursor-grabbing active:scale-[0.96] group text-center"
                             title={item.description}
@@ -1041,12 +906,50 @@ export default function BlockEditor({
         >
           {/* Sticky canvas header */}
           <div className="sticky top-0 z-20 px-4 py-2 border-b border-white/80 bg-white/80 backdrop-blur-sm flex items-center justify-between text-[10px] text-neutral-600">
-            <span className="font-semibold tracking-wide">{panelMode === 'constructor' ? 'Preview Constructor' : 'Canvas A4'}</span>
+            <div className="flex items-center gap-3">
+              <span className="font-semibold tracking-wide">{panelMode === 'constructor' ? 'Preview Constructor' : 'Canvas A4'}</span>
+              {/* Fase 5: Completitud */}
+              {document.blocks.length > 0 && panelMode !== 'constructor' && (
+                <div className="flex items-center gap-1.5 ml-2">
+                  <div className="flex gap-0.5">
+                    {[
+                      { done: documentHealth.hasHeader, tip: 'Cabecera' },
+                      { done: documentHealth.hasData, tip: 'Datos' },
+                      { done: documentHealth.hasPhotos, tip: 'Fotos' },
+                      { done: documentHealth.hasClosing, tip: 'Cierre' },
+                    ].map((item, i) => (
+                      <div
+                        key={i}
+                        className={`w-2 h-2 rounded-full transition-colors ${item.done ? 'bg-emerald-500' : 'bg-neutral-300'}`}
+                        title={item.tip}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-[9px] text-neutral-400">
+                    {[documentHealth.hasHeader, documentHealth.hasData, documentHealth.hasPhotos, documentHealth.hasClosing].filter(Boolean).length}/4
+                  </span>
+                </div>
+              )}
+              {/* Fase 7: Minimap */}
+              {document.blocks.length > 3 && panelMode !== 'constructor' && (
+                <div className="flex items-center gap-0.5 ml-1">
+                  {document.blocks.map((b) => (
+                    <button
+                      key={b.id}
+                      onClick={() => setSelectedBlockId(b.id)}
+                      className={`w-3 h-3 rounded-sm transition-all ${selectedBlockId === b.id ? 'scale-125 ring-1 ring-violet-400 ring-offset-1' : 'hover:scale-110'}`}
+                      style={{ backgroundColor: BLOCK_COLORS[b.type] || '#888' }}
+                      title={BLOCK_LABELS[b.type]}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="flex items-center gap-3">
               <span>
                 {panelMode === 'constructor'
                   ? 'Arma tu bloque en el preview central'
-                  : (document.blocks.length === 0 ? 'Arrastra bloques desde el panel izquierdo' : `${document.blocks.length} bloque(s) en pagina`)}
+                  : (document.blocks.length === 0 ? 'Arrastra bloques desde el panel izquierdo' : `${document.blocks.length} bloque(s)`)}
               </span>
               {selectedBlockId && panelMode !== 'constructor' && (
                 <span className="text-[9px] text-neutral-400 hidden xl:inline">
@@ -1072,271 +975,323 @@ export default function BlockEditor({
             >
               {panelMode === 'constructor' ? (
                 <div className="flex-1 flex flex-col gap-3">
-                  <div className="rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50 to-indigo-50 p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="rounded-xl border border-violet-200 bg-gradient-to-br from-violet-50 to-indigo-50 p-5 shadow-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
                       <div>
-                        <p className="text-[12px] font-semibold text-violet-700">Constructor visual</p>
-                        <p className="text-[10px] text-violet-700/80 mt-0.5">
-                          Construye el bloque desde este preview y usa el inspector derecho para ajustar propiedades.
+                        <div className="flex items-center gap-2 text-violet-700">
+                          <Wand2 size={16} />
+                          <p className="text-[13px] font-bold">Constructor de Bloques</p>
+                        </div>
+                        <p className="text-[11px] text-violet-700/80 mt-1 max-w-[500px] leading-snug">
+                          Selecciona el tipo de bloque en el panel izquierdo, configura sus propiedades
+                          en el panel derecho y visualiza el resultado aqui.
                         </p>
                       </div>
-                      <div className="flex items-center gap-1">
+                    </div>
+
+                    <div className="bg-white/80 rounded-xl p-4 border border-violet-100 backdrop-blur-sm">
+                      {/* Errors display */}
+                      {constructorErrors.length > 0 && (
+                        <div className="mb-4 rounded-lg bg-red-50 border border-red-100 p-2.5 flex items-start gap-2">
+                          <div className="mt-0.5 text-red-500"><X size={12} /></div>
+                          <div className="text-[11px] text-red-600">
+                            <p className="font-semibold mb-1">Corrige lo siguiente:</p>
+                            <ul className="list-disc list-inside space-y-0.5 opacity-90">
+                              {constructorErrors.map((err, idx) => <li key={idx}>{err}</li>)}
+                            </ul>
+                          </div>
+                        </div>
+                      )}
+
+                      <p className="text-[11px] font-semibold text-neutral-700 mb-3 flex items-center gap-1.5">
+                        <LayoutTemplate size={12} className="text-neutral-400" />
+                        Preview en Tiempo Real
+                      </p>
+                      <div className="rounded-xl border border-neutral-200 bg-neutral-50/50 p-4 min-h-[180px] flex items-center justify-center">
+                        <div className="w-full bg-white rounded-lg shadow-sm border border-neutral-100 overflow-hidden">
+                          {constructorPreviewBlock ? (
+                            <div className="p-4">
+                              <BlockPreview block={constructorPreviewBlock} />
+                            </div>
+                          ) : (
+                            <div className="p-8 text-center text-neutral-400 text-[11px]">
+                              Configura el bloque para ver la previsualizacion
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-neutral-400 text-center mt-2">
+                        Edita las propiedades en el panel derecho. Los cambios se reflejan aqui al instante.
+                      </p>
+
+                      {/* Actions */}
+                      <div className="mt-4 space-y-2">
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            onClick={() => {
+                              if (validateConstructor()) {
+                                setConstructorMode('append');
+                                addConstructorBlock();
+                              }
+                            }}
+                            className="flex items-center justify-center gap-1.5 rounded-xl bg-violet-600 text-white py-2.5 px-2 text-[11px] font-semibold hover:bg-violet-700 hover:shadow-lg hover:shadow-violet-200 transition-all active:scale-[0.98]"
+                          >
+                            <Plus size={14} />
+                            <span>Agregar</span>
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (validateConstructor()) {
+                                setConstructorMode('replace');
+                                addConstructorBlock();
+                              }
+                            }}
+                            className="flex items-center justify-center gap-1.5 rounded-xl border border-neutral-200 bg-white text-neutral-600 py-2.5 px-2 text-[11px] font-semibold hover:border-violet-300 hover:text-violet-600 hover:bg-violet-50 transition-all active:scale-[0.98]"
+                          >
+                            <Layers size={14} />
+                            <span>Reemplazar</span>
+                          </button>
+                        </div>
                         <button
-                          onClick={() => applyPhotoReference(4)}
-                          className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-700 hover:bg-amber-100"
+                          onClick={() => {
+                            if (!constructorPreviewBlock) return;
+                            saveBlockAsReusable(constructorPreviewBlock);
+                          }}
+                          disabled={!constructorPreviewBlock}
+                          className="w-full inline-flex items-center justify-center gap-1.5 text-[10px] font-medium text-neutral-400 hover:text-violet-600 transition-colors disabled:opacity-50 py-1.5"
                         >
-                          Ref Fotos
-                        </button>
-                        <button
-                          onClick={() => applyDataReference(6)}
-                          className="rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700 hover:bg-emerald-100"
-                        >
-                          Ref Datos
+                          <BookmarkPlus size={12} /> Guardar en Elementos
                         </button>
                       </div>
-                    </div>
-                    <div className="grid grid-cols-[1fr_auto] gap-2 mt-3">
-                      <input
-                        value={constructorName}
-                        onChange={(e) => setConstructorName(e.target.value)}
-                        className="w-full h-9 rounded-lg border border-violet-200 bg-white px-3 text-[12px] text-neutral-700 focus:outline-none focus:ring-2 focus:ring-violet-300"
-                        placeholder="Nombre sugerido de plantilla"
-                      />
-                      <div className="grid grid-cols-2 gap-1.5 min-w-[250px]">
-                        <button
-                          onClick={() => setConstructorMode('append')}
-                          className={`rounded-lg px-2 py-1.5 text-[11px] font-semibold ${constructorMode === 'append' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
-                        >
-                          Agregar
-                        </button>
-                        <button
-                          onClick={() => setConstructorMode('replace')}
-                          className={`rounded-lg px-2 py-1.5 text-[11px] font-semibold ${constructorMode === 'replace' ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'}`}
-                        >
-                          Reemplazar
-                        </button>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2 mt-2">
-                      <button
-                        onClick={() => setConstructorBlockKind('photo-grid')}
-                        className={`rounded-lg px-3 py-2 text-[11px] font-semibold border transition-colors ${constructorBlockKind === 'photo-grid' ? 'border-violet-400 bg-violet-100 text-violet-700' : 'border-violet-200 bg-white text-neutral-600 hover:bg-violet-50'}`}
-                      >
-                        Panel Fotos
-                      </button>
-                      <button
-                        onClick={() => setConstructorBlockKind('data-grid')}
-                        className={`rounded-lg px-3 py-2 text-[11px] font-semibold border transition-colors ${constructorBlockKind === 'data-grid' ? 'border-violet-400 bg-violet-100 text-violet-700' : 'border-violet-200 bg-white text-neutral-600 hover:bg-violet-50'}`}
-                      >
-                        Grilla Datos
-                      </button>
                     </div>
                   </div>
-                  <div className="rounded-xl border border-neutral-200 bg-white p-4">
-                    <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500 mb-2">Preview principal del bloque</p>
-                    <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4 min-h-[560px]">
-                      <div className="rounded-lg border border-neutral-200 bg-white p-4">
-                        {constructorPreviewBlock ? (
-                          <BlockPreview block={constructorPreviewBlock} />
-                        ) : (
-                          <p className="text-[11px] text-neutral-400">Sin configuracion.</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      onClick={addProfessionalConstructorBlock}
-                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl bg-violet-600 text-white py-2.5 text-[12px] font-semibold hover:bg-violet-700 transition-colors"
-                    >
-                      <Plus size={14} /> Agregar bloque al canvas
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (!constructorPreviewBlock) return;
-                        saveBlockAsReusable(constructorPreviewBlock);
-                      }}
-                      disabled={!constructorPreviewBlock}
-                      className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-violet-200 bg-violet-50 text-violet-700 py-2.5 text-[12px] font-semibold hover:bg-violet-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <BookmarkPlus size={14} /> Guardar en Elementos
-                    </button>
+
+                  {/* Canvas below hint */}
+                  <div className="flex items-center gap-3 px-2 border-t border-neutral-200/50 pt-4 mt-2 opacity-60 hover:opacity-100 transition-opacity">
+                    <div className="h-px bg-neutral-200 flex-1"></div>
+                    <span className="text-[10px] font-medium text-neutral-400 uppercase tracking-widest">Contenido del Canvas</span>
+                    <div className="h-px bg-neutral-200 flex-1"></div>
                   </div>
                 </div>
               ) : (
                 <>
-              {/* Blocks */}
-              {document.blocks.map((block, idx) => (
-                <div key={block.id} className="relative">
-                  {/* Insertion line — above block */}
-                  {dragOverIdx === idx && dragIdx !== null && dragIdx !== idx && (
-                    <div className="absolute -top-[3px] left-2 right-2 z-20 flex items-center pointer-events-none">
-                      <div className="w-2.5 h-2.5 rounded-full bg-violet-500 border-2 border-white shadow-sm" />
-                      <div className="flex-1 h-[3px] rounded-full bg-violet-500 shadow-[0_0_6px_rgba(139,92,246,0.4)]" />
-                      <div className="w-2.5 h-2.5 rounded-full bg-violet-500 border-2 border-white shadow-sm" />
+                  {/* Empty state — Fase 4 */}
+                  {document.blocks.length === 0 && (
+                    <div
+                      className={`flex-1 flex flex-col items-center justify-center min-h-[500px] transition-all duration-300 rounded-2xl ${
+                        isDragging ? 'bg-violet-50/60 border-2 border-dashed border-violet-400 mx-2 my-4' : ''
+                      }`}
+                      onDragOver={(e) => { e.preventDefault(); setPaletteInsertIdx(0); setDragOverIdx(0); }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (paletteDragItem) { addBlock(paletteDragItem, 0); setPaletteDragItem(null); setPaletteInsertIdx(null); }
+                        if (dragIdx !== null) handleDrop(0);
+                      }}
+                    >
+                      {isDragging ? (
+                        <>
+                          <div className="w-20 h-20 rounded-3xl bg-violet-100 border-2 border-violet-300 flex items-center justify-center mb-4" style={{ animation: 'dropZonePulse 1.5s ease-in-out infinite' }}>
+                            <Plus size={32} className="text-violet-500" />
+                          </div>
+                          <p className="text-[16px] font-bold text-violet-600">Suelta el bloque aqui</p>
+                          <p className="text-[12px] text-violet-400 mt-1">Se agregara como primer elemento</p>
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-violet-50 to-indigo-50 border-2 border-dashed border-violet-200 flex items-center justify-center mb-5">
+                            <LayoutTemplate size={30} className="text-violet-300" />
+                          </div>
+                          <p className="text-[16px] font-bold text-neutral-600">Arma tu plantilla como un rompecabezas</p>
+                          <p className="text-[12px] text-neutral-400 mt-2 max-w-xs text-center leading-relaxed">
+                            Arrastra bloques desde el panel izquierdo, o haz clic abajo para agregar tu primer bloque
+                          </p>
+                          <button
+                            onClick={() => setQuickAddIdx(0)}
+                            className="mt-5 inline-flex items-center gap-2 bg-violet-600 text-white px-5 py-2.5 rounded-xl text-[12px] font-semibold hover:bg-violet-700 shadow-lg shadow-violet-200 transition-all hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]"
+                          >
+                            <Plus size={16} /> Agregar primer bloque
+                          </button>
+                          {/* Quick start shortcuts */}
+                          <div className="mt-6 grid grid-cols-3 gap-3 max-w-sm">
+                            {(['header', 'data-grid', 'photo-grid'] as BlockType[]).map((type) => {
+                              const item = BLOCK_PALETTE.find(p => p.type === type);
+                              if (!item) return null;
+                              return (
+                                <button
+                                  key={type}
+                                  onClick={() => addBlock(item, 0)}
+                                  className="flex flex-col items-center gap-2 p-3 rounded-xl border border-neutral-200 hover:border-violet-300 hover:bg-violet-50 transition-all hover:shadow-md"
+                                >
+                                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: BLOCK_COLORS[type] }}>
+                                    {ICON_MAP[item.icon] || <Type size={14} />}
+                                  </div>
+                                  <span className="text-[9px] font-semibold text-neutral-500">{BLOCK_LABELS[type]}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                          {/* Quick-add popover at empty state */}
+                          {quickAddIdx === 0 && (
+                            <div className="mt-4 bg-white rounded-2xl shadow-2xl border border-neutral-200 p-4 w-[420px]" style={{ animation: 'beFadeIn 0.15s ease-out' }}>
+                              <div className="flex items-center justify-between mb-3">
+                                <span className="text-[12px] font-bold text-neutral-700">Insertar bloque</span>
+                                <button onClick={() => setQuickAddIdx(null)} className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-400"><X size={14} /></button>
+                              </div>
+                              <div className="grid grid-cols-5 gap-2">
+                                {BLOCK_PALETTE.filter((item, i, arr) => arr.findIndex(p => p.type === item.type) === i).map((item) => (
+                                  <button
+                                    key={item.type}
+                                    onClick={() => { addBlock(item, 0); setQuickAddIdx(null); }}
+                                    className="flex flex-col items-center gap-1.5 rounded-xl p-2.5 border border-transparent hover:border-violet-200 hover:bg-violet-50 transition-all"
+                                  >
+                                    <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: BLOCK_COLORS[item.type] }}>
+                                      {ICON_MAP[item.icon] || <Type size={14} />}
+                                    </div>
+                                    <span className="text-[9px] font-semibold text-neutral-600 leading-tight text-center">{BLOCK_LABELS[item.type]}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
                   )}
 
-                  {/* Block index number */}
-                  <div className={`absolute -left-10 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${canvasHovered || selectedBlockId === block.id ? 'opacity-60' : 'opacity-0'
-                    }`}>
-                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-neutral-100 text-[9px] font-bold text-neutral-500 border border-neutral-200">
-                      {idx + 1}
-                    </span>
-                  </div>
+                  {/* Blocks with drop zones — Fases 1, 2, 3 */}
+                  {document.blocks.length > 0 && (
+                    <>
+                      {/* Drop zone before first block */}
+                      <PuzzleDropZone
+                        index={0}
+                        isActive={paletteInsertIdx === 0 || (dragOverIdx === 0 && dragIdx !== null && dragIdx !== 0)}
+                        isDragActive={isDragging}
+                        quickAddIdx={quickAddIdx}
+                        setQuickAddIdx={setQuickAddIdx}
+                        onDragEnter={() => { if (paletteDragItem) setPaletteInsertIdx(0); if (dragIdx !== null) setDragOverIdx(0); }}
+                        onDragLeave={() => { if (paletteDragItem) setPaletteInsertIdx(null); }}
+                        onDrop={() => {
+                          if (paletteDragItem) { addBlock(paletteDragItem, 0); setPaletteDragItem(null); setPaletteInsertIdx(null); }
+                          else if (dragIdx !== null) handleDrop(0);
+                        }}
+                        onQuickAdd={(type) => { const item = BLOCK_PALETTE.find(p => p.type === type); if (item) addBlock(item, 0); }}
+                      />
 
-                  {/* Block container */}
-                  <div
-                    draggable={!block.locked}
-                    onDragStart={(e) => handleDragStart(e, idx)}
-                    onDragOver={(e) => handleDragOver(e, idx)}
-                    onDrop={() => handleDrop(idx)}
-                    onDragEnd={handleDragEnd}
-                    onClick={(e) => { e.stopPropagation(); setSelectedBlockId(block.id); setDeleteConfirmId((prev) => prev === block.id ? prev : null); }}
-                    className={[
-                      'group relative rounded-xl border-2 mb-2 cursor-pointer bg-white overflow-visible transition-all duration-200 ease-out',
-                      removingBlockId === block.id ? 'opacity-0 scale-[0.97] max-h-0 !mb-0 !py-0 overflow-hidden' : '',
-                      recentlyAddedId === block.id && !recentlyDuplicatedId ? 'animate-[beSlideDown_0.35s_ease-out]' : '',
-                      recentlyDuplicatedId === block.id ? 'animate-[beDuplicateGlow_0.7s_ease-out]' : '',
-                      selectedBlockId === block.id
-                        ? 'border-violet-500 shadow-[0_0_0_3px_rgba(139,92,246,0.15),0_4px_12px_rgba(0,0,0,0.08)]'
-                        : 'border-transparent hover:border-violet-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)]',
-                      dragIdx === idx ? 'opacity-40 scale-[0.97]' : '',
-                      block.locked ? 'bg-neutral-50/80' : '',
-                    ].filter(Boolean).join(' ')}
-                    style={removingBlockId === block.id
-                      ? { transition: `opacity ${REMOVE_ANIM_MS}ms ease-out, transform ${REMOVE_ANIM_MS}ms ease-out, max-height ${REMOVE_ANIM_MS}ms ease-out, margin ${REMOVE_ANIM_MS}ms ease-out` }
-                      : undefined
-                    }
-                  >
-                    {/* Drag handle — left edge */}
-                    <div className={`absolute -left-6 top-1/2 -translate-y-1/2 z-10 transition-opacity ${block.locked ? 'cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'} ${selectedBlockId === block.id ? 'opacity-50' : 'opacity-0 group-hover:opacity-30'
-                      }`}>
-                      <GripVertical size={14} className="text-neutral-500" />
-                    </div>
+                      {document.blocks.map((block, idx) => (
+                        <React.Fragment key={block.id}>
+                          {/* Block index number */}
+                          <div className="relative">
+                            <div className={`absolute -left-10 top-1/2 -translate-y-1/2 z-10 transition-opacity duration-200 ${canvasHovered || selectedBlockId === block.id ? 'opacity-60' : 'opacity-0'}`}>
+                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-neutral-100 text-[9px] font-bold text-neutral-500 border border-neutral-200">
+                                {idx + 1}
+                              </span>
+                            </div>
 
-                    {/* Block type badge — top left overlay */}
-                    <div className={`absolute top-2 left-2.5 z-10 transition-opacity duration-150 pointer-events-none ${selectedBlockId === block.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                      }`}>
-                      <span
-                        className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[8px] font-bold text-white shadow-sm"
-                        style={{ backgroundColor: BLOCK_COLORS[block.type] || '#888' }}
-                      >
-                        <span className="w-1.5 h-1.5 rounded-full bg-white/50 inline-block" />
-                        {BLOCK_LABELS[block.type] || block.type}
-                        {block.locked && <Lock size={9} className="ml-0.5" />}
-                      </span>
-                    </div>
+                            {/* Block container — puzzle piece */}
+                            <div
+                              draggable={!block.locked}
+                              onDragStart={(e) => handleDragStart(e, idx)}
+                              onDragOver={(e) => handleDragOver(e, idx)}
+                              onDrop={() => handleDrop(idx)}
+                              onDragEnd={handleDragEnd}
+                              onClick={(e) => { e.stopPropagation(); setSelectedBlockId(block.id); setQuickAddIdx(null); setDeleteConfirmId((prev) => prev === block.id ? prev : null); }}
+                              className={[
+                                'group relative rounded-xl border-2 border-l-[5px] cursor-pointer bg-white overflow-visible transition-all duration-200 ease-out',
+                                idx < document.blocks.length - 1 ? 'puzzle-connector' : '',
+                                idx > 0 ? 'puzzle-notch' : '',
+                                removingBlockId === block.id ? 'opacity-0 scale-[0.97] max-h-0 !mb-0 !py-0 overflow-hidden' : '',
+                                recentlyAddedId === block.id && !recentlyDuplicatedId ? 'animate-[puzzleSnap_0.4s_ease-out]' : '',
+                                recentlyDuplicatedId === block.id ? 'animate-[beDuplicateGlow_0.7s_ease-out]' : '',
+                                successBlockId === block.id ? 'animate-[placementGlow_0.6s_ease-out]' : '',
+                                shakeBlockId === block.id ? 'animate-[beShake_0.4s_ease-in-out]' : '',
+                                selectedBlockId === block.id
+                                  ? 'border-violet-500 shadow-[0_0_0_3px_rgba(139,92,246,0.15),0_4px_12px_rgba(0,0,0,0.08)]'
+                                  : 'border-transparent hover:border-violet-200 hover:shadow-[0_2px_8px_rgba(0,0,0,0.06)]',
+                                dragIdx === idx ? 'opacity-40 scale-[0.97]' : '',
+                                block.locked ? 'bg-neutral-50/80' : '',
+                              ].filter(Boolean).join(' ')}
+                              style={{
+                                borderLeftColor: BLOCK_COLORS[block.type] || '#888',
+                                ...(removingBlockId === block.id
+                                  ? { transition: `opacity ${REMOVE_ANIM_MS}ms ease-out, transform ${REMOVE_ANIM_MS}ms ease-out, max-height ${REMOVE_ANIM_MS}ms ease-out, margin ${REMOVE_ANIM_MS}ms ease-out` }
+                                  : {}),
+                              }}
+                            >
+                              {/* Drag handle — left edge */}
+                              <div className={`absolute -left-8 top-1/2 -translate-y-1/2 z-10 w-8 h-12 flex items-center justify-center transition-opacity ${block.locked ? 'cursor-not-allowed' : 'cursor-grab active:cursor-grabbing'} ${selectedBlockId === block.id ? 'opacity-50' : 'opacity-0 group-hover:opacity-40'}`}>
+                                <GripVertical size={16} className="text-neutral-500" />
+                              </div>
 
-                    {/* Action toolbar — top right overlay */}
-                    <div className={`absolute top-2 right-2 z-10 flex items-center gap-0.5 bg-white/95 rounded-lg shadow-md border border-neutral-100 p-0.5 backdrop-blur-sm transition-all duration-150 ${selectedBlockId === block.id ? 'opacity-100 translate-y-0' : 'opacity-0 group-hover:opacity-100 -translate-y-0.5 group-hover:translate-y-0'
-                      }`}>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); moveBlock(block.id, 'up'); }}
-                        disabled={block.locked}
-                        className="p-1 rounded-md hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                        title={block.locked ? 'Bloque bloqueado' : 'Subir (Ctrl+\u2191)'}
-                      ><ChevronUp size={12} /></button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); moveBlock(block.id, 'down'); }}
-                        disabled={block.locked}
-                        className="p-1 rounded-md hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                        title={block.locked ? 'Bloque bloqueado' : 'Bajar (Ctrl+\u2193)'}
-                      ><ChevronDown size={12} /></button>
-                      <div className="w-px h-3 bg-neutral-200 mx-0.5" />
-                      <button
-                        onClick={(e) => { e.stopPropagation(); duplicateBlock(block.id); }}
-                        className="p-1 rounded-md hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors"
-                        title="Duplicar (Ctrl+D)"
-                      ><Copy size={12} /></button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); saveBlockAsReusable(block); }}
-                        className="p-1 rounded-md hover:bg-violet-50 text-neutral-400 hover:text-violet-600 transition-colors"
-                        title="Guardar en Elementos"
-                      ><BookmarkPlus size={12} /></button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); toggleBlockLock(block.id); }}
-                        className="p-1 rounded-md hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors"
-                        title={block.locked ? 'Desbloquear' : 'Bloquear'}
-                      >
-                        {block.locked ? <Unlock size={12} /> : <Lock size={12} />}
-                      </button>
+                              {/* Block type badge — top left overlay */}
+                              <div className={`absolute top-2 left-3 z-10 transition-opacity duration-150 pointer-events-none ${selectedBlockId === block.id ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}>
+                                <span
+                                  className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[8px] font-bold text-white shadow-sm"
+                                  style={{ backgroundColor: BLOCK_COLORS[block.type] || '#888' }}
+                                >
+                                  <span className="w-1.5 h-1.5 rounded-full bg-white/50 inline-block" />
+                                  {BLOCK_LABELS[block.type] || block.type}
+                                  {block.locked && <Lock size={9} className="ml-0.5" />}
+                                </span>
+                              </div>
 
-                      {/* Delete: confirmation popover or button */}
-                      {deleteConfirmId === block.id ? (
-                        <div
-                          className="flex items-center gap-0.5 bg-red-50 rounded-md px-1 py-0.5 border border-red-200 ml-0.5"
-                          style={{ animation: 'beFadeIn 0.15s ease-out' }}
-                        >
-                          <span className="text-[9px] font-semibold text-red-600 px-1 whitespace-nowrap">Eliminar?</span>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); confirmDeleteBlock(block.id); }}
-                            className="p-0.5 rounded hover:bg-red-100 text-red-600"
-                            title="Confirmar"
-                          ><Check size={12} /></button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); cancelDeleteBlock(); }}
-                            className="p-0.5 rounded hover:bg-neutral-200 text-neutral-500"
-                            title="Cancelar"
-                          ><X size={12} /></button>
-                        </div>
-                      ) : (
+                              {/* Action toolbar — top right overlay */}
+                              <div className={`absolute top-2 right-2 z-10 flex items-center gap-0.5 bg-white/95 rounded-lg shadow-md border border-neutral-100 p-0.5 backdrop-blur-sm transition-all duration-150 ${selectedBlockId === block.id ? 'opacity-100 translate-y-0' : 'opacity-0 group-hover:opacity-100 -translate-y-0.5 group-hover:translate-y-0'}`}>
+                                <button onClick={(e) => { e.stopPropagation(); moveBlock(block.id, 'up'); }} disabled={block.locked} className="p-1 rounded-md hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" title={block.locked ? 'Bloque bloqueado' : 'Subir (Ctrl+\u2191)'}><ChevronUp size={12} /></button>
+                                <button onClick={(e) => { e.stopPropagation(); moveBlock(block.id, 'down'); }} disabled={block.locked} className="p-1 rounded-md hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" title={block.locked ? 'Bloque bloqueado' : 'Bajar (Ctrl+\u2193)'}><ChevronDown size={12} /></button>
+                                <div className="w-px h-3 bg-neutral-200 mx-0.5" />
+                                <button onClick={(e) => { e.stopPropagation(); duplicateBlock(block.id); }} className="p-1 rounded-md hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors" title="Duplicar (Ctrl+D)"><Copy size={12} /></button>
+                                <button onClick={(e) => { e.stopPropagation(); saveBlockAsReusable(block); }} className="p-1 rounded-md hover:bg-violet-50 text-neutral-400 hover:text-violet-600 transition-colors" title="Guardar en Elementos"><BookmarkPlus size={12} /></button>
+                                <button onClick={(e) => { e.stopPropagation(); toggleBlockLock(block.id); }} className="p-1 rounded-md hover:bg-neutral-100 text-neutral-400 hover:text-neutral-700 transition-colors" title={block.locked ? 'Desbloquear' : 'Bloquear'}>
+                                  {block.locked ? <Unlock size={12} /> : <Lock size={12} />}
+                                </button>
+                                {deleteConfirmId === block.id ? (
+                                  <div className="flex items-center gap-0.5 bg-red-50 rounded-md px-1 py-0.5 border border-red-200 ml-0.5" style={{ animation: 'beFadeIn 0.15s ease-out' }}>
+                                    <span className="text-[9px] font-semibold text-red-600 px-1 whitespace-nowrap">Eliminar?</span>
+                                    <button onClick={(e) => { e.stopPropagation(); confirmDeleteBlock(block.id); }} className="p-0.5 rounded hover:bg-red-100 text-red-600" title="Confirmar"><Check size={12} /></button>
+                                    <button onClick={(e) => { e.stopPropagation(); cancelDeleteBlock(); }} className="p-0.5 rounded hover:bg-neutral-200 text-neutral-500" title="Cancelar"><X size={12} /></button>
+                                  </div>
+                                ) : (
+                                  <button onClick={(e) => { e.stopPropagation(); requestDeleteBlock(block.id); }} disabled={block.locked} className="p-1 rounded-md hover:bg-red-50 text-neutral-400 hover:text-red-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed" title={block.locked ? 'Desbloquea para eliminar' : 'Eliminar (Del)'}><Trash2 size={12} /></button>
+                                )}
+                              </div>
+
+                              {/* Block preview */}
+                              <div className="px-4 py-3.5">
+                                <BlockPreview block={block} />
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Drop zone + Quick-add after each block */}
+                          <PuzzleDropZone
+                            index={idx + 1}
+                            isActive={paletteInsertIdx === idx + 1 || (dragOverIdx === idx + 1 && dragIdx !== null && dragIdx !== idx + 1)}
+                            isDragActive={isDragging}
+                            quickAddIdx={quickAddIdx}
+                            setQuickAddIdx={setQuickAddIdx}
+                            onDragEnter={() => { if (paletteDragItem) setPaletteInsertIdx(idx + 1); if (dragIdx !== null) setDragOverIdx(idx + 1); }}
+                            onDragLeave={() => { if (paletteDragItem) setPaletteInsertIdx(null); }}
+                            onDrop={() => {
+                              if (paletteDragItem) { addBlock(paletteDragItem, idx + 1); setPaletteDragItem(null); setPaletteInsertIdx(null); }
+                              else if (dragIdx !== null) handleDrop(idx + 1);
+                            }}
+                            onQuickAdd={(type) => { const item = BLOCK_PALETTE.find(p => p.type === type); if (item) addBlock(item, idx + 1); }}
+                          />
+                        </React.Fragment>
+                      ))}
+
+                      {/* Fase 5: Smart suggestion */}
+                      {nextSuggestion && (
                         <button
-                          onClick={(e) => { e.stopPropagation(); requestDeleteBlock(block.id); }}
-                          disabled={block.locked}
-                          className="p-1 rounded-md hover:bg-red-50 text-neutral-400 hover:text-red-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                          title={block.locked ? 'Desbloquea para eliminar' : 'Eliminar (Del)'}
-                        ><Trash2 size={12} /></button>
+                          onClick={() => { const item = BLOCK_PALETTE.find(p => p.type === nextSuggestion); if (item) addBlock(item); }}
+                          className="mt-2 mx-auto flex items-center gap-2 px-4 py-2 rounded-xl border border-dashed border-violet-200 text-[11px] text-violet-500 hover:bg-violet-50 hover:border-violet-400 transition-all"
+                        >
+                          <Sparkles size={12} />
+                          <span>Sugerencia: agregar <b>{BLOCK_LABELS[nextSuggestion]}</b></span>
+                        </button>
                       )}
-                    </div>
-
-                    {/* Block preview */}
-                    <div className="px-4 py-3.5">
-                      <BlockPreview block={block} />
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {/* Insertion line at bottom during drag */}
-              {dragOverIdx === document.blocks.length && dragIdx !== null && (
-                <div className="relative mx-2 my-1 flex items-center pointer-events-none">
-                  <div className="w-2.5 h-2.5 rounded-full bg-violet-500 border-2 border-white shadow-sm" />
-                  <div className="flex-1 h-[3px] rounded-full bg-violet-500 shadow-[0_0_6px_rgba(139,92,246,0.4)]" />
-                  <div className="w-2.5 h-2.5 rounded-full bg-violet-500 border-2 border-white shadow-sm" />
-                </div>
-              )}
-
-              {/* Empty state */}
-              {document.blocks.length === 0 && (
-                <div className="flex-1 flex flex-col items-center justify-center text-neutral-300 min-h-[400px]">
-                  <div className="w-16 h-16 rounded-2xl bg-neutral-50 border-2 border-dashed border-neutral-200 flex items-center justify-center mb-4">
-                    <LayoutTemplate size={26} className="text-neutral-300" />
-                  </div>
-                  <p className="text-[14px] font-semibold text-neutral-400">Disena tu plantilla</p>
-                  <p className="text-[11px] text-neutral-400 mt-1.5">Arrastra elementos desde el panel izquierdo</p>
-                  <p className="text-[10px] text-neutral-300 mt-0.5">o elige una plantilla pre-armada</p>
-                </div>
-              )}
-
-              {/* Drop zone at bottom */}
-              {document.blocks.length > 0 && (
-                <div
-                  className={`mt-3 border-2 border-dashed rounded-xl p-4 text-center text-[11px] font-medium transition-all duration-300 ${paletteDragItem || dragIdx !== null
-                      ? 'border-violet-400 text-violet-500 bg-violet-50/50 scale-[1.01] shadow-[0_0_12px_rgba(139,92,246,0.12)]'
-                      : 'border-neutral-200 text-neutral-400 hover:border-violet-300 hover:text-violet-400 hover:bg-violet-50/30'
-                    }`}
-                  onDragOver={(e) => { e.preventDefault(); setDragOverIdx(document.blocks.length); }}
-                  onDrop={() => {
-                    if (dragIdx !== null) handleDrop(document.blocks.length);
-                    if (paletteDragItem) { addBlock(paletteDragItem); setPaletteDragItem(null); }
-                  }}
-                >
-                  {paletteDragItem || dragIdx !== null
-                    ? 'Soltar aqui para agregar al final'
-                    : '+ Soltar bloque aqui'}
-                </div>
-              )}
+                    </>
+                  )}
                 </>
               )}
             </div>
@@ -1407,6 +1362,111 @@ export default function BlockEditor({
         </aside>
       </div>
     </>
+  );
+}
+
+/* ═══ Block Preview Components ═══ */
+
+/* ═══ Puzzle Drop Zone — between blocks ═══ */
+
+function PuzzleDropZone({
+  index, isActive, isDragActive, quickAddIdx, setQuickAddIdx,
+  onDragEnter, onDragLeave, onDrop, onQuickAdd,
+}: {
+  index: number;
+  isActive: boolean;
+  isDragActive: boolean;
+  quickAddIdx: number | null;
+  setQuickAddIdx: (idx: number | null) => void;
+  onDragEnter: () => void;
+  onDragLeave: () => void;
+  onDrop: () => void;
+  onQuickAdd: (type: BlockType) => void;
+}) {
+  const isQuickAddOpen = quickAddIdx === index;
+
+  return (
+    <div className="relative">
+      {/* Drop zone area */}
+      <div
+        className={`relative transition-all duration-300 ease-out ${
+          isActive
+            ? 'h-14 my-1'
+            : isDragActive
+              ? 'h-5 my-0.5'
+              : 'h-3 my-0'
+        }`}
+        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+        onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); onDragEnter(); }}
+        onDragLeave={(e) => { e.stopPropagation(); onDragLeave(); }}
+        onDrop={(e) => { e.preventDefault(); e.stopPropagation(); onDrop(); }}
+      >
+        {/* Active drop indicator */}
+        {isActive && (
+          <div className="absolute inset-x-3 top-1/2 -translate-y-1/2 flex items-center" style={{ animation: 'beFadeIn 0.15s ease-out' }}>
+            <div className="w-3 h-3 rounded-full bg-violet-500 border-2 border-white shadow-md" />
+            <div className="flex-1 h-[3px] rounded-full bg-gradient-to-r from-violet-500 via-violet-400 to-violet-500 shadow-[0_0_8px_rgba(139,92,246,0.5)]" />
+            <div className="w-3 h-3 rounded-full bg-violet-500 border-2 border-white shadow-md" />
+          </div>
+        )}
+        {isActive && (
+          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center pointer-events-none z-10">
+            <span className="bg-violet-500 text-white text-[9px] font-bold px-2.5 py-0.5 rounded-full shadow-lg" style={{ animation: 'beFadeIn 0.15s ease-out' }}>
+              Soltar aqui
+            </span>
+          </div>
+        )}
+
+        {/* Subtle drag target indicator when dragging but not hovering this zone */}
+        {isDragActive && !isActive && (
+          <div className="absolute inset-x-8 top-1/2 -translate-y-1/2 h-[2px] rounded-full bg-violet-200/50" />
+        )}
+      </div>
+
+      {/* Quick-add button — visible only when NOT dragging */}
+      {!isDragActive && (
+        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex justify-center z-20 pointer-events-none">
+          <button
+            onClick={(e) => { e.stopPropagation(); setQuickAddIdx(isQuickAddOpen ? null : index); }}
+            className={`pointer-events-auto w-6 h-6 rounded-full border-2 border-dashed flex items-center justify-center transition-all duration-200 shadow-sm ${
+              isQuickAddOpen
+                ? 'border-violet-400 bg-violet-100 scale-110'
+                : 'border-neutral-300 bg-white hover:border-violet-400 hover:bg-violet-50 hover:scale-110 opacity-0 hover:opacity-100'
+            }`}
+            style={isQuickAddOpen ? {} : { transition: 'opacity 0.2s, transform 0.2s, border-color 0.2s, background-color 0.2s' }}
+            title="Insertar bloque aqui"
+          >
+            {isQuickAddOpen ? <X size={11} className="text-violet-500" /> : <Plus size={11} className="text-neutral-400" />}
+          </button>
+        </div>
+      )}
+
+      {/* Quick-add popover */}
+      {isQuickAddOpen && (
+        <div className="relative z-30 flex justify-center mb-2" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white rounded-2xl shadow-2xl border border-neutral-200 p-4 w-[420px]" style={{ animation: 'beFadeIn 0.15s ease-out' }}>
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-[12px] font-bold text-neutral-700">Insertar bloque en posicion {index + 1}</span>
+              <button onClick={() => setQuickAddIdx(null)} className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-400"><X size={14} /></button>
+            </div>
+            <div className="grid grid-cols-5 gap-2">
+              {BLOCK_PALETTE.filter((item, i, arr) => arr.findIndex(p => p.type === item.type) === i).map((item) => (
+                <button
+                  key={item.type}
+                  onClick={() => { onQuickAdd(item.type); setQuickAddIdx(null); }}
+                  className="flex flex-col items-center gap-1.5 rounded-xl p-2.5 border border-transparent hover:border-violet-200 hover:bg-violet-50 transition-all active:scale-95"
+                >
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white" style={{ backgroundColor: BLOCK_COLORS[item.type] }}>
+                    {ICON_MAP[item.icon] || <Type size={14} />}
+                  </div>
+                  <span className="text-[9px] font-semibold text-neutral-600 leading-tight text-center">{BLOCK_LABELS[item.type]}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -1634,34 +1694,47 @@ function FieldListEditor({ fields, onChange }: { fields: FieldDef[]; onChange: (
   };
 
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-2">
+      <div className="flex justify-between px-1">
+        <span className="text-[9px] text-neutral-400 font-medium">Etiqueta visible</span>
+        <span className="text-[9px] text-neutral-400 font-medium tracking-tight" title="Nombre interno para mapeo de datos">Variable (ID interno)</span>
+      </div>
       {fields.map((f, i) => (
-        <div key={i} className="flex items-center gap-1 bg-neutral-50 rounded-lg p-1.5">
-          <div className="flex flex-col gap-0.5 mr-1">
-            <button onClick={() => moveField(i, 'up')} className="text-neutral-400 hover:text-neutral-600 p-0.5"><ChevronUp size={10} /></button>
-            <button onClick={() => moveField(i, 'down')} className="text-neutral-400 hover:text-neutral-600 p-0.5"><ChevronDown size={10} /></button>
+        <div key={i} className="group flex items-center gap-1 bg-neutral-50 rounded-lg p-1.5 border border-transparent hover:border-neutral-200 transition-colors">
+          <div className="flex flex-col gap-0.5 mr-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button onClick={() => moveField(i, 'up')} className="text-neutral-400 hover:text-neutral-600 p-0.5" title="Mover arriba"><ChevronUp size={10} /></button>
+            <button onClick={() => moveField(i, 'down')} className="text-neutral-400 hover:text-neutral-600 p-0.5" title="Mover abajo"><ChevronDown size={10} /></button>
           </div>
-          <input
-            value={f.label}
-            onChange={(e) => updateField(i, 'label', e.target.value)}
-            className="flex-1 h-6 rounded border border-neutral-200 bg-white px-1.5 text-[10px] text-neutral-700 focus:outline-none focus:ring-1 focus:ring-blue-300"
-            placeholder="Label"
-          />
-          <input
-            value={f.variable}
-            onChange={(e) => updateField(i, 'variable', e.target.value)}
-            className="flex-1 h-6 rounded border border-neutral-200 bg-white px-1.5 text-[10px] text-violet-600 font-mono focus:outline-none focus:ring-1 focus:ring-violet-300"
-            placeholder="Variable"
-          />
-          <button onClick={() => removeField(i)} className="p-1 text-neutral-400 hover:text-red-500 rounded hover:bg-red-50"><X size={10} /></button>
+          <div className="flex-1 relative">
+            <input
+              value={f.label}
+              onChange={(e) => updateField(i, 'label', e.target.value)}
+              className={`w-full h-7 rounded border bg-white px-2 text-[10px] text-neutral-700 focus:outline-none focus:ring-1 focus:ring-violet-300 ${!f.label.trim() ? 'border-red-300' : 'border-neutral-200'}`}
+              placeholder="Ej. Dirección"
+              title={!f.label.trim() ? 'Requerido' : ''}
+            />
+          </div>
+          <div className="flex-1 relative">
+            <input
+              value={f.variable}
+              onChange={(e) => updateField(i, 'variable', e.target.value)}
+              className={`w-full h-7 rounded border bg-white px-2 text-[10px] text-violet-600 font-mono focus:outline-none focus:ring-1 focus:ring-violet-300 ${!f.variable.trim() ? 'border-red-300' : 'border-neutral-200'}`}
+              placeholder="DIRECCION"
+              title={!f.variable.trim() ? 'Requerido' : 'Usa MAYÚSCULAS y guiones bajos'}
+            />
+          </div>
+          <button onClick={() => removeField(i)} className="p-1.5 text-neutral-400 hover:text-red-500 rounded-md hover:bg-white transition-colors" title="Eliminar campo"><X size={12} /></button>
         </div>
       ))}
       <button
         onClick={addField}
-        className="w-full border border-dashed border-neutral-300 rounded-lg py-1.5 text-[10px] text-neutral-400 hover:text-neutral-600 hover:border-neutral-400 transition-colors flex items-center justify-center gap-1"
+        className="w-full border border-dashed border-neutral-300 rounded-lg py-2 text-[10px] font-medium text-neutral-500 hover:text-violet-600 hover:border-violet-300 hover:bg-violet-50/50 transition-all flex items-center justify-center gap-1.5"
       >
-        <Plus size={10} /> Agregar campo
+        <Plus size={12} /> Agregar campo
       </button>
+      {fields.length === 0 && (
+        <p className="text-[10px] text-amber-600 bg-amber-50 px-2 py-1 rounded">Agrega al menos un campo para que el bloque sea útil.</p>
+      )}
     </div>
   );
 }
