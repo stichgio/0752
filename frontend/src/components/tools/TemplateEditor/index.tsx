@@ -12,7 +12,7 @@ import BlockEditor from './BlockEditor';
 
 /* ═══ Storage keys ═══ */
 const SESSION_KEY = 'block-editor-session-v1';
-const LEGACY_KEY  = 'block-editor-doc-v1';
+const LEGACY_KEY = 'block-editor-doc-v1';
 
 /* ═══ Helpers ═══ */
 function uid() {
@@ -115,11 +115,10 @@ function ToastStack({ items }: { items: Toast[] }) {
       {items.map((t) => (
         <div
           key={t.id}
-          className={`rounded-full px-5 py-2.5 text-[12px] font-semibold shadow-xl ${
-            t.type === 'ok'  ? 'bg-emerald-600 text-white' :
-            t.type === 'err' ? 'bg-red-600 text-white' :
-                               'bg-neutral-900 text-white'
-          }`}
+          className={`rounded-full px-5 py-2.5 text-[12px] font-semibold shadow-xl ${t.type === 'ok' ? 'bg-emerald-600 text-white' :
+              t.type === 'err' ? 'bg-red-600 text-white' :
+                'bg-neutral-900 text-white'
+            }`}
         >
           {t.msg}
         </div>
@@ -137,9 +136,9 @@ const STATUS_LABEL: Record<string, string> = {
 
 function StatusPill({ status }: { status: string }) {
   const cls: Record<string, string> = {
-    draft:     'bg-amber-50 text-amber-700 border-amber-200',
+    draft: 'bg-amber-50 text-amber-700 border-amber-200',
     published: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    archived:  'bg-neutral-100 text-neutral-500 border-neutral-200',
+    archived: 'bg-neutral-100 text-neutral-500 border-neutral-200',
   };
   return (
     <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${cls[status] || cls.draft}`}>
@@ -201,29 +200,29 @@ function formatShortId(id: string): string {
 
 /* ═══ Main ═══ */
 export default function TemplateEditor() {
-  const [doc,             setDoc]             = useState<BlockTemplateDocument>(createEmptyDocument);
-  const [templateId,      setTemplateId]      = useState<string | null>(null);
-  const [reportType,      setReportType]      = useState('generic');
-  const [dirty,           setDirty]           = useState(false);
-  const [saving,          setSaving]          = useState(false);
-  const [publishStatus,   setPublishStatus]   = useState<PublishStatus>('draft');
-  const [previewHtml,     setPreviewHtml]     = useState('');
-  const [showPreviewModal,setShowPreviewModal]= useState(false);
-  const [previewLoading,  setPreviewLoading]  = useState(false);
-  const [history,         setHistory]         = useState<BlockTemplateDocument[]>([]);
-  const [future,          setFuture]          = useState<BlockTemplateDocument[]>([]);
-  const [toasts,          setToasts]          = useState<Toast[]>([]);
+  const [doc, setDoc] = useState<BlockTemplateDocument>(createEmptyDocument);
+  const [templateId, setTemplateId] = useState<string | null>(null);
+  const [reportType, setReportType] = useState('generic');
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [publishStatus, setPublishStatus] = useState<PublishStatus>('draft');
+  const [previewHtml, setPreviewHtml] = useState('');
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [history, setHistory] = useState<BlockTemplateDocument[]>([]);
+  const [future, setFuture] = useState<BlockTemplateDocument[]>([]);
+  const [toasts, setToasts] = useState<Toast[]>([]);
 
   const [publishedTemplates, setPublishedTemplates] = useState<Array<{ id: string; name: string }>>([]);
   const [deletingTemplateId, setDeletingTemplateId] = useState<string | null>(null);
 
   // Open-template panel
-  const [showOpenPanel,      setShowOpenPanel]      = useState(false);
-  const [allTemplates,       setAllTemplates]       = useState<Array<{ id: string; name: string; status: string; updatedAt: string }>>([]);
-  const [loadingTemplates,   setLoadingTemplates]   = useState(false);
-  const [loadingTemplateId,  setLoadingTemplateId]  = useState<string | null>(null);
-  const [openPanelQuery,     setOpenPanelQuery]     = useState('');
-  const [sessionSavedAt,     setSessionSavedAt]     = useState<string | null>(null);
+  const [showOpenPanel, setShowOpenPanel] = useState(false);
+  const [allTemplates, setAllTemplates] = useState<Array<{ id: string; name: string; status: string; updatedAt: string }>>([]);
+  const [loadingTemplates, setLoadingTemplates] = useState(false);
+  const [loadingTemplateId, setLoadingTemplateId] = useState<string | null>(null);
+  const [openPanelQuery, setOpenPanelQuery] = useState('');
+  const [sessionSavedAt, setSessionSavedAt] = useState<string | null>(null);
 
   /* ── Toast helper ── */
   const toast = useCallback((msg: string, type: Toast['type'] = 'info') => {
@@ -240,9 +239,9 @@ export default function TemplateEditor() {
         const s = JSON.parse(raw);
         if (s?.doc?.blocks) {
           setDoc(s.doc);
-          if (s.templateId)    setTemplateId(s.templateId);
+          if (s.templateId) setTemplateId(s.templateId);
           if (s.publishStatus) setPublishStatus(s.publishStatus);
-          if (s.reportType)    setReportType(s.reportType);
+          if (s.reportType) setReportType(s.reportType);
           if (s.sessionSavedAt) setSessionSavedAt(s.sessionSavedAt);
           return;
         }
@@ -343,7 +342,7 @@ export default function TemplateEditor() {
   /* ── Keyboard shortcuts (single persistent listener via refs) ── */
   const undoRef = useRef(undo);
   const redoRef = useRef(redo);
-  const saveRef = useRef<() => void>(() => {});
+  const saveRef = useRef<() => void>(() => { });
 
   useEffect(() => { undoRef.current = undo; }, [undo]);
   useEffect(() => { redoRef.current = redo; }, [redo]);
@@ -576,97 +575,97 @@ export default function TemplateEditor() {
   return (
     <div
       data-template-editor
-      className="h-screen overflow-hidden text-neutral-900 flex flex-col bg-[radial-gradient(circle_at_top,#f8faff_0%,#edf1ff_42%,#eff2f7_100%)]"
+      className="h-full w-full overflow-hidden text-neutral-900 flex flex-col bg-[radial-gradient(circle_at_top,#f8faff_0%,#edf1ff_42%,#eff2f7_100%)]"
       style={{ fontFamily: '"Manrope", "Segoe UI", sans-serif' }}
     >
       {/* ═══ TOP BAR ═══ */}
       <header className="border-b border-neutral-200/80 bg-white/90 backdrop-blur px-3 py-2 shadow-[0_1px_3px_rgba(15,23,42,0.08)] z-50 flex flex-col gap-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
-        {/* Left */}
-        <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center shadow-sm">
-              <Grid3X3 size={14} className="text-white" />
+          {/* Left */}
+          <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-cyan-500 flex items-center justify-center shadow-sm">
+                <Grid3X3 size={14} className="text-white" />
+              </div>
+              <span className="text-[13px] font-bold tracking-tight text-neutral-900 hidden xl:inline">Template Builder</span>
             </div>
-            <span className="text-[13px] font-bold tracking-tight text-neutral-900 hidden xl:inline">Template Builder</span>
+            <ToolbarSeparator />
+            <ToolbarBtn onClick={newTemplate} title="Nueva plantilla (limpia)">
+              <Plus size={14} />
+              <span className="ml-1 hidden lg:inline text-[12px]">Nuevo</span>
+            </ToolbarBtn>
+            <ToolbarBtn onClick={openLoadPanel} title="Abrir plantilla guardada en el backend">
+              <FolderOpen size={14} />
+              <span className="ml-1 hidden lg:inline text-[12px]">Abrir</span>
+            </ToolbarBtn>
+            <ToolbarSeparator />
+            <input
+              className="h-8 w-48 sm:w-64 rounded-lg bg-neutral-50 border border-neutral-200 px-3 text-[13px] text-neutral-800 font-medium focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-300 focus:bg-white transition-all placeholder:text-neutral-400"
+              value={doc.name}
+              onChange={(e) => handleDocChange({ ...doc, name: e.target.value })}
+              placeholder="Nombre de la plantilla"
+            />
+            <StatusPill status={publishStatus} />
+            {dirty && (
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" title="Cambios sin guardar" />
+            )}
           </div>
-          <ToolbarSeparator />
-          <ToolbarBtn onClick={newTemplate} title="Nueva plantilla (limpia)">
-            <Plus size={14} />
-            <span className="ml-1 hidden lg:inline text-[12px]">Nuevo</span>
-          </ToolbarBtn>
-          <ToolbarBtn onClick={openLoadPanel} title="Abrir plantilla guardada en el backend">
-            <FolderOpen size={14} />
-            <span className="ml-1 hidden lg:inline text-[12px]">Abrir</span>
-          </ToolbarBtn>
-          <ToolbarSeparator />
-          <input
-            className="h-8 w-48 sm:w-64 rounded-lg bg-neutral-50 border border-neutral-200 px-3 text-[13px] text-neutral-800 font-medium focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-300 focus:bg-white transition-all placeholder:text-neutral-400"
-            value={doc.name}
-            onChange={(e) => handleDocChange({ ...doc, name: e.target.value })}
-            placeholder="Nombre de la plantilla"
-          />
-          <StatusPill status={publishStatus} />
-          {dirty && (
-            <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse shrink-0" title="Cambios sin guardar" />
-          )}
-        </div>
 
-        {/* Center: undo/redo */}
-        <div className="flex items-center gap-0.5 bg-neutral-100 rounded-xl p-1 border border-neutral-200/60">
-          <ToolbarBtn onClick={undo} disabled={history.length === 0} title="Deshacer (Ctrl+Z)">
-            <Undo2 size={15} />
-          </ToolbarBtn>
-          <ToolbarBtn onClick={redo} disabled={future.length === 0} title="Rehacer (Ctrl+Shift+Z / Ctrl+Y)">
-            <Redo2 size={15} />
-          </ToolbarBtn>
-        </div>
+          {/* Center: undo/redo */}
+          <div className="flex items-center gap-0.5 bg-neutral-100 rounded-xl p-1 border border-neutral-200/60">
+            <ToolbarBtn onClick={undo} disabled={history.length === 0} title="Deshacer (Ctrl+Z)">
+              <Undo2 size={15} />
+            </ToolbarBtn>
+            <ToolbarBtn onClick={redo} disabled={future.length === 0} title="Rehacer (Ctrl+Shift+Z / Ctrl+Y)">
+              <Redo2 size={15} />
+            </ToolbarBtn>
+          </div>
 
-        {/* Right: actions */}
-        <div className="flex flex-wrap items-center justify-end gap-1.5">
-          <select
-            value={reportType}
-            onChange={(e) => { setReportType(e.target.value); setDirty(true); }}
-            className="h-8 rounded-lg bg-neutral-50 border border-neutral-200 px-2 text-[11px] text-neutral-600 font-medium focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-300 transition-all cursor-pointer hidden xl:block"
-            style={{ colorScheme: 'light' }}
-            title="Tipo de reporte"
-          >
-            <option value="generic">Generico</option>
-            <option value="technical_report">Informe Tecnico</option>
-            <option value="ficha_tecnica">Ficha Tecnica</option>
-          </select>
-          <ToolbarSeparator />
-          <ToolbarBtn onClick={save} disabled={saving} title="Guardar (Ctrl+S)">
-            {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-            <span className="ml-1.5 hidden lg:inline text-[12px]">{saving ? 'Guardando...' : 'Guardar'}</span>
-          </ToolbarBtn>
-          <ToolbarBtn onClick={preview} disabled={previewLoading || !templateId} title="Vista previa con datos de muestra">
-            {previewLoading ? <Loader2 size={14} className="animate-spin" /> : <Eye size={14} />}
-            <span className="ml-1.5 hidden lg:inline text-[12px]">Preview</span>
-          </ToolbarBtn>
-          <ToolbarBtn onClick={exportHtml} disabled={!templateId} title="Exportar HTML compilado">
-            <FileCode2 size={14} />
-          </ToolbarBtn>
-          <ToolbarBtn onClick={exportJson} title="Exportar JSON de la plantilla">
-            <FileJson size={14} />
-          </ToolbarBtn>
-          <ToolbarSeparator />
-          <button
-            onClick={publish}
-            disabled={!templateId}
-            className="
+          {/* Right: actions */}
+          <div className="flex flex-wrap items-center justify-end gap-1.5">
+            <select
+              value={reportType}
+              onChange={(e) => { setReportType(e.target.value); setDirty(true); }}
+              className="h-8 rounded-lg bg-neutral-50 border border-neutral-200 px-2 text-[11px] text-neutral-600 font-medium focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-300 transition-all cursor-pointer hidden xl:block"
+              style={{ colorScheme: 'light' }}
+              title="Tipo de reporte"
+            >
+              <option value="generic">Generico</option>
+              <option value="technical_report">Informe Tecnico</option>
+              <option value="ficha_tecnica">Ficha Tecnica</option>
+            </select>
+            <ToolbarSeparator />
+            <ToolbarBtn onClick={save} disabled={saving} title="Guardar (Ctrl+S)">
+              {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+              <span className="ml-1.5 hidden lg:inline text-[12px]">{saving ? 'Guardando...' : 'Guardar'}</span>
+            </ToolbarBtn>
+            <ToolbarBtn onClick={preview} disabled={previewLoading || !templateId} title="Vista previa con datos de muestra">
+              {previewLoading ? <Loader2 size={14} className="animate-spin" /> : <Eye size={14} />}
+              <span className="ml-1.5 hidden lg:inline text-[12px]">Preview</span>
+            </ToolbarBtn>
+            <ToolbarBtn onClick={exportHtml} disabled={!templateId} title="Exportar HTML compilado">
+              <FileCode2 size={14} />
+            </ToolbarBtn>
+            <ToolbarBtn onClick={exportJson} title="Exportar JSON de la plantilla">
+              <FileJson size={14} />
+            </ToolbarBtn>
+            <ToolbarSeparator />
+            <button
+              onClick={publish}
+              disabled={!templateId}
+              className="
               inline-flex items-center gap-1.5 h-8 px-4 rounded-full text-[12px] font-semibold
               bg-violet-600 text-white hover:bg-violet-700
               shadow-[0_2px_8px_rgba(124,58,237,0.35)]
               active:scale-[0.97] transition-all duration-150 ease-out
               disabled:opacity-40 disabled:pointer-events-none
             "
-            title="Publicar plantilla (requiere FEATURE_TEMPLATE_EDITOR=true)"
-          >
-            <Send size={12} />
-            Publicar
-          </button>
-        </div>
+              title="Publicar plantilla (requiere FEATURE_TEMPLATE_EDITOR=true)"
+            >
+              <Send size={12} />
+              Publicar
+            </button>
+          </div>
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[10px] text-neutral-500">
           <span className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white/90 px-2.5 py-1">
@@ -753,11 +752,10 @@ export default function TemplateEditor() {
                     key={tpl.id}
                     onClick={() => loadTemplate(tpl)}
                     disabled={loadingTemplateId === tpl.id}
-                    className={`w-full text-left rounded-xl px-4 py-3 border transition-all group disabled:opacity-50 ${
-                      templateId === tpl.id
+                    className={`w-full text-left rounded-xl px-4 py-3 border transition-all group disabled:opacity-50 ${templateId === tpl.id
                         ? 'border-violet-300 bg-violet-50/50'
                         : 'border-neutral-100 hover:border-neutral-200 hover:bg-neutral-50'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0">

@@ -1,137 +1,146 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" href="https://res.cloudinary.com/dzhp64paw/image/upload/v1769010837/1_btdbv9.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#e8ecff" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap"
-    />
-    <title>Template Editor</title>
-    <style>
-      :root {
-        color-scheme: light;
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" href="https://res.cloudinary.com/dzhp64paw/image/upload/v1769010837/1_btdbv9.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#e8ecff" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&display=swap" />
+  <title>Template Editor</title>
+  <style>
+    :root {
+      color-scheme: light;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+    }
+
+    #root {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      zoom: 1.20;
+    }
+
+    body {
+      font-family: "Manrope", "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #f8faff 0%, #ecf0ff 46%, #eef2f7 100%);
+      color: #111827;
+    }
+
+    #boot-loader {
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(180deg, rgba(245, 248, 255, 0.95), rgba(237, 242, 255, 0.95));
+      transition: opacity 220ms ease, visibility 220ms ease;
+    }
+
+    .boot-card {
+      width: min(440px, calc(100vw - 40px));
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.9);
+      box-shadow: 0 18px 48px rgba(15, 23, 42, 0.12);
+      padding: 20px 22px;
+    }
+
+    .boot-title {
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: 0.02em;
+      color: #111827;
+    }
+
+    .boot-subtitle {
+      margin-top: 6px;
+      font-size: 12px;
+      color: #64748b;
+    }
+
+    .boot-track {
+      margin-top: 16px;
+      height: 8px;
+      border-radius: 999px;
+      background: #e2e8f0;
+      overflow: hidden;
+    }
+
+    .boot-bar {
+      height: 100%;
+      width: 36%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #4f46e5, #0ea5e9);
+      animation: boot-progress 1.2s ease-in-out infinite;
+    }
+
+    @keyframes boot-progress {
+      0% {
+        transform: translateX(-120%);
       }
 
-      html,
-      body,
-      #root {
-        width: 100%;
-        height: 100%;
-        margin: 0;
+      100% {
+        transform: translateX(320%);
       }
+    }
 
-      body {
-        font-family: "Manrope", "Segoe UI", sans-serif;
-        background: radial-gradient(circle at top, #f8faff 0%, #ecf0ff 46%, #eef2f7 100%);
-        color: #111827;
-      }
+    body.app-ready #boot-loader {
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
 
-      #boot-loader {
-        position: fixed;
-        inset: 0;
-        z-index: 1000;
-        display: grid;
-        place-items: center;
-        background: linear-gradient(180deg, rgba(245, 248, 255, 0.95), rgba(237, 242, 255, 0.95));
-        transition: opacity 220ms ease, visibility 220ms ease;
-      }
+    noscript {
+      position: fixed;
+      inset: auto 16px 16px;
+      border-radius: 12px;
+      border: 1px solid #fecaca;
+      background: #fff1f2;
+      color: #9f1239;
+      padding: 10px 12px;
+      font-size: 12px;
+    }
+  </style>
+</head>
 
-      .boot-card {
-        width: min(440px, calc(100vw - 40px));
-        border: 1px solid rgba(148, 163, 184, 0.3);
-        border-radius: 16px;
-        background: rgba(255, 255, 255, 0.9);
-        box-shadow: 0 18px 48px rgba(15, 23, 42, 0.12);
-        padding: 20px 22px;
-      }
-
-      .boot-title {
-        font-size: 14px;
-        font-weight: 800;
-        letter-spacing: 0.02em;
-        color: #111827;
-      }
-
-      .boot-subtitle {
-        margin-top: 6px;
-        font-size: 12px;
-        color: #64748b;
-      }
-
-      .boot-track {
-        margin-top: 16px;
-        height: 8px;
-        border-radius: 999px;
-        background: #e2e8f0;
-        overflow: hidden;
-      }
-
-      .boot-bar {
-        height: 100%;
-        width: 36%;
-        border-radius: inherit;
-        background: linear-gradient(90deg, #4f46e5, #0ea5e9);
-        animation: boot-progress 1.2s ease-in-out infinite;
-      }
-
-      @keyframes boot-progress {
-        0% {
-          transform: translateX(-120%);
-        }
-        100% {
-          transform: translateX(320%);
-        }
-      }
-
-      body.app-ready #boot-loader {
-        opacity: 0;
-        visibility: hidden;
-        pointer-events: none;
-      }
-
-      noscript {
-        position: fixed;
-        inset: auto 16px 16px;
-        border-radius: 12px;
-        border: 1px solid #fecaca;
-        background: #fff1f2;
-        color: #9f1239;
-        padding: 10px 12px;
-        font-size: 12px;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="boot-loader" aria-hidden="true">
-      <div class="boot-card">
-        <div class="boot-title">Template Editor</div>
-        <div class="boot-subtitle">Preparando interfaz y restaurando sesion local...</div>
-        <div class="boot-track"><div class="boot-bar"></div></div>
+<body>
+  <div id="boot-loader" aria-hidden="true">
+    <div class="boot-card">
+      <div class="boot-title">Template Editor</div>
+      <div class="boot-subtitle">Preparando interfaz y restaurando sesion local...</div>
+      <div class="boot-track">
+        <div class="boot-bar"></div>
       </div>
     </div>
-    <div id="root"></div>
-    <noscript>Necesitas habilitar JavaScript para usar el editor.</noscript>
-    <script>
-      (function () {
-        const root = document.getElementById("root");
-        const markReady = () => document.body.classList.add("app-ready");
-        if (root) {
-          const observer = new MutationObserver(() => {
-            if (root.childElementCount > 0) {
-              markReady();
-              observer.disconnect();
-            }
-          });
-          observer.observe(root, { childList: true });
-        }
-        window.addEventListener("load", () => setTimeout(markReady, 900), { once: true });
-      })();
-    </script>
-    <script type="module" src="/src/template-editor-main.jsx"></script>
-  </body>
+  </div>
+  <div id="root"></div>
+  <noscript>Necesitas habilitar JavaScript para usar el editor.</noscript>
+  <script>
+    (function () {
+      const root = document.getElementById("root");
+      const markReady = () => document.body.classList.add("app-ready");
+      if (root) {
+        const observer = new MutationObserver(() => {
+          if (root.childElementCount > 0) {
+            markReady();
+            observer.disconnect();
+          }
+        });
+        observer.observe(root, { childList: true });
+      }
+      window.addEventListener("load", () => setTimeout(markReady, 900), { once: true });
+    })();
+  </script>
+  <script type="module" src="/src/template-editor-main.jsx"></script>
+</body>
+
 </html>
