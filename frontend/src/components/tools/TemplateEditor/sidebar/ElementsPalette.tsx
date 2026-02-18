@@ -1,5 +1,5 @@
 import React from 'react';
-import { ElementType, DEFAULT_TOOLS, TOOL_CATEGORIES } from '../canvasTypes';
+import { ElementType, ElementPreset, DEFAULT_TOOLS, TOOL_CATEGORIES } from '../canvasTypes';
 import {
     Type, Heading, Image, Square, Circle, Minus,
     Table, PenTool, Braces, LayoutGrid, Box,
@@ -22,23 +22,68 @@ const ICON_MAP: Record<string, React.ReactNode> = {
     QrCode: <QrCode size={18} />,
 };
 
-interface ElementsPaletteProps {
-    onAddElement: (type: ElementType) => void;
+type ToolCategory = 'basic' | 'text' | 'shapes' | 'media' | 'data';
+
+interface PaletteTool {
+    key: string;
+    type: ElementType;
+    icon: string;
+    label: string;
+    category: ToolCategory;
+    presetId?: ElementPreset;
 }
 
+interface ElementsPaletteProps {
+    onAddElement: (type: ElementType, presetId?: ElementPreset) => void;
+}
+
+const PRESET_TOOLS: PaletteTool[] = [
+    {
+        key: 'preset-photo-panel',
+        type: 'photo-grid',
+        icon: 'LayoutGrid',
+        label: 'Panel fotografico',
+        category: 'media',
+        presetId: 'photo-panel',
+    },
+    {
+        key: 'preset-technical-table',
+        type: 'table',
+        icon: 'Table',
+        label: 'Datos tecnicos',
+        category: 'data',
+        presetId: 'technical-table',
+    },
+];
+
 export function ElementsPalette({ onAddElement }: ElementsPaletteProps) {
-    const handleDragStart = (e: React.DragEvent, type: ElementType) => {
+    const handleDragStart = (e: React.DragEvent, type: ElementType, presetId?: ElementPreset) => {
         e.dataTransfer.setData('application/react-dnd', type);
+        if (presetId) {
+            e.dataTransfer.setData('application/template-editor-preset', presetId);
+        }
         e.dataTransfer.effectAllowed = 'copy';
     };
 
-    // Group tools by category
-    const grouped = Object.entries(TOOL_CATEGORIES).map(([key, cat]) => ({
-        key,
-        label: cat.label,
-        color: cat.color,
-        tools: DEFAULT_TOOLS.filter(t => t.category === key),
-    })).filter(g => g.tools.length > 0);
+    const paletteTools: PaletteTool[] = [
+        ...DEFAULT_TOOLS.map((tool, idx) => ({
+            key: `${tool.type}-${idx}`,
+            type: tool.type,
+            icon: tool.icon,
+            label: tool.label,
+            category: tool.category,
+        })),
+        ...PRESET_TOOLS,
+    ];
+
+    const grouped = Object.entries(TOOL_CATEGORIES)
+        .map(([key, cat]) => ({
+            key,
+            label: cat.label,
+            color: cat.color,
+            tools: paletteTools.filter((t) => t.category === key),
+        }))
+        .filter((g) => g.tools.length > 0);
 
     return (
         <div className="p-3 space-y-5">
@@ -53,12 +98,12 @@ export function ElementsPalette({ onAddElement }: ElementsPaletteProps) {
                     <div className="grid grid-cols-3 gap-1.5">
                         {group.tools.map((tool) => (
                             <div
-                                key={tool.type}
+                                key={tool.key}
                                 draggable
-                                onDragStart={(e) => handleDragStart(e, tool.type)}
-                                onClick={() => onAddElement(tool.type)}
+                                onDragStart={(e) => handleDragStart(e, tool.type, tool.presetId)}
+                                onClick={() => onAddElement(tool.type, tool.presetId)}
                                 className="flex flex-col items-center justify-center p-2 rounded-lg border border-transparent hover:border-violet-300 hover:bg-violet-50 cursor-grab active:cursor-grabbing transition-all group/item"
-                                title={`Arrastra para añadir ${tool.label}`}
+                                title={`Arrastra para anadir ${tool.label}`}
                             >
                                 <div
                                     className="w-8 h-8 rounded-md flex items-center justify-center mb-1 transition-colors"

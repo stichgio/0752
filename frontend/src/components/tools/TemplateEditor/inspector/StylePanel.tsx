@@ -1,6 +1,7 @@
 import React from 'react';
 import { TemplateElement, ElementStyle } from '../canvasTypes';
 import { Palette } from 'lucide-react';
+import { normalizeTableData, resizeTableData } from '../utils/elementDefaults';
 
 interface StylePanelProps {
     element: TemplateElement;
@@ -15,6 +16,8 @@ export function StylePanel({ element, onUpdate }: StylePanelProps) {
     };
 
     const isTextType = element.type === 'text' || element.type === 'heading' || element.type === 'variable';
+    const isTableType = element.type === 'table';
+    const tableData = isTableType ? normalizeTableData(element) : null;
 
     return (
         <div className="px-3 py-3 border-b border-neutral-100 space-y-3">
@@ -72,6 +75,109 @@ export function StylePanel({ element, onUpdate }: StylePanelProps) {
                     </select>
                 </div>
             </div>
+
+            {/* Table config */}
+            {isTableType && tableData && (
+                <div>
+                    <span className="text-[10px] font-medium text-neutral-400 block mb-1">Tabla</span>
+                    <div className="space-y-1.5">
+                        <div className="grid grid-cols-2 gap-1.5">
+                            <div className="flex items-center h-7 bg-neutral-50 border border-neutral-200 rounded-md overflow-hidden focus-within:ring-1 focus-within:ring-violet-400">
+                                <input
+                                    type="number"
+                                    value={tableData.rowCount}
+                                    onChange={(e) => {
+                                        const next = resizeTableData(tableData, Number(e.target.value), tableData.colCount);
+                                        onUpdate(element.id, { tableData: next });
+                                    }}
+                                    min={1}
+                                    max={50}
+                                    step={1}
+                                    className="w-full h-full bg-transparent text-xs text-neutral-700 px-1.5 focus:outline-none"
+                                />
+                                <span className="text-[9px] text-neutral-400 pr-1 select-none">filas</span>
+                            </div>
+                            <div className="flex items-center h-7 bg-neutral-50 border border-neutral-200 rounded-md overflow-hidden focus-within:ring-1 focus-within:ring-violet-400">
+                                <input
+                                    type="number"
+                                    value={tableData.colCount}
+                                    onChange={(e) => {
+                                        const next = resizeTableData(tableData, tableData.rowCount, Number(e.target.value));
+                                        onUpdate(element.id, { tableData: next });
+                                    }}
+                                    min={1}
+                                    max={20}
+                                    step={1}
+                                    className="w-full h-full bg-transparent text-xs text-neutral-700 px-1.5 focus:outline-none"
+                                />
+                                <span className="text-[9px] text-neutral-400 pr-1 select-none">cols</span>
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-1.5">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const next = resizeTableData(tableData, tableData.rowCount + 1, tableData.colCount);
+                                    onUpdate(element.id, { tableData: next });
+                                }}
+                                className="h-7 text-[10px] font-medium bg-neutral-50 border border-neutral-200 rounded-md text-neutral-600 hover:bg-neutral-100 transition-colors"
+                                title="Agregar una fila al final"
+                            >
+                                + Agregar fila
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (tableData.rowCount <= 1) return;
+                                    const trimmed = { ...tableData, data: tableData.data.slice(0, -1) };
+                                    const next = resizeTableData(trimmed, tableData.rowCount - 1, tableData.colCount);
+                                    onUpdate(element.id, { tableData: next });
+                                }}
+                                disabled={tableData.rowCount <= 1}
+                                className="h-7 text-[10px] font-medium bg-neutral-50 border border-neutral-200 rounded-md text-neutral-600 hover:bg-neutral-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Eliminar la ultima fila"
+                            >
+                                - Eliminar fila
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const next = resizeTableData(tableData, tableData.rowCount, tableData.colCount + 1);
+                                    onUpdate(element.id, { tableData: next });
+                                }}
+                                className="h-7 text-[10px] font-medium bg-neutral-50 border border-neutral-200 rounded-md text-neutral-600 hover:bg-neutral-100 transition-colors"
+                                title="Agregar una columna al final"
+                            >
+                                + Agregar columna
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (tableData.colCount <= 1) return;
+                                    const trimmed = { ...tableData, data: tableData.data.map((row) => row.slice(0, -1)) };
+                                    const next = resizeTableData(trimmed, tableData.rowCount, tableData.colCount - 1);
+                                    onUpdate(element.id, { tableData: next });
+                                }}
+                                disabled={tableData.colCount <= 1}
+                                className="h-7 text-[10px] font-medium bg-neutral-50 border border-neutral-200 rounded-md text-neutral-600 hover:bg-neutral-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Eliminar la ultima columna"
+                            >
+                                - Eliminar columna
+                            </button>
+                        </div>
+                        <ColorInput
+                            label="Borde tabla"
+                            value={tableData.borderColor}
+                            onChange={(v) => {
+                                onUpdate(element.id, {
+                                    tableData: { ...tableData, borderColor: v },
+                                    style: { ...style, borderColor: v },
+                                });
+                            }}
+                        />
+                    </div>
+                </div>
+            )}
 
             {/* Typography (only for text-like elements) */}
             {isTextType && (

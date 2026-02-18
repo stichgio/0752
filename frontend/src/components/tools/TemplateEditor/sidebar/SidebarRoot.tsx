@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { Layers, Grid, LayoutTemplate, Settings2 } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Layers, Grid, LayoutTemplate, Settings2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ElementsPalette } from './ElementsPalette';
 import { LayersPanel } from './LayersPanel';
 import { TemplatesPanel } from './TemplatesPanel';
-import { ElementType } from '../canvasTypes';
+import { ElementType, ElementPreset } from '../canvasTypes';
 import type { CanvasDocument } from '../canvasTypes';
 
 interface SidebarRootProps {
-    onAddElement: (type: ElementType, pos?: { x: number; y: number }) => void;
+    onAddElement: (type: ElementType, pos?: { x: number; y: number }, presetId?: ElementPreset) => void;
     elements: any[];
     selectedIds: string[];
     onSelect: (id: string, multi: boolean) => void;
@@ -28,21 +28,51 @@ const TABS: { id: TabId; icon: React.ReactNode; label: string }[] = [
     { id: 'settings', icon: <Settings2 size={18} />, label: 'Ajustes' },
 ];
 
+const SIDEBAR_EXPANDED_WIDTH = 280;
+const SIDEBAR_COLLAPSED_WIDTH = 48;
+
 export function SidebarRoot(props: SidebarRootProps) {
     const [activeTab, setActiveTab] = useState<TabId>('elements');
+    const [isCollapsed, setIsCollapsed] = useState(false);
+
+    useEffect(() => {
+        const handleShortcut = (e: KeyboardEvent) => {
+            const isTypingTarget =
+                e.target instanceof HTMLInputElement ||
+                e.target instanceof HTMLTextAreaElement ||
+                (e.target instanceof HTMLElement && e.target.isContentEditable);
+            if (isTypingTarget) return;
+
+            if ((e.ctrlKey || e.metaKey) && e.code === 'Slash') {
+                e.preventDefault();
+                setIsCollapsed((prev) => !prev);
+            }
+        };
+
+        window.addEventListener('keydown', handleShortcut);
+        return () => window.removeEventListener('keydown', handleShortcut);
+    }, []);
+
+    const handleTabClick = (tabId: TabId) => {
+        setActiveTab(tabId);
+        if (isCollapsed) setIsCollapsed(false);
+    };
 
     return (
-        <div className="flex h-full border-r border-neutral-200 bg-white" style={{ width: 280 }}>
-            {/* Tab icons strip */}
-            <div className="w-12 flex flex-col items-center py-3 gap-1 border-r border-neutral-100 bg-neutral-50/80">
+        <div
+            className="relative flex h-full border-r border-neutral-200 bg-white transition-[width] duration-200 ease-out"
+            style={{ width: isCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH }}
+        >
+            <div className={`w-12 flex flex-col items-center py-3 gap-1 bg-neutral-50/80 ${isCollapsed ? '' : 'border-r border-neutral-100'}`}>
                 {TABS.map((tab) => (
                     <button
                         key={tab.id}
-                        onClick={() => setActiveTab(tab.id)}
-                        className={`flex flex-col items-center justify-center w-10 h-10 rounded-lg transition-all ${activeTab === tab.id
+                        onClick={() => handleTabClick(tab.id)}
+                        className={`flex flex-col items-center justify-center w-10 h-10 rounded-lg transition-all ${
+                            activeTab === tab.id
                                 ? 'bg-violet-100 text-violet-700 shadow-sm'
                                 : 'text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100'
-                            }`}
+                        }`}
                         title={tab.label}
                     >
                         {tab.icon}
@@ -50,46 +80,57 @@ export function SidebarRoot(props: SidebarRootProps) {
                 ))}
             </div>
 
-            {/* Content area */}
-            <div className="flex-1 flex flex-col h-full overflow-hidden">
-                <div className="px-3 py-2.5 border-b border-neutral-100 flex-shrink-0">
-                    <h2 className="text-sm font-semibold text-neutral-700">
-                        {TABS.find(t => t.id === activeTab)?.label}
-                    </h2>
-                </div>
+            {!isCollapsed && (
+                <div className="flex-1 flex flex-col h-full overflow-hidden">
+                    <div className="px-3 py-2.5 border-b border-neutral-100 flex-shrink-0">
+                        <h2 className="text-sm font-semibold text-neutral-700">
+                            {TABS.find((t) => t.id === activeTab)?.label}
+                        </h2>
+                    </div>
 
-                <div className="flex-1 overflow-y-auto min-h-0">
-                    {activeTab === 'elements' && (
-                        <ElementsPalette onAddElement={(type) => props.onAddElement(type)} />
-                    )}
-                    {activeTab === 'layers' && (
-                        <LayersPanel
-                            elements={props.elements}
-                            selectedIds={props.selectedIds}
-                            onSelect={props.onSelect}
-                            onToggleLock={props.onToggleLock}
-                            onToggleVisible={props.onToggleVisible}
-                            onReorder={props.onReorder}
-                        />
-                    )}
-                    {activeTab === 'templates' && (
-                        <TemplatesPanel
-                            onLoadTemplate={props.onLoadTemplate ?? (() => {})}
-                            currentDocName={props.currentDocName}
-                            isDirty={props.isDirty}
-                        />
-                    )}
-                    {activeTab === 'settings' && (
-                        <div className="p-4 text-center">
-                            <div className="w-12 h-12 bg-neutral-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                                <Settings2 size={20} className="text-neutral-400" />
+                    <div className="flex-1 overflow-y-auto min-h-0">
+                        {activeTab === 'elements' && (
+                            <ElementsPalette onAddElement={(type, presetId) => props.onAddElement(type, undefined, presetId)} />
+                        )}
+                        {activeTab === 'layers' && (
+                            <LayersPanel
+                                elements={props.elements}
+                                selectedIds={props.selectedIds}
+                                onSelect={props.onSelect}
+                                onToggleLock={props.onToggleLock}
+                                onToggleVisible={props.onToggleVisible}
+                                onReorder={props.onReorder}
+                            />
+                        )}
+                        {activeTab === 'templates' && (
+                            <TemplatesPanel
+                                onLoadTemplate={props.onLoadTemplate ?? (() => {})}
+                                currentDocName={props.currentDocName}
+                                isDirty={props.isDirty}
+                            />
+                        )}
+                        {activeTab === 'settings' && (
+                            <div className="p-4 text-center">
+                                <div className="w-12 h-12 bg-neutral-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                                    <Settings2 size={20} className="text-neutral-400" />
+                                </div>
+                                <p className="text-sm text-neutral-500">Ajustes de pagina</p>
+                                <p className="text-xs text-neutral-400 mt-1">Proximamente</p>
                             </div>
-                            <p className="text-sm text-neutral-500">Ajustes de página</p>
-                            <p className="text-xs text-neutral-400 mt-1">Próximamente</p>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
+
+            <button
+                type="button"
+                onClick={() => setIsCollapsed((prev) => !prev)}
+                className="absolute top-1/2 -right-3 -translate-y-1/2 w-6 h-12 rounded-full border border-neutral-200 bg-white text-neutral-500 shadow-sm hover:text-violet-600 hover:border-violet-300 transition-colors flex items-center justify-center z-10"
+                title={isCollapsed ? 'Mostrar panel (Ctrl+/)' : 'Ocultar panel (Ctrl+/)'}
+                aria-label={isCollapsed ? 'Mostrar panel lateral' : 'Ocultar panel lateral'}
+            >
+                {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+            </button>
         </div>
     );
 }

@@ -596,7 +596,80 @@ Your task is to take the provided natural language description of a process or t
 User	To make a cup of tea, start by boiling some water in a kettle. While the water is heating up, get a mug and put a tea bag in it. Once the water is boiling, carefully pour it into the mug, over the tea bag. Let the tea steep for a few minutes, depending on how strong you like it. After steeping, remove the tea bag and add milk and sugar to taste. Stir everything together and enjoy your hot cup of tea.
 
 
-
+------------------------------
+🎨 PROMPT 21: NUEVO BLOQUE PARA EDITOR DE PLANTILLAS
+Actúa como un desarrollador frontend experto en Canvas y React (Konva/HTML5 Canvas).
+Contexto del proyecto:
+- Módulo: Editor Visual de Plantillas
+- Ubicación: frontend/src/components/tools/TemplateEditor/
+- Lógica de renderizado: CanvasElement.tsx / CanvasArea.tsx
+- Estado: Hooks personalizados en hooks/useCanvasDrag.ts
+Tu tarea: Crear un nuevo tipo de elemento arrastrable: [NOMBRE DEL ELEMENTO, EJ: CÓDIGO QR / TABLA DINÁMICA]
+Instrucciones:
+1) Analiza `elementDefaults.ts` para definir la estructura de datos inicial del nuevo elemento.
+2) Modifica `CanvasElement.tsx` para renderizar el nuevo tipo visualmente.
+3) Si requiere propiedades nuevas, actualiza el `InspectorRoot.tsx` o `StylePanel.tsx` para permitir editarlas.
+4) Asegúrate de que el elemento respete:
+   - Sistema de selección (isSelected)
+   - Transformaciones (resize/rotate)
+   - Exportación a JSON para guardado
+Resultado esperado:
+- Código del nuevo componente visual en el Canvas
+- Actualización de tipos e interfaces
+- Configuración en el panel de propiedades
+------------------------------
+🖼️ PROMPT 22: MEJORA EN OPTIMIZADOR DE IMÁGENES
+Actúa como un ingeniero backend experto en procesamiento de imágenes con Python (Pillow/PIL).
+Contexto del proyecto:
+- Módulo: backend/image_optimizer/
+- Archivo principal: router.py
+- Objetivo: Reducir peso de imágenes para informes sin perder calidad legible.
+Tu tarea: Implementar [NUEVA FUNCIONALIDAD, EJ: CONVERSIÓN A WEBP / MARCA DE AGUA]
+Instrucciones:
+1) Analiza la función actual de procesamiento en el router.
+2) Implementa la lógica usando Pillow:
+   - Si es marca de agua: composisción de imágenes con transparencia.
+   - Si es formato: conversión y manejo de headers (MIME types).
+3) Mantén la respuesta actual que devuelve headers personalizados (X-Original-Size, X-Compressed-Size).
+4) Maneja errores si el archivo de entrada está corrupto.
+Resultado esperado:
+- Función de procesamiento actualizada
+- Endpoint modificado para aceptar nuevos parámetros (ej: texto de marca de agua)
+- Test rápido con una imagen de muestra
+------------------------------
+✂️ PROMPT 23: NUEVA HERRAMIENTA PDF (PYTHON)
+Actúa como un desarrollador Python especializado en manipulación de PDFs (pypdf / pdfrw).
+Contexto del proyecto:
+- Módulo: backend/pdf_tools/
+- Funciones existentes: merge (intercalado/secuencial), split.
+- Archivo: utils.py o nuevo archivo en el módulo.
+Tu tarea: Crear una función para [TAREA, EJ: EXTRAER IMÁGENES / ROTAR PÁGINAS]
+Instrucciones:
+1) Crea la función lógica en `backend/pdf_tools/[nueva_herramienta].py`.
+2) Expón la funcionalidad en `backend/main.py` bajo un nuevo endpoint `/api/tools/[nombre]`.
+3) Usa `UploadFile` para recibir el PDF y `BackgroundTasks` para limpiar archivos temporales (`_cleanup_file`).
+4) Valida que el archivo entrante sea realmente un PDF (magic numbers).
+Resultado esperado:
+- Script de lógica de manipulación PDF
+- Endpoint FastAPI funcional
+- Gestión correcta de archivos temporales (creación y borrado)
+------------------------------
+💾 PROMPT 24: MIGRACIÓN A SUPABASE (PERSISTENCIA)
+Actúa como un arquitecto de base de datos y desarrollador backend.
+Contexto del proyecto:
+- Estado actual: Persistencia en archivos JSON locales (`backend/data/*.json`).
+- Objetivo: Migrar un módulo a PostgreSQL (Supabase).
+- Módulo a migrar: [EJ: FICHAS TÉCNICAS / TEMPLATES]
+Tu tarea: Crear la capa de repositorio para Supabase.
+Instrucciones:
+1) Diseña la tabla SQL basándote en el modelo Pydantic en `models.py`.
+2) Crea el archivo `backend/[modulo]/supabase_service.py`.
+3) Implementa el patrón Repository para reemplazar las lecturas/escrituras de JSON por llamadas a Supabase Client.
+4) Mantén la interfaz del `router.py` igual para no romper el frontend.
+Resultado esperado:
+- Script SQL de creación de tabla
+- Clase de servicio Python para CRUD con Supabase
+- Modificación en `router.py` para usar el nuevo servicio
 ═══════════════════════════════════════════
 USO DE LOS PROMPTS
 ═══════════════════════════════════════════

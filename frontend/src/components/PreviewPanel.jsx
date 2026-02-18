@@ -116,6 +116,30 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                 return imageCount === parseInt(count, 10) ? content : '';
             });
 
+            // Handle if image count > X with else: {% if report.images|length > X %}...{% else %}...{% endif %}
+            const imageCountGtElseRegex = /\{%\s*if\s+report\.images\|length\s*>\s*(\d+)\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            html = html.replace(imageCountGtElseRegex, (match, count, ifContent, elseContent) => {
+                return imageCount > parseInt(count, 10) ? ifContent : elseContent;
+            });
+
+            // Handle if image count > X without else: {% if report.images|length > X %}...{% endif %}
+            const imageCountGtRegex = /\{%\s*if\s+report\.images\|length\s*>\s*(\d+)\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            html = html.replace(imageCountGtRegex, (match, count, content) => {
+                return imageCount > parseInt(count, 10) ? content : '';
+            });
+
+            // Handle if image count >= X with else
+            const imageCountGteElseRegex = /\{%\s*if\s+report\.images\|length\s*>=\s*(\d+)\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            html = html.replace(imageCountGteElseRegex, (match, count, ifContent, elseContent) => {
+                return imageCount >= parseInt(count, 10) ? ifContent : elseContent;
+            });
+
+            // Handle if image count >= X without else
+            const imageCountGteRegex = /\{%\s*if\s+report\.images\|length\s*>=\s*(\d+)\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            html = html.replace(imageCountGteRegex, (match, count, content) => {
+                return imageCount >= parseInt(count, 10) ? content : '';
+            });
+
             // Handle if image count < X patterns
             const imageCountLtRegex = /\{%\s*if\s+report\.images\|length\s*<\s*(\d+)\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
             html = html.replace(imageCountLtRegex, (match, count, content) => {
@@ -164,23 +188,24 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
             const reportImagesIfElseRegex = /\{%\s*if\s+report\.images\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
             html = html.replace(reportImagesIfElseRegex, (match, ifContent, elseContent) => (imageCount > 0 ? ifContent : elseContent));
 
-            const logoLeftRegex = /\{%\s*if\s+logo_left\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            const logoLeftRegex = /\{%\s*if\s+logo_left\b[^%]*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
             html = html.replace(logoLeftRegex, (match, ifPart, elsePart) => logoLeft ? ifPart : elsePart);
 
-            const logoRightRegex = /\{%\s*if\s+logo_right\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            const logoRightRegex = /\{%\s*if\s+logo_right\b[^%]*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
             html = html.replace(logoRightRegex, (match, ifPart, elsePart) => logoRight ? ifPart : elsePart);
 
+            // Handle {% if logo_left %}...{% endif %} (no else branch — from canvas editor)
+            const logoLeftNoElseRegex = /\{%\s*if\s+logo_left\b[^%]*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            html = html.replace(logoLeftNoElseRegex, (match, content) => logoLeft ? content : '');
 
-            const replacements = {
-                '{{ title }}': 'PANEL FOTOGRÁFICO VOLANTEO',
-                '{{ logo_left }}': logoLeft || emptyPixel,
-                '{{ logo_right }}': logoRight || emptyPixel,
-            };
+            const logoRightNoElseRegex = /\{%\s*if\s+logo_right\b[^%]*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            html = html.replace(logoRightNoElseRegex, (match, content) => logoRight ? content : '');
 
-            // Replace simple variables
-            Object.keys(replacements).forEach(key => {
-                html = html.replaceAll(key, replacements[key]);
-            });
+
+            // Replace simple variables (with optional spaces/filters)
+            html = html.replace(/\{\{\s*title\s*\}\}/g, 'PANEL FOTOGRÁFICO VOLANTEO');
+            html = html.replace(/\{\{\s*logo_left(?:\s*\|[^}]*)?\s*\}\}/g, logoLeft || emptyPixel);
+            html = html.replace(/\{\{\s*logo_right(?:\s*\|[^}]*)?\s*\}\}/g, logoRight || emptyPixel);
 
             // Replace {{ report.data.get('KEY', '-') }}
             // Regex to match {{ report.data.get('KEY', 'DEFAULT') }}
@@ -193,7 +218,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
             });
 
             // Handle direct image access by index: {{ report.images[0].path }}
-            const directImageRegex = /\{\{\s*report\.images\[(\d+)\]\.(path|name)\s*\}\}/g;
+            const directImageRegex = /\{\{\s*report\.images\[(\d+)\]\.(path|name)(?:\s*\|[^}]*)?\s*\}\}/g;
             html = html.replace(directImageRegex, (match, indexStr, property) => {
                 const index = parseInt(indexStr);
                 if (images && images[index]) {
@@ -224,8 +249,9 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
 
                 // Check if this loop (or its content) has a suffix filter like '_1.' in img.name
                 // Could be in the loop declaration OR in an if statement inside the loop
-                const suffixMatch = fullMatch.match(/'_(\d+)\.'\s+in\s+img\.name/) ||
-                    loopContent.match(/'_(\d+)\.'\s+in\s+img\.name/);
+                const suffixPattern = /["']_(\d+)\.["']\s+in\s+img\.name/;
+                const suffixMatch = fullMatch.match(suffixPattern) ||
+                    loopContent.match(suffixPattern);
 
                 let generatedLoopHtml = '';
                 let imagesToRender = [];
@@ -256,8 +282,8 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                     let itemHtml = loopContent;
 
                     // Replace {{ img.path }}
-                    itemHtml = itemHtml.replaceAll('{{ img.path }}', imgUrl);
-                    itemHtml = itemHtml.replaceAll('{{ img.name }}', img.name);
+                    itemHtml = itemHtml.replace(/\{\{\s*img\.path(?:\s*\|[^}]*)?\s*\}\}/g, imgUrl);
+                    itemHtml = itemHtml.replace(/\{\{\s*img\.name(?:\s*\|[^}]*)?\s*\}\}/g, img.name);
 
                     // Mock metadata
                     const dateStr = new Date(img.lastModified).toLocaleString();
@@ -267,8 +293,8 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
 
                     // Strip namespace and condition statements, just show the inner content
                     itemHtml = itemHtml.replace(/\{%\s*if\s+loop\.first\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g, (m, c) => i === 0 ? c : '');
-                    itemHtml = itemHtml.replace(/\{%\s*if\s+not\s+ns\.found\s+and\s+'_\d+\.'\s+in\s+img\.name\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g, '$1');
-                    itemHtml = itemHtml.replace(/\{%\s*set\s+ns\.found\s*=\s*true\s*%\}/g, '');
+                    itemHtml = itemHtml.replace(/\{%\s*if\s+not\s+ns\d*\.found\s+and\s+["']_\d+\.["']\s+in\s+img\.name\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g, '$1');
+                    itemHtml = itemHtml.replace(/\{%\s*set\s+ns\d*\.found\s*=\s*true\s*%\}/g, '');
 
                     generatedLoopHtml += itemHtml;
                 }
@@ -395,6 +421,23 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
         return { ...baseStyle, height: '7cm' };
     };
 
+    // Auto-resize iframe to match its content height
+    const handleIframeLoad = (e) => {
+        const iframe = e.target;
+        try {
+            const doc = iframe.contentDocument || iframe.contentWindow?.document;
+            if (doc?.body) {
+                // Wait a tick for images/layout to settle
+                setTimeout(() => {
+                    const contentHeight = doc.documentElement.scrollHeight || doc.body.scrollHeight;
+                    iframe.style.height = Math.max(contentHeight, 1122) + 'px'; // 1122px ≈ 297mm
+                }, 150);
+            }
+        } catch {
+            // Cross-origin restriction — keep minHeight fallback
+        }
+    };
+
     if (customTemplate && renderedHtml) {
         return (
             <div className={`flex-1 p-4 overflow-auto flex justify-center items-start ${isFocusMode ? 'bg-neutral-100' : 'bg-neutral-300'}`}>
@@ -404,6 +447,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                     sandbox="allow-same-origin"
                     title="Custom Template Preview"
                     className="bg-white text-black shadow-2xl"
+                    onLoad={handleIframeLoad}
                     style={{
                         width: '210mm',
                         minHeight: '297mm',

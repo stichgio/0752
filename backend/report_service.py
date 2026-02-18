@@ -30,6 +30,26 @@ except (OSError, ImportError) as e:
     HTML = None
     WEASYPRINT_AVAILABLE = False
 
+# Chrome/Edge headless fallback for environments without GTK3 (e.g. Windows local dev)
+CHROME_PATH = None
+if not WEASYPRINT_AVAILABLE:
+    _browser_candidates = [
+        "C:/Program Files/Google/Chrome/Application/chrome.exe",
+        "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
+        "C:/Program Files/Microsoft/Edge/Application/msedge.exe",
+        "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
+        "/usr/bin/google-chrome",
+        "/usr/bin/chromium-browser",
+        "/usr/bin/chromium",
+    ]
+    for _p in _browser_candidates:
+        if os.path.isfile(_p):
+            CHROME_PATH = _p
+            print(f"INFO: Using browser fallback for PDF: {_p}")
+            break
+
+PDF_ENGINE_AVAILABLE = WEASYPRINT_AVAILABLE or (CHROME_PATH is not None)
+
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 import piexif
@@ -596,8 +616,8 @@ class ReportService:
         from concurrent.futures import ThreadPoolExecutor, as_completed
         import time
 
-        if not WEASYPRINT_AVAILABLE:
-            raise RuntimeError("WeasyPrint is not available. Cannot generate PDFs.")
+        if not PDF_ENGINE_AVAILABLE:
+            raise RuntimeError("No PDF engine available. Install WeasyPrint or xhtml2pdf.")
 
         total_reports = len(reports_list)
         start_time = time.time()
@@ -867,7 +887,17 @@ class ReportService:
         pdf_file = os.path.join(output_path, f"Reporte_{item_id}.pdf")
 
         try:
-            HTML(string=html_out, base_url=folder_path).write_pdf(pdf_file)
+            if WEASYPRINT_AVAILABLE:
+                HTML(string=html_out, base_url=folder_path).write_pdf(pdf_file)
+            elif CHROME_PATH:
+                result_path = _render_pdf_with_chrome(html_out)
+                if result_path:
+                    import shutil
+                    shutil.move(result_path, pdf_file)
+                else:
+                    return {"id": item_id, "status": "error", "message": "Chrome PDF rendering failed"}
+            else:
+                return {"id": item_id, "status": "error", "message": "No PDF engine available"}
             return {"id": item_id, "status": "success", "file": pdf_file}
         except Exception as e:
             print(f"Error generating PDF for {item_id}: {e}")
@@ -880,26 +910,81 @@ class ReportService:
 
 def _render_pdf_to_file_safe(html_string):
     """
-    Renderizado seguro de PDF con manejo de errores robusto
+    Renderizado seguro de PDF con manejo de errores robusto.
+    Usa WeasyPrint si está disponible, sino Chrome/Edge headless como fallback.
     """
     import tempfile
-    from weasyprint import HTML
+
+    if WEASYPRINT_AVAILABLE:
+        try:
+            temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+
+            # ✅ CONFIGURACIÓN SEGURA: Sin optimizaciones arriesgadas
+            HTML(string=html_string, base_url=os.getcwd()).write_pdf(
+                temp_pdf.name,
+                optimize_images=False,  # Ya optimizadas
+                uncompressed_pdf=False  # Comprimir
+            )
+
+            temp_pdf.close()
+            return temp_pdf.name
+
+        except Exception as e:
+            print(f"[ERROR] WeasyPrint PDF rendering failed: {e}")
+            import traceback
+            traceback.print_exc()
+            if not CHROME_PATH:
+                return None
+
+    if CHROME_PATH:
+        return _render_pdf_with_chrome(html_string)
+
+    return None
+
+
+def _render_pdf_with_chrome(html_string):
+    """Render HTML to PDF using Chrome/Edge headless mode."""
+    import tempfile
+    import subprocess
 
     try:
-        temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+        html_file = tempfile.NamedTemporaryFile(
+            delete=False, suffix='.html', mode='w', encoding='utf-8'
+        )
+        html_file.write(html_string)
+        html_file.close()
 
-        # ✅ CONFIGURACIÓN SEGURA: Sin optimizaciones arriesgadas
-        HTML(string=html_string, base_url=os.getcwd()).write_pdf(
-            temp_pdf.name,
-            optimize_images=False,  # Ya optimizadas
-            uncompressed_pdf=False  # Comprimir
+        pdf_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+        pdf_file.close()
+
+        result = subprocess.run(
+            [
+                CHROME_PATH,
+                '--headless',
+                '--disable-gpu',
+                '--no-sandbox',
+                '--disable-software-rasterizer',
+                '--run-all-compositor-stages-before-draw',
+                f'--print-to-pdf={pdf_file.name}',
+                '--print-to-pdf-no-header',
+                html_file.name,
+            ],
+            capture_output=True,
+            text=True,
+            timeout=60,
         )
 
-        temp_pdf.close()
-        return temp_pdf.name
+        os.unlink(html_file.name)
+
+        if os.path.getsize(pdf_file.name) > 0:
+            return pdf_file.name
+
+        print(f"[ERROR] Chrome PDF generation produced empty file. stderr: {result.stderr}")
+        os.unlink(pdf_file.name)
+        return None
 
     except Exception as e:
-        print(f"[ERROR] PDF rendering failed: {e}")
+        print(f"[ERROR] Chrome PDF rendering failed: {e}")
         import traceback
         traceback.print_exc()
         return None

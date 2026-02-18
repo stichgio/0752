@@ -1,32 +1,74 @@
-﻿import React from 'react';
-import { TemplateElement } from '../canvasTypes';
+import React from 'react';
+import { TemplateElement, PageSettings, PhotoGridCount, PhotoGridOddPosition } from '../canvasTypes';
 import { TransformPanel } from './TransformPanel.tsx';
 import { StylePanel } from './StylePanel.tsx';
-import { Sliders, Info } from 'lucide-react';
+import { PageSettingsPanel } from './PageSettingsPanel.tsx';
+import { Sliders } from 'lucide-react';
+
+const PHOTO_COUNT_OPTIONS: Array<{ value: PhotoGridCount; label: string }> = [
+    { value: 2, label: '2 (compatibilidad)' },
+    { value: 3, label: '3 fotos' },
+    { value: 4, label: '4 fotos' },
+    { value: 5, label: '5 fotos' },
+    { value: 6, label: '6 fotos' },
+];
 
 interface InspectorRootProps {
     selectedIds: string[];
     elements: TemplateElement[];
     onUpdateElement: (id: string, updates: Partial<TemplateElement>) => void;
+    pageSettings: PageSettings;
+    onPageSettingsChange: (settings: PageSettings) => void;
 }
 
-export function InspectorRoot({ selectedIds, elements, onUpdateElement }: InspectorRootProps) {
-    if (selectedIds.length === 0) {
+export function InspectorRoot({
+    selectedIds,
+    elements,
+    onUpdateElement,
+    pageSettings,
+    onPageSettingsChange,
+}: InspectorRootProps) {
+    const selectedElementId = selectedIds[0] ?? null;
+
+    if (selectedElementId === null) {
         return (
-            <div className="h-full border-l border-neutral-200 bg-white flex flex-col items-center justify-center text-center px-6" style={{ width: 260 }}>
-                <div className="w-12 h-12 bg-neutral-100 rounded-xl flex items-center justify-center mb-3">
-                    <Info size={20} className="text-neutral-300" />
-                </div>
-                <p className="text-sm font-medium text-neutral-400">Sin seleccion</p>
-                <p className="text-xs text-neutral-300 mt-1">Selecciona un elemento del canvas para editar sus propiedades</p>
-            </div>
+            <PageSettingsPanel
+                pageSettings={pageSettings}
+                onChange={onPageSettingsChange}
+            />
         );
     }
 
-    const primaryId = selectedIds[0];
-    const primaryElement = elements.find(el => el.id === primaryId);
+    const primaryElement = elements.find(el => el.id === selectedElementId);
 
     if (!primaryElement) return null;
+
+    const isPhotoGrid = primaryElement.type === 'photo-grid';
+    const photoCount: PhotoGridCount = isPhotoGrid ? (primaryElement.photoConfig?.count || 2) : 2;
+    const photoShowLabels = isPhotoGrid ? Boolean(primaryElement.photoConfig?.showLabels) : false;
+    const photoOddPosition: PhotoGridOddPosition = isPhotoGrid
+        ? (primaryElement.photoConfig?.oddPosition || 'center')
+        : 'center';
+    const photoLabels = isPhotoGrid
+        ? Array.from({ length: photoCount }, (_, i) => primaryElement.photoConfig?.labels?.[i] || `Foto ${i + 1}`)
+        : [];
+
+    const updatePhotoConfig = (updates: Partial<{
+        count: PhotoGridCount;
+        labels: string[];
+        showLabels: boolean;
+        oddPosition: PhotoGridOddPosition;
+    }>) => {
+        if (!isPhotoGrid) return;
+        onUpdateElement(primaryElement.id, {
+            photoConfig: {
+                count: updates.count ?? photoCount,
+                labels: updates.labels ?? photoLabels,
+                showLabels: updates.showLabels ?? photoShowLabels,
+                oddPosition: updates.oddPosition ?? photoOddPosition,
+            },
+        });
+    };
 
     return (
         <div className="h-full border-l border-neutral-200 bg-white flex flex-col overflow-y-auto" style={{ width: 260 }}>
@@ -158,6 +200,79 @@ export function InspectorRoot({ selectedIds, elements, onUpdateElement }: Inspec
                         className="w-full h-7 px-2 text-xs border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400 focus:border-violet-400"
                         placeholder="https://..."
                     />
+                </div>
+            )}
+
+            {/* Photo grid config */}
+            {isPhotoGrid && (
+                <div className="px-3 py-3 border-b border-neutral-100 space-y-2.5">
+                    <label className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 block">
+                        Configuracion de Fotos
+                    </label>
+
+                    <div>
+                        <span className="text-[10px] font-medium text-neutral-400 block mb-1">Cantidad</span>
+                        <select
+                            value={photoCount}
+                            onChange={(e) => {
+                                const nextCount = Number(e.target.value) as PhotoGridCount;
+                                const nextLabels = Array.from(
+                                    { length: nextCount },
+                                    (_, i) => photoLabels[i] || `Foto ${i + 1}`
+                                );
+                                updatePhotoConfig({ count: nextCount, labels: nextLabels });
+                            }}
+                            className="w-full h-7 px-2 text-xs border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400 bg-white"
+                        >
+                            {PHOTO_COUNT_OPTIONS.map((opt) => (
+                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {photoCount % 2 !== 0 && (
+                        <div>
+                            <span className="text-[10px] font-medium text-neutral-400 block mb-1">Ubicacion impar</span>
+                            <select
+                                value={photoOddPosition}
+                                onChange={(e) => updatePhotoConfig({ oddPosition: e.target.value as PhotoGridOddPosition })}
+                                className="w-full h-7 px-2 text-xs border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400 bg-white"
+                            >
+                                <option value="left">Izquierda</option>
+                                <option value="center">Centro</option>
+                                <option value="right">Derecha</option>
+                            </select>
+                        </div>
+                    )}
+
+                    <label className="flex items-center gap-2 text-xs text-neutral-600">
+                        <input
+                            type="checkbox"
+                            checked={photoShowLabels}
+                            onChange={(e) => updatePhotoConfig({ showLabels: e.target.checked })}
+                            className="rounded border-neutral-300"
+                        />
+                        Mostrar etiquetas
+                    </label>
+
+                    {photoShowLabels && (
+                        <div className="space-y-1.5">
+                            {photoLabels.map((label, i) => (
+                                <input
+                                    key={i}
+                                    type="text"
+                                    value={label}
+                                    onChange={(e) => {
+                                        const nextLabels = [...photoLabels];
+                                        nextLabels[i] = e.target.value;
+                                        updatePhotoConfig({ labels: nextLabels });
+                                    }}
+                                    className="w-full h-7 px-2 text-xs border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400 focus:border-violet-400"
+                                    placeholder={`Etiqueta foto ${i + 1}`}
+                                />
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
 

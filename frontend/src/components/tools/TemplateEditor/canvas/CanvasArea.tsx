@@ -1,14 +1,15 @@
 import React, { useRef, useCallback, useEffect, useState } from 'react';
-import { CanvasDocument, TemplateElement, mmToPx, pxToMm, ElementType } from '../canvasTypes';
+import { CanvasDocument, TemplateElement, pxToMm, ElementType, ElementPreset, PageSettings } from '../canvasTypes';
 import { CanvasElement } from './CanvasElement';
 import { calculateSnap, SnapGuide } from '../utils/snapUtils';
 
 interface CanvasAreaProps {
     document: CanvasDocument;
+    pageSettings: PageSettings;
     onChange: (doc: CanvasDocument) => void;
     selectedIds: string[];
     onSelect: (ids: string[]) => void;
-    onAddElement: (type: ElementType, position: { x: number; y: number }) => void;
+    onAddElement: (type: ElementType, position: { x: number; y: number }, presetId?: ElementPreset) => void;
     zoom: number;
     onZoomChange: (z: number) => void;
 }
@@ -56,6 +57,7 @@ const defaultInteraction: InteractionState = {
 
 export function CanvasArea({
     document: doc,
+    pageSettings,
     onChange,
     selectedIds,
     onSelect,
@@ -72,10 +74,14 @@ export function CanvasArea({
     // Refs for latest state (needed in global mousemove/mouseup handlers)
     const docRef = useRef(doc);
     const scaleRef = useRef(zoom / 100);
+    const pageSettingsRef = useRef(pageSettings);
     docRef.current = doc;
     scaleRef.current = zoom / 100;
+    pageSettingsRef.current = pageSettings;
 
     const scale = zoom / 100;
+    const MM_TO_PX = 96 / 25.4;
+    const mmToCanvasPx = (mm: number) => mm * MM_TO_PX;
 
     // ─── Element Update ─────────────────────────────────────────
     const updateElement = useCallback((id: string, updates: Partial<TemplateElement>) => {
@@ -107,7 +113,7 @@ export function CanvasArea({
                     { x: newX, y: newY },
                     el.size,
                     docRef.current.elements,
-                    docRef.current.pageSettings
+                    pageSettingsRef.current
                 );
                 if (snapRes.x !== undefined) newX = snapRes.x;
                 if (snapRes.y !== undefined) newY = snapRes.y;
@@ -328,13 +334,18 @@ export function CanvasArea({
         e.preventDefault();
         const type = e.dataTransfer.getData('application/react-dnd') as ElementType;
         if (!type || !pageRef.current) return;
+        const presetRaw = e.dataTransfer.getData('application/template-editor-preset');
+        const presetId: ElementPreset | undefined =
+            presetRaw === 'photo-panel' || presetRaw === 'technical-table'
+                ? presetRaw
+                : undefined;
 
         const pageRect = pageRef.current.getBoundingClientRect();
         const sc = scaleRef.current;
         const xPx = (e.clientX - pageRect.left) / sc;
         const yPx = (e.clientY - pageRect.top) / sc;
 
-        onAddElement(type, { x: pxToMm(xPx), y: pxToMm(yPx) });
+        onAddElement(type, { x: pxToMm(xPx), y: pxToMm(yPx) }, presetId);
     }, [onAddElement]);
 
     const onDragOver = useCallback((e: React.DragEvent) => {
@@ -360,8 +371,8 @@ export function CanvasArea({
     }, [zoom, onZoomChange]);
 
     // ─── Render ─────────────────────────────────────────────────
-    const pageWidthPx = mmToPx(doc.pageSettings.width);
-    const pageHeightPx = mmToPx(doc.pageSettings.height);
+    const pageWidthPx = mmToCanvasPx(pageSettings.width);
+    const pageHeightPx = mmToCanvasPx(pageSettings.height);
 
     return (
         <div
@@ -388,7 +399,7 @@ export function CanvasArea({
                     style={{
                         width: pageWidthPx,
                         height: pageHeightPx,
-                        backgroundColor: doc.pageSettings.backgroundColor,
+                        backgroundColor: pageSettings.backgroundColor || '#ffffff',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.08), 0 12px 40px rgba(0,0,0,0.12)',
                         position: 'relative',
                         borderRadius: 2,
@@ -399,7 +410,7 @@ export function CanvasArea({
                         className="absolute inset-0 pointer-events-none"
                         style={{
                             backgroundImage: 'radial-gradient(circle, #d4d4d8 0.6px, transparent 0.6px)',
-                            backgroundSize: `${mmToPx(5)}px ${mmToPx(5)}px`,
+                            backgroundSize: `${mmToCanvasPx(5)}px ${mmToCanvasPx(5)}px`,
                             opacity: 0.4,
                         }}
                     />
@@ -408,10 +419,10 @@ export function CanvasArea({
                     <div
                         className="absolute pointer-events-none border border-dashed border-blue-200"
                         style={{
-                            top: mmToPx(doc.pageSettings.marginTop),
-                            left: mmToPx(doc.pageSettings.marginLeft),
-                            right: mmToPx(doc.pageSettings.marginRight),
-                            bottom: mmToPx(doc.pageSettings.marginBottom),
+                            top: mmToCanvasPx(pageSettings.margins.top),
+                            left: mmToCanvasPx(pageSettings.margins.left),
+                            right: mmToCanvasPx(pageSettings.margins.right),
+                            bottom: mmToCanvasPx(pageSettings.margins.bottom),
                             opacity: 0.5,
                         }}
                     />
@@ -444,13 +455,13 @@ export function CanvasArea({
                                 zIndex: 9999,
                                 ...(guide.orientation === 'vertical'
                                     ? {
-                                        left: mmToPx(guide.position),
+                                        left: mmToCanvasPx(guide.position),
                                         top: 0,
                                         bottom: 0,
                                         width: '1px',
                                     }
                                     : {
-                                        top: mmToPx(guide.position),
+                                        top: mmToCanvasPx(guide.position),
                                         left: 0,
                                         right: 0,
                                         height: '1px',
@@ -465,10 +476,10 @@ export function CanvasArea({
                             className="pointer-events-none"
                             style={{
                                 position: 'absolute',
-                                left: mmToPx(marquee.x),
-                                top: mmToPx(marquee.y),
-                                width: mmToPx(marquee.w),
-                                height: mmToPx(marquee.h),
+                                left: mmToCanvasPx(marquee.x),
+                                top: mmToCanvasPx(marquee.y),
+                                width: mmToCanvasPx(marquee.w),
+                                height: mmToCanvasPx(marquee.h),
                                 border: '1px solid #3b82f6',
                                 backgroundColor: 'rgba(59, 130, 246, 0.08)',
                                 zIndex: 9998,

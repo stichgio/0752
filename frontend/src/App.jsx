@@ -463,7 +463,51 @@ export default function App() {
     const handleDownload = async () => {
         if (!panelRef.current) return;
 
-        const canvas = await html2canvas(panelRef.current, { scale: 2, useCORS: true });
+        // When a custom template is active, panelRef points to an <iframe>.
+        // html2canvas cannot capture iframe content directly, so we render
+        // from the iframe's inner document instead.
+        let target = panelRef.current;
+        const canvasOptions = {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: '#ffffff',
+        };
+        if (panelRef.current.tagName === 'IFRAME') {
+            const iframeDoc = panelRef.current.contentDocument || panelRef.current.contentWindow?.document;
+            if (iframeDoc?.body) {
+                // Ensure assets are loaded before rasterizing the iframe content.
+                if (iframeDoc.fonts?.ready) {
+                    try {
+                        await iframeDoc.fonts.ready;
+                    } catch {
+                        // Ignore font loading errors and continue with image wait.
+                    }
+                }
+
+                const imagePromises = Array.from(iframeDoc.images || []).map((img) => {
+                    if (img.complete) return Promise.resolve();
+                    return new Promise((resolve) => {
+                        const done = () => resolve();
+                        img.addEventListener('load', done, { once: true });
+                        img.addEventListener('error', done, { once: true });
+                    });
+                });
+                await Promise.all(imagePromises);
+
+                target = iframeDoc.querySelector('.page') || iframeDoc.body;
+                const width = Math.ceil(target.scrollWidth || target.clientWidth || 0);
+                const height = Math.ceil(target.scrollHeight || target.clientHeight || 0);
+                if (width > 0 && height > 0) {
+                    canvasOptions.width = width;
+                    canvasOptions.height = height;
+                    canvasOptions.windowWidth = width;
+                    canvasOptions.windowHeight = height;
+                }
+            }
+        }
+
+        const canvas = await html2canvas(target, canvasOptions);
         const link = document.createElement('a');
         link.download = `Panel_${data[selectedIndex]?.[idColumn] || 'Output'}.png`;
         link.href = canvas.toDataURL();
