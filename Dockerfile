@@ -42,10 +42,10 @@ WORKDIR $HOME/app
 COPY --chown=user backend $HOME/app
 
 # Create output folder for PDFs and Jinja2 cache
-RUN mkdir -p $HOME/app/output && chmod 777 $HOME/app/output
-RUN mkdir -p /tmp/jinja2_cache && chmod 777 /tmp/jinja2_cache
+RUN mkdir -p $HOME/app/output && chmod 755 $HOME/app/output
+RUN mkdir -p /tmp/jinja2_cache && chmod 755 /tmp/jinja2_cache
 # Ensure data directory has correct permissions (critical for SQLite/JSON stores)
-RUN chmod -R 777 $HOME/app/data
+RUN chmod -R 755 $HOME/app/data
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt

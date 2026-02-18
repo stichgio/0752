@@ -141,6 +141,26 @@ select * {
 }
 
 /* ================================================
+   Template Editor - Force light theme on inputs
+   ================================================ */
+.template-editor-root {
+  color-scheme: light;
+}
+
+.template-editor-root input,
+.template-editor-root textarea,
+.template-editor-root select {
+  color-scheme: light;
+  background-color: #ffffff;
+  color: #374151;
+}
+
+.template-editor-root select option {
+  background-color: #ffffff !important;
+  color: #374151 !important;
+}
+
+/* ================================================
    Print Styles
    ================================================ */
 @media print {

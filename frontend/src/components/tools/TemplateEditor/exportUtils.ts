@@ -1,0 +1,482 @@
+// Export to Jinja2/HTML
+import type { TemplateElement, CanvasDocument } from './canvasTypes';
+
+// ─── SVG placeholder for preview ──────────────────────────────────────────────
+
+function makeSvgPlaceholder(label: string): string {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="150">
+    <rect fill="#e5e7eb" width="200" height="150"/>
+    <text fill="#9ca3af" font-family="Arial" font-size="28" text-anchor="middle" x="100" y="75">&#128247;</text>
+    <text fill="#9ca3af" font-family="Arial" font-size="11" text-anchor="middle" x="100" y="105">${label}</text>
+  </svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+// ─── HTML escape that preserves Jinja2 {{ }} expressions ──────────────────────
+
+function escapeHtml(text: string): string {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+/**
+ * Smart escape: preserves Jinja2 `{{ ... }}` expressions while escaping
+ * everything else (< > & " ').  This is needed for table cells that mix
+ * static text with `{{ report.data.get('field', '-') }}`.
+ */
+function escapeHtmlPreserveJinja(text: string): string {
+  // Split on {{ ... }} blocks, escape only the non-Jinja parts
+  return text.replace(
+    /(\{\{[^}]*\}\})|([^{]+|{)/g,
+    (_match, jinjaBlock, plain) => {
+      if (jinjaBlock) return jinjaBlock; // keep as-is
+      if (plain) return escapeHtml(plain);
+      return '';
+    }
+  );
+}
+
+// ─── Jinja2 / HTML export ──────────────────────────────────────────────────────
+
+export function exportToJinja2(doc: CanvasDocument): string {
+  const elements = doc.elements.filter(el => el.visible !== false);
+
+  // Sort by z-index
+  elements.sort((a, b) => (a.style.zIndex || 0) - (b.style.zIndex || 0));
+
+  let html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>{{ report.title | default('${doc.name}') }}</title>
+  <style>
+    @page {
+      size: ${doc.pageSettings.width}mm ${doc.pageSettings.height}mm;
+      margin: 0;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+    }
+
+    .template-container {
+      position: relative;
+      width: ${doc.pageSettings.width}mm;
+      height: ${doc.pageSettings.height}mm;
+      background: ${doc.pageSettings.backgroundColor};
+      overflow: hidden;
+      page-break-after: always;
+    }
+
+    .element {
+      position: absolute;
+      overflow: hidden;
+    }
+
+    .photo-grid {
+      display: grid;
+      gap: 2mm;
+      padding: 2mm;
+    }
+
+    .photo-item {
+      background: #f3f4f6;
+      border: 1px solid #d1d5db;
+      border-radius: 1.4mm;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .photo-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
+    }
+
+    .photo-label {
+      font-weight: 700;
+      font-size: 7.5pt;
+      text-transform: uppercase;
+      margin-top: 1mm;
+      letter-spacing: 0.02em;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th, td {
+      border: 1px solid #d1d5db;
+      padding: 1.5mm 2mm;
+      font-size: 7.5pt;
+    }
+
+    th {
+      background: #f3f4f6;
+      font-weight: 700;
+      color: #555;
+    }
+
+    .signature-line {
+      border-top: 1px solid #374151;
+      width: 100%;
+      padding-top: 2mm;
+      text-align: center;
+    }
+
+    .signature-title {
+      font-weight: 700;
+      font-size: 8pt;
+      text-transform: uppercase;
+      color: #333;
+    }
+
+    .signature-name {
+      font-size: 7.5pt;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  {% for report in reports %}
+  <div class="template-container">
+`;
+
+  for (const el of elements) {
+    const style = generateElementStyle(el);
+    const content = generateElementContent(el);
+
+    // Skip types that are purely decorative with no HTML content
+    if (content === null) continue;
+
+    html += `    <div class="element ${el.type}" style="${style}">${content}</div>\n`;
+  }
+
+  html += `  </div>
+  {% endfor %}
+</body>
+</html>`;
+
+  return html;
+}
+
+function generateElementStyle(el: TemplateElement): string {
+  const styles: string[] = [
+    `left: ${el.position.x}mm`,
+    `top: ${el.position.y}mm`,
+    `width: ${el.size.width}mm`,
+    `height: ${el.size.height}mm`,
+    `z-index: ${el.style.zIndex || 1}`,
+  ];
+
+  if (el.style.backgroundColor && el.style.backgroundColor !== 'transparent') {
+    styles.push(`background-color: ${el.style.backgroundColor}`);
+  }
+
+  if (el.style.color) {
+    styles.push(`color: ${el.style.color}`);
+  }
+
+  if (el.style.fontSize) {
+    styles.push(`font-size: ${el.style.fontSize}pt`);
+  }
+
+  if (el.style.fontFamily) {
+    styles.push(`font-family: '${el.style.fontFamily}', sans-serif`);
+  }
+
+  if (el.style.fontWeight) {
+    styles.push(`font-weight: ${el.style.fontWeight}`);
+  }
+
+  if (el.style.textAlign) {
+    styles.push(`text-align: ${el.style.textAlign}`);
+  }
+
+  if (el.style.textTransform) {
+    styles.push(`text-transform: ${el.style.textTransform}`);
+  }
+
+  if (el.style.lineHeight) {
+    styles.push(`line-height: ${el.style.lineHeight}`);
+  }
+
+  if (el.style.letterSpacing) {
+    styles.push(`letter-spacing: ${el.style.letterSpacing}px`);
+  }
+
+  if (el.style.padding) {
+    styles.push(`padding: ${el.style.padding}px`);
+  }
+
+  // Full border shorthand
+  if (el.style.borderWidth && el.style.borderStyle !== 'none') {
+    styles.push(`border: ${el.style.borderWidth}px ${el.style.borderStyle || 'solid'} ${el.style.borderColor || '#000'}`);
+  }
+
+  // Individual border sides (e.g. borderTopWidth, borderBottomWidth)
+  if (el.style.borderTopWidth && !el.style.borderWidth) {
+    styles.push(`border-top: ${el.style.borderTopWidth}px ${el.style.borderStyle || 'solid'} ${el.style.borderColor || '#000'}`);
+  }
+  if (el.style.borderBottomWidth && !el.style.borderWidth) {
+    styles.push(`border-bottom: ${el.style.borderBottomWidth}px ${el.style.borderStyle || 'solid'} ${el.style.borderColor || '#000'}`);
+  }
+
+  if (el.style.borderRadius) {
+    styles.push(`border-radius: ${el.style.borderRadius}${el.type === 'circle' ? '%' : 'mm'}`);
+  }
+
+  if (el.style.opacity !== undefined && el.style.opacity !== 1) {
+    styles.push(`opacity: ${el.style.opacity}`);
+  }
+
+  if (el.style.boxShadow) {
+    styles.push(`box-shadow: ${el.style.boxShadow}`);
+  }
+
+  return styles.join('; ');
+}
+
+/**
+ * Generate element HTML content.  Returns `null` for types that should
+ * be rendered purely via CSS (rectangle, container) — the caller skips
+ * emitting a DOM node for those.
+ */
+function generateElementContent(el: TemplateElement): string | null {
+  switch (el.type) {
+    case 'text':
+    case 'heading':
+      return escapeHtml(el.content || '');
+
+    case 'variable':
+      // variableName holds a full Jinja2 expression, e.g. report.data.get('CENTRO', '-')
+      return `{{ ${el.variableName || 'variable'} }}`;
+
+    case 'logo': {
+      if (el.imageUrl) {
+        return `<img src="${escapeHtml(el.imageUrl)}" style="width: 100%; height: 100%; object-fit: contain" />`;
+      }
+      // Use variableName as Jinja2 var (defaults to logo_left)
+      const logoVar = el.variableName || 'logo_left';
+      return `{% if ${logoVar} %}<img src="{{ ${logoVar} }}" style="width: 100%; height: 100%; object-fit: contain" />{% endif %}`;
+    }
+
+    case 'image': {
+      if (el.imageUrl) {
+        const objectFit = el.style.objectFit || 'cover';
+        return `<img src="${escapeHtml(el.imageUrl)}" style="width: 100%; height: 100%; object-fit: ${objectFit}" />`;
+      }
+      return '';
+    }
+
+    case 'photo-grid': {
+      const count = el.photoConfig?.count || 2;
+      const cols = count === 4 ? 2 : count;
+      let gridHtml = '';
+      if (el.content) {
+        gridHtml += `<div style="font-weight: bold; font-size: 7.5pt; margin-bottom: 1mm; text-transform: uppercase;">${escapeHtml(el.content)}</div>`;
+      }
+      gridHtml += `<div class="photo-grid" style="grid-template-columns: repeat(${cols}, 1fr); height: ${el.content ? 'calc(100% - 6mm)' : '100%'};">`;
+
+      for (let i = 0; i < count; i++) {
+        const label = el.photoConfig?.labels?.[i] || `Foto ${i + 1}`;
+        // Use report.images[i].path — compatible with the backend report context
+        // Wrap in {% if %} guard so partial image lists don't error
+        gridHtml += `{% if report.images|length > ${i} %}`;
+        gridHtml += `<div class="photo-item">`;
+        gridHtml += `<img src="{{ report.images[${i}].path }}" alt="{{ report.images[${i}].name | default('${escapeHtml(label)}') }}" />`;
+        if (el.photoConfig?.showLabels) {
+          gridHtml += `<div class="photo-label">${escapeHtml(label)}</div>`;
+        }
+        gridHtml += `</div>`;
+        gridHtml += `{% else %}`;
+        gridHtml += `<div class="photo-item" style="background: #f0f0f0;"><span style="color:#999;">Sin foto</span>`;
+        if (el.photoConfig?.showLabels) {
+          gridHtml += `<div class="photo-label">${escapeHtml(label)}</div>`;
+        }
+        gridHtml += `</div>{% endif %}\n`;
+      }
+
+      gridHtml += '</div>';
+      return gridHtml;
+    }
+
+    case 'table': {
+      if (!el.tableData) return '';
+
+      let tableHtml = '<table>';
+      tableHtml += '<thead><tr>';
+      for (const header of el.tableData.headers) {
+        tableHtml += `<th>${escapeHtml(header)}</th>`;
+      }
+      tableHtml += '</tr></thead>';
+
+      tableHtml += '<tbody>';
+      for (const row of el.tableData.rows) {
+        tableHtml += '<tr>';
+        for (const cell of row) {
+          // Use smart escape to preserve {{ jinja }} expressions in cells
+          tableHtml += `<td>${escapeHtmlPreserveJinja(cell)}</td>`;
+        }
+        tableHtml += '</tr>';
+      }
+      tableHtml += '</tbody></table>';
+
+      return tableHtml;
+    }
+
+    case 'signature': {
+      const sigs = el.signatureConfig || [{ title: 'FIRMA', name: '' }];
+      return `
+        <div class="signature-line">
+          <div class="signature-title">${escapeHtml(sigs[0]?.title || 'FIRMA')}</div>
+          ${sigs[0]?.name ? `<div class="signature-name">${escapeHtml(sigs[0].name)}</div>` : ''}
+        </div>
+      `;
+    }
+
+    case 'divider': {
+      const div = el.dividerConfig;
+      if (!div) return '';
+      const isVertical = div.orientation === 'vertical';
+      const thickness = div.thickness || 1;
+      const color = div.color || '#374151';
+      const lineStyle = div.style || 'solid';
+      if (isVertical) {
+        return `<div style="width: 0; height: 100%; border-left: ${thickness}px ${lineStyle} ${color};"></div>`;
+      }
+      return `<div style="width: 100%; height: 0; border-top: ${thickness}px ${lineStyle} ${color};"></div>`;
+    }
+
+    case 'rectangle':
+      // Rendered purely via element style (border, background, etc.)
+      return '';
+
+    case 'circle':
+      return '';
+
+    case 'shape': {
+      const shape = el.shapeConfig;
+      if (!shape) return '';
+      if (shape.kind === 'line') {
+        return `<div style="width: 100%; height: 0; border-top: ${shape.strokeWidth || 1}px solid ${shape.stroke || '#000'};"></div>`;
+      }
+      if (shape.kind === 'arrow') {
+        return `<svg viewBox="0 0 100 50" preserveAspectRatio="none" style="width: 100%; height: 100%;">
+          <defs><marker id="ah" orient="auto" markerWidth="4" markerHeight="4" refX="3" refY="2"><path d="M0,0 V4 L4,2 Z" fill="${shape.stroke || '#000'}"/></marker></defs>
+          <line x1="2" y1="25" x2="94" y2="25" stroke="${shape.stroke || '#000'}" stroke-width="${shape.strokeWidth || 2}" marker-end="url(#ah)"/>
+        </svg>`;
+      }
+      // Rectangle/circle shapes rendered via CSS
+      return '';
+    }
+
+    case 'container':
+      return '';
+
+    case 'qr':
+      // QR codes need JS or server-side rendering — emit placeholder
+      return `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; border: 1px dashed #ccc; color: #999; font-size: 8pt;">[QR: ${escapeHtml(el.qrConfig?.content || '')}]</div>`;
+
+    default:
+      return '';
+  }
+}
+
+// ─── JSON export / import ──────────────────────────────────────────────────────
+
+export function exportToJSON(doc: CanvasDocument): string {
+  return JSON.stringify(doc, null, 2);
+}
+
+export function importFromJSON(json: string): CanvasDocument | null {
+  try {
+    const doc = JSON.parse(json);
+    if (!doc.id || !Array.isArray(doc.elements)) {
+      return null;
+    }
+    return doc as CanvasDocument;
+  } catch {
+    return null;
+  }
+}
+
+// ─── Preview HTML ──────────────────────────────────────────────────────────────
+
+export function generatePreviewHtml(doc: CanvasDocument, sampleData: Record<string, string> = {}): string {
+  let html = exportToJinja2(doc);
+
+  // 1. Remove Jinja2 block tags ({% for %}, {% endfor %}, {% if %}, etc.)
+  html = html.replace(/{%[^%]*%}/g, '');
+
+  // 2. Replace report.data.get('FIELD', default) → [FIELD]
+  html = html.replace(
+    /{{\s*report\.data\.get\s*\(\s*['"]([^'"]+)['"]\s*(?:,\s*[^)]+)?\s*\)\s*}}/g,
+    (_match, field) => `<span style="color: #6d4cff; font-weight: 600;">[${field}]</span>`
+  );
+
+  // 3. Replace report.images[i].path → SVG placeholder
+  html = html.replace(
+    /{{\s*report\.images\[(\d+)\]\.path[^}]*}}/g,
+    (_match, i) => makeSvgPlaceholder(`Foto ${parseInt(i) + 1}`)
+  );
+
+  // 4. Replace report.images[i].name / .date / .coords → label
+  html = html.replace(
+    /{{\s*report\.images\[(\d+)\]\.(\w+)[^}]*}}/g,
+    (_match, i, prop) => `[img${parseInt(i) + 1}.${prop}]`
+  );
+
+  // 5. Replace logo_left / logo_right → SVG placeholder
+  html = html.replace(
+    /{{\s*(logo_left|logo_right)\s*(?:\|[^}]*)?\s*}}/g,
+    (_match, v) => makeSvgPlaceholder(v === 'logo_left' ? 'Logo Izq.' : 'Logo Der.')
+  );
+
+  // 6. Apply user-provided sample data
+  for (const [key, value] of Object.entries(sampleData)) {
+    html = html.replace(new RegExp(`{{\\s*${key}\\s*}}`, 'g'), value);
+  }
+
+  // 7. Replace any remaining {{ expr }} with styled [expr]
+  html = html.replace(
+    /{{\s*([^}]+?)\s*}}/g,
+    (_match, expr) => `<span style="color: #6d4cff; font-weight: 600;">[${expr.trim()}]</span>`
+  );
+
+  // 8. Inject preview-specific styles: center the A4 page on a gray background
+  const previewStyles = `
+  <style>
+    html { height: 100%; }
+    body {
+      margin: 0 !important;
+      padding: 40px 0 !important;
+      background: #d1d5db !important;
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      gap: 24px !important;
+      min-height: 100% !important;
+      box-sizing: border-box !important;
+    }
+    .template-container {
+      flex-shrink: 0 !important;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.22) !important;
+    }
+  </style>`;
+  html = html.replace('</head>', `${previewStyles}\n</head>`);
+
+  return html;
+}
