@@ -206,11 +206,108 @@ def _compile_data_grid(block: EditorBlock) -> str:
     return f'<div class="{css_class}">{"".join(cells)}</div>'
 
 
+def _normalize_photo_count(value: Any) -> int:
+    try:
+        count = int(value)
+    except (TypeError, ValueError):
+        return 0
+    return count if count in {2, 3, 4, 5, 6} else 0
+
+
+def _normalize_odd_position(value: Any) -> str:
+    raw = str(value or "").strip().lower()
+    if raw in {"left", "center", "right"}:
+        return raw
+    return "center"
+
+
+def _odd_photo_item_style(index: int, count: int, odd_position: str) -> str:
+    if count % 2 == 0 or index != count - 1:
+        return ""
+    if odd_position == "right":
+        return "grid-column: 2 / span 1;"
+    if odd_position == "center":
+        return "grid-column: 1 / span 2; width: 50%; justify-self: center;"
+    return "grid-column: 1 / span 1;"
+
+
+def _compile_fixed_photo_grid(
+    count: int,
+    labels: List[str],
+    show_labels: bool,
+    tag_html: str = "",
+    odd_position: str = "center",
+) -> str:
+    safe_labels = [str(label) for label in labels]
+    photo_cells: List[str] = []
+
+    for i in range(count):
+        label = safe_labels[i] if i < len(safe_labels) and safe_labels[i].strip() else f"FOTO {i + 1}"
+        label_html = (
+            label.replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+        )
+        label_jinja = label_html.replace("'", "\\'")
+        odd_style = _odd_photo_item_style(i, count, odd_position)
+        style_attr = f' style="{odd_style}"' if odd_style else ""
+
+        if show_labels:
+            photo_cells.append(
+                f'{{% if report.images|length > {i} %}}'
+                f'<div class="photo-container"{style_attr}>'
+                f'<div class="photo-item"><img src="{{{{ report.images[{i}].path }}}}" alt="{{{{ report.images[{i}].name | default(\'{label_jinja}\') }}}}"></div>'
+                f'<div class="photo-label">{label_html}</div>'
+                '</div>'
+                '{% else %}'
+                f'<div class="photo-container"{style_attr}>'
+                '<div class="photo-item" style="background: #f0f0f0;"><span style="color:#999;">Sin foto</span></div>'
+                f'<div class="photo-label">{label_html}</div>'
+                '</div>'
+                '{% endif %}'
+            )
+            continue
+
+        empty_style = f'background: #f0f0f0;{(" " + odd_style) if odd_style else ""}'
+        photo_cells.append(
+            f'{{% if report.images|length > {i} %}}'
+            f'<div class="photo-item"{style_attr}><img src="{{{{ report.images[{i}].path }}}}" alt="{{{{ report.images[{i}].name }}}}"></div>'
+            '{% else %}'
+            f'<div class="photo-item" style="{empty_style}"><span style="color:#999;">Sin foto</span></div>'
+            '{% endif %}'
+        )
+
+    return (
+        '<div class="photo-section">'
+        f"{tag_html}"
+        '<div class="photo-frame">'
+        '<div class="photo-grid" style="grid-template-columns: repeat(2, 1fr);">'
+        + "".join(photo_cells)
+        + '</div>'
+        '</div>'
+        '</div>'
+    )
+
+
 def _compile_photo_grid(block: EditorBlock) -> str:
     show_labels = _get_meta(block, "showLabels", False)
     labels = _get_meta(block, "labels", [])
     panel_title = str(_get_meta(block, "panelTitle", "") or "").strip()
     tag_html = f'<span class="photo-tag">{panel_title}</span>' if panel_title else ""
+    configured_count = _normalize_photo_count(_get_meta(block, "count", 0))
+    odd_position = _normalize_odd_position(
+        _get_meta(block, "oddPosition", _get_meta(block, "oddAlignment", "center"))
+    )
+
+    if configured_count:
+        label_list = labels if isinstance(labels, list) else []
+        return _compile_fixed_photo_grid(
+            configured_count,
+            label_list,
+            bool(show_labels),
+            tag_html,
+            odd_position=odd_position,
+        )
 
     if show_labels and labels:
         return _compile_labeled_photos(labels, tag_html)

@@ -73,6 +73,37 @@ def test_compile_photo_grid_adds_safe_guards_for_indexed_images():
     assert "{% if report.images|length > 2 %}" in html
 
 
+def test_compile_photo_grid_respects_configured_count_and_odd_position():
+    block = EditorBlock(
+        id="pg2",
+        type="photo-grid",
+        metadata={"count": 5, "oddPosition": "right", "showLabels": False},
+    )
+    html = _compile_photo_grid(block)
+    assert 'grid-template-columns: repeat(2, 1fr);' in html
+    assert "{% if report.images|length > 4 %}" in html
+    assert "grid-column: 2 / span 1;" in html
+
+
+def test_compile_photo_grid_respects_configured_count_with_labels():
+    block = EditorBlock(
+        id="pg3",
+        type="photo-grid",
+        metadata={
+            "count": 3,
+            "oddPosition": "center",
+            "showLabels": True,
+            "labels": ["ANTES", "DURANTE", "DESPUES"],
+        },
+    )
+    html = _compile_photo_grid(block)
+    assert "{% if report.images|length > 2 %}" in html
+    assert '<div class="photo-label">ANTES</div>' in html
+    assert '<div class="photo-label">DURANTE</div>' in html
+    assert '<div class="photo-label">DESPUES</div>' in html
+    assert "grid-column: 1 / span 2; width: 50%; justify-self: center;" in html
+
+
 def test_sanitize_html_fallback_removes_javascript_and_suspicious_data_urls(monkeypatch):
     monkeypatch.setattr(validators_module, "bleach", None)
     dirty = '<img src="javascript:alert(1)" onerror="alert(2)"><img src="data:text/html;base64,PHNjcmlwdA==">'

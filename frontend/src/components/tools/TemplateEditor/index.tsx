@@ -1,14 +1,28 @@
 import React, { useCallback, useEffect, useRef, useState, memo } from 'react';
 import {
-  FileCode2, FileJson, Grid3X3, Plus,
+  FileCode2, FileJson, Plus,
   Redo2, Save, Send, Undo2, X, Eye, Download, Upload,
 } from 'lucide-react';
-import type { CanvasDocument } from './canvasTypes';
-import { createEmptyDocument } from './canvasTypes';
+import type { CanvasDocument, PageSettings } from './canvasTypes';
+import { createDefaultPageSettings, createEmptyDocument, normalizePageSettings } from './canvasTypes';
 import CanvasEditor from './CanvasEditor';
 import { exportToJinja2, exportToJSON, importFromJSON, generatePreviewHtml } from './exportUtils';
 
 const SESSION_KEY = 'canvas-editor-session-v1';
+
+function isSamePageSettings(a: PageSettings, b: PageSettings): boolean {
+  return (
+    a.format === b.format &&
+    a.orientation === b.orientation &&
+    a.width === b.width &&
+    a.height === b.height &&
+    a.margins.top === b.margins.top &&
+    a.margins.right === b.margins.right &&
+    a.margins.bottom === b.margins.bottom &&
+    a.margins.left === b.margins.left &&
+    (a.backgroundColor || '#ffffff') === (b.backgroundColor || '#ffffff')
+  );
+}
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
 
@@ -21,11 +35,10 @@ const ToastStack = memo(function ToastStack({ items }: { items: Toast[] }) {
       {items.map((t) => (
         <div
           key={t.id}
-          className={`rounded-lg px-4 py-2 text-sm font-medium shadow-lg ${
-            t.type === 'ok' ? 'bg-emerald-600 text-white' :
+          className={`rounded-lg px-4 py-2 text-sm font-medium shadow-lg ${t.type === 'ok' ? 'bg-emerald-600 text-white' :
             t.type === 'err' ? 'bg-red-600 text-white' :
-            'bg-neutral-900 text-white'
-          }`}
+              'bg-neutral-900 text-white'
+            }`}
         >
           {t.msg}
         </div>
@@ -81,6 +94,7 @@ const ToolbarBtn = memo(function ToolbarBtn({
 
 export default function TemplateEditor() {
   const [doc, setDoc] = useState<CanvasDocument>(createEmptyDocument);
+  const [pageSettings, setPageSettings] = useState<PageSettings>(createDefaultPageSettings);
   const [status, setStatus] = useState<PublishStatus>('draft');
   const [dirty, setDirty] = useState(false);
   const [history, setHistory] = useState<CanvasDocument[]>([]);
@@ -104,7 +118,9 @@ export default function TemplateEditor() {
       if (raw) {
         const s = JSON.parse(raw);
         if (s?.doc?.elements) {
-          setDoc(s.doc);
+          const normalizedPageSettings = normalizePageSettings(s.doc.pageSettings);
+          setDoc({ ...s.doc, pageSettings: normalizedPageSettings });
+          setPageSettings(normalizedPageSettings);
           setStatus((s.status as PublishStatus) || 'draft');
         }
       }
@@ -112,6 +128,11 @@ export default function TemplateEditor() {
       localStorage.removeItem(SESSION_KEY);
     }
   }, []);
+
+  useEffect(() => {
+    const normalized = normalizePageSettings(doc.pageSettings);
+    setPageSettings((prev) => (isSamePageSettings(prev, normalized) ? prev : normalized));
+  }, [doc.pageSettings]);
 
   // ── Auto-save ─────────────────────────────────────────────────────────────
 
@@ -138,12 +159,31 @@ export default function TemplateEditor() {
   // ── History management ────────────────────────────────────────────────────
 
   const handleDocChange = useCallback((newDoc: CanvasDocument) => {
+    const normalizedDoc = {
+      ...newDoc,
+      pageSettings: normalizePageSettings(newDoc.pageSettings),
+    };
     setHistory(h => [...h.slice(-49), doc]);
     setFuture([]);
-    setDoc(newDoc);
+    setDoc(normalizedDoc);
+    setPageSettings((prev) => (
+      isSamePageSettings(prev, normalizedDoc.pageSettings)
+        ? prev
+        : normalizedDoc.pageSettings
+    ));
     setDirty(true);
     if (status === 'published') setStatus('draft');
   }, [doc, status]);
+
+  const handlePageSettingsChange = useCallback((nextPageSettings: PageSettings) => {
+    const normalized = normalizePageSettings(nextPageSettings);
+    setPageSettings(normalized);
+    handleDocChange({
+      ...doc,
+      pageSettings: normalized,
+      updatedAt: new Date().toISOString(),
+    });
+  }, [doc, handleDocChange]);
 
   const undo = useCallback(() => {
     if (!history.length) return;
@@ -189,6 +229,7 @@ export default function TemplateEditor() {
     if (dirty && !window.confirm('¿Descartar cambios sin guardar?')) return;
     const d = createEmptyDocument();
     setDoc(d);
+    setPageSettings(normalizePageSettings(d.pageSettings));
     setHistory([]);
     setFuture([]);
     setDirty(false);
@@ -199,9 +240,16 @@ export default function TemplateEditor() {
 
   /** Load a preset or imported doc into the editor */
   const loadDocument = useCallback((newDoc: CanvasDocument) => {
+    const normalizedPageSettings = normalizePageSettings(newDoc.pageSettings);
     setHistory(h => [...h.slice(-49), doc]);
     setFuture([]);
-    setDoc({ ...newDoc, status: 'draft', updatedAt: new Date().toISOString() });
+    setDoc({
+      ...newDoc,
+      pageSettings: normalizedPageSettings,
+      status: 'draft',
+      updatedAt: new Date().toISOString(),
+    });
+    setPageSettings(normalizedPageSettings);
     setStatus('draft');
     setDirty(true);
     toast(`Plantilla "${newDoc.name}" cargada`, 'ok');
@@ -279,10 +327,12 @@ export default function TemplateEditor() {
       <header className="h-14 bg-white border-b border-neutral-200 px-4 flex items-center justify-between shadow-sm z-50 flex-shrink-0">
         <div className="flex items-center gap-2 min-w-0">
           {/* Logo */}
-          <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg flex items-center justify-center text-white flex-shrink-0">
-            <Grid3X3 size={16} />
-          </div>
-          <span className="font-bold text-neutral-900 flex-shrink-0">Canvas Editor</span>
+          <img
+            src="https://res.cloudinary.com/dzhp64paw/image/upload/v1771449784/logo_xipfod.png"
+            alt="Logo"
+            className="h-10 w-auto object-contain flex-shrink-0"
+          />
+
 
           <div className="h-6 w-px bg-neutral-200 mx-1 flex-shrink-0" />
 
@@ -376,7 +426,9 @@ export default function TemplateEditor() {
       <div className="flex-1 min-h-0 overflow-hidden">
         <CanvasEditor
           document={doc}
+          pageSettings={pageSettings}
           onChange={handleDocChange}
+          onPageSettingsChange={handlePageSettingsChange}
           isDirty={dirty}
           onLoadTemplate={loadDocument}
         />
@@ -424,11 +476,23 @@ export default function TemplateEditor() {
                 srcDoc={previewHtml}
                 sandbox="allow-same-origin"
                 title="Preview"
+                onLoad={(e) => {
+                  const iframe = e.target as HTMLIFrameElement;
+                  try {
+                    const iDoc = iframe.contentDocument || iframe.contentWindow?.document;
+                    if (iDoc?.body) {
+                      setTimeout(() => {
+                        const h = iDoc.documentElement.scrollHeight || iDoc.body.scrollHeight;
+                        iframe.style.height = Math.max(h, 1122) + 'px';
+                      }, 100);
+                    }
+                  } catch { /* cross-origin fallback */ }
+                }}
                 style={{
                   border: 'none',
                   width: '100%',
                   display: 'block',
-                  minHeight: `calc(${doc.pageSettings?.height ?? 297}mm + 80px)`,
+                  minHeight: `calc(${pageSettings.height || 297}mm + 80px)`,
                 }}
               />
             </div>

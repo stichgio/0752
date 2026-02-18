@@ -1,5 +1,6 @@
 import React, { memo, useMemo, useCallback } from 'react';
 import { TemplateElement, mmToPx } from '../canvasTypes';
+import { TableComponent } from './elements/TableComponent';
 import {
     RotateCcw, Type, Heading, Image, Square, Circle, Minus as LineIcon,
     Table, PenTool, Braces, LayoutGrid, Box, SeparatorHorizontal, QrCode,
@@ -17,6 +18,30 @@ interface CanvasElementProps {
 
 const HANDLE_SIZE = 8;
 const ROTATE_HANDLE_OFFSET = 24;
+type OddPhotoPosition = 'left' | 'center' | 'right';
+
+function getPhotoGridColumns(count: number): number {
+    if (count <= 1) return 1;
+    return 2;
+}
+
+function getOddPhotoItemStyle(index: number, count: number, oddPosition: OddPhotoPosition): React.CSSProperties {
+    if (count % 2 === 0 || index !== count - 1) return {};
+
+    if (oddPosition === 'right') {
+        return { gridColumn: '2 / span 1' };
+    }
+
+    if (oddPosition === 'center') {
+        return {
+            gridColumn: '1 / span 2',
+            justifySelf: 'center',
+            width: '50%',
+        };
+    }
+
+    return { gridColumn: '1 / span 1' };
+}
 
 const TYPE_COLORS: Record<string, string> = {
     text: '#8b5cf6',
@@ -66,6 +91,11 @@ export const CanvasElement = memo(function CanvasElement({
     if (element.visible === false) return null;
 
     const { position, size, style, type, content, id, locked, rotation = 0 } = element;
+    const hasLoadedMedia = (type === 'image' || type === 'logo') && !!element.imageUrl;
+    const hasDefaultMediaFrame =
+        hasLoadedMedia &&
+        (style.borderColor || '').toLowerCase() === '#d1d5db' &&
+        (style.borderWidth || 0) <= 1;
 
     const x = mmToPx(position.x);
     const y = mmToPx(position.y);
@@ -93,7 +123,7 @@ export const CanvasElement = memo(function CanvasElement({
     const innerStyle: React.CSSProperties = useMemo(() => ({
         width: '100%',
         height: '100%',
-        backgroundColor: style.backgroundColor,
+        backgroundColor: hasLoadedMedia ? 'transparent' : style.backgroundColor,
         color: style.color,
         fontSize: style.fontSize ? `${style.fontSize}px` : undefined,
         fontFamily: style.fontFamily,
@@ -101,9 +131,9 @@ export const CanvasElement = memo(function CanvasElement({
         textAlign: style.textAlign as any,
         lineHeight: style.lineHeight ? `${style.lineHeight}` : undefined,
         letterSpacing: style.letterSpacing ? `${style.letterSpacing}px` : undefined,
-        borderWidth: style.borderWidth ? `${style.borderWidth}px` : undefined,
-        borderStyle: style.borderStyle || (style.borderWidth ? 'solid' : undefined),
-        borderColor: style.borderColor,
+        borderWidth: hasDefaultMediaFrame ? undefined : (style.borderWidth ? `${style.borderWidth}px` : undefined),
+        borderStyle: hasDefaultMediaFrame ? undefined : (style.borderStyle || (style.borderWidth ? 'solid' : undefined)),
+        borderColor: hasDefaultMediaFrame ? undefined : style.borderColor,
         borderRadius: style.borderRadius ? `${style.borderRadius}%` : undefined,
         padding: style.padding ? `${style.padding}px` : undefined,
         overflow: 'hidden',
@@ -111,7 +141,7 @@ export const CanvasElement = memo(function CanvasElement({
         flexDirection: 'column' as const,
         justifyContent: 'center',
         boxSizing: 'border-box' as const,
-    }), [style]);
+    }), [style, hasLoadedMedia, hasDefaultMediaFrame]);
 
     const handleMouseDown = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
@@ -303,40 +333,20 @@ export const CanvasElement = memo(function CanvasElement({
             }
 
             case 'table': {
-                const headers = element.tableData?.headers || ['Col 1', 'Col 2', 'Col 3'];
-                const rows = element.tableData?.rows || [['', '', ''], ['', '', '']];
-
                 return (
-                    <div style={{ width: '100%', height: '100%', overflow: 'hidden', padding: 2 }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: style.fontSize || 9 }}>
-                            <thead>
-                                <tr>
-                                    {headers.map((h, i) => (
-                                        <th key={i} style={{ border: '1px solid #d1d5db', padding: '2px 4px', background: '#f3f4f6', fontWeight: 600 }}>
-                                            {h}
-                                        </th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {rows.map((row, ri) => (
-                                    <tr key={ri}>
-                                        {row.map((cell, ci) => (
-                                            <td key={ci} style={{ border: '1px solid #d1d5db', padding: '2px 4px' }}>
-                                                {cell || <span style={{ color: '#d1d5db' }}>—</span>}
-                                            </td>
-                                        ))}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                    <div style={{ width: '100%', height: '100%', overflow: 'hidden' }}>
+                        <TableComponent
+                            tableData={element.tableData}
+                            style={style}
+                        />
                     </div>
                 );
             }
 
             case 'photo-grid': {
                 const count = element.photoConfig?.count || 2;
-                const cols = count === 4 ? 2 : count;
+                const cols = getPhotoGridColumns(count);
+                const oddPosition = (element.photoConfig?.oddPosition || 'center') as OddPhotoPosition;
                 return (
                     <div style={{ width: '100%', height: '100%', padding: 4 }}>
                         {content && (
@@ -357,6 +367,7 @@ export const CanvasElement = memo(function CanvasElement({
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     borderRadius: 4,
+                                    ...getOddPhotoItemStyle(i, count, oddPosition),
                                 }}>
                                     <Image size={16} color="#ccc" />
                                     {element.photoConfig?.showLabels && (
@@ -541,3 +552,4 @@ function getCursorForDirection(dir: string): string {
     };
     return map[dir] || 'pointer';
 }
+

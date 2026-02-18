@@ -16,6 +16,10 @@ export type ElementType =
   | 'divider'
   | 'qr';
 
+export type ElementPreset = 'photo-panel' | 'technical-table';
+export type PhotoGridCount = 2 | 3 | 4 | 5 | 6;
+export type PhotoGridOddPosition = 'left' | 'center' | 'right';
+
 export interface Position {
   x: number;
   y: number;
@@ -24,6 +28,25 @@ export interface Position {
 export interface Size {
   width: number;
   height: number;
+}
+
+export type PageFormat = 'A4' | 'Letter' | 'Custom';
+export type PageOrientation = 'portrait' | 'landscape';
+
+export interface PageMargins {
+  top: number;
+  right: number;
+  bottom: number;
+  left: number;
+}
+
+export interface PageSettings {
+  format: PageFormat;
+  width: number; // mm
+  height: number; // mm
+  orientation: PageOrientation;
+  margins: PageMargins; // mm
+  backgroundColor?: string;
 }
 
 export interface ElementStyle {
@@ -64,6 +87,16 @@ export interface ElementStyle {
   objectPosition?: string;
 }
 
+export interface TableData {
+  rowCount: number;
+  colCount: number;
+  data: string[][];
+  borderColor: string;
+  // Legacy shape kept for backward compatibility with existing templates.
+  headers?: string[];
+  rows?: string[][];
+}
+
 export interface TemplateElement {
   id: string;
   type: ElementType;
@@ -83,16 +116,14 @@ export interface TemplateElement {
   placeholder?: string; // Placeholder text
 
   // Table specific
-  tableData?: {
-    headers: string[];
-    rows: string[][];
-  };
+  tableData?: TableData;
 
   // Photo grid specific
   photoConfig?: {
-    count: 2 | 3 | 4;
+    count: PhotoGridCount;
     labels: string[];
     showLabels: boolean;
+    oddPosition?: PhotoGridOddPosition;
   };
 
   // Signature specific
@@ -131,15 +162,7 @@ export interface CanvasDocument {
   id: string;
   name: string;
   elements: TemplateElement[];
-  pageSettings: {
-    width: number; // mm
-    height: number; // mm
-    marginTop: number;
-    marginRight: number;
-    marginBottom: number;
-    marginLeft: number;
-    backgroundColor: string;
-  };
+  pageSettings: PageSettings;
   version: number;
   status: 'draft' | 'published' | 'archived';
   createdAt: string;
@@ -253,9 +276,8 @@ export const DEFAULT_TOOLS: ToolItem[] = [
     category: 'media',
     defaultSize: { width: 150, height: 150 },
     defaultStyle: {
-      backgroundColor: '#f3f4f6',
-      borderColor: '#d1d5db',
-      borderWidth: 1,
+      backgroundColor: 'transparent',
+      borderWidth: 0,
       objectFit: 'cover',
     },
   },
@@ -266,9 +288,8 @@ export const DEFAULT_TOOLS: ToolItem[] = [
     category: 'media',
     defaultSize: { width: 60, height: 60 },
     defaultStyle: {
-      backgroundColor: '#ffffff',
-      borderColor: '#d1d5db',
-      borderWidth: 1,
+      backgroundColor: 'transparent',
+      borderWidth: 0,
       objectFit: 'contain',
     },
   },
@@ -336,19 +357,89 @@ export function createEmptyDocument(): CanvasDocument {
     id: `doc_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     name: 'Nueva Plantilla',
     elements: [],
-    pageSettings: {
-      width: 210, // A4 width in mm
-      height: 297, // A4 height in mm
-      marginTop: 10,
-      marginRight: 10,
-      marginBottom: 10,
-      marginLeft: 10,
-      backgroundColor: '#ffffff',
-    },
+    pageSettings: createDefaultPageSettings(),
     version: 1,
     status: 'draft',
     createdAt: now,
     updatedAt: now,
+  };
+}
+
+export function createDefaultPageSettings(): PageSettings {
+  return {
+    format: 'A4',
+    width: 210,
+    height: 297,
+    orientation: 'portrait',
+    margins: {
+      top: 10,
+      right: 10,
+      bottom: 10,
+      left: 10,
+    },
+    backgroundColor: '#ffffff',
+  };
+}
+
+function toFiniteNumber(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+function isKnownFormat(value: unknown): value is PageFormat {
+  return value === 'A4' || value === 'Letter' || value === 'Custom';
+}
+
+function inferFormat(width: number, height: number): PageFormat {
+  const min = Math.min(width, height);
+  const max = Math.max(width, height);
+  const epsilon = 1;
+  const nearly = (a: number, b: number) => Math.abs(a - b) <= epsilon;
+  if (nearly(min, 210) && nearly(max, 297)) return 'A4';
+  if (nearly(min, 216) && nearly(max, 279)) return 'Letter';
+  return 'Custom';
+}
+
+function inferOrientation(width: number, height: number): PageOrientation {
+  return width > height ? 'landscape' : 'portrait';
+}
+
+export function normalizePageSettings(raw: unknown): PageSettings {
+  const defaults = createDefaultPageSettings();
+  if (!raw || typeof raw !== 'object') return defaults;
+
+  const maybe = raw as Record<string, unknown>;
+  const width = toFiniteNumber(maybe.width, defaults.width);
+  const height = toFiniteNumber(maybe.height, defaults.height);
+
+  const legacyTop = toFiniteNumber(maybe.marginTop, defaults.margins.top);
+  const legacyRight = toFiniteNumber(maybe.marginRight, defaults.margins.right);
+  const legacyBottom = toFiniteNumber(maybe.marginBottom, defaults.margins.bottom);
+  const legacyLeft = toFiniteNumber(maybe.marginLeft, defaults.margins.left);
+
+  const marginsRaw = maybe.margins as Partial<PageMargins> | undefined;
+  const margins: PageMargins = {
+    top: toFiniteNumber(marginsRaw?.top, legacyTop),
+    right: toFiniteNumber(marginsRaw?.right, legacyRight),
+    bottom: toFiniteNumber(marginsRaw?.bottom, legacyBottom),
+    left: toFiniteNumber(marginsRaw?.left, legacyLeft),
+  };
+
+  const format = isKnownFormat(maybe.format) ? maybe.format : inferFormat(width, height);
+  const orientation =
+    maybe.orientation === 'portrait' || maybe.orientation === 'landscape'
+      ? maybe.orientation
+      : inferOrientation(width, height);
+
+  return {
+    format,
+    width,
+    height,
+    orientation,
+    margins,
+    backgroundColor:
+      typeof maybe.backgroundColor === 'string'
+        ? maybe.backgroundColor
+        : defaults.backgroundColor,
   };
 }
 
@@ -370,6 +461,14 @@ export function createElement(
     visible: true,
     locked: false,
     content: type === 'text' || type === 'heading' ? tool.label : '',
+    ...(type === 'table' ? {
+      tableData: {
+        rowCount: 2,
+        colCount: 2,
+        data: [['', ''], ['', '']],
+        borderColor: '#d1d5db',
+      },
+    } : {}),
     ...overrides,
   };
 }

@@ -1,5 +1,7 @@
 // Export to Jinja2/HTML
 import type { TemplateElement, CanvasDocument } from './canvasTypes';
+import { normalizeTableData } from './utils/elementDefaults';
+import { normalizePageSettings } from './canvasTypes';
 
 // ─── SVG placeholder for preview ──────────────────────────────────────────────
 
@@ -41,6 +43,7 @@ function escapeHtmlPreserveJinja(text: string): string {
 
 export function exportToJinja2(doc: CanvasDocument): string {
   const elements = doc.elements.filter(el => el.visible !== false);
+  const pageSettings = normalizePageSettings(doc.pageSettings);
 
   // Sort by z-index
   elements.sort((a, b) => (a.style.zIndex || 0) - (b.style.zIndex || 0));
@@ -52,7 +55,7 @@ export function exportToJinja2(doc: CanvasDocument): string {
   <title>{{ report.title | default('${doc.name}') }}</title>
   <style>
     @page {
-      size: ${doc.pageSettings.width}mm ${doc.pageSettings.height}mm;
+      size: ${pageSettings.width}mm ${pageSettings.height}mm;
       margin: 0;
     }
 
@@ -68,9 +71,9 @@ export function exportToJinja2(doc: CanvasDocument): string {
 
     .template-container {
       position: relative;
-      width: ${doc.pageSettings.width}mm;
-      height: ${doc.pageSettings.height}mm;
-      background: ${doc.pageSettings.backgroundColor};
+      width: ${pageSettings.width}mm;
+      height: ${pageSettings.height}mm;
+      background: ${pageSettings.backgroundColor || '#ffffff'};
       overflow: hidden;
       page-break-after: always;
     }
@@ -181,8 +184,23 @@ function generateElementStyle(el: TemplateElement): string {
     `z-index: ${el.style.zIndex || 1}`,
   ];
 
+  // Logo/image elements should have transparent background by default
+  // to avoid ugly outlines on PNG images
+  const isMediaElement = el.type === 'logo' || el.type === 'image';
+  const normalizedMediaBg = (el.style.backgroundColor || '').trim().toLowerCase();
+  const isDefaultMediaBackground = [
+    '',
+    'transparent',
+    '#fff',
+    '#ffffff',
+    '#f3f4f6',
+    '#e5e7eb',
+  ].includes(normalizedMediaBg);
+
   if (el.style.backgroundColor && el.style.backgroundColor !== 'transparent') {
-    styles.push(`background-color: ${el.style.backgroundColor}`);
+    if (!isMediaElement || !isDefaultMediaBackground) {
+      styles.push(`background-color: ${el.style.backgroundColor}`);
+    }
   }
 
   if (el.style.color) {
@@ -221,8 +239,9 @@ function generateElementStyle(el: TemplateElement): string {
     styles.push(`padding: ${el.style.padding}px`);
   }
 
-  // Full border shorthand
-  if (el.style.borderWidth && el.style.borderStyle !== 'none') {
+  // Full border shorthand — skip default borders on media elements (logo, image)
+  // to avoid ugly outlines around transparent PNG images
+  if (el.style.borderWidth && el.style.borderStyle !== 'none' && !isMediaElement) {
     styles.push(`border: ${el.style.borderWidth}px ${el.style.borderStyle || 'solid'} ${el.style.borderColor || '#000'}`);
   }
 
@@ -254,6 +273,29 @@ function generateElementStyle(el: TemplateElement): string {
  * be rendered purely via CSS (rectangle, container) — the caller skips
  * emitting a DOM node for those.
  */
+function getPhotoGridColumns(count: number): number {
+  if (count <= 1) return 1;
+  return 2;
+}
+
+function getOddPhotoItemInlineStyle(
+  index: number,
+  count: number,
+  oddPosition: 'left' | 'center' | 'right'
+): string {
+  if (count % 2 === 0 || index !== count - 1) return '';
+
+  if (oddPosition === 'right') {
+    return 'grid-column: 2 / span 1;';
+  }
+
+  if (oddPosition === 'center') {
+    return 'grid-column: 1 / span 2; width: 50%; justify-self: center;';
+  }
+
+  return 'grid-column: 1 / span 1;';
+}
+
 function generateElementContent(el: TemplateElement): string | null {
   switch (el.type) {
     case 'text':
@@ -283,7 +325,8 @@ function generateElementContent(el: TemplateElement): string | null {
 
     case 'photo-grid': {
       const count = el.photoConfig?.count || 2;
-      const cols = count === 4 ? 2 : count;
+      const cols = getPhotoGridColumns(count);
+      const oddPosition = el.photoConfig?.oddPosition || 'center';
       let gridHtml = '';
       if (el.content) {
         gridHtml += `<div style="font-weight: bold; font-size: 7.5pt; margin-bottom: 1mm; text-transform: uppercase;">${escapeHtml(el.content)}</div>`;
@@ -292,17 +335,20 @@ function generateElementContent(el: TemplateElement): string | null {
 
       for (let i = 0; i < count; i++) {
         const label = el.photoConfig?.labels?.[i] || `Foto ${i + 1}`;
+        const oddItemStyle = getOddPhotoItemInlineStyle(i, count, oddPosition);
+        const oddStyleAttr = oddItemStyle ? ` style="${oddItemStyle}"` : '';
         // Use report.images[i].path — compatible with the backend report context
         // Wrap in {% if %} guard so partial image lists don't error
         gridHtml += `{% if report.images|length > ${i} %}`;
-        gridHtml += `<div class="photo-item">`;
+        gridHtml += `<div class="photo-item"${oddStyleAttr}>`;
         gridHtml += `<img src="{{ report.images[${i}].path }}" alt="{{ report.images[${i}].name | default('${escapeHtml(label)}') }}" />`;
         if (el.photoConfig?.showLabels) {
           gridHtml += `<div class="photo-label">${escapeHtml(label)}</div>`;
         }
         gridHtml += `</div>`;
         gridHtml += `{% else %}`;
-        gridHtml += `<div class="photo-item" style="background: #f0f0f0;"><span style="color:#999;">Sin foto</span>`;
+        const emptyStyle = `background: #f0f0f0;${oddItemStyle ? ` ${oddItemStyle}` : ''}`;
+        gridHtml += `<div class="photo-item" style="${emptyStyle}"><span style="color:#999;">Sin foto</span>`;
         if (el.photoConfig?.showLabels) {
           gridHtml += `<div class="photo-label">${escapeHtml(label)}</div>`;
         }
@@ -315,20 +361,15 @@ function generateElementContent(el: TemplateElement): string | null {
 
     case 'table': {
       if (!el.tableData) return '';
+      const table = normalizeTableData(el);
 
-      let tableHtml = '<table>';
-      tableHtml += '<thead><tr>';
-      for (const header of el.tableData.headers) {
-        tableHtml += `<th>${escapeHtml(header)}</th>`;
-      }
-      tableHtml += '</tr></thead>';
-
+      let tableHtml = '<table style="width: 100%; height: 100%; border-collapse: collapse; table-layout: fixed;">';
       tableHtml += '<tbody>';
-      for (const row of el.tableData.rows) {
+      for (const row of table.data) {
         tableHtml += '<tr>';
         for (const cell of row) {
           // Use smart escape to preserve {{ jinja }} expressions in cells
-          tableHtml += `<td>${escapeHtmlPreserveJinja(cell)}</td>`;
+          tableHtml += `<td style="border: 1px solid ${table.borderColor}; padding: 1.5mm 2mm;">${escapeHtmlPreserveJinja(cell)}</td>`;
         }
         tableHtml += '</tr>';
       }
@@ -398,7 +439,14 @@ function generateElementContent(el: TemplateElement): string | null {
 // ─── JSON export / import ──────────────────────────────────────────────────────
 
 export function exportToJSON(doc: CanvasDocument): string {
-  return JSON.stringify(doc, null, 2);
+  return JSON.stringify(
+    {
+      ...doc,
+      pageSettings: normalizePageSettings(doc.pageSettings),
+    },
+    null,
+    2
+  );
 }
 
 export function importFromJSON(json: string): CanvasDocument | null {
@@ -407,7 +455,10 @@ export function importFromJSON(json: string): CanvasDocument | null {
     if (!doc.id || !Array.isArray(doc.elements)) {
       return null;
     }
-    return doc as CanvasDocument;
+    return {
+      ...doc,
+      pageSettings: normalizePageSettings(doc.pageSettings),
+    } as CanvasDocument;
   } catch {
     return null;
   }
@@ -418,7 +469,29 @@ export function importFromJSON(json: string): CanvasDocument | null {
 export function generatePreviewHtml(doc: CanvasDocument, sampleData: Record<string, string> = {}): string {
   let html = exportToJinja2(doc);
 
-  // 1. Remove Jinja2 block tags ({% for %}, {% endfor %}, {% if %}, etc.)
+  // 1. Evaluate Jinja2 conditionals before stripping tags.
+  //    In preview mode we have no real data, so image-count guards
+  //    resolve to 0 images → show the "else" (placeholder) branch.
+
+  // Handle {% if report.images|length > N %}...{% else %}...{% endif %}
+  html = html.replace(
+    /\{%\s*if\s+report\.images\|length\s*>\s*\d+\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g,
+    (_match, _ifContent, elseContent) => elseContent
+  );
+
+  // Handle {% if report.images|length > N %}...{% endif %} (no else)
+  html = html.replace(
+    /\{%\s*if\s+report\.images\|length\s*>\s*\d+\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g,
+    ''
+  );
+
+  // Handle {% if logo_var %}...{% endif %} — show the content (assume logos present)
+  html = html.replace(
+    /\{%\s*if\s+(logo_left|logo_right)\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g,
+    (_match, _v, content) => content
+  );
+
+  // Remove remaining Jinja2 block tags ({% for %}, {% endfor %}, etc.)
   html = html.replace(/{%[^%]*%}/g, '');
 
   // 2. Replace report.data.get('FIELD', default) → [FIELD]

@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { CanvasDocument, TemplateElement, createElement, generateId, ElementType } from './canvasTypes';
+import { CanvasDocument, TemplateElement, createElement, generateId, ElementType, ElementPreset, PageSettings } from './canvasTypes';
 import { SidebarRoot } from './sidebar/SidebarRoot';
 import { CanvasArea } from './canvas/CanvasArea';
 import { InspectorRoot } from './inspector/InspectorRoot';
@@ -9,12 +9,21 @@ import { migrateToCanvas } from './utils/elementDefaults';
 
 interface CanvasEditorProps {
   document: CanvasDocument;
+  pageSettings: PageSettings;
   onChange: (doc: CanvasDocument) => void;
+  onPageSettingsChange: (settings: PageSettings) => void;
   isDirty?: boolean;
   onLoadTemplate?: (doc: CanvasDocument) => void;
 }
 
-export default function CanvasEditor({ document: doc, onChange, isDirty, onLoadTemplate }: CanvasEditorProps) {
+export default function CanvasEditor({
+  document: doc,
+  pageSettings,
+  onChange,
+  onPageSettingsChange,
+  isDirty,
+  onLoadTemplate,
+}: CanvasEditorProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [zoom, setZoom] = useState(75);
   const hasMigrated = useRef(false);
@@ -45,12 +54,56 @@ export default function CanvasEditor({ document: doc, onChange, isDirty, onLoadT
     onChange({ ...doc, elements: newElements });
   }, [doc, onChange]);
 
-  const handleAddElement = useCallback((type: ElementType, pos?: { x: number; y: number }) => {
+  const handleAddElement = useCallback((type: ElementType, pos?: { x: number; y: number }, presetId?: ElementPreset) => {
     const position = pos || {
-      x: (doc.pageSettings.width / 2) - 25,
-      y: (doc.pageSettings.height / 2) - 25,
+      x: (pageSettings.width / 2) - 25,
+      y: (pageSettings.height / 2) - 25,
     };
     const newEl = createElement(type, position);
+
+    if (presetId === 'photo-panel') {
+      newEl.name = `Panel fotografico ${Math.floor(Math.random() * 1000)}`;
+      newEl.content = 'Panel fotografico';
+      newEl.size = { width: 190, height: 120 };
+      newEl.photoConfig = {
+        count: 4,
+        labels: ['ANTES', 'DURANTE', 'DESPUES', 'DETALLE'],
+        showLabels: true,
+        oddPosition: 'center',
+      };
+      newEl.style = {
+        ...newEl.style,
+        backgroundColor: '#ffffff',
+        borderColor: '#d1d5db',
+        borderWidth: 1,
+        borderStyle: 'solid',
+      };
+    }
+
+    if (presetId === 'technical-table') {
+      newEl.name = `Datos tecnicos ${Math.floor(Math.random() * 1000)}`;
+      newEl.size = { width: 190, height: 70 };
+      newEl.tableData = {
+        rowCount: 5,
+        colCount: 2,
+        borderColor: '#9ca3af',
+        data: [
+          ['DATOS TECNICOS', ''],
+          ['NIS', ''],
+          ['DIRECCION', ''],
+          ['FECHA', ''],
+          ['OBSERVACION', ''],
+        ],
+      };
+      newEl.style = {
+        ...newEl.style,
+        backgroundColor: '#ffffff',
+        borderColor: '#9ca3af',
+        borderWidth: 1,
+        borderStyle: 'solid',
+        fontSize: 9,
+      };
+    }
 
     if (type === 'shape') {
       newEl.shapeConfig = { kind: 'rectangle', fill: '#e5e7eb', stroke: '#9ca3af', strokeWidth: 1 };
@@ -67,7 +120,7 @@ export default function CanvasEditor({ document: doc, onChange, isDirty, onLoadT
 
     onChange({ ...doc, elements: [...doc.elements, newEl] });
     setSelectedIds([newEl.id]);
-  }, [doc, onChange]);
+  }, [doc, onChange, pageSettings.height, pageSettings.width]);
 
   const handleDelete = useCallback(() => {
     if (!selectedIds.length) return;
@@ -108,9 +161,9 @@ export default function CanvasEditor({ document: doc, onChange, isDirty, onLoadT
 
     if (selected.length === 1) {
       refLeft = 0;
-      refRight = doc.pageSettings.width;
+      refRight = pageSettings.width;
       refTop = 0;
-      refBottom = doc.pageSettings.height;
+      refBottom = pageSettings.height;
     } else {
       refLeft = Math.min(...selected.map(e => e.position.x));
       refRight = Math.max(...selected.map(e => e.position.x + e.size.width));
@@ -136,7 +189,7 @@ export default function CanvasEditor({ document: doc, onChange, isDirty, onLoadT
     });
 
     handleUpdateElements(updates);
-  }, [doc, selectedIds, handleUpdateElements]);
+  }, [doc, selectedIds, handleUpdateElements, pageSettings.height, pageSettings.width]);
 
   // Z-index manipulation
   const handleBringToFront = useCallback(() => {
@@ -270,6 +323,7 @@ export default function CanvasEditor({ document: doc, onChange, isDirty, onLoadT
         <div className="flex-1 relative flex flex-col min-w-0">
           <CanvasArea
             document={doc}
+            pageSettings={pageSettings}
             onChange={onChange}
             selectedIds={selectedIds}
             onSelect={setSelectedIds}
@@ -290,6 +344,8 @@ export default function CanvasEditor({ document: doc, onChange, isDirty, onLoadT
           selectedIds={selectedIds}
           elements={doc.elements}
           onUpdateElement={handleUpdateElement}
+          pageSettings={pageSettings}
+          onPageSettingsChange={onPageSettingsChange}
         />
       </div>
     </div>

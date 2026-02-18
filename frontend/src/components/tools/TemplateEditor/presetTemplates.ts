@@ -20,7 +20,14 @@ function now(): string {
   return new Date().toISOString();
 }
 
-const PAGE = { width: 210, height: 297, marginTop: 10, marginRight: 10, marginBottom: 10, marginLeft: 10, backgroundColor: '#ffffff' };
+const PAGE = {
+  format: 'A4' as const,
+  width: 210,
+  height: 297,
+  orientation: 'portrait' as const,
+  margins: { top: 10, right: 10, bottom: 10, left: 10 },
+  backgroundColor: '#ffffff',
+};
 
 // ─── Helper builders ───────────────────────────────────────────────────────────
 
