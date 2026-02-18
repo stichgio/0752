@@ -99,6 +99,24 @@ const PomodoroTimer = () => {
 
     const [isOpen, setIsOpen] = useState(false);
 
+    // Keyboard shortcut to toggle pomodoro (CTRL + Q)
+    useEffect(() => {
+        const handleKeyDown = (e) => {
+            // Check for CTRL+Q or CMD+Q (Mac)
+            const isCtrlQ = (e.ctrlKey || e.metaKey) && (e.key === 'q' || e.key === 'Q');
+
+            if (isCtrlQ) {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsOpen(prev => !prev);
+            }
+        };
+
+        // Use capture phase to catch event before other handlers
+        window.addEventListener('keydown', handleKeyDown, true);
+        return () => window.removeEventListener('keydown', handleKeyDown, true);
+    }, []);
+
     return (
 
         <div className="relative cursor-pointer group z-[100]">

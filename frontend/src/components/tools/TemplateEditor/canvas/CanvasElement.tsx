@@ -1,0 +1,543 @@
+import React, { memo, useMemo, useCallback } from 'react';
+import { TemplateElement, mmToPx } from '../canvasTypes';
+import {
+    RotateCcw, Type, Heading, Image, Square, Circle, Minus as LineIcon,
+    Table, PenTool, Braces, LayoutGrid, Box, SeparatorHorizontal, QrCode,
+} from 'lucide-react';
+
+interface CanvasElementProps {
+    element: TemplateElement;
+    scale: number;
+    isSelected: boolean;
+    onSelect: (id: string, multi: boolean) => void;
+    onDragStart: (e: React.MouseEvent, id: string) => void;
+    onResizeStart: (e: React.MouseEvent, element: TemplateElement, direction: string) => void;
+    onRotateStart: (e: React.MouseEvent, element: TemplateElement) => void;
+}
+
+const HANDLE_SIZE = 8;
+const ROTATE_HANDLE_OFFSET = 24;
+
+const TYPE_COLORS: Record<string, string> = {
+    text: '#8b5cf6',
+    heading: '#7c3aed',
+    variable: '#2563eb',
+    image: '#f59e0b',
+    logo: '#d97706',
+    rectangle: '#6b7280',
+    circle: '#6b7280',
+    line: '#6b7280',
+    shape: '#10b981',
+    divider: '#6b7280',
+    qr: '#000000',
+    table: '#ec4899',
+    'photo-grid': '#f59e0b',
+    signature: '#374151',
+    container: '#9ca3af',
+};
+
+const TYPE_ICONS: Record<string, React.ReactNode> = {
+    text: <Type size={10} />,
+    heading: <Heading size={10} />,
+    variable: <Braces size={10} />,
+    image: <Image size={10} />,
+    logo: <Image size={10} />,
+    rectangle: <Square size={10} />,
+    circle: <Circle size={10} />,
+    line: <LineIcon size={10} />,
+    shape: <Square size={10} />,
+    divider: <SeparatorHorizontal size={10} />,
+    qr: <QrCode size={10} />,
+    table: <Table size={10} />,
+    'photo-grid': <LayoutGrid size={10} />,
+    signature: <PenTool size={10} />,
+    container: <Box size={10} />,
+};
+
+export const CanvasElement = memo(function CanvasElement({
+    element,
+    scale,
+    isSelected,
+    onSelect,
+    onDragStart,
+    onResizeStart,
+    onRotateStart,
+}: CanvasElementProps) {
+    if (element.visible === false) return null;
+
+    const { position, size, style, type, content, id, locked, rotation = 0 } = element;
+
+    const x = mmToPx(position.x);
+    const y = mmToPx(position.y);
+    const width = mmToPx(size.width);
+    const height = mmToPx(size.height);
+
+    const accentColor = TYPE_COLORS[type] || '#3b82f6';
+
+    const containerStyle: React.CSSProperties = useMemo(() => ({
+        position: 'absolute',
+        left: x,
+        top: y,
+        width,
+        height,
+        transform: rotation ? `rotate(${rotation}deg)` : undefined,
+        transformOrigin: 'center center',
+        zIndex: style.zIndex || 1,
+        opacity: style.opacity ?? 1,
+        cursor: locked ? 'default' : isSelected ? 'move' : 'pointer',
+        outline: isSelected ? `2px solid ${accentColor}` : 'none',
+        outlineOffset: '1px',
+        pointerEvents: 'auto' as const,
+    }), [x, y, width, height, rotation, style.zIndex, style.opacity, locked, isSelected, accentColor]);
+
+    const innerStyle: React.CSSProperties = useMemo(() => ({
+        width: '100%',
+        height: '100%',
+        backgroundColor: style.backgroundColor,
+        color: style.color,
+        fontSize: style.fontSize ? `${style.fontSize}px` : undefined,
+        fontFamily: style.fontFamily,
+        fontWeight: style.fontWeight as any,
+        textAlign: style.textAlign as any,
+        lineHeight: style.lineHeight ? `${style.lineHeight}` : undefined,
+        letterSpacing: style.letterSpacing ? `${style.letterSpacing}px` : undefined,
+        borderWidth: style.borderWidth ? `${style.borderWidth}px` : undefined,
+        borderStyle: style.borderStyle || (style.borderWidth ? 'solid' : undefined),
+        borderColor: style.borderColor,
+        borderRadius: style.borderRadius ? `${style.borderRadius}%` : undefined,
+        padding: style.padding ? `${style.padding}px` : undefined,
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column' as const,
+        justifyContent: 'center',
+        boxSizing: 'border-box' as const,
+    }), [style]);
+
+    const handleMouseDown = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (locked) return;
+        onSelect(id, e.shiftKey);
+        onDragStart(e, id);
+    }, [locked, onSelect, onDragStart, id]);
+
+    const renderContent = () => {
+        switch (type) {
+            case 'text':
+            case 'heading':
+                return (
+                    <div style={{ whiteSpace: 'pre-wrap', padding: '2px 4px' }}>
+                        {content || <span style={{ color: '#aaa', fontStyle: 'italic' }}>
+                            {type === 'heading' ? 'Título' : 'Texto...'}
+                        </span>}
+                    </div>
+                );
+
+            case 'variable':
+                return (
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        padding: '2px 6px',
+                        fontFamily: 'monospace',
+                        fontSize: style.fontSize || 11,
+                    }}>
+                        <Braces size={12} style={{ opacity: 0.6, flexShrink: 0 }} />
+                        <span>{element.variableName || 'variable'}</span>
+                    </div>
+                );
+
+            case 'image':
+            case 'logo':
+                return element.imageUrl ? (
+                    <img
+                        src={element.imageUrl}
+                        alt={type}
+                        style={{
+                            width: '100%',
+                            height: '100%',
+                            objectFit: style.objectFit || (type === 'logo' ? 'contain' : 'cover')
+                        }}
+                        draggable={false}
+                    />
+                ) : (
+                    <div style={{
+                        width: '100%',
+                        height: '100%',
+                        background: 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#9ca3af',
+                        gap: 4,
+                    }}>
+                        <Image size={Math.min(24, width * 0.3)} />
+                        <span style={{ fontSize: 10 }}>
+                            {type === 'logo'
+                                ? (element.variableName || 'logo_left')
+                                : 'Imagen'}
+                        </span>
+                    </div>
+                );
+
+            case 'rectangle':
+                return <div style={{ width: '100%', height: '100%' }} />;
+
+            case 'circle':
+                return (
+                    <div style={{
+                        width: '100%',
+                        height: '100%',
+                        borderRadius: '50%',
+                        backgroundColor: style.backgroundColor || '#e5e7eb',
+                        border: `${style.borderWidth || 1}px ${style.borderStyle || 'solid'} ${style.borderColor || '#9ca3af'}`,
+                        boxSizing: 'border-box',
+                    }} />
+                );
+
+            case 'line':
+                return (
+                    <div style={{
+                        width: '100%',
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                    }}>
+                        <div style={{
+                            width: '100%',
+                            height: Math.max(1, style.borderWidth || 1),
+                            backgroundColor: style.backgroundColor || '#374151',
+                        }} />
+                    </div>
+                );
+
+            case 'shape': {
+                const shape = element.shapeConfig;
+                if (!shape) return null;
+
+                const commonShapeStyle: React.CSSProperties = {
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: shape.fill || 'transparent',
+                    border: `${shape.strokeWidth || 1}px solid ${shape.stroke || '#000'}`,
+                    boxSizing: 'border-box',
+                };
+
+                if (shape.kind === 'rectangle') {
+                    return <div style={{ ...commonShapeStyle, borderRadius: shape.borderRadius || 0 }} />;
+                } else if (shape.kind === 'circle') {
+                    return <div style={{ ...commonShapeStyle, borderRadius: '50%' }} />;
+                } else if (shape.kind === 'line') {
+                    return (
+                        <div style={{ display: 'flex', alignItems: 'center', width: '100%', height: '100%' }}>
+                            <div style={{ width: '100%', height: shape.strokeWidth || 2, backgroundColor: shape.stroke || '#000' }} />
+                        </div>
+                    );
+                } else if (shape.kind === 'arrow') {
+                    return (
+                        <svg viewBox="0 0 100 50" preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
+                            <defs>
+                                <marker id={`arrowhead-${id}`} orient="auto" markerWidth="4" markerHeight="4" refX="3" refY="2">
+                                    <path d="M0,0 V4 L4,2 Z" fill={shape.stroke || '#000'} />
+                                </marker>
+                            </defs>
+                            <line x1="2" y1="25" x2="94" y2="25" stroke={shape.stroke || '#000'} strokeWidth={shape.strokeWidth || 2} markerEnd={`url(#arrowhead-${id})`} />
+                        </svg>
+                    );
+                }
+                return null;
+            }
+
+            case 'divider': {
+                const div = element.dividerConfig;
+                const isVertical = div?.orientation === 'vertical';
+                const thickness = div?.thickness || 1;
+                const color = div?.color || '#374151';
+                const divStyle = div?.style || 'solid';
+
+                return (
+                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{
+                            width: isVertical ? 0 : '100%',
+                            height: isVertical ? '100%' : 0,
+                            borderTop: !isVertical ? `${thickness}px ${divStyle} ${color}` : undefined,
+                            borderLeft: isVertical ? `${thickness}px ${divStyle} ${color}` : undefined,
+                        }} />
+                    </div>
+                );
+            }
+
+            case 'qr': {
+                return (
+                    <div style={{
+                        width: '100%',
+                        height: '100%',
+                        backgroundColor: element.qrConfig?.background || '#fff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '8%',
+                        position: 'relative',
+                    }}>
+                        <QrCode size={Math.min(width, height) * 0.6} color={element.qrConfig?.foreground || '#000'} />
+                        {element.qrConfig?.content && (
+                            <div style={{
+                                position: 'absolute',
+                                bottom: 2,
+                                left: 0,
+                                right: 0,
+                                textAlign: 'center',
+                                fontSize: 7,
+                                color: '#999',
+                                overflow: 'hidden',
+                                whiteSpace: 'nowrap',
+                                textOverflow: 'ellipsis',
+                                padding: '0 4px',
+                            }}>
+                                {element.qrConfig.content}
+                            </div>
+                        )}
+                    </div>
+                );
+            }
+
+            case 'table': {
+                const headers = element.tableData?.headers || ['Col 1', 'Col 2', 'Col 3'];
+                const rows = element.tableData?.rows || [['', '', ''], ['', '', '']];
+
+                return (
+                    <div style={{ width: '100%', height: '100%', overflow: 'hidden', padding: 2 }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: style.fontSize || 9 }}>
+                            <thead>
+                                <tr>
+                                    {headers.map((h, i) => (
+                                        <th key={i} style={{ border: '1px solid #d1d5db', padding: '2px 4px', background: '#f3f4f6', fontWeight: 600 }}>
+                                            {h}
+                                        </th>
+                                    ))}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {rows.map((row, ri) => (
+                                    <tr key={ri}>
+                                        {row.map((cell, ci) => (
+                                            <td key={ci} style={{ border: '1px solid #d1d5db', padding: '2px 4px' }}>
+                                                {cell || <span style={{ color: '#d1d5db' }}>—</span>}
+                                            </td>
+                                        ))}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                );
+            }
+
+            case 'photo-grid': {
+                const count = element.photoConfig?.count || 2;
+                const cols = count === 4 ? 2 : count;
+                return (
+                    <div style={{ width: '100%', height: '100%', padding: 4 }}>
+                        {content && (
+                            <div style={{ fontWeight: 'bold', fontSize: 10, marginBottom: 4 }}>{content}</div>
+                        )}
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: `repeat(${cols}, 1fr)`,
+                            gap: 4,
+                            height: content ? 'calc(100% - 20px)' : '100%',
+                        }}>
+                            {Array.from({ length: count }).map((_, i) => (
+                                <div key={i} style={{
+                                    background: '#f3f4f6',
+                                    border: '1px dashed #d1d5db',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    borderRadius: 4,
+                                }}>
+                                    <Image size={16} color="#ccc" />
+                                    {element.photoConfig?.showLabels && (
+                                        <span style={{ fontSize: 8, color: '#aaa', marginTop: 2 }}>
+                                            {element.photoConfig.labels?.[i] || `Foto ${i + 1}`}
+                                        </span>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+            }
+
+            case 'signature': {
+                const sigs = element.signatureConfig || [{ title: 'FIRMA', name: '' }];
+                return (
+                    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: 4 }}>
+                        <div style={{ borderTop: '1px solid #374151', paddingTop: 4, textAlign: 'center' }}>
+                            <div style={{ fontSize: 9, fontWeight: 'bold' }}>{sigs[0]?.title || 'FIRMA'}</div>
+                            {sigs[0]?.name && <div style={{ fontSize: 8, color: '#666' }}>{sigs[0].name}</div>}
+                        </div>
+                    </div>
+                );
+            }
+
+            case 'container':
+                return (
+                    <div style={{
+                        width: '100%',
+                        height: '100%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: '#9ca3af',
+                        fontSize: 10,
+                    }}>
+                        {content || 'Contenedor'}
+                    </div>
+                );
+
+            default:
+                return <div style={{ padding: 4 }}>{content}</div>;
+        }
+    };
+
+    const handleSz = HANDLE_SIZE / scale;
+
+    return (
+        <div
+            className="canvas-element-wrapper"
+            data-element-id={id}
+            style={containerStyle}
+            onMouseDown={handleMouseDown}
+        >
+            <div style={innerStyle}>
+                {renderContent()}
+            </div>
+
+            {/* Type badge (shown when selected or hovered) */}
+            {isSelected && (
+                <div
+                    className="pointer-events-none"
+                    style={{
+                        position: 'absolute',
+                        top: -20 / scale,
+                        left: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 3 / scale,
+                        padding: `${1 / scale}px ${4 / scale}px`,
+                        backgroundColor: accentColor,
+                        color: 'white',
+                        borderRadius: 3 / scale,
+                        fontSize: 9 / scale,
+                        fontWeight: 600,
+                        whiteSpace: 'nowrap',
+                        lineHeight: `${14 / scale}px`,
+                    }}
+                >
+                    {TYPE_ICONS[type]}
+                    {element.name}
+                </div>
+            )}
+
+            {/* Resize + Rotate handles */}
+            {isSelected && !locked && (
+                <>
+                    {['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se'].map((dir) => (
+                        <div
+                            key={dir}
+                            style={{
+                                position: 'absolute',
+                                width: handleSz,
+                                height: handleSz,
+                                backgroundColor: 'white',
+                                border: `${1.5 / scale}px solid ${accentColor}`,
+                                borderRadius: dir === 'n' || dir === 's' || dir === 'e' || dir === 'w' ? handleSz / 4 : '50%',
+                                zIndex: 10,
+                                cursor: getCursorForDirection(dir),
+                                boxShadow: `0 0 ${2 / scale}px rgba(0,0,0,0.15)`,
+                                ...getHandlePosition(dir, width, height, handleSz),
+                            }}
+                            onMouseDown={(e) => {
+                                e.stopPropagation();
+                                onResizeStart(e, element, dir);
+                            }}
+                        />
+                    ))}
+
+                    {/* Rotation Handle */}
+                    <div
+                        style={{
+                            position: 'absolute',
+                            top: -(ROTATE_HANDLE_OFFSET + 4) / scale,
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: 0,
+                            zIndex: 10,
+                        }}
+                    >
+                        <div
+                            style={{
+                                width: 18 / scale,
+                                height: 18 / scale,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                backgroundColor: 'white',
+                                border: `${1.5 / scale}px solid ${accentColor}`,
+                                borderRadius: '50%',
+                                cursor: 'grab',
+                                boxShadow: `0 1px ${3 / scale}px rgba(0,0,0,0.15)`,
+                            }}
+                            onMouseDown={(e) => {
+                                e.stopPropagation();
+                                onRotateStart(e, element);
+                            }}
+                        >
+                            <RotateCcw size={10 / scale} color={accentColor} />
+                        </div>
+                        {/* Line connecting handle to element */}
+                        <div
+                            className="pointer-events-none"
+                            style={{
+                                width: 1 / scale,
+                                height: 6 / scale,
+                                backgroundColor: accentColor,
+                                opacity: 0.4,
+                            }}
+                        />
+                    </div>
+                </>
+            )}
+        </div>
+    );
+});
+
+function getHandlePosition(dir: string, w: number, h: number, size: number): React.CSSProperties {
+    const half = size / 2;
+    switch (dir) {
+        case 'nw': return { left: -half, top: -half };
+        case 'n': return { left: '50%', top: -half, transform: 'translateX(-50%)' };
+        case 'ne': return { right: -half, top: -half };
+        case 'w': return { left: -half, top: '50%', transform: 'translateY(-50%)' };
+        case 'e': return { right: -half, top: '50%', transform: 'translateY(-50%)' };
+        case 'sw': return { left: -half, bottom: -half };
+        case 's': return { left: '50%', bottom: -half, transform: 'translateX(-50%)' };
+        case 'se': return { right: -half, bottom: -half };
+        default: return {};
+    }
+}
+
+function getCursorForDirection(dir: string): string {
+    const map: Record<string, string> = {
+        nw: 'nwse-resize', n: 'ns-resize', ne: 'nesw-resize',
+        w: 'ew-resize', e: 'ew-resize',
+        sw: 'nesw-resize', s: 'ns-resize', se: 'nwse-resize',
+    };
+    return map[dir] || 'pointer';
+}
