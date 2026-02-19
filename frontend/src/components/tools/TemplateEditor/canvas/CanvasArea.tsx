@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useEffect, useState, useMemo } from 'react';
+import React, { useRef, useCallback, useEffect, useState } from 'react';
 import {
     CanvasDocument,
     TemplateElement,
@@ -10,8 +10,7 @@ import {
 } from '../canvasTypes';
 import { CanvasElement } from './CanvasElement';
 import { useSnapGrid } from '../hooks/useSnapGrid';
-import { resolveSmartGuideSnap, useSmartGuides } from '../hooks/useSmartGuides';
-import { DragTooltip } from './DragTooltip';
+import { resolveSmartGuideSnap } from '../hooks/useSmartGuides';
 import { Lock } from 'lucide-react';
 
 interface CanvasAreaProps {
@@ -77,12 +76,16 @@ const defaultInteraction: InteractionState = {
     resizeGroupChildren: [],
 };
 
-interface DragPreviewState {
-    id: string;
-    x: number;
-    y: number;
-    cursorX: number;
-    cursorY: number;
+interface DragSessionState {
+    active: boolean;
+    primaryId: string | null;
+    dragIds: string[];
+}
+
+interface PaletteDragPayload {
+    type?: ElementType;
+    presetId?: ElementPreset;
+    overrides?: Partial<TemplateElement>;
 }
 
 const MIN_SIZE_MM = 2;
@@ -106,7 +109,11 @@ export function CanvasArea({
     const pageRef = useRef<HTMLDivElement>(null);
     const interactionRef = useRef<InteractionState>({ ...defaultInteraction });
     const [marquee, setMarquee] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
-    const [dragPreview, setDragPreview] = useState<DragPreviewState | null>(null);
+    const [dragSession, setDragSession] = useState<DragSessionState>({
+        active: false,
+        primaryId: null,
+        dragIds: [],
+    });
     const [aspectLockIndicator, setAspectLockIndicator] = useState<{ x: number; y: number } | null>(null);
     const gridPatternIdRef = useRef(`canvas-grid-${Math.random().toString(36).slice(2, 9)}`);
 
@@ -116,32 +123,23 @@ export function CanvasArea({
     const selectedIdsRef = useRef(selectedIds);
     const dragRafRef = useRef<number | null>(null);
     const pendingDragPointRef = useRef<{ clientX: number; clientY: number } | null>(null);
+    const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+    const activeDragPointerIdRef = useRef<number | null>(null);
+    const activeDragPointerTargetRef = useRef<HTMLElement | null>(null);
+    const elementNodeMapRef = useRef<Map<string, HTMLDivElement>>(new Map());
     const snapEnabledRef = useRef(snapEnabled);
-    const gridSizeRef = useRef(gridSize);
 
     docRef.current = doc;
     scaleRef.current = zoom / 100;
     pageSettingsRef.current = pageSettings;
     selectedIdsRef.current = selectedIds;
     snapEnabledRef.current = snapEnabled;
-    gridSizeRef.current = gridSize;
 
     const scale = zoom / 100;
     const MM_TO_PX = 96 / 25.4;
     const mmToCanvasPx = (mm: number) => mm * MM_TO_PX;
     const normalizedGridSize = Math.max(1, gridSize);
     const { snapToGrid } = useSnapGrid(normalizedGridSize, snapEnabled);
-
-    const draggingPosition = useMemo(
-        () => ({ x: dragPreview?.x ?? 0, y: dragPreview?.y ?? 0 }),
-        [dragPreview?.x, dragPreview?.y],
-    );
-    const { guides } = useSmartGuides(
-        doc.elements,
-        snapEnabled && dragPreview ? dragPreview.id : null,
-        draggingPosition,
-        pageSettings,
-    );
 
     const updateElement = useCallback(
         (id: string, updates: Partial<TemplateElement>) => {
@@ -169,7 +167,66 @@ export function CanvasArea({
         [onChange],
     );
 
-    const applyDragAt = useCallback(
+    const setElementNodeRef = useCallback((id: string, node: HTMLDivElement | null) => {
+        if (node) {
+            elementNodeMapRef.current.set(id, node);
+            return;
+        }
+        elementNodeMapRef.current.delete(id);
+    }, []);
+
+    const clearDragVisual = useCallback((dragIds: string[]) => {
+        dragOffsetRef.current = { x: 0, y: 0 };
+        dragIds.forEach((dragId) => {
+            const node = elementNodeMapRef.current.get(dragId);
+            if (!node) return;
+            node.style.removeProperty('--drag-tx');
+            node.style.removeProperty('--drag-ty');
+        });
+    }, []);
+
+    const applyDragVisualAt = useCallback(
+        (clientX: number, clientY: number) => {
+            const state = interactionRef.current;
+            if (state.mode !== 'drag' || !state.elementId) return;
+
+            const sc = scaleRef.current;
+            const dxPx = clientX - state.startClientX;
+            const dyPx = clientY - state.startClientY;
+            const dxMm = pxToMm(dxPx / sc);
+            const dyMm = pxToMm(dyPx / sc);
+
+            dragOffsetRef.current = { x: dxMm, y: dyMm };
+
+            const translateXPx = mmToCanvasPx(dragOffsetRef.current.x);
+            const translateYPx = mmToCanvasPx(dragOffsetRef.current.y);
+            const draggedIds = state.dragIds.length > 0 ? state.dragIds : [state.elementId];
+
+            draggedIds.forEach((dragId) => {
+                const node = elementNodeMapRef.current.get(dragId);
+                if (!node) return;
+                node.style.setProperty('--drag-tx', `${translateXPx}px`);
+                node.style.setProperty('--drag-ty', `${translateYPx}px`);
+            });
+        },
+        [mmToCanvasPx],
+    );
+
+    const flushPendingDragFrame = useCallback(() => {
+        dragRafRef.current = null;
+        const point = pendingDragPointRef.current;
+        if (!point) return;
+        applyDragVisualAt(point.clientX, point.clientY);
+    }, [applyDragVisualAt]);
+
+    const scheduleDragFrame = useCallback(() => {
+        if (dragRafRef.current !== null) {
+            window.cancelAnimationFrame(dragRafRef.current);
+        }
+        dragRafRef.current = window.requestAnimationFrame(flushPendingDragFrame);
+    }, [flushPendingDragFrame]);
+
+    const commitDragAt = useCallback(
         (clientX: number, clientY: number) => {
             const state = interactionRef.current;
             if (state.mode !== 'drag' || !state.elementId) return;
@@ -183,31 +240,20 @@ export function CanvasArea({
             const draggedIds = state.dragIds.length > 0 ? state.dragIds : [state.elementId];
             const anchorInitial = state.dragInitialPositions[state.elementId] ?? state.initialPos;
 
-            const rawAnchorX = anchorInitial.x + dxMm;
-            const rawAnchorY = anchorInitial.y + dyMm;
-
-            let anchorX = rawAnchorX;
-            let anchorY = rawAnchorY;
+            let anchorX = anchorInitial.x + dxMm;
+            let anchorY = anchorInitial.y + dyMm;
 
             if (snapEnabledRef.current) {
                 const guideSnap = resolveSmartGuideSnap(
                     docRef.current.elements,
                     state.elementId,
-                    { x: rawAnchorX, y: rawAnchorY },
+                    { x: anchorX, y: anchorY },
                     pageSettingsRef.current,
                 );
 
-                anchorX = guideSnap.x ?? snapToGrid(rawAnchorX);
-                anchorY = guideSnap.y ?? snapToGrid(rawAnchorY);
+                anchorX = guideSnap.x ?? snapToGrid(anchorX);
+                anchorY = guideSnap.y ?? snapToGrid(anchorY);
             }
-
-            setDragPreview({
-                id: state.elementId,
-                x: anchorX,
-                y: anchorY,
-                cursorX: clientX,
-                cursorY: clientY,
-            });
 
             const deltaX = anchorX - anchorInitial.x;
             const deltaY = anchorY - anchorInitial.y;
@@ -243,23 +289,46 @@ export function CanvasArea({
         [snapToGrid, updateElement, updateElements],
     );
 
+    const finishDrag = useCallback(
+        (clientX: number, clientY: number) => {
+            const state = interactionRef.current;
+            if (state.mode !== 'drag' || !state.elementId) return;
+
+            if (dragRafRef.current !== null) {
+                window.cancelAnimationFrame(dragRafRef.current);
+                dragRafRef.current = null;
+            }
+
+            const finalPoint = pendingDragPointRef.current ?? { clientX, clientY };
+            applyDragVisualAt(finalPoint.clientX, finalPoint.clientY);
+            commitDragAt(finalPoint.clientX, finalPoint.clientY);
+
+            const draggedIds = state.dragIds.length > 0 ? state.dragIds : [state.elementId];
+            clearDragVisual(draggedIds);
+
+            const pointerId = activeDragPointerIdRef.current;
+            const pointerTarget = activeDragPointerTargetRef.current;
+            if (
+                pointerId !== null &&
+                pointerTarget &&
+                pointerTarget.hasPointerCapture(pointerId)
+            ) {
+                pointerTarget.releasePointerCapture(pointerId);
+            }
+
+            activeDragPointerIdRef.current = null;
+            activeDragPointerTargetRef.current = null;
+            pendingDragPointRef.current = null;
+            setDragSession({ active: false, primaryId: null, dragIds: [] });
+            interactionRef.current = { ...defaultInteraction };
+        },
+        [applyDragVisualAt, clearDragVisual, commitDragAt],
+    );
+
     const handleGlobalMouseMove = useCallback(
         (e: MouseEvent) => {
             const state = interactionRef.current;
             const sc = scaleRef.current;
-
-            if (state.mode === 'drag' && state.elementId) {
-                pendingDragPointRef.current = { clientX: e.clientX, clientY: e.clientY };
-                if (dragRafRef.current === null) {
-                    dragRafRef.current = window.requestAnimationFrame(() => {
-                        dragRafRef.current = null;
-                        const point = pendingDragPointRef.current;
-                        if (!point) return;
-                        applyDragAt(point.clientX, point.clientY);
-                    });
-                }
-                return;
-            }
 
             if (state.mode === 'resize' && state.elementId) {
                 const dxPx = e.clientX - state.startClientX;
@@ -413,21 +482,15 @@ export function CanvasArea({
                 onSelect(selected);
             }
         },
-        [applyDragAt, onSelect, snapToGrid, updateElement],
+        [onSelect, snapToGrid, updateElement],
     );
 
     const handleGlobalMouseUp = useCallback(
-        (e: MouseEvent | PointerEvent) => {
+        () => {
             const state = interactionRef.current;
 
             if (state.mode === 'drag') {
-                if (dragRafRef.current !== null) {
-                    window.cancelAnimationFrame(dragRafRef.current);
-                    dragRafRef.current = null;
-                }
-                applyDragAt(e.clientX, e.clientY);
-                pendingDragPointRef.current = null;
-                setDragPreview(null);
+                return;
             }
 
             if (state.mode === 'marquee') {
@@ -437,66 +500,93 @@ export function CanvasArea({
             setAspectLockIndicator(null);
             interactionRef.current = { ...defaultInteraction };
         },
-        [applyDragAt],
+        [],
     );
 
     useEffect(() => {
         window.addEventListener('mousemove', handleGlobalMouseMove);
         window.addEventListener('mouseup', handleGlobalMouseUp);
-        window.addEventListener('pointerup', handleGlobalMouseUp);
         return () => {
             window.removeEventListener('mousemove', handleGlobalMouseMove);
             window.removeEventListener('mouseup', handleGlobalMouseUp);
-            window.removeEventListener('pointerup', handleGlobalMouseUp);
             if (dragRafRef.current !== null) {
                 window.cancelAnimationFrame(dragRafRef.current);
                 dragRafRef.current = null;
             }
+            const state = interactionRef.current;
+            if (state.mode === 'drag' && state.elementId) {
+                const draggedIds = state.dragIds.length > 0 ? state.dragIds : [state.elementId];
+                clearDragVisual(draggedIds);
+            }
         };
-    }, [handleGlobalMouseMove, handleGlobalMouseUp]);
+    }, [clearDragVisual, handleGlobalMouseMove, handleGlobalMouseUp]);
 
-    const handleDragStart = useCallback((e: React.MouseEvent, id: string) => {
-        const element = docRef.current.elements.find((el) => el.id === id);
-        if (!element || element.locked) return;
+    const handleDragStart = useCallback(
+        (e: React.PointerEvent, id: string) => {
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+            if (
+                e.target instanceof HTMLElement &&
+                e.target.closest('[contenteditable="true"], [contenteditable="plaintext-only"]')
+            ) {
+                return;
+            }
 
-        const selected = selectedIdsRef.current;
-        const shouldDragSelection = selected.includes(id) && selected.length > 1 && !e.shiftKey;
-        const candidateIds = shouldDragSelection ? selected : [id];
-        const dragIds = candidateIds.filter((targetId) => {
-            const target = docRef.current.elements.find((item) => item.id === targetId);
-            return !!target && !target.locked;
-        });
+            const element = docRef.current.elements.find((el) => el.id === id);
+            if (!element || element.locked) return;
 
-        if (dragIds.length === 0) return;
+            const selected = selectedIdsRef.current;
+            const shouldDragSelection = selected.includes(id) && selected.length > 1 && !e.shiftKey;
+            const candidateIds = shouldDragSelection ? selected : [id];
+            const dragIds = candidateIds.filter((targetId) => {
+                const target = docRef.current.elements.find((item) => item.id === targetId);
+                return !!target && !target.locked;
+            });
 
-        const dragInitialPositions: Record<string, { x: number; y: number }> = {};
-        dragIds.forEach((targetId) => {
-            const target = docRef.current.elements.find((item) => item.id === targetId);
-            if (!target) return;
-            dragInitialPositions[targetId] = { ...target.position };
-        });
+            if (dragIds.length === 0) return;
 
-        interactionRef.current = {
-            ...defaultInteraction,
-            mode: 'drag',
-            elementId: id,
-            startClientX: e.clientX,
-            startClientY: e.clientY,
-            initialPos: { ...element.position },
-            dragIds,
-            dragInitialPositions,
-        };
+            const dragInitialPositions: Record<string, { x: number; y: number }> = {};
+            dragIds.forEach((targetId) => {
+                const target = docRef.current.elements.find((item) => item.id === targetId);
+                if (!target) return;
+                dragInitialPositions[targetId] = { ...target.position };
+            });
 
-        setDragPreview({
-            id,
-            x: element.position.x,
-            y: element.position.y,
-            cursorX: e.clientX,
-            cursorY: e.clientY,
-        });
-    }, []);
+            e.preventDefault();
+            const pointerTarget = e.currentTarget as HTMLElement;
+            pointerTarget.setPointerCapture(e.pointerId);
+            activeDragPointerIdRef.current = e.pointerId;
+            activeDragPointerTargetRef.current = pointerTarget;
 
-    const handleResizeStart = useCallback((e: React.MouseEvent, element: TemplateElement, direction: string) => {
+            if (dragRafRef.current !== null) {
+                window.cancelAnimationFrame(dragRafRef.current);
+                dragRafRef.current = null;
+            }
+
+            clearDragVisual(dragIds);
+            dragOffsetRef.current = { x: 0, y: 0 };
+            pendingDragPointRef.current = { clientX: e.clientX, clientY: e.clientY };
+
+            interactionRef.current = {
+                ...defaultInteraction,
+                mode: 'drag',
+                elementId: id,
+                startClientX: e.clientX,
+                startClientY: e.clientY,
+                initialPos: { ...element.position },
+                dragIds,
+                dragInitialPositions,
+            };
+
+            setDragSession({
+                active: true,
+                primaryId: id,
+                dragIds,
+            });
+        },
+        [clearDragVisual],
+    );
+
+    const handleResizeStart = useCallback((e: React.PointerEvent, element: TemplateElement, direction: string) => {
         const resizeGroupChildren =
             element.type === 'group'
                 ? (element.groupChildren || []).map((child) => JSON.parse(JSON.stringify(child)) as TemplateElement)
@@ -517,7 +607,7 @@ export function CanvasArea({
         };
     }, []);
 
-    const handleRotateStart = useCallback((e: React.MouseEvent, element: TemplateElement) => {
+    const handleRotateStart = useCallback((e: React.PointerEvent, element: TemplateElement) => {
         if (element.type === 'group') return;
         const elWrapper = (e.target as HTMLElement).closest('.canvas-element-wrapper');
         let cx = e.clientX;
@@ -543,6 +633,53 @@ export function CanvasArea({
             initialRotation: element.rotation || 0,
         };
     }, []);
+
+    const handleCanvasPointerMove = useCallback(
+        (e: React.PointerEvent<HTMLDivElement>) => {
+            const state = interactionRef.current;
+            if (state.mode !== 'drag' || !state.elementId) return;
+
+            const activePointerId = activeDragPointerIdRef.current;
+            if (activePointerId === null || e.pointerId !== activePointerId) return;
+
+            pendingDragPointRef.current = {
+                clientX: e.clientX,
+                clientY: e.clientY,
+            };
+            scheduleDragFrame();
+        },
+        [scheduleDragFrame],
+    );
+
+    const handleCanvasPointerUp = useCallback(
+        (e: React.PointerEvent<HTMLDivElement>) => {
+            const state = interactionRef.current;
+            if (state.mode !== 'drag' || !state.elementId) return;
+
+            const activePointerId = activeDragPointerIdRef.current;
+            if (activePointerId === null || e.pointerId !== activePointerId) return;
+
+            pendingDragPointRef.current = {
+                clientX: e.clientX,
+                clientY: e.clientY,
+            };
+            finishDrag(e.clientX, e.clientY);
+        },
+        [finishDrag],
+    );
+
+    const handleCanvasPointerCancel = useCallback(
+        (e: React.PointerEvent<HTMLDivElement>) => {
+            const state = interactionRef.current;
+            if (state.mode !== 'drag' || !state.elementId) return;
+
+            const activePointerId = activeDragPointerIdRef.current;
+            if (activePointerId === null || e.pointerId !== activePointerId) return;
+
+            finishDrag(e.clientX, e.clientY);
+        },
+        [finishDrag],
+    );
 
     const handleSelect = useCallback(
         (id: string, multi: boolean) => {
@@ -598,36 +735,65 @@ export function CanvasArea({
             if (!pageRef.current) return;
 
             const pageRect = pageRef.current.getBoundingClientRect();
-            const sc = scaleRef.current;
-            const xPx = (e.clientX - pageRect.left) / sc;
-            const yPx = (e.clientY - pageRect.top) / sc;
+            const isInsidePage =
+                e.clientX >= pageRect.left &&
+                e.clientX <= pageRect.right &&
+                e.clientY >= pageRect.top &&
+                e.clientY <= pageRect.bottom;
+            if (!isInsidePage) return;
+
+            const currentScale = scaleRef.current;
+            if (currentScale <= 0) return;
+
+            const xMm = pxToMm((e.clientX - pageRect.left) / currentScale);
+            const yMm = pxToMm((e.clientY - pageRect.top) / currentScale);
+            const pageWidth = pageSettingsRef.current.width;
+            const pageHeight = pageSettingsRef.current.height;
             const dropPos = {
-                x: snapToGrid(pxToMm(xPx)),
-                y: snapToGrid(pxToMm(yPx)),
+                x: snapToGrid(Math.max(0, Math.min(pageWidth, xMm))),
+                y: snapToGrid(Math.max(0, Math.min(pageHeight, yMm))),
             };
 
-            const blockId = e.dataTransfer.getData('application/template-editor-block') as BlockPreset;
+            const blockId = (
+                e.dataTransfer.getData('application/template-editor-block') ||
+                e.dataTransfer.getData('blockType')
+            ) as BlockPreset;
             if (blockId && onAddBlock) {
                 onAddBlock(blockId, dropPos);
                 return;
             }
 
-            const type = e.dataTransfer.getData('application/react-dnd') as ElementType;
+            let payload: PaletteDragPayload | null = null;
+            const payloadRaw = e.dataTransfer.getData('application/template-editor-element');
+            if (payloadRaw) {
+                try {
+                    const parsed = JSON.parse(payloadRaw) as PaletteDragPayload;
+                    if (parsed && typeof parsed === 'object') payload = parsed;
+                } catch {
+                    payload = null;
+                }
+            }
+
+            const fallbackType = e.dataTransfer.getData('application/react-dnd');
+            const type = (payload?.type || e.dataTransfer.getData('elementType') || fallbackType) as ElementType;
             if (!type) return;
-            const presetRaw = e.dataTransfer.getData('application/template-editor-preset');
+
+            const presetRaw = payload?.presetId || e.dataTransfer.getData('application/template-editor-preset');
             const presetId: ElementPreset | undefined =
                 presetRaw === 'photo-panel' || presetRaw === 'technical-table' ? presetRaw : undefined;
 
-            const overridesRaw = e.dataTransfer.getData('application/template-editor-element-overrides');
-            let overrides: Partial<TemplateElement> | undefined;
-            if (overridesRaw) {
-                try {
-                    const parsed = JSON.parse(overridesRaw) as Partial<TemplateElement>;
-                    if (parsed && typeof parsed === 'object') {
-                        overrides = parsed;
+            let overrides = payload?.overrides;
+            if (!overrides) {
+                const overridesRaw = e.dataTransfer.getData('application/template-editor-element-overrides');
+                if (overridesRaw) {
+                    try {
+                        const parsed = JSON.parse(overridesRaw) as Partial<TemplateElement>;
+                        if (parsed && typeof parsed === 'object') {
+                            overrides = parsed;
+                        }
+                    } catch {
+                        overrides = undefined;
                     }
-                } catch {
-                    overrides = undefined;
                 }
             }
 
@@ -671,6 +837,11 @@ export function CanvasArea({
                 backgroundSize: '40px 40px',
             }}
             onMouseDown={handleCanvasMouseDown}
+            onPointerMove={handleCanvasPointerMove}
+            onPointerUp={handleCanvasPointerUp}
+            onPointerCancel={handleCanvasPointerCancel}
+            onDrop={onDrop}
+            onDragOver={onDragOver}
         >
             <div
                 className="relative my-8 shrink-0"
@@ -681,8 +852,6 @@ export function CanvasArea({
             >
                 <div
                     ref={pageRef}
-                    onDrop={onDrop}
-                    onDragOver={onDragOver}
                     style={{
                         width: pageWidthPx,
                         height: pageHeightPx,
@@ -746,50 +915,11 @@ export function CanvasArea({
                                 onResizeStart={handleResizeStart}
                                 onRotateStart={handleRotateStart}
                                 dataPreview={dataPreview}
+                                isDragging={dragSession.active && dragSession.primaryId === el.id}
+                                suppressPointerEvents={dragSession.active}
+                                onSetNodeRef={setElementNodeRef}
                             />
                         ))}
-
-                    {dragPreview && guides.length > 0 && (
-                        <svg
-                            className="absolute inset-0 pointer-events-none"
-                            width={pageWidthPx}
-                            height={pageHeightPx}
-                            style={{ zIndex: 9999 }}
-                        >
-                            {guides.map((guide, index) => {
-                                const stroke = guide.active ? '#ef4444' : 'transparent';
-                                if (guide.axis === 'x') {
-                                    const x = mmToCanvasPx(guide.position);
-                                    return (
-                                        <line
-                                            key={`x-${guide.position}-${index}`}
-                                            x1={x}
-                                            x2={x}
-                                            y1={0}
-                                            y2={pageHeightPx}
-                                            stroke={stroke}
-                                            strokeWidth={1}
-                                            strokeDasharray="4 4"
-                                        />
-                                    );
-                                }
-
-                                const y = mmToCanvasPx(guide.position);
-                                return (
-                                    <line
-                                        key={`y-${guide.position}-${index}`}
-                                        x1={0}
-                                        x2={pageWidthPx}
-                                        y1={y}
-                                        y2={y}
-                                        stroke={stroke}
-                                        strokeWidth={1}
-                                        strokeDasharray="4 4"
-                                    />
-                                );
-                            })}
-                        </svg>
-                    )}
 
                     {marquee && (
                         <div
@@ -808,15 +938,6 @@ export function CanvasArea({
                     )}
                 </div>
             </div>
-
-            {dragPreview && (
-                <DragTooltip
-                    cursorX={dragPreview.cursorX}
-                    cursorY={dragPreview.cursorY}
-                    x={dragPreview.x}
-                    y={dragPreview.y}
-                />
-            )}
 
             {aspectLockIndicator && (
                 <div
