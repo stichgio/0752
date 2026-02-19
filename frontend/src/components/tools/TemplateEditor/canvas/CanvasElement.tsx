@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useCallback } from 'react';
+import React, { memo, useMemo, useCallback, useEffect, useRef, useState } from 'react';
 import { TemplateElement, mmToPx } from '../canvasTypes';
 import { TableComponent } from './elements/TableComponent';
 import {
@@ -10,10 +10,13 @@ interface CanvasElementProps {
     element: TemplateElement;
     scale: number;
     isSelected: boolean;
+    dataPreview?: Record<string, unknown>;
     onSelect: (id: string, multi: boolean) => void;
+    onUpdateElement: (id: string, updates: Partial<TemplateElement>) => void;
     onDragStart: (e: React.MouseEvent, id: string) => void;
     onResizeStart: (e: React.MouseEvent, element: TemplateElement, direction: string) => void;
     onRotateStart: (e: React.MouseEvent, element: TemplateElement) => void;
+    disableInteraction?: boolean;
 }
 
 const HANDLE_SIZE = 8;
@@ -59,6 +62,7 @@ const TYPE_COLORS: Record<string, string> = {
     'photo-grid': '#f59e0b',
     signature: '#374151',
     container: '#9ca3af',
+    group: '#2563eb',
 };
 
 const TYPE_ICONS: Record<string, React.ReactNode> = {
@@ -77,20 +81,34 @@ const TYPE_ICONS: Record<string, React.ReactNode> = {
     'photo-grid': <LayoutGrid size={10} />,
     signature: <PenTool size={10} />,
     container: <Box size={10} />,
+    group: <Box size={10} />,
 };
+
+const NOOP_SELECT = () => {};
+const NOOP_UPDATE = () => {};
+const NOOP_DRAG = () => {};
+const NOOP_RESIZE = () => {};
+const NOOP_ROTATE = () => {};
 
 export const CanvasElement = memo(function CanvasElement({
     element,
     scale,
     isSelected,
+    dataPreview,
     onSelect,
+    onUpdateElement,
     onDragStart,
     onResizeStart,
     onRotateStart,
+    disableInteraction = false,
 }: CanvasElementProps) {
     if (element.visible === false) return null;
 
     const { position, size, style, type, content, id, locked, rotation = 0 } = element;
+    const isInlineTextEditable = (type === 'text' || type === 'heading') && !locked && !disableInteraction;
+    const [isEditing, setIsEditing] = useState(false);
+    const [draftContent, setDraftContent] = useState(content || '');
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
     const hasLoadedMedia = (type === 'image' || type === 'logo') && !!element.imageUrl;
     const hasDefaultMediaFrame =
         hasLoadedMedia &&
@@ -101,6 +119,37 @@ export const CanvasElement = memo(function CanvasElement({
     const y = mmToPx(position.y);
     const width = mmToPx(size.width);
     const height = mmToPx(size.height);
+
+    useEffect(() => {
+        if (!isEditing) {
+            setDraftContent(content || '');
+        }
+    }, [content, isEditing]);
+
+    useEffect(() => {
+        if (!isEditing || !textareaRef.current) return;
+        const textarea = textareaRef.current;
+        textarea.focus();
+        const cursorPos = textarea.value.length;
+        textarea.setSelectionRange(cursorPos, cursorPos);
+    }, [isEditing]);
+
+    const handleInlineEditCommit = useCallback(() => {
+        if (!isInlineTextEditable) return;
+        if (draftContent !== (content || '')) {
+            onUpdateElement(id, { content: draftContent });
+        }
+        setIsEditing(false);
+    }, [isInlineTextEditable, draftContent, content, onUpdateElement, id]);
+
+    const handleTextDoubleClick = useCallback((e: React.MouseEvent) => {
+        if (!isInlineTextEditable) return;
+        e.preventDefault();
+        e.stopPropagation();
+        onSelect(id, false);
+        setDraftContent(content || '');
+        setIsEditing(true);
+    }, [isInlineTextEditable, onSelect, id, content]);
 
     const accentColor = TYPE_COLORS[type] || '#3b82f6';
 
@@ -114,11 +163,11 @@ export const CanvasElement = memo(function CanvasElement({
         transformOrigin: 'center center',
         zIndex: style.zIndex || 1,
         opacity: style.opacity ?? 1,
-        cursor: locked ? 'default' : isSelected ? 'move' : 'pointer',
+        cursor: disableInteraction ? 'default' : locked ? 'default' : isEditing ? 'text' : isSelected ? 'move' : 'pointer',
         outline: isSelected ? `2px solid ${accentColor}` : 'none',
         outlineOffset: '1px',
-        pointerEvents: 'auto' as const,
-    }), [x, y, width, height, rotation, style.zIndex, style.opacity, locked, isSelected, accentColor]);
+        pointerEvents: disableInteraction ? 'none' as const : 'auto' as const,
+    }), [x, y, width, height, rotation, style.zIndex, style.opacity, disableInteraction, locked, isEditing, isSelected, accentColor]);
 
     const innerStyle: React.CSSProperties = useMemo(() => ({
         width: '100%',
@@ -145,20 +194,96 @@ export const CanvasElement = memo(function CanvasElement({
 
     const handleMouseDown = useCallback((e: React.MouseEvent) => {
         e.stopPropagation();
+        if (disableInteraction) return;
         if (locked) return;
+        if (isEditing) return;
+        if ((isInlineTextEditable || type === 'table') && e.detail === 2) {
+            onSelect(id, e.shiftKey);
+            return;
+        }
         onSelect(id, e.shiftKey);
         onDragStart(e, id);
-    }, [locked, onSelect, onDragStart, id]);
+    }, [disableInteraction, locked, isEditing, isInlineTextEditable, type, onSelect, onDragStart, id]);
+
+    const inlineTextareaStyle: React.CSSProperties = useMemo(() => ({
+        position: 'absolute',
+        inset: 0,
+        width: '100%',
+        height: '100%',
+        margin: 0,
+        border: 'none',
+        outline: 'none',
+        boxSizing: 'border-box',
+        resize: 'none',
+        backgroundColor: 'transparent',
+        color: style.color || '#111827',
+        fontSize: style.fontSize ? `${style.fontSize}px` : undefined,
+        fontFamily: style.fontFamily,
+        fontWeight: style.fontWeight as React.CSSProperties['fontWeight'],
+        textAlign: style.textAlign as React.CSSProperties['textAlign'],
+        lineHeight: style.lineHeight ? `${style.lineHeight}` : undefined,
+        letterSpacing: style.letterSpacing ? `${style.letterSpacing}px` : undefined,
+        padding: '2px 4px',
+        overflow: 'hidden',
+    }), [style.color, style.fontSize, style.fontFamily, style.fontWeight, style.textAlign, style.lineHeight, style.letterSpacing]);
+
+    const variableTemplate = useMemo(() => {
+        const rawContent = typeof content === 'string' ? content.trim() : '';
+        if (rawContent.includes('{{') && rawContent.includes('}}')) {
+            return rawContent;
+        }
+
+        const rawVariable = (element.variableName || '').trim();
+        if (!rawVariable) return '{{variable}}';
+        if (rawVariable.startsWith('{{') && rawVariable.endsWith('}}')) {
+            return rawVariable;
+        }
+        return `{{${rawVariable}}}`;
+    }, [content, element.variableName]);
+
+    const variableDisplayValue = useMemo(() => {
+        if (!dataPreview) return variableTemplate;
+
+        return variableTemplate.replace(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g, (match, key: string) => {
+            const previewValue = dataPreview[key];
+            if (previewValue === null || previewValue === undefined || previewValue === '') {
+                return match;
+            }
+            return String(previewValue);
+        });
+    }, [dataPreview, variableTemplate]);
 
     const renderContent = () => {
         switch (type) {
             case 'text':
             case 'heading':
                 return (
-                    <div style={{ whiteSpace: 'pre-wrap', padding: '2px 4px' }}>
-                        {content || <span style={{ color: '#aaa', fontStyle: 'italic' }}>
-                            {type === 'heading' ? 'Título' : 'Texto...'}
-                        </span>}
+                    <div style={{ position: 'relative', width: '100%', height: '100%' }} onDoubleClick={handleTextDoubleClick}>
+                        <div style={{ whiteSpace: 'pre-wrap', padding: '2px 4px', opacity: isEditing ? 0 : 1 }}>
+                            {content || (
+                                <span style={{ color: '#aaa', fontStyle: 'italic' }}>
+                                    {type === 'heading' ? 'Título' : 'Texto...'}
+                                </span>
+                            )}
+                        </div>
+                        {isEditing && (
+                            <textarea
+                                ref={textareaRef}
+                                value={draftContent}
+                                onChange={(e) => setDraftContent(e.target.value)}
+                                onBlur={handleInlineEditCommit}
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onDoubleClick={(e) => e.stopPropagation()}
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && e.shiftKey) {
+                                        e.preventDefault();
+                                        e.currentTarget.blur();
+                                    }
+                                }}
+                                style={inlineTextareaStyle}
+                                spellCheck={false}
+                            />
+                        )}
                     </div>
                 );
 
@@ -173,7 +298,7 @@ export const CanvasElement = memo(function CanvasElement({
                         fontSize: style.fontSize || 11,
                     }}>
                         <Braces size={12} style={{ opacity: 0.6, flexShrink: 0 }} />
-                        <span>{element.variableName || 'variable'}</span>
+                        <span>{variableDisplayValue}</span>
                     </div>
                 );
 
@@ -338,6 +463,8 @@ export const CanvasElement = memo(function CanvasElement({
                         <TableComponent
                             tableData={element.tableData}
                             style={style}
+                            disabled={!!locked || disableInteraction}
+                            onTableDataChange={(nextTable) => onUpdateElement(id, { tableData: nextTable })}
                         />
                     </div>
                 );
@@ -391,6 +518,38 @@ export const CanvasElement = memo(function CanvasElement({
                             <div style={{ fontSize: 9, fontWeight: 'bold' }}>{title}</div>
                             {signatureName && <div style={{ fontSize: 8, color: '#666' }}>{signatureName}</div>}
                         </div>
+                    </div>
+                );
+            }
+
+            case 'group': {
+                const children = (element.groupChildren || [])
+                    .filter((child) => child.type !== 'group' && child.visible !== false)
+                    .sort((a, b) => (a.style.zIndex || 0) - (b.style.zIndex || 0));
+
+                return (
+                    <div
+                        style={{
+                            width: '100%',
+                            height: '100%',
+                            position: 'relative',
+                            backgroundColor: 'rgba(59, 130, 246, 0.04)',
+                        }}
+                    >
+                        {children.map((child) => (
+                            <CanvasElement
+                                key={child.id}
+                                element={child}
+                                scale={scale}
+                                isSelected={false}
+                                onSelect={NOOP_SELECT}
+                                onUpdateElement={NOOP_UPDATE}
+                                onDragStart={NOOP_DRAG}
+                                onResizeStart={NOOP_RESIZE}
+                                onRotateStart={NOOP_ROTATE}
+                                disableInteraction
+                            />
+                        ))}
                     </div>
                 );
             }
@@ -455,7 +614,7 @@ export const CanvasElement = memo(function CanvasElement({
             )}
 
             {/* Resize + Rotate handles */}
-            {isSelected && !locked && (
+            {isSelected && !disableInteraction && !locked && !isEditing && (
                 <>
                     {['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se'].map((dir) => (
                         <div
@@ -479,51 +638,51 @@ export const CanvasElement = memo(function CanvasElement({
                         />
                     ))}
 
-                    {/* Rotation Handle */}
-                    <div
-                        style={{
-                            position: 'absolute',
-                            top: -(ROTATE_HANDLE_OFFSET + 4) / scale,
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            alignItems: 'center',
-                            gap: 0,
-                            zIndex: 10,
-                        }}
-                    >
+                    {type !== 'group' && (
                         <div
                             style={{
-                                width: 18 / scale,
-                                height: 18 / scale,
+                                position: 'absolute',
+                                top: -(ROTATE_HANDLE_OFFSET + 4) / scale,
+                                left: '50%',
+                                transform: 'translateX(-50%)',
                                 display: 'flex',
+                                flexDirection: 'column',
                                 alignItems: 'center',
-                                justifyContent: 'center',
-                                backgroundColor: 'white',
-                                border: `${1.5 / scale}px solid ${accentColor}`,
-                                borderRadius: '50%',
-                                cursor: 'grab',
-                                boxShadow: `0 1px ${3 / scale}px rgba(0,0,0,0.15)`,
-                            }}
-                            onMouseDown={(e) => {
-                                e.stopPropagation();
-                                onRotateStart(e, element);
+                                gap: 0,
+                                zIndex: 10,
                             }}
                         >
-                            <RotateCcw size={10 / scale} color={accentColor} />
+                            <div
+                                style={{
+                                    width: 18 / scale,
+                                    height: 18 / scale,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    backgroundColor: 'white',
+                                    border: `${1.5 / scale}px solid ${accentColor}`,
+                                    borderRadius: '50%',
+                                    cursor: 'grab',
+                                    boxShadow: `0 1px ${3 / scale}px rgba(0,0,0,0.15)`,
+                                }}
+                                onMouseDown={(e) => {
+                                    e.stopPropagation();
+                                    onRotateStart(e, element);
+                                }}
+                            >
+                                <RotateCcw size={10 / scale} color={accentColor} />
+                            </div>
+                            <div
+                                className="pointer-events-none"
+                                style={{
+                                    width: 1 / scale,
+                                    height: 6 / scale,
+                                    backgroundColor: accentColor,
+                                    opacity: 0.4,
+                                }}
+                            />
                         </div>
-                        {/* Line connecting handle to element */}
-                        <div
-                            className="pointer-events-none"
-                            style={{
-                                width: 1 / scale,
-                                height: 6 / scale,
-                                backgroundColor: accentColor,
-                                opacity: 0.4,
-                            }}
-                        />
-                    </div>
+                    )}
                 </>
             )}
         </div>

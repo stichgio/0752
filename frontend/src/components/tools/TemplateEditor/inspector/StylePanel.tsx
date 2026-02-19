@@ -22,6 +22,16 @@ export function StylePanel({ element, onUpdate }: StylePanelProps) {
     const signatureTitle = isSignatureType ? (element.title ?? element.signatureConfig?.[0]?.title ?? 'SUPERVISOR') : '';
     const signatureName = isSignatureType ? (element.signatureName ?? element.signatureConfig?.[0]?.name ?? '') : '';
 
+    const updateTableCell = (rowIndex: number, colIndex: number, value: string) => {
+        if (!tableData) return;
+        const nextData = tableData.data.map((row, rIdx) =>
+            rIdx === rowIndex
+                ? row.map((cell, cIdx) => (cIdx === colIndex ? value : cell))
+                : row.slice()
+        );
+        onUpdate(element.id, { tableData: { ...tableData, data: nextData } });
+    };
+
     return (
         <div className="px-3 py-3 border-b border-neutral-100 space-y-3">
             <div className="flex items-center gap-1.5 mb-1">
@@ -178,6 +188,29 @@ export function StylePanel({ element, onUpdate }: StylePanelProps) {
                                 });
                             }}
                         />
+                        <div>
+                            <span className="text-[10px] font-medium text-neutral-400 block mb-1">Contenido de la tabla</span>
+                            <div className="max-h-40 overflow-y-auto pr-1 space-y-1">
+                                {tableData.data.map((row, rowIndex) => (
+                                    <div
+                                        key={`table-row-${rowIndex}`}
+                                        className="grid gap-1"
+                                        style={{ gridTemplateColumns: `repeat(${tableData.colCount}, minmax(0, 1fr))` }}
+                                    >
+                                        {row.map((cell, colIndex) => (
+                                            <input
+                                                key={`table-cell-${rowIndex}-${colIndex}`}
+                                                type="text"
+                                                value={cell}
+                                                onChange={(e) => updateTableCell(rowIndex, colIndex, e.target.value)}
+                                                className="h-7 px-2 text-[10px] border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400 focus:border-violet-400"
+                                                placeholder={`F${rowIndex + 1} C${colIndex + 1}`}
+                                            />
+                                        ))}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}

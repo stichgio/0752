@@ -34,6 +34,8 @@ export const defaultTable: TableData = {
     colCount: 2,
     data: [['', ''], ['', '']],
     borderColor: '#d1d5db',
+    colWidths: [50, 50],
+    rowHeights: [50, 50],
 };
 
 function toSafeCount(value: unknown, fallback: number): number {
@@ -52,6 +54,44 @@ function buildGridData(rowCount: number, colCount: number, source?: unknown): st
     );
 }
 
+function toPositiveNumber(value: unknown): number {
+    const n = Number(value);
+    if (!Number.isFinite(n) || n <= 0) return 0;
+    return n;
+}
+
+function roundPercent(value: number): number {
+    return Math.round(value * 1000) / 1000;
+}
+
+function normalizeDistribution(source: unknown, count: number): number[] {
+    if (count <= 0) return [];
+
+    const fallback = Array.from({ length: count }, () => roundPercent(100 / count));
+    const list = Array.isArray(source) ? source : [];
+    if (list.length !== count) {
+        const fallbackTotal = fallback.reduce((sum, value) => sum + value, 0);
+        const fallbackDelta = roundPercent(100 - fallbackTotal);
+        if (fallback.length > 0) fallback[fallback.length - 1] = roundPercent(fallback[fallback.length - 1] + fallbackDelta);
+        return fallback;
+    }
+    const raw = Array.from({ length: count }, (_, idx) => toPositiveNumber(list[idx]));
+    const rawTotal = raw.reduce((sum, value) => sum + value, 0);
+
+    if (rawTotal <= 0) {
+        const fallbackTotal = fallback.reduce((sum, value) => sum + value, 0);
+        const fallbackDelta = roundPercent(100 - fallbackTotal);
+        if (fallback.length > 0) fallback[fallback.length - 1] = roundPercent(fallback[fallback.length - 1] + fallbackDelta);
+        return fallback;
+    }
+
+    const normalized = raw.map((value) => roundPercent((value / rawTotal) * 100));
+    const normalizedTotal = normalized.reduce((sum, value) => sum + value, 0);
+    const delta = roundPercent(100 - normalizedTotal);
+    if (normalized.length > 0) normalized[normalized.length - 1] = roundPercent(normalized[normalized.length - 1] + delta);
+    return normalized;
+}
+
 export function normalizeTableData(element: Pick<TemplateElement, 'tableData' | 'style'>): TableData {
     const raw = element.tableData;
     const headers = Array.isArray(raw?.headers)
@@ -64,7 +104,13 @@ export function normalizeTableData(element: Pick<TemplateElement, 'tableData' | 
         : [];
 
     const legacySeed = headers.length > 0 ? [headers, ...rows] : rows;
-    const hasNewShape = raw && (Array.isArray(raw.data) || raw.rowCount !== undefined || raw.colCount !== undefined);
+    const hasNewShape = raw && (
+        Array.isArray(raw.data) ||
+        raw.rowCount !== undefined ||
+        raw.colCount !== undefined ||
+        Array.isArray(raw.colWidths) ||
+        Array.isArray(raw.rowHeights)
+    );
     const seed = hasNewShape ? raw?.data : legacySeed;
 
     const inferredRowCount = legacySeed.length || defaultTable.rowCount;
@@ -84,17 +130,23 @@ export function normalizeTableData(element: Pick<TemplateElement, 'tableData' | 
         colCount,
         data: buildGridData(rowCount, colCount, seed),
         borderColor,
+        colWidths: normalizeDistribution(raw?.colWidths, colCount),
+        rowHeights: normalizeDistribution(raw?.rowHeights, rowCount),
     };
 }
 
 export function resizeTableData(table: TableData, rowCount: number, colCount: number): TableData {
     const safeRows = toSafeCount(rowCount, table.rowCount || defaultTable.rowCount);
     const safeCols = toSafeCount(colCount, table.colCount || defaultTable.colCount);
+    const keepColWidths = safeCols === table.colCount;
+    const keepRowHeights = safeRows === table.rowCount;
     return {
         rowCount: safeRows,
         colCount: safeCols,
         borderColor: table.borderColor || defaultTable.borderColor,
         data: buildGridData(safeRows, safeCols, table.data),
+        colWidths: normalizeDistribution(keepColWidths ? table.colWidths : undefined, safeCols),
+        rowHeights: normalizeDistribution(keepRowHeights ? table.rowHeights : undefined, safeRows),
     };
 }
 

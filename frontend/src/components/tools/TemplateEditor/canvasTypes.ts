@@ -14,9 +14,11 @@ export type ElementType =
   | 'container'
   | 'shape'
   | 'divider'
-  | 'qr';
+  | 'qr'
+  | 'group';
 
 export type ElementPreset = 'photo-panel' | 'technical-table';
+export type BlockPreset = 'header-logos' | 'datos-generales' | 'firmas-dual';
 export type PhotoGridCount = 2 | 3 | 4 | 5 | 6;
 export type PhotoGridOddPosition = 'left' | 'center' | 'right';
 
@@ -92,6 +94,8 @@ export interface TableData {
   colCount: number;
   data: string[][];
   borderColor: string;
+  colWidths?: number[];
+  rowHeights?: number[];
   // Legacy shape kept for backward compatibility with existing templates.
   headers?: string[];
   rows?: string[][];
@@ -158,6 +162,10 @@ export interface TemplateElement {
     foreground: string;
     background: string;
   };
+
+  // Group specific
+  children?: string[];
+  groupChildren?: TemplateElement[];
 }
 
 export interface CanvasDocument {
@@ -469,6 +477,8 @@ export function createElement(
         colCount: 2,
         data: [['', ''], ['', '']],
         borderColor: '#d1d5db',
+        colWidths: [50, 50],
+        rowHeights: [50, 50],
       },
     } : {}),
     ...(type === 'signature' ? {

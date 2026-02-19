@@ -7,8 +7,139 @@ import type { CanvasDocument, PageSettings } from './canvasTypes';
 import { createDefaultPageSettings, createEmptyDocument, normalizePageSettings } from './canvasTypes';
 import CanvasEditor from './CanvasEditor';
 import { exportToJinja2, exportToJSON, importFromJSON, generatePreviewHtml } from './exportUtils';
+import { useUndoableState } from './hooks/useUndoableState';
+import type { CanvasChangeOptions } from './historyTypes';
 
 const SESSION_KEY = 'canvas-editor-session-v1';
+
+const NESTED_REPORT_KEYS = new Set([
+  'metadata',
+  'header',
+  'inspeccion',
+  'medidas',
+  'valvulas',
+  'canastillas',
+]);
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+  return value as Record<string, unknown>;
+}
+
+function assignPrimitive(target: Record<string, unknown>, key: string, value: unknown) {
+  if (value === null || value === undefined) return;
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    target[key] = value;
+  }
+}
+
+function buildDataPreviewFromReport(report: unknown): Record<string, unknown> {
+  const preview: Record<string, unknown> = {};
+  const reportObject = asRecord(report);
+  if (!reportObject) return preview;
+
+  const metadata = asRecord(reportObject.metadata);
+  if (metadata) {
+    ['informe_id', 'dia', 'mes', 'anio', 'pagina'].forEach((key) => {
+      assignPrimitive(preview, key, metadata[key]);
+    });
+  }
+
+  const header = asRecord(reportObject.header);
+  if (header) {
+    ['cs', 'contratista', 'codigo_infraestructura', 'ubicacion', 'suministro', 'tipo', 'volumen'].forEach((key) => {
+      assignPrimitive(preview, key, header[key]);
+    });
+  }
+
+  const inspeccion = asRecord(reportObject.inspeccion);
+  if (inspeccion) {
+    Object.entries(inspeccion).forEach(([key, value]) => {
+      assignPrimitive(preview, key, value);
+      if (key.startsWith('observaciones_')) {
+        assignPrimitive(preview, `obs_${key.slice('observaciones_'.length)}`, value);
+      } else if (key.startsWith('sugerencias_')) {
+        assignPrimitive(preview, `sug_${key.slice('sugerencias_'.length)}`, value);
+      }
+    });
+  }
+
+  const medidas = asRecord(reportObject.medidas);
+  if (medidas) {
+    Object.entries(medidas).forEach(([key, value]) => {
+      assignPrimitive(preview, `medidas_${key}`, value);
+    });
+  }
+
+  const valvulas = asRecord(reportObject.valvulas);
+  if (valvulas) {
+    const valvulaSections: Array<[string, string]> = [
+      ['diametros', 'conduccion'],
+      ['impulsion', 'impulsion'],
+      ['aduccion', 'aduccion'],
+      ['bypass', 'bypass'],
+      ['desague', 'desague'],
+    ];
+
+    valvulaSections.forEach(([sectionKey, variableSection]) => {
+      const sectionData = asRecord(valvulas[sectionKey]);
+      if (!sectionData) return;
+      Object.entries(sectionData).forEach(([diameter, value]) => {
+        assignPrimitive(preview, `valvulas_${variableSection}_${diameter}`, value);
+      });
+    });
+
+    assignPrimitive(preview, 'valvulas_operativas', valvulas.operativas);
+    assignPrimitive(preview, 'valvulas_no_operativas', valvulas.no_operativas);
+
+    Object.entries(valvulas).forEach(([key, value]) => {
+      if (key.startsWith('observaciones_')) {
+        assignPrimitive(preview, `obs_valvulas_${key.slice('observaciones_'.length)}`, value);
+      } else if (key.startsWith('sugerencias_')) {
+        assignPrimitive(preview, `sug_valvulas_${key.slice('sugerencias_'.length)}`, value);
+      }
+    });
+  }
+
+  const canastillas = asRecord(reportObject.canastillas);
+  if (canastillas) {
+    const canastillaSections: Array<[string, string]> = [
+      ['diametros', 'aduccion'],
+      ['aduccion', 'aduccion'],
+      ['succion', 'succion'],
+      ['desague', 'desague'],
+    ];
+
+    canastillaSections.forEach(([sectionKey, variableSection]) => {
+      const sectionData = asRecord(canastillas[sectionKey]);
+      if (!sectionData) return;
+      Object.entries(sectionData).forEach(([diameter, value]) => {
+        assignPrimitive(preview, `canastillas_${variableSection}_${diameter}`, value);
+      });
+    });
+
+    assignPrimitive(preview, 'canastillas_operativas', canastillas.operativas);
+    assignPrimitive(preview, 'canastillas_no_operativas', canastillas.no_operativas);
+
+    Object.entries(canastillas).forEach(([key, value]) => {
+      if (key.startsWith('observaciones_')) {
+        assignPrimitive(preview, `obs_canastillas_${key.slice('observaciones_'.length)}`, value);
+      } else if (key.startsWith('sugerencias_')) {
+        assignPrimitive(preview, `sug_canastillas_${key.slice('sugerencias_'.length)}`, value);
+      }
+    });
+  }
+
+  assignPrimitive(preview, 'observaciones', reportObject.observaciones);
+  assignPrimitive(preview, 'sugerencias', reportObject.sugerencias);
+
+  Object.entries(reportObject).forEach(([key, value]) => {
+    if (NESTED_REPORT_KEYS.has(key)) return;
+    assignPrimitive(preview, key, value);
+  });
+
+  return preview;
+}
 
 function isSamePageSettings(a: PageSettings, b: PageSettings): boolean {
   return (
@@ -93,15 +224,23 @@ const ToolbarBtn = memo(function ToolbarBtn({
 // ─── Main component ───────────────────────────────────────────────────────────
 
 export default function TemplateEditor() {
-  const [doc, setDoc] = useState<CanvasDocument>(createEmptyDocument);
+  const {
+    present: doc,
+    canUndo,
+    canRedo,
+    setPresent: setDocHistory,
+    commitPending: commitPendingHistory,
+    undo: undoHistory,
+    redo: redoHistory,
+    reset: resetDocHistory,
+  } = useUndoableState<CanvasDocument>(createEmptyDocument, { limit: 50 });
   const [pageSettings, setPageSettings] = useState<PageSettings>(createDefaultPageSettings);
   const [status, setStatus] = useState<PublishStatus>('draft');
   const [dirty, setDirty] = useState(false);
-  const [history, setHistory] = useState<CanvasDocument[]>([]);
-  const [future, setFuture] = useState<CanvasDocument[]>([]);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [previewHtml, setPreviewHtml] = useState('');
+  const [dataPreview, setDataPreview] = useState<Record<string, unknown> | undefined>(undefined);
   const importRef = useRef<HTMLInputElement>(null);
 
   const toast = useCallback((msg: string, type: Toast['type'] = 'info') => {
@@ -119,7 +258,7 @@ export default function TemplateEditor() {
         const s = JSON.parse(raw);
         if (s?.doc?.elements) {
           const normalizedPageSettings = normalizePageSettings(s.doc.pageSettings);
-          setDoc({ ...s.doc, pageSettings: normalizedPageSettings });
+          resetDocHistory({ ...s.doc, pageSettings: normalizedPageSettings });
           setPageSettings(normalizedPageSettings);
           setStatus((s.status as PublishStatus) || 'draft');
         }
@@ -127,12 +266,50 @@ export default function TemplateEditor() {
     } catch {
       localStorage.removeItem(SESSION_KEY);
     }
-  }, []);
+  }, [resetDocHistory]);
 
   useEffect(() => {
     const normalized = normalizePageSettings(doc.pageSettings);
     setPageSettings((prev) => (isSamePageSettings(prev, normalized) ? prev : normalized));
   }, [doc.pageSettings]);
+
+  useEffect(() => {
+    let isActive = true;
+    const controller = new AbortController();
+
+    const loadDataPreview = async () => {
+      try {
+        const response = await fetch('/api/technical-reports/reports', {
+          method: 'GET',
+          signal: controller.signal,
+        });
+        if (!response.ok) return;
+
+        const payload = (await response.json()) as { reports?: unknown[] };
+        const firstReport = Array.isArray(payload.reports) ? payload.reports[0] : null;
+        if (!isActive) return;
+
+        if (!firstReport) {
+          setDataPreview(undefined);
+          return;
+        }
+
+        const preview = buildDataPreviewFromReport(firstReport);
+        setDataPreview(Object.keys(preview).length ? preview : undefined);
+      } catch (error) {
+        if ((error as { name?: string })?.name === 'AbortError') return;
+        if (isActive) {
+          setDataPreview(undefined);
+        }
+      }
+    };
+
+    void loadDataPreview();
+    return () => {
+      isActive = false;
+      controller.abort();
+    };
+  }, []);
 
   // ── Auto-save ─────────────────────────────────────────────────────────────
 
@@ -158,14 +335,20 @@ export default function TemplateEditor() {
 
   // ── History management ────────────────────────────────────────────────────
 
-  const handleDocChange = useCallback((newDoc: CanvasDocument) => {
+  const handleDocChange = useCallback((newDoc: CanvasDocument, options?: CanvasChangeOptions) => {
+    if (options?.finalizeOnly) {
+      commitPendingHistory();
+      return;
+    }
+
     const normalizedDoc = {
       ...newDoc,
       pageSettings: normalizePageSettings(newDoc.pageSettings),
     };
-    setHistory(h => [...h.slice(-49), doc]);
-    setFuture([]);
-    setDoc(normalizedDoc);
+
+    setDocHistory(normalizedDoc, {
+      commitToHistory: options?.commitToHistory !== false,
+    });
     setPageSettings((prev) => (
       isSamePageSettings(prev, normalizedDoc.pageSettings)
         ? prev
@@ -173,7 +356,7 @@ export default function TemplateEditor() {
     ));
     setDirty(true);
     if (status === 'published') setStatus('draft');
-  }, [doc, status]);
+  }, [commitPendingHistory, setDocHistory, status]);
 
   const handlePageSettingsChange = useCallback((nextPageSettings: PageSettings) => {
     const normalized = normalizePageSettings(nextPageSettings);
@@ -186,20 +369,18 @@ export default function TemplateEditor() {
   }, [doc, handleDocChange]);
 
   const undo = useCallback(() => {
-    if (!history.length) return;
-    const prev = history[history.length - 1];
-    setHistory(h => h.slice(0, -1));
-    setFuture(f => [doc, ...f.slice(0, 49)]);
-    setDoc(prev);
-  }, [history, doc]);
+    if (!canUndo) return;
+    undoHistory();
+    setDirty(true);
+    if (status === 'published') setStatus('draft');
+  }, [canUndo, undoHistory, status]);
 
   const redo = useCallback(() => {
-    if (!future.length) return;
-    const next = future[0];
-    setFuture(f => f.slice(1));
-    setHistory(h => [...h.slice(-49), doc]);
-    setDoc(next);
-  }, [future, doc]);
+    if (!canRedo) return;
+    redoHistory();
+    setDirty(true);
+    if (status === 'published') setStatus('draft');
+  }, [canRedo, redoHistory, status]);
 
   // ── Keyboard shortcuts ────────────────────────────────────────────────────
 
@@ -228,22 +409,18 @@ export default function TemplateEditor() {
   const newTemplate = useCallback(() => {
     if (dirty && !window.confirm('¿Descartar cambios sin guardar?')) return;
     const d = createEmptyDocument();
-    setDoc(d);
+    resetDocHistory(d);
     setPageSettings(normalizePageSettings(d.pageSettings));
-    setHistory([]);
-    setFuture([]);
     setDirty(false);
     setStatus('draft');
     localStorage.removeItem(SESSION_KEY);
     toast('Nueva plantilla creada', 'ok');
-  }, [dirty, toast]);
+  }, [dirty, resetDocHistory, toast]);
 
   /** Load a preset or imported doc into the editor */
   const loadDocument = useCallback((newDoc: CanvasDocument) => {
     const normalizedPageSettings = normalizePageSettings(newDoc.pageSettings);
-    setHistory(h => [...h.slice(-49), doc]);
-    setFuture([]);
-    setDoc({
+    setDocHistory({
       ...newDoc,
       pageSettings: normalizedPageSettings,
       status: 'draft',
@@ -253,7 +430,7 @@ export default function TemplateEditor() {
     setStatus('draft');
     setDirty(true);
     toast(`Plantilla "${newDoc.name}" cargada`, 'ok');
-  }, [doc, toast]);
+  }, [setDocHistory, toast]);
 
   const exportHtml = useCallback(() => {
     const html = exportToJinja2(doc);
@@ -314,12 +491,12 @@ export default function TemplateEditor() {
       return;
     }
     const updated = { ...doc, status: 'published' as const, updatedAt: new Date().toISOString() };
-    setDoc(updated);
+    setDocHistory(updated);
     setStatus('published');
     setDirty(false);
     localStorage.setItem(SESSION_KEY, JSON.stringify({ doc: updated, status: 'published' }));
     toast('Plantilla publicada', 'ok');
-  }, [doc, toast]);
+  }, [doc, setDocHistory, toast]);
 
   return (
     <div className="template-editor-root h-full w-full flex flex-col bg-neutral-50">
@@ -361,10 +538,10 @@ export default function TemplateEditor() {
         <div className="flex items-center gap-1 flex-shrink-0">
           {/* Undo / Redo */}
           <div className="flex items-center bg-neutral-100 rounded-lg p-0.5">
-            <ToolbarBtn onClick={undo} disabled={!history.length} title="Deshacer (Ctrl+Z)">
+            <ToolbarBtn onClick={undo} disabled={!canUndo} title="Deshacer (Ctrl+Z)">
               <Undo2 size={16} />
             </ToolbarBtn>
-            <ToolbarBtn onClick={redo} disabled={!future.length} title="Rehacer (Ctrl+Y)">
+            <ToolbarBtn onClick={redo} disabled={!canRedo} title="Rehacer (Ctrl+Y)">
               <Redo2 size={16} />
             </ToolbarBtn>
           </div>
@@ -429,6 +606,7 @@ export default function TemplateEditor() {
           pageSettings={pageSettings}
           onChange={handleDocChange}
           onPageSettingsChange={handlePageSettingsChange}
+          dataPreview={dataPreview}
           isDirty={dirty}
           onLoadTemplate={loadDocument}
         />

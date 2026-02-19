@@ -130,6 +130,14 @@ class TestTechnicalReportsEndpoints:
         assert r.status_code == 200
         assert "reports" in r.json()
 
+    def test_list_template_variables(self):
+        r = client.get("/api/technical-reports/variables")
+        assert r.status_code == 200
+        payload = r.json()
+        assert isinstance(payload, list)
+        assert len(payload) > 0
+        assert {"key", "label", "category"}.issubset(payload[0].keys())
+
     def test_get_nonexistent_returns_404(self):
         r = client.get("/api/technical-reports/reports/NONEXISTENT_ID_99999")
         assert r.status_code == 404

@@ -14,6 +14,9 @@ class EditorBlock(BaseModel):
         "info-bar", "info_bar", "section-title", "section_title",
         "data-grid", "data_grid", "photo-grid", "photo_grid",
         "signatures", "spacer",
+        # Canvas-editor types
+        "heading", "logo", "rectangle", "circle", "shape", "divider",
+        "variable", "container", "qr", "line",
     ]
     content: str = ""
     variables: List[str] = Field(default_factory=list)

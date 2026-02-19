@@ -15,7 +15,8 @@ TEMPLATE_CSS = """\
 @page { size: A4; margin: 5mm; }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { margin: 0; padding: 0; }
-body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 8pt; color: #222; line-height: 1.15; }
+body { font-family: Arial, 'Segoe UI', Helvetica, sans-serif; font-size: 8pt; color: #222; line-height: 1.15;
+       -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 
 /* ── WeasyPrint (PDF) ── */
 @media print {
@@ -51,12 +52,11 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 8pt; color: #222; 
 /* Section Title */
 .section-title { font-size: 7.5pt; font-weight: 700; text-transform: uppercase; border-bottom: 1px solid; padding-bottom: 0.5mm; margin: 1.5mm 0 1mm 0; flex-shrink: 0; }
 
-/* Data Grids */
-.grid-6 { display: grid; grid-template-columns: auto 1fr auto 1fr auto 1fr; gap: 1mm 2mm; margin-bottom: 1.5mm; flex-shrink: 0; }
-.grid-4 { display: grid; grid-template-columns: auto 1fr auto 1fr; gap: 1mm 2mm; margin-bottom: 1.5mm; flex-shrink: 0; }
-.lbl { font-weight: 600; text-align: right; font-size: 6.5pt; color: #555; white-space: nowrap; align-self: center; }
-.val { border: 1px dotted #888; background: #fefefe; padding: 0.8mm 1.5mm; font-size: 7pt; min-height: 4mm; display: flex; align-items: center; }
-.span3 { grid-column: span 3; }
+/* Data Grids — table layout for WeasyPrint compatibility */
+.grid-6, .grid-4 { width: 100%; border-collapse: separate; border-spacing: 2mm 1mm; margin-bottom: 1.5mm; table-layout: auto; }
+.lbl { font-weight: 600; text-align: right; font-size: 6.5pt; color: #555; white-space: nowrap; vertical-align: middle; padding: 0; }
+.val { border: 1px dotted #888; background: #fefefe; padding: 0.8mm 1.5mm; font-size: 7pt; min-height: 4mm; vertical-align: middle; }
+.span3 { /* handled via colspan in table layout */ }
 
 /* Photo Section */
 .photo-section {
@@ -224,17 +224,57 @@ def _compile_data_grid(block: EditorBlock) -> str:
     span_fields: List[str] = _get_meta(block, "spanFields", [])
     css_class = "grid-6" if columns == 6 else "grid-4"
 
-    cells: List[str] = []
+    # Determine pairs per row: 6-col = 3 label-value pairs, 4-col = 2 pairs
+    pairs_per_row = 3 if columns == 6 else 2
+
+    rows_html: List[str] = []
+    current_row: List[str] = []
+    col_pos = 0
+
     for field in fields:
         label = field.get("label", "")
         variable = field.get("variable", "")
-        span_class = " span3" if variable in span_fields else ""
-        cells.append(
-            f'<span class="lbl">{label}:</span>'
-            f'<div class="val{span_class}">{{{{ report.data.get(\'{variable}\', \'-\') }}}}</div>'
-        )
+        is_span = variable in span_fields
 
-    return f'<div class="{css_class}">{"".join(cells)}</div>'
+        if is_span and columns == 6:
+            # Spanning field takes remaining columns in current row
+            if col_pos > 0:
+                # Pad remaining cells with empty
+                while col_pos < pairs_per_row:
+                    current_row.append('<td class="lbl"></td><td class="val"></td>')
+                    col_pos += 1
+                rows_html.append(f'<tr>{"".join(current_row)}</tr>')
+                current_row = []
+                col_pos = 0
+            # Span field gets full row with colspan
+            remaining_val_cols = pairs_per_row * 2 - 1
+            current_row.append(
+                f'<td class="lbl">{label}:</td>'
+                f'<td class="val" colspan="{remaining_val_cols}">'
+                f"{{{{ report.data.get('{variable}', '-') }}}}</td>"
+            )
+            rows_html.append(f'<tr>{"".join(current_row)}</tr>')
+            current_row = []
+            col_pos = 0
+        else:
+            current_row.append(
+                f'<td class="lbl">{label}:</td>'
+                f'<td class="val">{{{{ report.data.get(\'{variable}\', \'-\') }}}}</td>'
+            )
+            col_pos += 1
+            if col_pos >= pairs_per_row:
+                rows_html.append(f'<tr>{"".join(current_row)}</tr>')
+                current_row = []
+                col_pos = 0
+
+    # Flush remaining cells
+    if current_row:
+        while col_pos < pairs_per_row:
+            current_row.append('<td class="lbl"></td><td class="val"></td>')
+            col_pos += 1
+        rows_html.append(f'<tr>{"".join(current_row)}</tr>')
+
+    return f'<table class="{css_class}">{"".join(rows_html)}</table>'
 
 
 def _normalize_photo_count(value: Any) -> int:
@@ -261,6 +301,30 @@ def _to_float(value: Any, default: float) -> float:
         return float(value)
     except (TypeError, ValueError):
         return default
+
+
+def _normalize_percentages(values: Any, count: int) -> List[float]:
+    if count <= 0:
+        return []
+
+    raw: List[float] = []
+    if isinstance(values, list):
+        for idx in range(count):
+            try:
+                parsed = float(values[idx])
+            except (TypeError, ValueError, IndexError):
+                parsed = 0.0
+            raw.append(parsed if parsed > 0 else 0.0)
+    else:
+        raw = [0.0 for _ in range(count)]
+
+    total = sum(raw)
+    if total <= 0:
+        return [100.0 / count for _ in range(count)]
+
+    normalized = [(value / total) * 100.0 for value in raw]
+    normalized[-1] += 100.0 - sum(normalized)
+    return normalized
 
 
 PHOTO_TABLE_STYLE = (
@@ -399,13 +463,18 @@ def _compile_fixed_photo_grid(
 
 
 def _compile_photo_grid(block: EditorBlock) -> str:
-    show_labels = _get_meta(block, "showLabels", False)
-    labels = _get_meta(block, "labels", [])
-    panel_title = str(_get_meta(block, "panelTitle", "") or "").strip()
+    # Check photoConfig in metadata (canvas editor) or direct metadata keys (block editor)
+    photo_config = _get_meta(block, "photoConfig") or {}
+    show_labels = photo_config.get("showLabels", _get_meta(block, "showLabels", False))
+    labels = photo_config.get("labels", _get_meta(block, "labels", []))
+    panel_title = str(photo_config.get("panelTitle", _get_meta(block, "panelTitle", "")) or "").strip()
     tag_html = f'<span class="photo-tag">{panel_title}</span>' if panel_title else ""
-    configured_count = _normalize_photo_count(_get_meta(block, "count", 0))
+    configured_count = _normalize_photo_count(
+        photo_config.get("count", _get_meta(block, "count", 0))
+    )
     odd_position = _normalize_odd_position(
-        _get_meta(block, "oddPosition", _get_meta(block, "oddAlignment", "center"))
+        photo_config.get("oddPosition",
+            _get_meta(block, "oddPosition", _get_meta(block, "oddAlignment", "center")))
     )
 
     if configured_count:
@@ -522,27 +591,135 @@ def _compile_labeled_photos(labels: List[str], tag_html: str = "") -> str:
 
 def _compile_text(block: EditorBlock) -> str:
     content = block.content or _get_meta(block, "content", "")
-    font_size = _get_meta(block, "fontSize", 9)
-    align = _get_meta(block, "align", "left")
-    bold = _get_meta(block, "bold", False)
+    layout = (block.metadata or {}).get("layout")
+    style_meta = (block.metadata or {}).get("style") or {}
+
+    # Canvas-style text with absolute positioning
+    if layout and ("x" in layout or "y" in layout):
+        layout_css = _layout_style(block)
+        style_css = _style_css(block)
+        return (
+            f'<div class="element text" style="{layout_css} {style_css} overflow: hidden;">'
+            f'{content}'
+            '</div>'
+        )
+
+    # Block-style text (flow layout)
+    font_size = style_meta.get("fontSize", _get_meta(block, "fontSize", 9))
+    align = style_meta.get("textAlign", _get_meta(block, "align", "left"))
+    bold = _get_meta(block, "bold", False) or style_meta.get("fontWeight") == "bold"
     weight = "font-weight: 700;" if bold else ""
+    color_css = f"color: {style_meta['color']};" if style_meta.get("color") else ""
     return (
-        f'<div class="text-block" style="font-size: {font_size}pt; text-align: {align}; {weight}">'
+        f'<div class="text-block" style="font-size: {font_size}pt; text-align: {align}; {weight} {color_css}">'
         f'{content}'
         '</div>'
     )
 
 
 def _compile_table(block: EditorBlock) -> str:
+    metadata = block.metadata or {}
+    table_meta = metadata.get("tableData") if isinstance(metadata.get("tableData"), dict) else {}
+    layout = metadata.get("layout") if isinstance(metadata.get("layout"), dict) else {}
+
+    def _to_positive_int(value: Any, default: int) -> int:
+        try:
+            parsed = int(value)
+        except (TypeError, ValueError):
+            return default
+        return parsed if parsed > 0 else default
+
+    def _to_string_matrix(value: Any) -> List[List[str]]:
+        if not isinstance(value, list):
+            return []
+        matrix: List[List[str]] = []
+        for row in value:
+            if isinstance(row, list):
+                matrix.append(["" if cell is None else str(cell) for cell in row])
+            else:
+                matrix.append([])
+        return matrix
+
+    has_table_cells_shape = any(
+        key in table_meta for key in ("rowCount", "colCount", "data", "colWidths", "rowHeights")
+    ) or any(
+        key in metadata for key in ("rowCount", "colCount", "data", "colWidths", "rowHeights")
+    )
+
+    if has_table_cells_shape:
+        table_data = _to_string_matrix(table_meta.get("data", metadata.get("data", [])))
+
+        inferred_row_count = len(table_data) if table_data else 2
+        inferred_col_count = max((len(row) for row in table_data), default=0) or 2
+
+        row_count = _to_positive_int(
+            table_meta.get("rowCount", metadata.get("rowCount")),
+            inferred_row_count,
+        )
+        col_count = _to_positive_int(
+            table_meta.get("colCount", metadata.get("colCount")),
+            inferred_col_count,
+        )
+        border_color = _escape_html(table_meta.get("borderColor") or metadata.get("borderColor") or "#cbd5e1")
+        col_widths = _normalize_percentages(
+            table_meta.get("colWidths", metadata.get("colWidths", [])),
+            col_count,
+        )
+        row_heights = _normalize_percentages(
+            table_meta.get("rowHeights", metadata.get("rowHeights", [])),
+            row_count,
+        )
+
+        colgroup_html = (
+            "<colgroup>"
+            + "".join(f'<col style="width: {width:.4f}%;">' for width in col_widths)
+            + "</colgroup>"
+        )
+
+        body_rows: List[str] = []
+        for r in range(row_count):
+            row_height = row_heights[r] if r < len(row_heights) else (100.0 / row_count if row_count > 0 else 100.0)
+            cells: List[str] = []
+            for c in range(col_count):
+                text = table_data[r][c] if r < len(table_data) and c < len(table_data[r]) else ""
+                cells.append(
+                    f'<td style="border: 1px solid {border_color}; padding: 2px;">'
+                    f'{_escape_html(text)}</td>'
+                )
+            body_rows.append(f'<tr style="height: {row_height:.4f}%;">{"".join(cells)}</tr>')
+
+        table_html = (
+            '<table class="data-table" style="width: 100%; height: 100%; border-collapse: collapse; table-layout: fixed;">'
+            f"{colgroup_html}"
+            f'<tbody>{"".join(body_rows)}</tbody>'
+            '</table>'
+        )
+
+        if layout:
+            x = _to_float(layout.get("x"), 0.0)
+            y = _to_float(layout.get("y"), 0.0)
+            w = _to_float(layout.get("width"), 100.0)
+            h = _to_float(layout.get("height"), 30.0)
+            return (
+                '<div class="element table" '
+                f'style="position: absolute; left: {x}mm; top: {y}mm; width: {w}mm; height: {h}mm;">'
+                f"{table_html}"
+                '</div>'
+            )
+
+        return table_html
+
+    # Legacy block-table support (headers + rows)
     headers: List[str] = _get_meta(block, "headers", ["Campo", "Valor"])
     rows: List[List[str]] = _get_meta(block, "rows", [])
-    border_color = _get_meta(block, "borderColor", "#cbd5e1")
-    header_bg = _get_meta(block, "headerBg", "#f5f5f5")
+    border_color = _escape_html(_get_meta(block, "borderColor", "#cbd5e1") or "#cbd5e1")
+    header_bg = _escape_html(_get_meta(block, "headerBg", "#f5f5f5") or "#f5f5f5")
 
-    header_cells = "".join(f"<th>{h}</th>" for h in headers)
+    header_cells = "".join(f"<th>{_escape_html('' if h is None else h)}</th>" for h in headers)
     body_rows = []
     for row in rows:
-        cells = "".join(f"<td>{c}</td>" for c in row)
+        safe_row = row if isinstance(row, list) else []
+        cells = "".join(f"<td>{_escape_html('' if c is None else c)}</td>" for c in safe_row)
         body_rows.append(f"<tr>{cells}</tr>")
 
     return (
@@ -630,6 +807,199 @@ def _compile_spacer(block: EditorBlock) -> str:
     return f'<div class="spacer" style="height: {height}mm;"></div>'
 
 
+# ─── Canvas element helpers ───
+
+
+def _layout_style(block: EditorBlock) -> str:
+    """Generate position: absolute style from layout metadata (canvas elements)."""
+    layout = (block.metadata or {}).get("layout") or {}
+    if not layout:
+        return ""
+    x = _to_float(layout.get("x"), 0.0)
+    y = _to_float(layout.get("y"), 0.0)
+    w = _to_float(layout.get("width"), 0.0)
+    h = _to_float(layout.get("height"), 0.0)
+    rotation = _to_float(layout.get("rotation"), 0.0)
+
+    parts = [
+        f"position: absolute; left: {x}mm; top: {y}mm;",
+        f"width: {w}mm; height: {h}mm;",
+    ]
+    if rotation:
+        parts.append(f"transform: rotate({rotation}deg); transform-origin: center center;")
+    return " ".join(parts)
+
+
+def _style_css(block: EditorBlock) -> str:
+    """Generate inline CSS from style metadata (canvas elements)."""
+    style = (block.metadata or {}).get("style") or {}
+    parts: List[str] = []
+    if style.get("backgroundColor") and style["backgroundColor"] != "transparent":
+        parts.append(f"background-color: {style['backgroundColor']};")
+    if style.get("color"):
+        parts.append(f"color: {style['color']};")
+    if style.get("fontSize"):
+        parts.append(f"font-size: {style['fontSize']}pt;")
+    if style.get("fontFamily"):
+        parts.append(f"font-family: '{style['fontFamily']}', sans-serif;")
+    if style.get("fontWeight"):
+        parts.append(f"font-weight: {style['fontWeight']};")
+    if style.get("textAlign"):
+        parts.append(f"text-align: {style['textAlign']};")
+    if style.get("textTransform"):
+        parts.append(f"text-transform: {style['textTransform']};")
+    if style.get("lineHeight"):
+        parts.append(f"line-height: {style['lineHeight']};")
+    if style.get("letterSpacing"):
+        parts.append(f"letter-spacing: {style['letterSpacing']}px;")
+    if style.get("padding"):
+        parts.append(f"padding: {style['padding']}px;")
+    if style.get("borderWidth") and style.get("borderStyle") != "none":
+        bw = style["borderWidth"]
+        bs = style.get("borderStyle", "solid")
+        bc = style.get("borderColor", "#000")
+        parts.append(f"border: {bw}px {bs} {bc};")
+    if style.get("borderRadius"):
+        parts.append(f"border-radius: {style['borderRadius']}mm;")
+    if style.get("opacity") is not None and float(style.get("opacity", 1)) != 1:
+        parts.append(f"opacity: {style['opacity']};")
+    return " ".join(parts)
+
+
+def _compile_heading(block: EditorBlock) -> str:
+    """Canvas heading element."""
+    layout = _layout_style(block)
+    style = _style_css(block)
+    content = block.content or _get_meta(block, "content", "")
+    return f'<div class="element heading" style="{layout} {style} overflow: hidden;">{content}</div>'
+
+
+def _compile_logo(block: EditorBlock) -> str:
+    """Canvas logo element with Jinja2 variable binding."""
+    layout = _layout_style(block)
+    style = _style_css(block)
+    image_url = _get_meta(block, "imageUrl", "")
+    variable_name = _get_meta(block, "variableName", "logo_left")
+
+    if image_url:
+        return (
+            f'<div class="element logo" style="{layout} {style} overflow: hidden;">'
+            f'<img src="{_escape_html(image_url)}" style="width: 100%; height: 100%; object-fit: contain;" />'
+            '</div>'
+        )
+    return (
+        f'{{% if {variable_name} %}}'
+        f'<div class="element logo" style="{layout} {style} overflow: hidden;">'
+        f'<img src="{{{{ {variable_name} }}}}" style="width: 100%; height: 100%; object-fit: contain;" />'
+        '</div>'
+        '{% endif %}'
+    )
+
+
+def _compile_canvas_image(block: EditorBlock) -> str:
+    """Canvas image element."""
+    layout = _layout_style(block)
+    style = _style_css(block)
+    image_url = _get_meta(block, "imageUrl", "")
+    object_fit = ((block.metadata or {}).get("style") or {}).get("objectFit", "cover")
+
+    if image_url:
+        return (
+            f'<div class="element image" style="{layout} {style} overflow: hidden;">'
+            f'<img src="{_escape_html(image_url)}" style="width: 100%; height: 100%; object-fit: {object_fit};" />'
+            '</div>'
+        )
+    return f'<div class="element image" style="{layout} {style} overflow: hidden;">{block.content or ""}</div>'
+
+
+def _compile_rectangle(block: EditorBlock) -> str:
+    """Canvas rectangle element — rendered via CSS only."""
+    layout = _layout_style(block)
+    style = _style_css(block)
+    shape_config = _get_meta(block, "shapeConfig") or {}
+    fill = shape_config.get("fill", "")
+    stroke = shape_config.get("stroke", "")
+    stroke_width = _to_float(shape_config.get("strokeWidth"), 0)
+    extra = ""
+    if fill:
+        extra += f"background-color: {fill};"
+    if stroke and stroke_width:
+        extra += f"border: {stroke_width}px solid {stroke};"
+    return f'<div class="element rectangle" style="{layout} {style} {extra}"></div>'
+
+
+def _compile_circle(block: EditorBlock) -> str:
+    """Canvas circle element."""
+    layout = _layout_style(block)
+    style = _style_css(block)
+    shape_config = _get_meta(block, "shapeConfig") or {}
+    fill = shape_config.get("fill", "")
+    stroke = shape_config.get("stroke", "")
+    stroke_width = _to_float(shape_config.get("strokeWidth"), 0)
+    extra = "border-radius: 50%;"
+    if fill:
+        extra += f"background-color: {fill};"
+    if stroke and stroke_width:
+        extra += f"border: {stroke_width}px solid {stroke};"
+    return f'<div class="element circle" style="{layout} {style} {extra}"></div>'
+
+
+def _compile_shape(block: EditorBlock) -> str:
+    """Canvas shape element (line, arrow, rectangle, circle)."""
+    shape_config = _get_meta(block, "shapeConfig") or {}
+    kind = shape_config.get("kind", "rectangle")
+    if kind == "circle":
+        return _compile_circle(block)
+    if kind == "line":
+        layout = _layout_style(block)
+        stroke = shape_config.get("stroke", "#000")
+        stroke_width = _to_float(shape_config.get("strokeWidth"), 1)
+        return (
+            f'<div class="element shape" style="{layout} overflow: hidden;">'
+            f'<div style="width: 100%; height: 0; border-top: {stroke_width}px solid {stroke};"></div>'
+            '</div>'
+        )
+    if kind == "arrow":
+        layout = _layout_style(block)
+        stroke = shape_config.get("stroke", "#000")
+        stroke_width = _to_float(shape_config.get("strokeWidth"), 2)
+        return (
+            f'<div class="element shape" style="{layout} overflow: hidden;">'
+            f'<svg viewBox="0 0 100 50" preserveAspectRatio="none" style="width: 100%; height: 100%;">'
+            f'<defs><marker id="ah" orient="auto" markerWidth="4" markerHeight="4" refX="3" refY="2">'
+            f'<path d="M0,0 V4 L4,2 Z" fill="{stroke}"/></marker></defs>'
+            f'<line x1="2" y1="25" x2="94" y2="25" stroke="{stroke}" stroke-width="{stroke_width}" marker-end="url(#ah)"/>'
+            '</svg></div>'
+        )
+    # Default: rectangle
+    return _compile_rectangle(block)
+
+
+def _compile_divider(block: EditorBlock) -> str:
+    """Canvas divider element."""
+    layout = _layout_style(block)
+    div_config = _get_meta(block, "dividerConfig") or {}
+    orientation = div_config.get("orientation", "horizontal")
+    color = div_config.get("color", "#374151")
+    thickness = _to_float(div_config.get("thickness"), 1)
+    line_style = div_config.get("style", "solid")
+
+    if orientation == "vertical":
+        inner = f'<div style="width: 0; height: 100%; border-left: {thickness}px {line_style} {color};"></div>'
+    else:
+        inner = f'<div style="width: 100%; height: 0; border-top: {thickness}px {line_style} {color};"></div>'
+
+    return f'<div class="element divider" style="{layout} overflow: hidden;">{inner}</div>'
+
+
+def _compile_variable(block: EditorBlock) -> str:
+    """Canvas variable element with Jinja2 expression."""
+    layout = _layout_style(block)
+    style = _style_css(block)
+    variable_name = _get_meta(block, "variableName", "variable")
+    return f'<div class="element variable" style="{layout} {style} overflow: hidden;">{{{{ {variable_name} }}}}</div>'
+
+
 # ─── Block type dispatch ───
 
 BLOCK_COMPILERS = {
@@ -643,11 +1013,19 @@ BLOCK_COMPILERS = {
     "photo-grid": _compile_photo_grid,
     "photo_grid": _compile_photo_grid,
     "text": _compile_text,
+    "heading": _compile_heading,
     "table": _compile_table,
     "signature": _compile_signature,
     "signatures": _compile_signatures,
     "footer": _compile_footer,
     "spacer": _compile_spacer,
+    "logo": _compile_logo,
+    "image": _compile_canvas_image,
+    "rectangle": _compile_rectangle,
+    "circle": _compile_circle,
+    "shape": _compile_shape,
+    "divider": _compile_divider,
+    "variable": _compile_variable,
     "protected": lambda b: (
         f'<div class="text-block protected-block" '
         f'data-block-id="{b.id}" '
@@ -657,7 +1035,6 @@ BLOCK_COMPILERS = {
         f'{b.content or ""}'
         '</div>'
     ),
-    "image": lambda b: f'<div>{b.content or ""}</div>',
     "variables": lambda b: f'<span>{b.content or ""}</span>',
 }
 
@@ -672,15 +1049,19 @@ def _render_block(block: EditorBlock) -> str:
 
 
 def _is_block_based(template_json: TemplateJson) -> bool:
-    """Detect if this template was created with the block editor (vs legacy canvas)."""
-    if template_json.metadata.get("source") == "block-editor":
+    """Detect if this template was created with the block or canvas editor (vs legacy)."""
+    source = template_json.metadata.get("source", "")
+    if source in ("block-editor", "canvas-editor-v3"):
         return True
     for section in template_json.sections:
         for block in section.blocks:
             if block.type in ("header", "info-bar", "info_bar", "section-title",
                               "section_title", "data-grid", "data_grid",
                               "photo-grid", "photo_grid", "signatures",
-                              "footer", "spacer"):
+                              "footer", "spacer",
+                              # Canvas editor types
+                              "heading", "logo", "rectangle", "circle",
+                              "shape", "divider", "variable", "container"):
                 return True
     return False
 
@@ -700,14 +1081,66 @@ def compileTemplateJsonToJinja(template_json: TemplateJson) -> str:
     return _compile_block_template(template_json)
 
 
+def _has_canvas_layout(template_json: TemplateJson) -> bool:
+    """Check if any block uses absolute positioning (canvas-style layout)."""
+    for section in template_json.sections:
+        for block in section.blocks:
+            layout = (block.metadata or {}).get("layout")
+            if layout and ("x" in layout or "y" in layout):
+                return True
+    return False
+
+
 def _compile_block_template(template_json: TemplateJson) -> str:
     """Compile a block-based template to full Jinja2 HTML."""
+    is_canvas = _has_canvas_layout(template_json)
+
     blocks_html: List[str] = []
     for section in template_json.sections:
         for block in section.blocks:
             blocks_html.append(_render_block(block))
 
     page_content = "\n".join(blocks_html)
+
+    # Canvas templates use position: relative container with absolute children
+    # Block templates use flex column layout
+    if is_canvas:
+        page_settings = template_json.metadata.get("pageSettings") or {}
+        page_w = page_settings.get("width", 210)
+        page_h = page_settings.get("height", 297)
+        page_bg = page_settings.get("backgroundColor", "#ffffff")
+
+        canvas_css = (
+            f"@page {{ size: {page_w}mm {page_h}mm; margin: 0; }}\n"
+            "* { box-sizing: border-box; }\n"
+            f"body {{ margin: 0; padding: 0; font-family: Arial, 'Segoe UI', Helvetica, sans-serif; "
+            "-webkit-print-color-adjust: exact; print-color-adjust: exact; }\n"
+            f".page {{ position: relative; width: {page_w}mm; height: {page_h}mm; "
+            f"background: {page_bg}; overflow: hidden; page-break-after: always; }}\n"
+            ".element { position: absolute; overflow: hidden; }\n"
+        )
+
+        return (
+            '<!DOCTYPE html>\n'
+            '<html lang="es">\n'
+            '<head>\n'
+            '<meta charset="UTF-8">\n'
+            '<title>{{ title }}</title>\n'
+            f'<style>\n{canvas_css}\n</style>\n'
+            '</head>\n'
+            '<body>\n'
+            '{# Handle both single data/images (legacy) and reports list #}\n'
+            "{% set report_list = reports if reports else [{'data': data, 'images': images, "
+            "'layout_mode': layout_mode, 'img_count': img_count}] %}\n"
+            '\n'
+            '{% for report in report_list %}\n'
+            '<div class="page">\n'
+            f'{page_content}\n'
+            '</div>\n'
+            '{% endfor %}\n'
+            '</body>\n'
+            '</html>'
+        )
 
     return (
         '<!DOCTYPE html>\n'

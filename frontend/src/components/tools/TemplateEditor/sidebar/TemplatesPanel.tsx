@@ -9,6 +9,12 @@ interface TemplatesPanelProps {
   isDirty?: boolean;
 }
 
+const NEW_TEMPLATE_IDS = new Set([
+  'informe-limpieza-estandar',
+  'acta-conformidad',
+  'hoja-membretada-base',
+]);
+
 // Mini thumbnail preview — shows colored header + layout lines
 function TemplateThumbnail({ color, category }: { color: string; category: string }) {
   const isReport = category === 'reportes' || category === 'fichas';
@@ -76,16 +82,28 @@ function TemplateThumbnail({ color, category }: { color: string; category: strin
 function TemplateCard({
   template,
   onLoad,
+  highlight = false,
 }: {
   template: PresetTemplate;
   onLoad: (t: PresetTemplate) => void;
+  highlight?: boolean;
 }) {
   return (
     <button
-      className="w-full text-left group p-2 rounded-lg border border-neutral-200 hover:border-violet-300 hover:shadow-sm transition-all bg-white focus:outline-none focus:ring-2 focus:ring-violet-300"
+      className={`w-full text-left group p-2 rounded-lg border transition-all focus:outline-none focus:ring-2 relative ${
+        highlight
+          ? 'border-emerald-300 bg-gradient-to-br from-emerald-50 via-white to-cyan-50 hover:border-emerald-400 hover:shadow-md focus:ring-emerald-300'
+          : 'border-neutral-200 bg-white hover:border-violet-300 hover:shadow-sm focus:ring-violet-300'
+      }`}
       onClick={() => onLoad(template)}
       title={template.description}
     >
+      {highlight && (
+        <span className="absolute top-1.5 right-1.5 px-1.5 py-0.5 rounded-full bg-emerald-600 text-white text-[8px] font-semibold tracking-wide">
+          NUEVA
+        </span>
+      )}
+
       {/* Mini preview */}
       <div className="w-full h-16 mb-2 rounded overflow-hidden border border-neutral-100">
         <TemplateThumbnail color={template.thumbnail} category={template.category} />
@@ -93,14 +111,21 @@ function TemplateCard({
 
       <div className="flex items-start justify-between gap-1">
         <div className="min-w-0">
-          <p className="text-xs font-semibold text-neutral-800 truncate group-hover:text-violet-700 transition-colors">
+          <p className={`text-xs font-semibold text-neutral-800 truncate transition-colors ${
+            highlight ? 'group-hover:text-emerald-700' : 'group-hover:text-violet-700'
+          }`}>
             {template.name}
           </p>
           <p className="text-[10px] text-neutral-400 mt-0.5 leading-tight line-clamp-2">
             {template.description}
           </p>
         </div>
-        <ChevronRight size={12} className="text-neutral-300 group-hover:text-violet-400 transition-colors flex-shrink-0 mt-0.5" />
+        <ChevronRight
+          size={12}
+          className={`transition-colors flex-shrink-0 mt-0.5 ${
+            highlight ? 'text-emerald-300 group-hover:text-emerald-500' : 'text-neutral-300 group-hover:text-violet-400'
+          }`}
+        />
       </div>
 
       {/* Tags */}
@@ -128,6 +153,8 @@ export function TemplatesPanel({ onLoadTemplate, isDirty }: TemplatesPanelProps)
     const matchesCat = activeCategory === 'all' || t.category === activeCategory;
     return matchesSearch && matchesCat;
   });
+  const newTemplates = filtered.filter((t) => NEW_TEMPLATE_IDS.has(t.id));
+  const regularTemplates = filtered.filter((t) => !NEW_TEMPLATE_IDS.has(t.id));
 
   const handleLoad = (template: PresetTemplate) => {
     if (isDirty) {
@@ -204,10 +231,39 @@ export function TemplatesPanel({ onLoadTemplate, isDirty }: TemplatesPanelProps)
             <p className="text-[10px] text-neutral-400 mt-0.5">Prueba con otro término</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-2">
-            {filtered.map(t => (
-              <TemplateCard key={t.id} template={t} onLoad={handleLoad} />
-            ))}
+          <div className="space-y-3">
+            {newTemplates.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between px-0.5 mb-1">
+                  <p className="text-[10px] font-semibold text-emerald-700 uppercase tracking-wide">
+                    Nuevas plantillas
+                  </p>
+                  <span className="text-[9px] text-emerald-600">
+                    {newTemplates.length}
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 gap-2">
+                  {newTemplates.map(t => (
+                    <TemplateCard key={t.id} template={t} onLoad={handleLoad} highlight />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {regularTemplates.length > 0 && (
+              <div>
+                {newTemplates.length > 0 && (
+                  <p className="text-[10px] font-semibold text-neutral-500 uppercase tracking-wide px-0.5 mb-1">
+                    Catalogo general
+                  </p>
+                )}
+                <div className="grid grid-cols-2 gap-2">
+                  {regularTemplates.map(t => (
+                    <TemplateCard key={t.id} template={t} onLoad={handleLoad} />
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>

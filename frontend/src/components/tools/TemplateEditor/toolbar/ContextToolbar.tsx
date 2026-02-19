@@ -15,6 +15,10 @@ interface ContextToolbarProps {
     isLocked: boolean;
     onBringToFront: () => void;
     onSendToBack: () => void;
+    canGroup: boolean;
+    canUngroup: boolean;
+    onGroup: () => void;
+    onUngroup: () => void;
 }
 
 export function ContextToolbar({
@@ -26,6 +30,10 @@ export function ContextToolbar({
     isLocked,
     onBringToFront,
     onSendToBack,
+    canGroup,
+    canUngroup,
+    onGroup,
+    onUngroup,
 }: ContextToolbarProps) {
     if (selectedCount === 0) return null;
 
@@ -36,6 +44,28 @@ export function ContextToolbar({
             </span>
 
             <Divider />
+
+            {canGroup && (
+                <button
+                    onClick={onGroup}
+                    title="Agrupar (Ctrl+G)"
+                    className="h-7 px-2 rounded-md text-[11px] font-medium text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors"
+                >
+                    Agrupar
+                </button>
+            )}
+
+            {canUngroup && (
+                <button
+                    onClick={onUngroup}
+                    title="Desagrupar (Ctrl+Shift+G)"
+                    className="h-7 px-2 rounded-md text-[11px] font-medium text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors"
+                >
+                    Desagrupar
+                </button>
+            )}
+
+            {(canGroup || canUngroup) && <Divider />}
 
             <ToolBtn icon={<AlignLeft size={14} />} onClick={() => onAlign('left')} title="Alinear Izquierda" />
             <ToolBtn icon={<AlignCenter size={14} />} onClick={() => onAlign('center')} title="Centro H" />

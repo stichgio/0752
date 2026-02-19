@@ -1,20 +1,39 @@
 import React from 'react';
-import { ZoomIn, ZoomOut, Maximize2, Mouse } from 'lucide-react';
+import { ZoomIn, ZoomOut, Mouse } from 'lucide-react';
 
 interface StatusBarProps {
     zoom: number;
     onZoomChange: (z: number) => void;
     mousePos?: { x: number; y: number };
     selectionCount: number;
+    selectedElementMetrics?: { x: number; y: number; width: number; height: number } | null;
+    snapEnabled: boolean;
+    snapGridSize: number;
+    showGrid: boolean;
+    onSnapEnabledChange: (enabled: boolean) => void;
+    onSnapGridSizeChange: (size: number) => void;
+    onShowGridChange: (show: boolean) => void;
 }
 
 const ZOOM_PRESETS = [25, 50, 75, 100, 150, 200];
+const SNAP_GRID_OPTIONS = [1, 2, 5, 10];
 
-export function StatusBar({ zoom, onZoomChange, mousePos, selectionCount }: StatusBarProps) {
+export function StatusBar({
+    zoom,
+    onZoomChange,
+    mousePos,
+    selectionCount,
+    selectedElementMetrics,
+    snapEnabled,
+    snapGridSize,
+    showGrid,
+    onSnapEnabledChange,
+    onSnapGridSizeChange,
+    onShowGridChange,
+}: StatusBarProps) {
     return (
-        <div className="h-7 bg-white/90 backdrop-blur-sm border-t border-neutral-200 flex items-center justify-between px-3 text-[11px] text-neutral-500 select-none shrink-0">
-            {/* Left: Zoom Controls */}
-            <div className="flex items-center gap-1.5">
+        <div className="h-8 bg-white/90 backdrop-blur-sm border-t border-neutral-200 flex items-center justify-between px-3 text-[11px] text-neutral-500 select-none shrink-0 gap-3">
+            <div className="flex items-center gap-1.5 min-w-0">
                 <button
                     className="p-0.5 hover:text-neutral-800 rounded transition-colors"
                     onClick={() => onZoomChange(Math.max(10, zoom - 10))}
@@ -23,7 +42,6 @@ export function StatusBar({ zoom, onZoomChange, mousePos, selectionCount }: Stat
                     <ZoomOut size={13} />
                 </button>
 
-                {/* Zoom slider */}
                 <input
                     type="range"
                     min={10}
@@ -51,26 +69,70 @@ export function StatusBar({ zoom, onZoomChange, mousePos, selectionCount }: Stat
 
                 <div className="w-px h-3 bg-neutral-200 mx-1" />
 
-                {/* Presets */}
-                {ZOOM_PRESETS.map(z => (
+                {ZOOM_PRESETS.map((preset) => (
                     <button
-                        key={z}
-                        onClick={() => onZoomChange(z)}
-                        className={`px-1 py-0.5 rounded text-[10px] transition-colors ${Math.abs(zoom - z) < 5
-                                ? 'bg-violet-100 text-violet-600 font-medium'
-                                : 'hover:bg-neutral-100'
+                        key={preset}
+                        onClick={() => onZoomChange(preset)}
+                        className={`px-1 py-0.5 rounded text-[10px] transition-colors ${Math.abs(zoom - preset) < 5
+                            ? 'bg-violet-100 text-violet-600 font-medium'
+                            : 'hover:bg-neutral-100'
                             }`}
                     >
-                        {z}%
+                        {preset}%
                     </button>
                 ))}
             </div>
 
-            {/* Right: Info */}
             <div className="flex items-center gap-3">
+                <label className="flex items-center gap-1 text-[10px] text-neutral-600">
+                    <input
+                        type="checkbox"
+                        checked={snapEnabled}
+                        onChange={(e) => onSnapEnabledChange(e.target.checked)}
+                        className="rounded border-neutral-300"
+                    />
+                    Snap
+                </label>
+
+                <select
+                    value={snapGridSize}
+                    onChange={(e) => onSnapGridSizeChange(Number(e.target.value))}
+                    disabled={!snapEnabled}
+                    className="h-6 px-1.5 rounded border border-neutral-200 text-[10px] bg-white disabled:opacity-50"
+                    title="Tamaño de grilla (mm)"
+                >
+                    {SNAP_GRID_OPTIONS.map((size) => (
+                        <option key={size} value={size}>
+                            {size} mm
+                        </option>
+                    ))}
+                </select>
+
+                <button
+                    onClick={() => onShowGridChange(!showGrid)}
+                    className={`px-2 h-6 rounded border text-[10px] transition-colors ${showGrid
+                        ? 'border-violet-200 bg-violet-50 text-violet-700'
+                        : 'border-neutral-200 hover:bg-neutral-100 text-neutral-600'
+                        }`}
+                    title={showGrid ? 'Ocultar grilla' : 'Mostrar grilla'}
+                >
+                    Grid
+                </button>
+
+                <div className="w-px h-3 bg-neutral-200" />
+
                 {selectionCount > 0 && (
-                    <span className="text-violet-600 font-medium">{selectionCount} seleccionado{selectionCount > 1 ? 's' : ''}</span>
+                    <span className="text-violet-600 font-medium">
+                        {selectionCount} seleccionado{selectionCount > 1 ? 's' : ''}
+                    </span>
                 )}
+
+                {selectionCount === 1 && selectedElementMetrics && (
+                    <span className="font-mono text-[10px] text-neutral-700">
+                        {`X: ${selectedElementMetrics.x.toFixed(1)}  Y: ${selectedElementMetrics.y.toFixed(1)}  W: ${selectedElementMetrics.width.toFixed(1)}  H: ${selectedElementMetrics.height.toFixed(1)}`}
+                    </span>
+                )}
+
                 {mousePos && (
                     <span className="font-mono text-[10px]">
                         <Mouse size={10} className="inline mr-0.5" />

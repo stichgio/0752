@@ -459,6 +459,125 @@ COLUMN_MAPPING = {
 }
 
 
+VARIABLE_CATEGORY_ORDER = [
+    'Identificadores',
+    'Infraestructura',
+    'Inspeccion',
+    'Medidas',
+    'Valvulas',
+    'Canastillas',
+    'Observaciones',
+    'Sugerencias',
+    'Generales',
+    'Otros',
+]
+VARIABLE_CATEGORY_RANK = {category: idx for idx, category in enumerate(VARIABLE_CATEGORY_ORDER)}
+
+IDENTIFIER_VARIABLES = {'informe_id', 'dia', 'mes', 'anio', 'pagina'}
+INFRASTRUCTURE_VARIABLES = {
+    'cs',
+    'contratista',
+    'codigo_infraestructura',
+    'ubicacion',
+    'suministro',
+    'tipo',
+    'volumen',
+}
+INSPECTION_VARIABLES = {
+    'caja_registro',
+    'marco_tapa',
+    'escalera_interior',
+    'escalera_exterior',
+    'cuba_interior',
+    'cuba_exterior',
+    'loza_fondo',
+    'loza_techo_interior',
+    'loza_techo_exterior',
+    'ducto_ventilacion',
+    'cerco_perimetrico',
+    'descarga',
+}
+
+VARIABLE_LABEL_OVERRIDES = {
+    'informe_id': 'Nro. Informe',
+    'cs': 'Centro de Servicio',
+    'codigo_infraestructura': 'Codigo Infraestructura',
+    'caja_registro': 'Caja de Registro',
+    'marco_tapa': 'Marco y Tapa',
+    'observaciones': 'Observaciones Generales',
+    'sugerencias': 'Sugerencias Generales',
+}
+
+
+def _humanize_variable_label(key: str) -> str:
+    """Convierte una clave tecnica en etiqueta legible."""
+    if key in VARIABLE_LABEL_OVERRIDES:
+        return VARIABLE_LABEL_OVERRIDES[key]
+
+    if key.startswith('obs_'):
+        return f"Obs. {_humanize_variable_label(key[4:])}"
+
+    if key.startswith('sug_'):
+        return f"Sug. {_humanize_variable_label(key[4:])}"
+
+    words = []
+    for token in key.split('_'):
+        if not token:
+            continue
+        if token.isdigit():
+            words.append(token)
+        elif token in {'id', 'cs', 'ot', 'nis'}:
+            words.append(token.upper())
+        elif token == 'anio':
+            words.append('Anio')
+        else:
+            words.append(token.capitalize())
+    return " ".join(words) if words else key
+
+
+def _variable_category(key: str) -> str:
+    if key in IDENTIFIER_VARIABLES:
+        return 'Identificadores'
+    if key in INFRASTRUCTURE_VARIABLES:
+        return 'Infraestructura'
+    if key in INSPECTION_VARIABLES:
+        return 'Inspeccion'
+    if key.startswith('medidas_'):
+        return 'Medidas'
+    if key.startswith('valvulas_'):
+        return 'Valvulas'
+    if key.startswith('canastillas_'):
+        return 'Canastillas'
+    if key.startswith('obs_'):
+        return 'Observaciones'
+    if key.startswith('sug_'):
+        return 'Sugerencias'
+    if key in {'observaciones', 'sugerencias'}:
+        return 'Generales'
+    return 'Otros'
+
+
+def build_variables_catalog() -> List[Dict[str, str]]:
+    """Construye el catalogo de variables dinamicas a partir de COLUMN_MAPPING."""
+    unique_keys = sorted(set(COLUMN_MAPPING.values()))
+    items = [
+        {
+            "key": key,
+            "label": _humanize_variable_label(key),
+            "category": _variable_category(key),
+        }
+        for key in unique_keys
+    ]
+    items.sort(
+        key=lambda item: (
+            VARIABLE_CATEGORY_RANK.get(item["category"], 999),
+            item["label"].lower(),
+            item["key"],
+        )
+    )
+    return items
+
+
 def parse_csv_file(content: bytes) -> List[Dict[str, Any]]:
     """
     Parsea archivo CSV con separador punto y coma (;) o coma (,).
@@ -919,6 +1038,13 @@ async def get_all_reports(
         reports = [r for r in reports if r.status == status]
     
     return {"reports": [r.dict() for r in reports], "total": len(reports)}
+
+
+@router.get("/variables")
+async def get_template_variables():
+    """Lista de variables disponibles para el editor de plantillas."""
+    return build_variables_catalog()
+
 
 @router.get("/reports/{report_id}")
 async def get_report(report_id: str):

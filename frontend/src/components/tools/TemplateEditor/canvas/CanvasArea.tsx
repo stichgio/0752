@@ -1,7 +1,18 @@
-import React, { useRef, useCallback, useEffect, useState } from 'react';
-import { CanvasDocument, TemplateElement, pxToMm, ElementType, ElementPreset, PageSettings } from '../canvasTypes';
+import React, { useRef, useCallback, useEffect, useState, useMemo } from 'react';
+import {
+    CanvasDocument,
+    TemplateElement,
+    pxToMm,
+    ElementType,
+    ElementPreset,
+    BlockPreset,
+    PageSettings,
+} from '../canvasTypes';
 import { CanvasElement } from './CanvasElement';
-import { calculateSnap, SnapGuide } from '../utils/snapUtils';
+import { useSnapGrid } from '../hooks/useSnapGrid';
+import { resolveSmartGuideSnap, useSmartGuides } from '../hooks/useSmartGuides';
+import { DragTooltip } from './DragTooltip';
+import { Lock } from 'lucide-react';
 
 interface CanvasAreaProps {
     document: CanvasDocument;
@@ -9,32 +20,40 @@ interface CanvasAreaProps {
     onChange: (doc: CanvasDocument) => void;
     selectedIds: string[];
     onSelect: (ids: string[]) => void;
-    onAddElement: (type: ElementType, position: { x: number; y: number }, presetId?: ElementPreset) => void;
+    onAddElement: (
+        type: ElementType,
+        position?: { x: number; y: number },
+        presetId?: ElementPreset,
+        overrides?: Partial<TemplateElement>,
+    ) => void;
+    onAddBlock?: (blockId: BlockPreset, position: { x: number; y: number }) => void;
     zoom: number;
     onZoomChange: (z: number) => void;
+    snapEnabled: boolean;
+    gridSize: number;
+    showGrid: boolean;
+    dataPreview?: Record<string, unknown>;
 }
 
-// Shared interaction state (avoids stale closures)
 interface InteractionState {
     mode: 'idle' | 'drag' | 'resize' | 'rotate' | 'marquee';
     elementId: string | null;
     startClientX: number;
     startClientY: number;
-    // For drag
     initialPos: { x: number; y: number };
-    // For resize
+    dragIds: string[];
+    dragInitialPositions: Record<string, { x: number; y: number }>;
     direction: string;
     initialX: number;
     initialY: number;
     initialW: number;
     initialH: number;
-    // For rotate
     centerX: number;
     centerY: number;
     startAngle: number;
     initialRotation: number;
-    // For marquee
     marqueeStart: { x: number; y: number };
+    resizeGroupChildren: TemplateElement[];
 }
 
 const defaultInteraction: InteractionState = {
@@ -43,6 +62,8 @@ const defaultInteraction: InteractionState = {
     startClientX: 0,
     startClientY: 0,
     initialPos: { x: 0, y: 0 },
+    dragIds: [],
+    dragInitialPositions: {},
     direction: '',
     initialX: 0,
     initialY: 0,
@@ -53,7 +74,18 @@ const defaultInteraction: InteractionState = {
     startAngle: 0,
     initialRotation: 0,
     marqueeStart: { x: 0, y: 0 },
+    resizeGroupChildren: [],
 };
+
+interface DragPreviewState {
+    id: string;
+    x: number;
+    y: number;
+    cursorX: number;
+    cursorY: number;
+}
+
+const MIN_SIZE_MM = 2;
 
 export function CanvasArea({
     document: doc,
@@ -62,176 +94,387 @@ export function CanvasArea({
     selectedIds,
     onSelect,
     onAddElement,
+    onAddBlock,
     zoom,
     onZoomChange,
+    snapEnabled,
+    gridSize,
+    showGrid,
+    dataPreview,
 }: CanvasAreaProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const pageRef = useRef<HTMLDivElement>(null);
     const interactionRef = useRef<InteractionState>({ ...defaultInteraction });
-    const [snapGuides, setSnapGuides] = useState<SnapGuide[]>([]);
     const [marquee, setMarquee] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+    const [dragPreview, setDragPreview] = useState<DragPreviewState | null>(null);
+    const [aspectLockIndicator, setAspectLockIndicator] = useState<{ x: number; y: number } | null>(null);
+    const gridPatternIdRef = useRef(`canvas-grid-${Math.random().toString(36).slice(2, 9)}`);
 
-    // Refs for latest state (needed in global mousemove/mouseup handlers)
     const docRef = useRef(doc);
     const scaleRef = useRef(zoom / 100);
     const pageSettingsRef = useRef(pageSettings);
+    const selectedIdsRef = useRef(selectedIds);
+    const dragRafRef = useRef<number | null>(null);
+    const pendingDragPointRef = useRef<{ clientX: number; clientY: number } | null>(null);
+    const snapEnabledRef = useRef(snapEnabled);
+    const gridSizeRef = useRef(gridSize);
+
     docRef.current = doc;
     scaleRef.current = zoom / 100;
     pageSettingsRef.current = pageSettings;
+    selectedIdsRef.current = selectedIds;
+    snapEnabledRef.current = snapEnabled;
+    gridSizeRef.current = gridSize;
 
     const scale = zoom / 100;
     const MM_TO_PX = 96 / 25.4;
     const mmToCanvasPx = (mm: number) => mm * MM_TO_PX;
+    const normalizedGridSize = Math.max(1, gridSize);
+    const { snapToGrid } = useSnapGrid(normalizedGridSize, snapEnabled);
 
-    // ─── Element Update ─────────────────────────────────────────
-    const updateElement = useCallback((id: string, updates: Partial<TemplateElement>) => {
-        const newElements = docRef.current.elements.map(el =>
-            el.id === id ? { ...el, ...updates } : el
-        );
-        onChange({ ...docRef.current, elements: newElements });
-    }, [onChange]);
+    const draggingPosition = useMemo(
+        () => ({ x: dragPreview?.x ?? 0, y: dragPreview?.y ?? 0 }),
+        [dragPreview?.x, dragPreview?.y],
+    );
+    const { guides } = useSmartGuides(
+        doc.elements,
+        snapEnabled && dragPreview ? dragPreview.id : null,
+        draggingPosition,
+        pageSettings,
+    );
 
-    // ─── Global Mouse Handlers ──────────────────────────────────
-    const handleGlobalMouseMove = useCallback((e: MouseEvent) => {
-        const state = interactionRef.current;
-        const sc = scaleRef.current;
+    const updateElement = useCallback(
+        (id: string, updates: Partial<TemplateElement>) => {
+            const newElements = docRef.current.elements.map((el) => (el.id === id ? { ...el, ...updates } : el));
+            onChange({ ...docRef.current, elements: newElements });
+        },
+        [onChange],
+    );
 
-        if (state.mode === 'drag' && state.elementId) {
-            const dxPx = e.clientX - state.startClientX;
-            const dyPx = e.clientY - state.startClientY;
+    const updateElements = useCallback(
+        (updates: Map<string, Partial<TemplateElement>>) => {
+            if (updates.size === 0) return;
+
+            let changed = false;
+            const newElements = docRef.current.elements.map((el) => {
+                const next = updates.get(el.id);
+                if (!next) return el;
+                changed = true;
+                return { ...el, ...next };
+            });
+
+            if (!changed) return;
+            onChange({ ...docRef.current, elements: newElements });
+        },
+        [onChange],
+    );
+
+    const applyDragAt = useCallback(
+        (clientX: number, clientY: number) => {
+            const state = interactionRef.current;
+            if (state.mode !== 'drag' || !state.elementId) return;
+
+            const sc = scaleRef.current;
+            const dxPx = clientX - state.startClientX;
+            const dyPx = clientY - state.startClientY;
             const dxMm = pxToMm(dxPx / sc);
             const dyMm = pxToMm(dyPx / sc);
 
-            let newX = state.initialPos.x + dxMm;
-            let newY = state.initialPos.y + dyMm;
+            const draggedIds = state.dragIds.length > 0 ? state.dragIds : [state.elementId];
+            const anchorInitial = state.dragInitialPositions[state.elementId] ?? state.initialPos;
 
-            // Snap
-            const el = docRef.current.elements.find(el => el.id === state.elementId);
-            if (el) {
-                const snapRes = calculateSnap(
-                    state.elementId!,
-                    { x: newX, y: newY },
-                    el.size,
+            const rawAnchorX = anchorInitial.x + dxMm;
+            const rawAnchorY = anchorInitial.y + dyMm;
+
+            let anchorX = rawAnchorX;
+            let anchorY = rawAnchorY;
+
+            if (snapEnabledRef.current) {
+                const guideSnap = resolveSmartGuideSnap(
                     docRef.current.elements,
-                    pageSettingsRef.current
+                    state.elementId,
+                    { x: rawAnchorX, y: rawAnchorY },
+                    pageSettingsRef.current,
                 );
-                if (snapRes.x !== undefined) newX = snapRes.x;
-                if (snapRes.y !== undefined) newY = snapRes.y;
-                setSnapGuides(snapRes.guides);
+
+                anchorX = guideSnap.x ?? snapToGrid(rawAnchorX);
+                anchorY = guideSnap.y ?? snapToGrid(rawAnchorY);
             }
 
-            updateElement(state.elementId, { position: { x: newX, y: newY } });
-
-        } else if (state.mode === 'resize' && state.elementId) {
-            const dxPx = e.clientX - state.startClientX;
-            const dyPx = e.clientY - state.startClientY;
-            const dx = pxToMm(dxPx / sc);
-            const dy = pxToMm(dyPx / sc);
-            const dir = state.direction;
-
-            let x = state.initialX;
-            let y = state.initialY;
-            let w = state.initialW;
-            let h = state.initialH;
-
-            if (dir.includes('e')) w += dx;
-            if (dir.includes('w')) { x += dx; w -= dx; }
-            if (dir.includes('s')) h += dy;
-            if (dir.includes('n')) { y += dy; h -= dy; }
-
-            // Aspect ratio lock with Shift
-            if (e.shiftKey && state.initialW > 0 && state.initialH > 0) {
-                const ratio = state.initialW / state.initialH;
-                if (dir === 'se' || dir === 'nw' || dir === 'ne' || dir === 'sw') {
-                    if (Math.abs(dx) > Math.abs(dy)) {
-                        h = w / ratio;
-                    } else {
-                        w = h * ratio;
-                    }
-                }
-            }
-
-            if (w < 2) w = 2;
-            if (h < 2) h = 2;
-
-            updateElement(state.elementId, {
-                position: { x, y },
-                size: { width: w, height: h },
+            setDragPreview({
+                id: state.elementId,
+                x: anchorX,
+                y: anchorY,
+                cursorX: clientX,
+                cursorY: clientY,
             });
 
-        } else if (state.mode === 'rotate' && state.elementId) {
-            const dx = e.clientX - state.centerX;
-            const dy = e.clientY - state.centerY;
-            const angle = Math.atan2(dy, dx);
-            const delta = angle - state.startAngle;
-            let deg = state.initialRotation + delta * (180 / Math.PI);
+            const deltaX = anchorX - anchorInitial.x;
+            const deltaY = anchorY - anchorInitial.y;
+            const updates = new Map<string, Partial<TemplateElement>>();
+            const elementMap = new Map(docRef.current.elements.map((el) => [el.id, el]));
 
-            // 15° snap with Shift
-            if (e.shiftKey) {
-                deg = Math.round(deg / 15) * 15;
+            draggedIds.forEach((dragId) => {
+                const initial = state.dragInitialPositions[dragId];
+                const current = elementMap.get(dragId);
+                if (!initial || !current) return;
+
+                const nextX = initial.x + deltaX;
+                const nextY = initial.y + deltaY;
+
+                if (
+                    Math.abs(current.position.x - nextX) < 0.001 &&
+                    Math.abs(current.position.y - nextY) < 0.001
+                ) {
+                    return;
+                }
+
+                updates.set(dragId, { position: { x: nextX, y: nextY } });
+            });
+
+            if (updates.size === 0) return;
+            if (updates.size === 1) {
+                const [id, next] = updates.entries().next().value as [string, Partial<TemplateElement>];
+                updateElement(id, next);
+                return;
+            }
+            updateElements(updates);
+        },
+        [snapToGrid, updateElement, updateElements],
+    );
+
+    const handleGlobalMouseMove = useCallback(
+        (e: MouseEvent) => {
+            const state = interactionRef.current;
+            const sc = scaleRef.current;
+
+            if (state.mode === 'drag' && state.elementId) {
+                pendingDragPointRef.current = { clientX: e.clientX, clientY: e.clientY };
+                if (dragRafRef.current === null) {
+                    dragRafRef.current = window.requestAnimationFrame(() => {
+                        dragRafRef.current = null;
+                        const point = pendingDragPointRef.current;
+                        if (!point) return;
+                        applyDragAt(point.clientX, point.clientY);
+                    });
+                }
+                return;
             }
 
-            deg = ((deg % 360) + 360) % 360; // Normalize to 0-360
+            if (state.mode === 'resize' && state.elementId) {
+                const dxPx = e.clientX - state.startClientX;
+                const dyPx = e.clientY - state.startClientY;
+                const dx = pxToMm(dxPx / sc);
+                const dy = pxToMm(dyPx / sc);
+                const dir = state.direction;
 
-            updateElement(state.elementId, { rotation: deg });
+                let x = state.initialX;
+                let y = state.initialY;
+                let w = state.initialW;
+                let h = state.initialH;
 
-        } else if (state.mode === 'marquee') {
-            if (!pageRef.current) return;
-            const pageRect = pageRef.current.getBoundingClientRect();
-            const currentX = pxToMm((e.clientX - pageRect.left) / sc);
-            const currentY = pxToMm((e.clientY - pageRect.top) / sc);
+                if (dir.includes('e')) w += dx;
+                if (dir.includes('w')) {
+                    x += dx;
+                    w -= dx;
+                }
+                if (dir.includes('s')) h += dy;
+                if (dir.includes('n')) {
+                    y += dy;
+                    h -= dy;
+                }
 
-            const mx = Math.min(state.marqueeStart.x, currentX);
-            const my = Math.min(state.marqueeStart.y, currentY);
-            const mw = Math.abs(currentX - state.marqueeStart.x);
-            const mh = Math.abs(currentY - state.marqueeStart.y);
+                const isCorner = dir === 'se' || dir === 'nw' || dir === 'ne' || dir === 'sw';
+                if (e.shiftKey && isCorner && state.initialW > 0 && state.initialH > 0) {
+                    const ratio = state.initialW / state.initialH;
+                    if (Math.abs(dx) > Math.abs(dy)) {
+                        const newH = w / ratio;
+                        if (dir.includes('n')) y = state.initialY + state.initialH - newH;
+                        h = newH;
+                    } else {
+                        const newW = h * ratio;
+                        if (dir.includes('w')) x = state.initialX + state.initialW - newW;
+                        w = newW;
+                    }
+                    setAspectLockIndicator({ x: e.clientX, y: e.clientY });
+                } else {
+                    setAspectLockIndicator(null);
+                }
 
-            setMarquee({ x: mx, y: my, w: mw, h: mh });
+                if (snapEnabledRef.current) {
+                    let left = x;
+                    let top = y;
+                    let right = x + w;
+                    let bottom = y + h;
 
-            // Select elements within marquee
-            const selected = docRef.current.elements
-                .filter(el => el.visible !== false && !el.locked)
-                .filter(el => {
-                    return (
-                        el.position.x < mx + mw &&
-                        el.position.x + el.size.width > mx &&
-                        el.position.y < my + mh &&
-                        el.position.y + el.size.height > my
-                    );
-                })
-                .map(el => el.id);
-            onSelect(selected);
-        }
-    }, [updateElement, onSelect]);
+                    if (dir.includes('w')) left = snapToGrid(left);
+                    if (dir.includes('e')) right = snapToGrid(right);
+                    if (dir.includes('n')) top = snapToGrid(top);
+                    if (dir.includes('s')) bottom = snapToGrid(bottom);
 
-    const handleGlobalMouseUp = useCallback(() => {
-        const state = interactionRef.current;
+                    w = right - left;
+                    h = bottom - top;
 
-        if (state.mode === 'drag') {
-            setSnapGuides([]);
-        }
+                    if (w < MIN_SIZE_MM) {
+                        if (dir.includes('w')) left = right - MIN_SIZE_MM;
+                        else right = left + MIN_SIZE_MM;
+                        w = MIN_SIZE_MM;
+                    }
+                    if (h < MIN_SIZE_MM) {
+                        if (dir.includes('n')) top = bottom - MIN_SIZE_MM;
+                        else bottom = top + MIN_SIZE_MM;
+                        h = MIN_SIZE_MM;
+                    }
 
-        if (state.mode === 'marquee') {
-            setMarquee(null);
-        }
+                    x = left;
+                    y = top;
+                } else {
+                    if (w < MIN_SIZE_MM) w = MIN_SIZE_MM;
+                    if (h < MIN_SIZE_MM) h = MIN_SIZE_MM;
+                }
 
-        interactionRef.current = { ...defaultInteraction };
-    }, []);
+                const activeElement = docRef.current.elements.find((element) => element.id === state.elementId);
 
-    // Attach/detach global listeners
+                if (activeElement?.type === 'group') {
+                    const sourceChildren =
+                        state.resizeGroupChildren.length > 0
+                            ? state.resizeGroupChildren
+                            : (activeElement.groupChildren || []);
+                    const scaleX = state.initialW > 0 ? w / state.initialW : 1;
+                    const scaleY = state.initialH > 0 ? h / state.initialH : 1;
+                    const resizedChildren = sourceChildren.map((child) => ({
+                        ...child,
+                        position: {
+                            x: child.position.x * scaleX,
+                            y: child.position.y * scaleY,
+                        },
+                        size: {
+                            width: Math.max(MIN_SIZE_MM, child.size.width * scaleX),
+                            height: Math.max(MIN_SIZE_MM, child.size.height * scaleY),
+                        },
+                    }));
+
+                    updateElement(state.elementId, {
+                        position: { x, y },
+                        size: { width: w, height: h },
+                        children: resizedChildren.map((child) => child.id),
+                        groupChildren: resizedChildren,
+                    });
+                    return;
+                }
+
+                updateElement(state.elementId, {
+                    position: { x, y },
+                    size: { width: w, height: h },
+                });
+                return;
+            }
+
+            if (state.mode === 'rotate' && state.elementId) {
+                const dx = e.clientX - state.centerX;
+                const dy = e.clientY - state.centerY;
+                const angle = Math.atan2(dy, dx);
+                const delta = angle - state.startAngle;
+                let deg = state.initialRotation + (delta * 180) / Math.PI;
+
+                if (e.shiftKey) {
+                    deg = Math.round(deg / 15) * 15;
+                }
+
+                deg = ((deg % 360) + 360) % 360;
+                updateElement(state.elementId, { rotation: deg });
+                return;
+            }
+
+            if (state.mode === 'marquee') {
+                if (!pageRef.current) return;
+                const pageRect = pageRef.current.getBoundingClientRect();
+                const currentX = pxToMm((e.clientX - pageRect.left) / sc);
+                const currentY = pxToMm((e.clientY - pageRect.top) / sc);
+
+                const mx = Math.min(state.marqueeStart.x, currentX);
+                const my = Math.min(state.marqueeStart.y, currentY);
+                const mw = Math.abs(currentX - state.marqueeStart.x);
+                const mh = Math.abs(currentY - state.marqueeStart.y);
+
+                setMarquee({ x: mx, y: my, w: mw, h: mh });
+
+                const selected = docRef.current.elements
+                    .filter((el) => el.visible !== false && !el.locked)
+                    .filter((el) => {
+                        return (
+                            el.position.x < mx + mw &&
+                            el.position.x + el.size.width > mx &&
+                            el.position.y < my + mh &&
+                            el.position.y + el.size.height > my
+                        );
+                    })
+                    .map((el) => el.id);
+                onSelect(selected);
+            }
+        },
+        [applyDragAt, onSelect, snapToGrid, updateElement],
+    );
+
+    const handleGlobalMouseUp = useCallback(
+        (e: MouseEvent | PointerEvent) => {
+            const state = interactionRef.current;
+
+            if (state.mode === 'drag') {
+                if (dragRafRef.current !== null) {
+                    window.cancelAnimationFrame(dragRafRef.current);
+                    dragRafRef.current = null;
+                }
+                applyDragAt(e.clientX, e.clientY);
+                pendingDragPointRef.current = null;
+                setDragPreview(null);
+            }
+
+            if (state.mode === 'marquee') {
+                setMarquee(null);
+            }
+
+            setAspectLockIndicator(null);
+            interactionRef.current = { ...defaultInteraction };
+        },
+        [applyDragAt],
+    );
+
     useEffect(() => {
         window.addEventListener('mousemove', handleGlobalMouseMove);
         window.addEventListener('mouseup', handleGlobalMouseUp);
+        window.addEventListener('pointerup', handleGlobalMouseUp);
         return () => {
             window.removeEventListener('mousemove', handleGlobalMouseMove);
             window.removeEventListener('mouseup', handleGlobalMouseUp);
+            window.removeEventListener('pointerup', handleGlobalMouseUp);
+            if (dragRafRef.current !== null) {
+                window.cancelAnimationFrame(dragRafRef.current);
+                dragRafRef.current = null;
+            }
         };
     }, [handleGlobalMouseMove, handleGlobalMouseUp]);
 
-    // ─── Element Interaction Start Handlers ─────────────────────
     const handleDragStart = useCallback((e: React.MouseEvent, id: string) => {
-        const el = docRef.current.elements.find(el => el.id === id);
-        if (!el || el.locked) return;
+        const element = docRef.current.elements.find((el) => el.id === id);
+        if (!element || element.locked) return;
+
+        const selected = selectedIdsRef.current;
+        const shouldDragSelection = selected.includes(id) && selected.length > 1 && !e.shiftKey;
+        const candidateIds = shouldDragSelection ? selected : [id];
+        const dragIds = candidateIds.filter((targetId) => {
+            const target = docRef.current.elements.find((item) => item.id === targetId);
+            return !!target && !target.locked;
+        });
+
+        if (dragIds.length === 0) return;
+
+        const dragInitialPositions: Record<string, { x: number; y: number }> = {};
+        dragIds.forEach((targetId) => {
+            const target = docRef.current.elements.find((item) => item.id === targetId);
+            if (!target) return;
+            dragInitialPositions[targetId] = { ...target.position };
+        });
 
         interactionRef.current = {
             ...defaultInteraction,
@@ -239,11 +482,26 @@ export function CanvasArea({
             elementId: id,
             startClientX: e.clientX,
             startClientY: e.clientY,
-            initialPos: { ...el.position },
+            initialPos: { ...element.position },
+            dragIds,
+            dragInitialPositions,
         };
+
+        setDragPreview({
+            id,
+            x: element.position.x,
+            y: element.position.y,
+            cursorX: e.clientX,
+            cursorY: e.clientY,
+        });
     }, []);
 
     const handleResizeStart = useCallback((e: React.MouseEvent, element: TemplateElement, direction: string) => {
+        const resizeGroupChildren =
+            element.type === 'group'
+                ? (element.groupChildren || []).map((child) => JSON.parse(JSON.stringify(child)) as TemplateElement)
+                : [];
+
         interactionRef.current = {
             ...defaultInteraction,
             mode: 'resize',
@@ -255,11 +513,12 @@ export function CanvasArea({
             initialY: element.position.y,
             initialW: element.size.width,
             initialH: element.size.height,
+            resizeGroupChildren,
         };
     }, []);
 
     const handleRotateStart = useCallback((e: React.MouseEvent, element: TemplateElement) => {
-        // Calculate element center in screen coords
+        if (element.type === 'group') return;
         const elWrapper = (e.target as HTMLElement).closest('.canvas-element-wrapper');
         let cx = e.clientX;
         let cy = e.clientY;
@@ -285,75 +544,103 @@ export function CanvasArea({
         };
     }, []);
 
-    // ─── Selection ──────────────────────────────────────────────
-    const handleSelect = useCallback((id: string, multi: boolean) => {
-        if (multi) {
-            onSelect(
-                selectedIds.includes(id)
-                    ? selectedIds.filter(i => i !== id)
-                    : [...selectedIds, id]
-            );
-        } else {
+    const handleSelect = useCallback(
+        (id: string, multi: boolean) => {
+            if (multi) {
+                onSelect(selectedIds.includes(id) ? selectedIds.filter((item) => item !== id) : [...selectedIds, id]);
+                return;
+            }
+            if (selectedIds.includes(id) && selectedIds.length > 1) {
+                onSelect(selectedIds);
+                return;
+            }
             onSelect([id]);
-        }
-    }, [selectedIds, onSelect]);
+        },
+        [selectedIds, onSelect],
+    );
 
-    // Click on empty canvas — start marquee or deselect
-    const handleCanvasMouseDown = useCallback((e: React.MouseEvent) => {
-        if ((e.target as HTMLElement).closest('.canvas-element-wrapper')) return;
+    const handleCanvasMouseDown = useCallback(
+        (e: React.MouseEvent) => {
+            if ((e.target as HTMLElement).closest('.canvas-element-wrapper')) return;
 
-        if (!pageRef.current) {
-            onSelect([]);
-            return;
-        }
+            if (!pageRef.current) {
+                onSelect([]);
+                return;
+            }
 
-        const sc = scaleRef.current;
-        const pageRect = pageRef.current.getBoundingClientRect();
-        const x = pxToMm((e.clientX - pageRect.left) / sc);
-        const y = pxToMm((e.clientY - pageRect.top) / sc);
+            const sc = scaleRef.current;
+            const pageRect = pageRef.current.getBoundingClientRect();
+            const x = pxToMm((e.clientX - pageRect.left) / sc);
+            const y = pxToMm((e.clientY - pageRect.top) / sc);
 
-        // Check if click is within the page area
-        if (
-            e.clientX >= pageRect.left && e.clientX <= pageRect.right &&
-            e.clientY >= pageRect.top && e.clientY <= pageRect.bottom
-        ) {
-            // Start marquee selection
-            interactionRef.current = {
-                ...defaultInteraction,
-                mode: 'marquee',
-                marqueeStart: { x, y },
+            if (
+                e.clientX >= pageRect.left &&
+                e.clientX <= pageRect.right &&
+                e.clientY >= pageRect.top &&
+                e.clientY <= pageRect.bottom
+            ) {
+                interactionRef.current = {
+                    ...defaultInteraction,
+                    mode: 'marquee',
+                    marqueeStart: { x, y },
+                };
+                onSelect([]);
+            } else {
+                onSelect([]);
+            }
+        },
+        [onSelect],
+    );
+
+    const onDrop = useCallback(
+        (e: React.DragEvent) => {
+            e.preventDefault();
+            if (!pageRef.current) return;
+
+            const pageRect = pageRef.current.getBoundingClientRect();
+            const sc = scaleRef.current;
+            const xPx = (e.clientX - pageRect.left) / sc;
+            const yPx = (e.clientY - pageRect.top) / sc;
+            const dropPos = {
+                x: snapToGrid(pxToMm(xPx)),
+                y: snapToGrid(pxToMm(yPx)),
             };
-            onSelect([]);
-        } else {
-            onSelect([]);
-        }
-    }, [onSelect]);
 
-    // ─── Drop from palette ──────────────────────────────────────
-    const onDrop = useCallback((e: React.DragEvent) => {
-        e.preventDefault();
-        const type = e.dataTransfer.getData('application/react-dnd') as ElementType;
-        if (!type || !pageRef.current) return;
-        const presetRaw = e.dataTransfer.getData('application/template-editor-preset');
-        const presetId: ElementPreset | undefined =
-            presetRaw === 'photo-panel' || presetRaw === 'technical-table'
-                ? presetRaw
-                : undefined;
+            const blockId = e.dataTransfer.getData('application/template-editor-block') as BlockPreset;
+            if (blockId && onAddBlock) {
+                onAddBlock(blockId, dropPos);
+                return;
+            }
 
-        const pageRect = pageRef.current.getBoundingClientRect();
-        const sc = scaleRef.current;
-        const xPx = (e.clientX - pageRect.left) / sc;
-        const yPx = (e.clientY - pageRect.top) / sc;
+            const type = e.dataTransfer.getData('application/react-dnd') as ElementType;
+            if (!type) return;
+            const presetRaw = e.dataTransfer.getData('application/template-editor-preset');
+            const presetId: ElementPreset | undefined =
+                presetRaw === 'photo-panel' || presetRaw === 'technical-table' ? presetRaw : undefined;
 
-        onAddElement(type, { x: pxToMm(xPx), y: pxToMm(yPx) }, presetId);
-    }, [onAddElement]);
+            const overridesRaw = e.dataTransfer.getData('application/template-editor-element-overrides');
+            let overrides: Partial<TemplateElement> | undefined;
+            if (overridesRaw) {
+                try {
+                    const parsed = JSON.parse(overridesRaw) as Partial<TemplateElement>;
+                    if (parsed && typeof parsed === 'object') {
+                        overrides = parsed;
+                    }
+                } catch {
+                    overrides = undefined;
+                }
+            }
+
+            onAddElement(type, dropPos, presetId, overrides);
+        },
+        [onAddElement, onAddBlock, snapToGrid],
+    );
 
     const onDragOver = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         e.dataTransfer.dropEffect = 'copy';
     }, []);
 
-    // ─── Wheel zoom ─────────────────────────────────────────────
     useEffect(() => {
         const container = containerRef.current;
         if (!container) return;
@@ -370,9 +657,9 @@ export function CanvasArea({
         return () => container.removeEventListener('wheel', handleWheel);
     }, [zoom, onZoomChange]);
 
-    // ─── Render ─────────────────────────────────────────────────
     const pageWidthPx = mmToCanvasPx(pageSettings.width);
     const pageHeightPx = mmToCanvasPx(pageSettings.height);
+    const gridSpacingPx = mmToCanvasPx(normalizedGridSize);
 
     return (
         <div
@@ -405,17 +692,33 @@ export function CanvasArea({
                         borderRadius: 2,
                     }}
                 >
-                    {/* Subtle dot grid */}
-                    <div
-                        className="absolute inset-0 pointer-events-none"
-                        style={{
-                            backgroundImage: 'radial-gradient(circle, #d4d4d8 0.6px, transparent 0.6px)',
-                            backgroundSize: `${mmToCanvasPx(5)}px ${mmToCanvasPx(5)}px`,
-                            opacity: 0.4,
-                        }}
-                    />
+                    {showGrid && (
+                        <svg
+                            className="absolute inset-0 pointer-events-none"
+                            width={pageWidthPx}
+                            height={pageHeightPx}
+                            style={{ zIndex: 0, opacity: 0.6 }}
+                        >
+                            <defs>
+                                <pattern
+                                    id={gridPatternIdRef.current}
+                                    width={gridSpacingPx}
+                                    height={gridSpacingPx}
+                                    patternUnits="userSpaceOnUse"
+                                >
+                                    <path
+                                        d={`M ${gridSpacingPx} 0 L 0 0 0 ${gridSpacingPx}`}
+                                        fill="none"
+                                        stroke="#9ca3af"
+                                        strokeWidth={1}
+                                        strokeDasharray="2 3"
+                                    />
+                                </pattern>
+                            </defs>
+                            <rect width="100%" height="100%" fill={`url(#${gridPatternIdRef.current})`} />
+                        </svg>
+                    )}
 
-                    {/* Margin guides (subtle dashed lines) */}
                     <div
                         className="absolute pointer-events-none border border-dashed border-blue-200"
                         style={{
@@ -424,53 +727,70 @@ export function CanvasArea({
                             right: mmToCanvasPx(pageSettings.margins.right),
                             bottom: mmToCanvasPx(pageSettings.margins.bottom),
                             opacity: 0.5,
+                            zIndex: 2,
                         }}
                     />
 
-                    {/* Elements */}
                     {doc.elements
-                        .filter(el => el.visible !== false)
+                        .filter((el) => el.visible !== false)
                         .sort((a, b) => (a.style.zIndex || 0) - (b.style.zIndex || 0))
-                        .map(el => (
+                        .map((el) => (
                             <CanvasElement
                                 key={el.id}
                                 element={el}
                                 scale={scale}
                                 isSelected={selectedIds.includes(el.id)}
                                 onSelect={handleSelect}
+                                onUpdateElement={updateElement}
                                 onDragStart={handleDragStart}
                                 onResizeStart={handleResizeStart}
                                 onRotateStart={handleRotateStart}
+                                dataPreview={dataPreview}
                             />
                         ))}
 
-                    {/* Snap Guides */}
-                    {snapGuides.map((guide, i) => (
-                        <div
-                            key={i}
-                            className="pointer-events-none"
-                            style={{
-                                position: 'absolute',
-                                backgroundColor: '#e040fb',
-                                zIndex: 9999,
-                                ...(guide.orientation === 'vertical'
-                                    ? {
-                                        left: mmToCanvasPx(guide.position),
-                                        top: 0,
-                                        bottom: 0,
-                                        width: '1px',
-                                    }
-                                    : {
-                                        top: mmToCanvasPx(guide.position),
-                                        left: 0,
-                                        right: 0,
-                                        height: '1px',
-                                    }),
-                            }}
-                        />
-                    ))}
+                    {dragPreview && guides.length > 0 && (
+                        <svg
+                            className="absolute inset-0 pointer-events-none"
+                            width={pageWidthPx}
+                            height={pageHeightPx}
+                            style={{ zIndex: 9999 }}
+                        >
+                            {guides.map((guide, index) => {
+                                const stroke = guide.active ? '#ef4444' : 'transparent';
+                                if (guide.axis === 'x') {
+                                    const x = mmToCanvasPx(guide.position);
+                                    return (
+                                        <line
+                                            key={`x-${guide.position}-${index}`}
+                                            x1={x}
+                                            x2={x}
+                                            y1={0}
+                                            y2={pageHeightPx}
+                                            stroke={stroke}
+                                            strokeWidth={1}
+                                            strokeDasharray="4 4"
+                                        />
+                                    );
+                                }
 
-                    {/* Marquee Selection Rectangle */}
+                                const y = mmToCanvasPx(guide.position);
+                                return (
+                                    <line
+                                        key={`y-${guide.position}-${index}`}
+                                        x1={0}
+                                        x2={pageWidthPx}
+                                        y1={y}
+                                        y2={y}
+                                        stroke={stroke}
+                                        strokeWidth={1}
+                                        strokeDasharray="4 4"
+                                    />
+                                );
+                            })}
+                        </svg>
+                    )}
+
                     {marquee && (
                         <div
                             className="pointer-events-none"
@@ -488,6 +808,40 @@ export function CanvasArea({
                     )}
                 </div>
             </div>
+
+            {dragPreview && (
+                <DragTooltip
+                    cursorX={dragPreview.cursorX}
+                    cursorY={dragPreview.cursorY}
+                    x={dragPreview.x}
+                    y={dragPreview.y}
+                />
+            )}
+
+            {aspectLockIndicator && (
+                <div
+                    className="pointer-events-none"
+                    style={{
+                        position: 'fixed',
+                        left: aspectLockIndicator.x + 16,
+                        top: aspectLockIndicator.y - 28,
+                        zIndex: 10000,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 4,
+                        background: 'rgba(124, 58, 237, 0.9)',
+                        color: 'white',
+                        borderRadius: 6,
+                        padding: '3px 8px',
+                        fontSize: 11,
+                        fontWeight: 500,
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                    }}
+                >
+                    <Lock size={12} />
+                    <span>Aspecto fijo</span>
+                </div>
+            )}
         </div>
     );
 }
