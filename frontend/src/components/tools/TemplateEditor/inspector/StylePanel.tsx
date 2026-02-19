@@ -17,7 +17,10 @@ export function StylePanel({ element, onUpdate }: StylePanelProps) {
 
     const isTextType = element.type === 'text' || element.type === 'heading' || element.type === 'variable';
     const isTableType = element.type === 'table';
+    const isSignatureType = element.type === 'signature';
     const tableData = isTableType ? normalizeTableData(element) : null;
+    const signatureTitle = isSignatureType ? (element.title ?? element.signatureConfig?.[0]?.title ?? 'SUPERVISOR') : '';
+    const signatureName = isSignatureType ? (element.signatureName ?? element.signatureConfig?.[0]?.name ?? '') : '';
 
     return (
         <div className="px-3 py-3 border-b border-neutral-100 space-y-3">
@@ -175,6 +178,49 @@ export function StylePanel({ element, onUpdate }: StylePanelProps) {
                                 });
                             }}
                         />
+                    </div>
+                </div>
+            )}
+
+            {/* Signature config */}
+            {isSignatureType && (
+                <div>
+                    <span className="text-[10px] font-medium text-neutral-400 block mb-1">Firma</span>
+                    <div className="space-y-1.5">
+                        <div>
+                            <span className="text-[10px] text-neutral-500 block mb-1">Titulo de la firma</span>
+                            <input
+                                type="text"
+                                value={signatureTitle}
+                                onChange={(e) => {
+                                    const nextTitle = e.target.value;
+                                    onUpdate(element.id, {
+                                        title: nextTitle,
+                                        signatureName,
+                                        signatureConfig: [{ title: nextTitle, name: signatureName }],
+                                    });
+                                }}
+                                className="w-full h-7 px-2 text-xs border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400 focus:border-violet-400"
+                                placeholder="SUPERVISOR"
+                            />
+                        </div>
+                        <div>
+                            <span className="text-[10px] text-neutral-500 block mb-1">Nombre (Opcional)</span>
+                            <input
+                                type="text"
+                                value={signatureName}
+                                onChange={(e) => {
+                                    const nextName = e.target.value;
+                                    onUpdate(element.id, {
+                                        title: signatureTitle,
+                                        signatureName: nextName,
+                                        signatureConfig: [{ title: signatureTitle, name: nextName }],
+                                    });
+                                }}
+                                className="w-full h-7 px-2 text-xs border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400 focus:border-violet-400"
+                                placeholder="Ing. Juan Perez"
+                            />
+                        </div>
                     </div>
                 </div>
             )}
