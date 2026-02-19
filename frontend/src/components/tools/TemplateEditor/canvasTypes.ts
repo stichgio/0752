@@ -127,6 +127,8 @@ export interface TemplateElement {
   };
 
   // Signature specific
+  title?: string;
+  signatureName?: string;
   signatureConfig?: {
     title: string;
     name: string;
@@ -468,6 +470,11 @@ export function createElement(
         data: [['', ''], ['', '']],
         borderColor: '#d1d5db',
       },
+    } : {}),
+    ...(type === 'signature' ? {
+      title: 'SUPERVISOR',
+      signatureName: '',
+      signatureConfig: [{ title: 'SUPERVISOR', name: '' }],
     } : {}),
     ...overrides,
   };

@@ -1,1 +1,218 @@
-{}
+{
+  "92384773-955c-4183-be45-a89bbefa1a99": {
+    "id": "92384773-955c-4183-be45-a89bbefa1a99",
+    "name": "__E2E_Test_7976282d",
+    "reportType": "generic",
+    "status": "archived",
+    "currentVersion": 1,
+    "createdAt": "2026-02-19T13:52:47.122905+00:00",
+    "updatedAt": "2026-02-19T13:52:49.603495+00:00",
+    "createdBy": "e2e-verify-script",
+    "updatedBy": "e2e-verify-script",
+    "featureFlag": true,
+    "versions": [
+      {
+        "version": 1,
+        "status": "draft",
+        "author": "e2e-verify-script",
+        "createdAt": "2026-02-19T13:52:47.122905+00:00",
+        "templateJson": {
+          "reportType": "generic",
+          "sections": [
+            {
+              "id": "sec-e2e-1",
+              "type": "body",
+              "title": "Seccion E2E",
+              "blocks": [
+                {
+                  "id": "blk-e2e-1",
+                  "type": "text",
+                  "content": "<p>Plantilla de prueba E2E - {{ title }}</p>",
+                  "variables": [
+                    "title"
+                  ],
+                  "placeholders": [],
+                  "metadata": {},
+                  "locked": false
+                }
+              ],
+              "metadata": {}
+            }
+          ],
+          "metadata": {},
+          "variableBindings": {},
+          "protectionRules": {
+            "required_block_ids": [],
+            "editable_placeholder_by_block": {}
+          }
+        },
+        "compiledJinja": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>@page { size: A4; margin: 10mm; }body { font-family: Arial, sans-serif; font-size: 11px; }.editor-block { margin: 4px 0; }.protected-block { margin: 4px 0; border-left: 3px solid #b91c1c; padding-left: 8px; }</style></head><body><section data-section-id=\"sec-e2e-1\" data-section-type=\"body\"><div class=\"text-block\" style=\"font-size: 9pt; text-align: left; \"><p>Plantilla de prueba E2E - {{ title }}</p></div></section></body></html>",
+        "diffSummary": {
+          "created": true
+        }
+      }
+    ]
+  },
+  "580f8d71-7c0a-485d-a51f-e96b8f2a1ed5": {
+    "id": "580f8d71-7c0a-485d-a51f-e96b8f2a1ed5",
+    "name": "__E2E_Test_d768529e",
+    "reportType": "generic",
+    "status": "archived",
+    "currentVersion": 1,
+    "createdAt": "2026-02-19T13:56:21.760541+00:00",
+    "updatedAt": "2026-02-19T13:56:24.201719+00:00",
+    "createdBy": "e2e-verify-script",
+    "updatedBy": "e2e-verify-script",
+    "featureFlag": true,
+    "versions": [
+      {
+        "version": 1,
+        "status": "draft",
+        "author": "e2e-verify-script",
+        "createdAt": "2026-02-19T13:56:21.760541+00:00",
+        "templateJson": {
+          "reportType": "generic",
+          "sections": [
+            {
+              "id": "sec-e2e-1",
+              "type": "body",
+              "title": "Seccion E2E",
+              "blocks": [
+                {
+                  "id": "blk-e2e-1",
+                  "type": "text",
+                  "content": "<p>Plantilla de prueba E2E - {{ title }}</p>",
+                  "variables": [
+                    "title"
+                  ],
+                  "placeholders": [],
+                  "metadata": {},
+                  "locked": false
+                }
+              ],
+              "metadata": {}
+            }
+          ],
+          "metadata": {},
+          "variableBindings": {},
+          "protectionRules": {
+            "required_block_ids": [],
+            "editable_placeholder_by_block": {}
+          }
+        },
+        "compiledJinja": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>@page { size: A4; margin: 10mm; }body { font-family: Arial, sans-serif; font-size: 11px; }.editor-block { margin: 4px 0; }.protected-block { margin: 4px 0; border-left: 3px solid #b91c1c; padding-left: 8px; }</style></head><body><section data-section-id=\"sec-e2e-1\" data-section-type=\"body\"><div class=\"text-block\" style=\"font-size: 9pt; text-align: left; \"><p>Plantilla de prueba E2E - {{ title }}</p></div></section></body></html>",
+        "diffSummary": {
+          "created": true
+        }
+      }
+    ]
+  },
+  "b06305c6-4c64-43ba-bf40-4d88edd9f378": {
+    "id": "b06305c6-4c64-43ba-bf40-4d88edd9f378",
+    "name": "__E2E_Test_96a2f39c",
+    "reportType": "generic",
+    "status": "archived",
+    "currentVersion": 1,
+    "createdAt": "2026-02-19T14:00:59.303220+00:00",
+    "updatedAt": "2026-02-19T14:01:01.733228+00:00",
+    "createdBy": "e2e-verify-script",
+    "updatedBy": "e2e-verify-script",
+    "featureFlag": true,
+    "versions": [
+      {
+        "version": 1,
+        "status": "draft",
+        "author": "e2e-verify-script",
+        "createdAt": "2026-02-19T14:00:59.303220+00:00",
+        "templateJson": {
+          "reportType": "generic",
+          "sections": [
+            {
+              "id": "sec-e2e-1",
+              "type": "body",
+              "title": "Seccion E2E",
+              "blocks": [
+                {
+                  "id": "blk-e2e-1",
+                  "type": "text",
+                  "content": "<p>Plantilla de prueba E2E - {{ title }}</p>",
+                  "variables": [
+                    "title"
+                  ],
+                  "placeholders": [],
+                  "metadata": {},
+                  "locked": false
+                }
+              ],
+              "metadata": {}
+            }
+          ],
+          "metadata": {},
+          "variableBindings": {},
+          "protectionRules": {
+            "required_block_ids": [],
+            "editable_placeholder_by_block": {}
+          }
+        },
+        "compiledJinja": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>@page { size: A4; margin: 10mm; }body { font-family: Arial, sans-serif; font-size: 11px; }.editor-block { margin: 4px 0; }.protected-block { margin: 4px 0; border-left: 3px solid #b91c1c; padding-left: 8px; }</style></head><body><section data-section-id=\"sec-e2e-1\" data-section-type=\"body\"><div class=\"text-block\" style=\"font-size: 9pt; text-align: left; \"><p>Plantilla de prueba E2E - {{ title }}</p></div></section></body></html>",
+        "diffSummary": {
+          "created": true
+        }
+      }
+    ]
+  },
+  "2e5f5ed0-5351-4e41-997a-87c0290db7a1": {
+    "id": "2e5f5ed0-5351-4e41-997a-87c0290db7a1",
+    "name": "__E2E_Test_277003fb",
+    "reportType": "generic",
+    "status": "archived",
+    "currentVersion": 1,
+    "createdAt": "2026-02-19T14:09:20.737603+00:00",
+    "updatedAt": "2026-02-19T14:09:20.754914+00:00",
+    "createdBy": "e2e-verify-script",
+    "updatedBy": "e2e-verify-script",
+    "featureFlag": true,
+    "versions": [
+      {
+        "version": 1,
+        "status": "published",
+        "author": "e2e-verify-script",
+        "createdAt": "2026-02-19T14:09:20.737603+00:00",
+        "templateJson": {
+          "reportType": "generic",
+          "sections": [
+            {
+              "id": "sec-e2e-1",
+              "type": "body",
+              "title": "Seccion E2E",
+              "blocks": [
+                {
+                  "id": "blk-e2e-1",
+                  "type": "text",
+                  "content": "<p>Plantilla de prueba E2E - {{ title }}</p>",
+                  "variables": [
+                    "title"
+                  ],
+                  "placeholders": [],
+                  "metadata": {},
+                  "locked": false
+                }
+              ],
+              "metadata": {}
+            }
+          ],
+          "metadata": {},
+          "variableBindings": {},
+          "protectionRules": {
+            "required_block_ids": [],
+            "editable_placeholder_by_block": {}
+          }
+        },
+        "compiledJinja": "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>@page { size: A4; margin: 10mm; }body { font-family: Arial, sans-serif; font-size: 11px; }.editor-block { margin: 4px 0; }.protected-block { margin: 4px 0; border-left: 3px solid #b91c1c; padding-left: 8px; }</style></head><body><section data-section-id=\"sec-e2e-1\" data-section-type=\"body\"><div class=\"text-block\" style=\"font-size: 9pt; text-align: left; \"><p>Plantilla de prueba E2E - {{ title }}</p></div></section></body></html>",
+        "diffSummary": {
+          "created": true
+        }
+      }
+    ]
+  }
+}

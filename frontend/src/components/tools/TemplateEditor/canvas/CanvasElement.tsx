@@ -383,12 +383,13 @@ export const CanvasElement = memo(function CanvasElement({
             }
 
             case 'signature': {
-                const sigs = element.signatureConfig || [{ title: 'FIRMA', name: '' }];
+                const title = element.title ?? element.signatureConfig?.[0]?.title ?? 'SUPERVISOR';
+                const signatureName = element.signatureName ?? element.signatureConfig?.[0]?.name ?? '';
                 return (
                     <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: 4 }}>
                         <div style={{ borderTop: '1px solid #374151', paddingTop: 4, textAlign: 'center' }}>
-                            <div style={{ fontSize: 9, fontWeight: 'bold' }}>{sigs[0]?.title || 'FIRMA'}</div>
-                            {sigs[0]?.name && <div style={{ fontSize: 8, color: '#666' }}>{sigs[0].name}</div>}
+                            <div style={{ fontSize: 9, fontWeight: 'bold' }}>{title}</div>
+                            {signatureName && <div style={{ fontSize: 8, color: '#666' }}>{signatureName}</div>}
                         </div>
                     </div>
                 );

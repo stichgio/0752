@@ -75,8 +75,7 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 8pt; color: #222; 
     position: absolute;
     top: 0.6mm;
     left: 2.4mm;
-    display: inline-flex;
-    align-items: center;
+    display: inline-block;
     padding: 0.6mm 2.2mm;
     border-radius: 999px;
     font-size: 7pt;
@@ -92,24 +91,56 @@ body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 8pt; color: #222; 
     border-radius: 2mm;
     padding: 1.7mm;
     background: #ffffff;
-    display: flex;
 }
-.photo-grid { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 2mm; width: 100%; height: 100%; }
-.photo-item { border: 1px solid #ddd; border-radius: 1.4mm; background: #f3f4f6; display: flex; align-items: center; justify-content: center; overflow: hidden; width: 100%; height: 100%; padding: 0; }
-.photo-item img { width: 100%; height: 100%; object-fit: contain; object-position: center; display: block; }
-.layout-2 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; align-items: stretch; }
-.layout-3 { display: flex; flex-direction: column; gap: 2mm; width: 100%; height: 100%; }
-.layout-3 .top-row { display: flex; flex-direction: row; gap: 2mm; height: calc(50% - 1mm); }
-.layout-3 .top-row .photo-item { flex: 1; height: 100%; }
-.layout-3 .bottom-row { display: flex; justify-content: center; height: calc(50% - 1mm); }
-.layout-3 .bottom-row .photo-item { width: calc(50% - 1mm); height: 100%; }
-.layout-4 { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(2, 1fr); align-items: stretch; }
-.layout-grid { grid-template-columns: 1fr 1fr; grid-template-rows: repeat(2, 1fr); }
-.no-photos { flex: 1; display: flex; align-items: center; justify-content: center; border: 1px dashed #ccc; color: #999; font-style: italic; border-radius: 1.2mm; }
+.photo-grid {
+    width: 100%;
+    height: 100%;
+    border-collapse: separate;
+    border-spacing: 2mm;
+    table-layout: fixed;
+}
+.photo-row { height: 48%; }
+.photo-cell {
+    width: 48%;
+    height: 48%;
+    box-sizing: border-box;
+    text-align: center;
+    vertical-align: middle;
+    border: 1px solid #d1d5db;
+    border-radius: 1.4mm;
+    background: #f3f4f6;
+    padding: 1mm;
+}
+.photo-cell-empty {
+    width: 48%;
+    height: 48%;
+    box-sizing: border-box;
+    border: 1px solid transparent;
+    background: transparent;
+}
+.photo-cell-center {
+    border: none;
+    background: transparent;
+    padding: 0;
+}
+.photo-cell-center .photo-cell-inner {
+    width: 48%;
+    height: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+    text-align: center;
+    vertical-align: middle;
+    border: 1px solid #d1d5db;
+    border-radius: 1.4mm;
+    background: #f3f4f6;
+    padding: 1mm;
+}
+.photo-item { width: 100%; height: 100%; }
+.photo-item img { max-width: 100%; max-height: 85%; margin: 0 auto; display: block; }
+.no-photos { border: 1px dashed #ccc; color: #999; font-style: italic; border-radius: 1.2mm; text-align: center; padding: 8mm 2mm; }
 
 /* Photo labels */
-.photo-container { display: flex; flex-direction: column; align-items: center; gap: 1.3mm; }
-.photo-label { font-weight: 700; font-size: 7.5pt; text-transform: uppercase; margin-top: 0; letter-spacing: 0.02em; }
+.photo-label { font-weight: 700; font-size: 7.5pt; text-transform: uppercase; margin-top: 2mm; letter-spacing: 0.02em; }
 
 /* Text block */
 .text-block { margin: 2mm 0; }
@@ -221,14 +252,120 @@ def _normalize_odd_position(value: Any) -> str:
     return "center"
 
 
-def _odd_photo_item_style(index: int, count: int, odd_position: str) -> str:
-    if count % 2 == 0 or index != count - 1:
-        return ""
-    if odd_position == "right":
-        return "grid-column: 2 / span 1;"
-    if odd_position == "center":
-        return "grid-column: 1 / span 2; width: 50%; justify-self: center;"
-    return "grid-column: 1 / span 1;"
+def _escape_html(value: Any) -> str:
+    return str(value).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def _to_float(value: Any, default: float) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+PHOTO_TABLE_STYLE = (
+    "width: 100%; height: 100%; border-collapse: separate; "
+    "border-spacing: 2mm; table-layout: fixed;"
+)
+PHOTO_ROW_STYLE = "height: 48%;"
+PHOTO_CELL_STYLE = (
+    "width: 48%; height: 48%; box-sizing: border-box; text-align: center; "
+    "vertical-align: middle; background: #f3f4f6; border: 1px solid #d1d5db; padding: 1mm;"
+)
+PHOTO_EMPTY_CELL_STYLE = (
+    "width: 48%; height: 48%; box-sizing: border-box; border: 1px solid transparent; "
+    "background: transparent;"
+)
+PHOTO_CENTER_CELL_STYLE = "padding: 0; border: none; background: transparent;"
+PHOTO_CENTER_INNER_STYLE = (
+    "width: 48%; height: 100%; margin: 0 auto; box-sizing: border-box; text-align: center; "
+    "vertical-align: middle; background: #f3f4f6; border: 1px solid #d1d5db; padding: 1mm;"
+)
+PHOTO_IMAGE_STYLE = "max-width: 100%; max-height: 85%; margin: 0 auto; display: block;"
+PHOTO_LABEL_STYLE = (
+    "font-weight: 700; font-size: 7.5pt; text-transform: uppercase; margin-top: 2mm; "
+    "letter-spacing: 0.02em;"
+)
+
+
+def _resolve_photo_rows(count: int, odd_position: str) -> List[Dict[str, Any]]:
+    rows: List[Dict[str, Any]] = []
+
+    for slot_index in range(0, count - 1, 2):
+        rows.append({"type": "pair", "slots": [slot_index, slot_index + 1]})
+
+    if count % 2 == 1:
+        last_slot = count - 1
+        if odd_position == "center":
+            rows.append({"type": "center", "slot": last_slot})
+        elif odd_position == "right":
+            rows.append({"type": "pair", "slots": [None, last_slot]})
+        else:
+            rows.append({"type": "pair", "slots": [last_slot, None]})
+
+    return rows
+
+
+def _compile_indexed_photo_content(index: int, label: str, show_labels: bool) -> str:
+    label_html = _escape_html(label)
+    label_jinja = label_html.replace("'", "\\'")
+    alt_expr = (
+        f"{{{{ report.images[{index}].name | default('{label_jinja}') }}}}"
+        if show_labels
+        else f"{{{{ report.images[{index}].name }}}}"
+    )
+    label_html_block = (
+        f'<div class="photo-label" style="{PHOTO_LABEL_STYLE}">{label_html}</div>'
+        if show_labels
+        else ""
+    )
+
+    return (
+        f'{{% if report.images|length > {index} %}}'
+        f'<img src="{{{{ report.images[{index}].path }}}}" alt="{alt_expr}" style="{PHOTO_IMAGE_STYLE}">'
+        '{% else %}'
+        '<div style="color:#999;">Sin foto</div>'
+        '{% endif %}'
+        f"{label_html_block}"
+    )
+
+
+def _compile_table_photo_grid(
+    count: int,
+    odd_position: str,
+    slot_content_by_index: Dict[int, str],
+) -> str:
+    rows_html: List[str] = []
+
+    for row in _resolve_photo_rows(count, odd_position):
+        if row["type"] == "center":
+            slot_index = row["slot"]
+            slot_html = slot_content_by_index.get(slot_index, '<div style="color:#999;">Sin foto</div>')
+            rows_html.append(
+                f'<tr class="photo-row" style="{PHOTO_ROW_STYLE}">'
+                f'<td colspan="2" class="photo-cell photo-cell-center" style="{PHOTO_CENTER_CELL_STYLE}">'
+                f'<div class="photo-cell-inner" style="{PHOTO_CENTER_INNER_STYLE}">{slot_html}</div>'
+                '</td>'
+                '</tr>'
+            )
+            continue
+
+        cells_html: List[str] = []
+        for slot_index in row["slots"]:
+            if slot_index is None:
+                cells_html.append(f'<td class="photo-cell-empty" style="{PHOTO_EMPTY_CELL_STYLE}"></td>')
+                continue
+
+            slot_html = slot_content_by_index.get(slot_index, '<div style="color:#999;">Sin foto</div>')
+            cells_html.append(
+                f'<td class="photo-cell" style="{PHOTO_CELL_STYLE}">{slot_html}</td>'
+            )
+
+        rows_html.append(
+            f'<tr class="photo-row" style="{PHOTO_ROW_STYLE}">{"".join(cells_html)}</tr>'
+        )
+
+    return f'<table class="photo-grid" style="{PHOTO_TABLE_STYLE}">{"".join(rows_html)}</table>'
 
 
 def _compile_fixed_photo_grid(
@@ -239,51 +376,23 @@ def _compile_fixed_photo_grid(
     odd_position: str = "center",
 ) -> str:
     safe_labels = [str(label) for label in labels]
-    photo_cells: List[str] = []
+    slot_content_by_index: Dict[int, str] = {}
 
     for i in range(count):
         label = safe_labels[i] if i < len(safe_labels) and safe_labels[i].strip() else f"FOTO {i + 1}"
-        label_html = (
-            label.replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-        )
-        label_jinja = label_html.replace("'", "\\'")
-        odd_style = _odd_photo_item_style(i, count, odd_position)
-        style_attr = f' style="{odd_style}"' if odd_style else ""
+        slot_content_by_index[i] = _compile_indexed_photo_content(i, label, show_labels)
 
-        if show_labels:
-            photo_cells.append(
-                f'{{% if report.images|length > {i} %}}'
-                f'<div class="photo-container"{style_attr}>'
-                f'<div class="photo-item"><img src="{{{{ report.images[{i}].path }}}}" alt="{{{{ report.images[{i}].name | default(\'{label_jinja}\') }}}}"></div>'
-                f'<div class="photo-label">{label_html}</div>'
-                '</div>'
-                '{% else %}'
-                f'<div class="photo-container"{style_attr}>'
-                '<div class="photo-item" style="background: #f0f0f0;"><span style="color:#999;">Sin foto</span></div>'
-                f'<div class="photo-label">{label_html}</div>'
-                '</div>'
-                '{% endif %}'
-            )
-            continue
-
-        empty_style = f'background: #f0f0f0;{(" " + odd_style) if odd_style else ""}'
-        photo_cells.append(
-            f'{{% if report.images|length > {i} %}}'
-            f'<div class="photo-item"{style_attr}><img src="{{{{ report.images[{i}].path }}}}" alt="{{{{ report.images[{i}].name }}}}"></div>'
-            '{% else %}'
-            f'<div class="photo-item" style="{empty_style}"><span style="color:#999;">Sin foto</span></div>'
-            '{% endif %}'
-        )
+    table_html = _compile_table_photo_grid(
+        count=count,
+        odd_position=odd_position,
+        slot_content_by_index=slot_content_by_index,
+    )
 
     return (
         '<div class="photo-section">'
         f"{tag_html}"
         '<div class="photo-frame">'
-        '<div class="photo-grid" style="grid-template-columns: repeat(2, 1fr);">'
-        + "".join(photo_cells)
-        + '</div>'
+        f"{table_html}"
         '</div>'
         '</div>'
     )
@@ -318,30 +427,56 @@ def _compile_photo_grid(block: EditorBlock) -> str:
         '<div class="photo-frame">'
         "{% if report.images %}"
         "{% set img_count = report.images|length %}"
+        f'<table class="photo-grid" style="{PHOTO_TABLE_STYLE}">'
         "{% if img_count == 3 %}"
-        '<div class="photo-grid layout-3">'
-        '<div class="top-row">'
-        # Guard indexed access to avoid runtime errors with partial image lists.
-        '{% if report.images|length > 0 %}'
-        '<div class="photo-item"><img src="{{ report.images[0].path }}" alt="{{ report.images[0].name }}"></div>'
-        '{% endif %}'
-        '{% if report.images|length > 1 %}'
-        '<div class="photo-item"><img src="{{ report.images[1].path }}" alt="{{ report.images[1].name }}"></div>'
-        '{% endif %}'
-        "</div>"
-        '<div class="bottom-row">'
-        '{% if report.images|length > 2 %}'
-        '<div class="photo-item"><img src="{{ report.images[2].path }}" alt="{{ report.images[2].name }}"></div>'
-        '{% endif %}'
-        "</div>"
-        "</div>"
+        f'<tr class="photo-row" style="{PHOTO_ROW_STYLE}">'
+        f'<td class="photo-cell" style="{PHOTO_CELL_STYLE}">'
+        "{% if report.images|length > 0 %}"
+        f'<img src="{{{{ report.images[0].path }}}}" alt="{{{{ report.images[0].name }}}}" style="{PHOTO_IMAGE_STYLE}">'
         "{% else %}"
-        '<div class="photo-grid layout-{{ img_count if img_count in [2, 4] else \'grid\' }}">'
-        "{% for img in report.images %}"
-        '<div class="photo-item"><img src="{{ img.path }}" alt="{{ img.name }}"></div>'
-        "{% endfor %}"
-        "</div>"
+        '<div style="color:#999;">Sin foto</div>'
         "{% endif %}"
+        "</td>"
+        f'<td class="photo-cell" style="{PHOTO_CELL_STYLE}">'
+        "{% if report.images|length > 1 %}"
+        f'<img src="{{{{ report.images[1].path }}}}" alt="{{{{ report.images[1].name }}}}" style="{PHOTO_IMAGE_STYLE}">'
+        "{% else %}"
+        '<div style="color:#999;">Sin foto</div>'
+        "{% endif %}"
+        "</td>"
+        "</tr>"
+        f'<tr class="photo-row" style="{PHOTO_ROW_STYLE}">'
+        f'<td colspan="2" class="photo-cell photo-cell-center" style="{PHOTO_CENTER_CELL_STYLE}">'
+        f'<div class="photo-cell-inner" style="{PHOTO_CENTER_INNER_STYLE}">'
+        "{% if report.images|length > 2 %}"
+        f'<img src="{{{{ report.images[2].path }}}}" alt="{{{{ report.images[2].name }}}}" style="{PHOTO_IMAGE_STYLE}">'
+        "{% else %}"
+        '<div style="color:#999;">Sin foto</div>'
+        "{% endif %}"
+        "</div>"
+        "</td>"
+        "</tr>"
+        "{% else %}"
+        "{% for pair_start in range(0, img_count, 2) %}"
+        f'<tr class="photo-row" style="{PHOTO_ROW_STYLE}">'
+        f'<td class="photo-cell" style="{PHOTO_CELL_STYLE}">'
+        "{% if report.images|length > pair_start %}"
+        f'<img src="{{{{ report.images[pair_start].path }}}}" alt="{{{{ report.images[pair_start].name }}}}" style="{PHOTO_IMAGE_STYLE}">'
+        "{% else %}"
+        '<div style="color:#999;">Sin foto</div>'
+        "{% endif %}"
+        "</td>"
+        f'<td class="photo-cell" style="{PHOTO_CELL_STYLE}">'
+        "{% if report.images|length > pair_start + 1 %}"
+        f'<img src="{{{{ report.images[pair_start + 1].path }}}}" alt="{{{{ report.images[pair_start + 1].name }}}}" style="{PHOTO_IMAGE_STYLE}">'
+        "{% else %}"
+        '<div style="color:#999;">Sin foto</div>'
+        "{% endif %}"
+        "</td>"
+        "</tr>"
+        "{% endfor %}"
+        "{% endif %}"
+        "</table>"
         "{% else %}"
         '<div class="no-photos">No se encontraron imágenes asociadas a esta orden.</div>'
         "{% endif %}"
@@ -352,34 +487,34 @@ def _compile_photo_grid(block: EditorBlock) -> str:
 
 def _compile_labeled_photos(labels: List[str], tag_html: str = "") -> str:
     """Labeled photo grid where each position has a name (ANTES, DURANTE, etc.)."""
-    photo_cells: List[str] = []
+    slot_content_by_index: Dict[int, str] = {}
     for i, label in enumerate(labels):
-        photo_cells.append(
+        label_html = _escape_html(label)
+        slot_content_by_index[i] = (
             f'{{% set ns{i} = namespace(found=false) %}}'
             f'{{% for img in report.images %}}'
             f'{{% if not ns{i}.found and "_{i + 1}." in img.name %}}'
             f'{{% set ns{i}.found = true %}}'
-            '<div class="photo-container">'
-            f'<div class="photo-item"><img src="{{{{ img.path }}}}" alt="{{{{ img.name }}}}"></div>'
-            f'<div class="photo-label">{label}</div>'
-            '</div>'
+            f'<img src="{{{{ img.path }}}}" alt="{{{{ img.name }}}}" style="{PHOTO_IMAGE_STYLE}">'
             '{% endif %}'
             '{% endfor %}'
             f'{{% if not ns{i}.found %}}'
-            '<div class="photo-container">'
-            '<div class="photo-item" style="background: #f0f0f0;"><span style="color:#999;">Sin foto</span></div>'
-            f'<div class="photo-label">{label}</div>'
-            '</div>'
+            '<div style="color:#999;">Sin foto</div>'
             '{% endif %}'
+            f'<div class="photo-label" style="{PHOTO_LABEL_STYLE}">{label_html}</div>'
         )
+
+    table_html = _compile_table_photo_grid(
+        count=len(labels),
+        odd_position="center",
+        slot_content_by_index=slot_content_by_index,
+    )
 
     return (
         '<div class="photo-section">'
         f"{tag_html}"
         '<div class="photo-frame">'
-        '<div class="photo-grid layout-4">'
-        + "".join(photo_cells)
-        + '</div>'
+        f"{table_html}"
         '</div>'
         '</div>'
     )
@@ -418,6 +553,39 @@ def _compile_table(block: EditorBlock) -> str:
     )
 
 
+def _compile_signature(block: EditorBlock) -> str:
+    metadata = block.metadata or {}
+    layout = metadata.get("layout") or {}
+    style = metadata.get("style") or {}
+    legacy_sig = (metadata.get("signatureConfig") or [{}])[0] if isinstance(metadata.get("signatureConfig"), list) else {}
+
+    x = _to_float(layout.get("x"), 0.0)
+    y = _to_float(layout.get("y"), 0.0)
+    w = _to_float(layout.get("width"), 55.0)
+    h = _to_float(layout.get("height"), 20.0)
+
+    border_color = style.get("borderColor", "#333")
+    border_top_width = _to_float(style.get("borderTopWidth", style.get("borderWidth", 1)), 1.0)
+    text_align = style.get("textAlign", "center")
+
+    raw_title = metadata.get("title", legacy_sig.get("title", "FIRMA"))
+    raw_name = metadata.get("name", metadata.get("signatureName", legacy_sig.get("name", "")))
+    title = _escape_html(raw_title or "")
+    name = _escape_html(raw_name or "")
+    name_html = f'<div style="font-size: 7.5pt; color: #555;">{name}</div>' if name else ""
+
+    return (
+        '<div class="element signature" '
+        f'style="position: absolute; left: {x}mm; top: {y}mm; width: {w}mm; height: {h}mm; '
+        f'text-align: {text_align}; border-top: {border_top_width}px solid {border_color};">'
+        '<div style="padding-top: 2mm; font-weight: bold; font-size: 8pt; text-transform: uppercase;">'
+        f"{title}"
+        '</div>'
+        f"{name_html}"
+        '</div>'
+    )
+
+
 def _compile_signatures(block: EditorBlock) -> str:
     sigs: List[Dict[str, str]] = _get_meta(block, "signatures", [])
     gap = _get_meta(block, "gap", 15)
@@ -426,8 +594,8 @@ def _compile_signatures(block: EditorBlock) -> str:
 
     sig_blocks = []
     for sig in sigs:
-        title = sig.get("title", "")
-        name = sig.get("name", "")
+        title = _escape_html(sig.get("title", ""))
+        name = _escape_html(sig.get("name", ""))
         name_html = f'<div class="signature-name">{name}</div>' if name else ""
         sig_blocks.append(
             '<div class="signature-block">'
@@ -476,6 +644,7 @@ BLOCK_COMPILERS = {
     "photo_grid": _compile_photo_grid,
     "text": _compile_text,
     "table": _compile_table,
+    "signature": _compile_signature,
     "signatures": _compile_signatures,
     "footer": _compile_footer,
     "spacer": _compile_spacer,
@@ -586,3 +755,4 @@ def _compile_legacy(template_json: TemplateJson) -> str:
         f"{html_body}"
         "</body></html>"
     )
+

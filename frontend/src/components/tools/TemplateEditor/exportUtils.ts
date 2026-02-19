@@ -379,11 +379,12 @@ function generateElementContent(el: TemplateElement): string | null {
     }
 
     case 'signature': {
-      const sigs = el.signatureConfig || [{ title: 'FIRMA', name: '' }];
+      const title = el.title ?? el.signatureConfig?.[0]?.title ?? 'SUPERVISOR';
+      const signatureName = el.signatureName ?? el.signatureConfig?.[0]?.name ?? '';
       return `
         <div class="signature-line">
-          <div class="signature-title">${escapeHtml(sigs[0]?.title || 'FIRMA')}</div>
-          ${sigs[0]?.name ? `<div class="signature-name">${escapeHtml(sigs[0].name)}</div>` : ''}
+          <div class="signature-title">${escapeHtml(title)}</div>
+          ${signatureName ? `<div class="signature-name">${escapeHtml(signatureName)}</div>` : ''}
         </div>
       `;
     }

@@ -52,6 +52,9 @@ export function documentToLegacyTemplate(doc: CanvasDocument): LegacyTemplate {
             dividerConfig: el.dividerConfig,
             photoConfig: el.photoConfig,
             tableData: el.tableData,
+            title: el.title,
+            name: el.signatureName,
+            signatureName: el.signatureName,
             signatureConfig: el.signatureConfig,
         },
         locked: el.locked
@@ -79,29 +82,37 @@ export function legacyTemplateToDocument(json: LegacyTemplate, id: string, name:
     const blocks = json.sections?.[0]?.blocks || [];
 
     // Convert blocks to elements
-    const elements: TemplateElement[] = blocks.map((b, i) => ({
-        id: `el_${Date.now()}_${i}`,
-        type: b.type as any,
-        name: `Element ${i}`,
-        position: {
-            x: b.metadata?.layout?.x || 0,
-            y: b.metadata?.layout?.y || 0
-        },
-        size: {
-            width: b.metadata?.layout?.width || 100,
-            height: b.metadata?.layout?.height || 50
-        },
-        style: b.metadata?.style || {},
-        content: b.content,
-        locked: b.locked,
-        visible: true,
-        rotation: b.metadata?.layout?.rotation,
-        tableData: b.metadata?.tableData,
-        photoConfig: b.metadata?.photoConfig,
-        signatureConfig: b.metadata?.signatureConfig,
-        shapeConfig: b.metadata?.shapeConfig,
-        dividerConfig: b.metadata?.dividerConfig,
-    }));
+    const elements: TemplateElement[] = blocks.map((b, i) => {
+        const legacySignature = b.metadata?.signatureConfig?.[0];
+        const signatureTitle = b.metadata?.title ?? legacySignature?.title;
+        const signatureName = b.metadata?.signatureName ?? b.metadata?.name ?? legacySignature?.name ?? '';
+
+        return {
+            id: `el_${Date.now()}_${i}`,
+            type: b.type as any,
+            name: `Element ${i}`,
+            position: {
+                x: b.metadata?.layout?.x || 0,
+                y: b.metadata?.layout?.y || 0
+            },
+            size: {
+                width: b.metadata?.layout?.width || 100,
+                height: b.metadata?.layout?.height || 50
+            },
+            style: b.metadata?.style || {},
+            content: b.content,
+            locked: b.locked,
+            visible: true,
+            rotation: b.metadata?.layout?.rotation,
+            tableData: b.metadata?.tableData,
+            photoConfig: b.metadata?.photoConfig,
+            title: signatureTitle,
+            signatureName,
+            signatureConfig: signatureTitle ? [{ title: signatureTitle, name: signatureName }] : b.metadata?.signatureConfig,
+            shapeConfig: b.metadata?.shapeConfig,
+            dividerConfig: b.metadata?.dividerConfig,
+        };
+    });
 
     return {
         id,

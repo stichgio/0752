@@ -9,7 +9,13 @@ export const ELEMENT_DEFAULTS: Record<string, Partial<TemplateElement>> = {
     'photo-grid': { size: { width: 203, height: 53 }, style: { zIndex: 1 } },
     text: { size: { width: 98, height: 16 }, style: { zIndex: 1 } },
     table: { size: { width: 203, height: 32 }, style: { zIndex: 1 } },
-    signature: { size: { width: 203, height: 21 }, style: { zIndex: 1 } },
+    signature: {
+        size: { width: 203, height: 21 },
+        style: { zIndex: 1 },
+        title: 'SUPERVISOR',
+        signatureName: '',
+        signatureConfig: [{ title: 'SUPERVISOR', name: '' }],
+    },
     footer: { size: { width: 203, height: 8 }, style: { zIndex: 1 } },
     spacer: { size: { width: 203, height: 5 }, style: { zIndex: 1 } },
     shape: { size: { width: 50, height: 50 }, style: { zIndex: 1 } },
@@ -107,12 +113,25 @@ export function migrateToCanvas(elements: TemplateElement[]): TemplateElement[] 
         const normalizedTable = el.type === 'table'
             ? normalizeTableData(el)
             : undefined;
+        const normalizedSignature = el.type === 'signature'
+            ? (() => {
+                const legacy = el.signatureConfig?.[0];
+                const title = (el.title ?? legacy?.title ?? 'SUPERVISOR').toString();
+                const signatureName = (el.signatureName ?? legacy?.name ?? '').toString();
+                return {
+                    title,
+                    signatureName,
+                    signatureConfig: [{ title, name: signatureName }],
+                };
+            })()
+            : undefined;
 
         // If element already has position, keep it (unless it's 0,0 which implies uninitialized)
         if (el.position && (el.position.x !== 0 || el.position.y !== 0)) {
             return {
                 ...el,
                 ...(normalizedTable ? { tableData: normalizedTable } : {}),
+                ...(normalizedSignature || {}),
             };
         }
 
@@ -133,6 +152,7 @@ export function migrateToCanvas(elements: TemplateElement[]): TemplateElement[] 
             rotation: el.rotation || 0,
             style: { ...el.style, zIndex: el.style.zIndex || index + 1 },
             ...(normalizedTable ? { tableData: normalizedTable } : {}),
+            ...(normalizedSignature || {}),
         };
     });
 }

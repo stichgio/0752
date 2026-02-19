@@ -80,9 +80,11 @@ def test_compile_photo_grid_respects_configured_count_and_odd_position():
         metadata={"count": 5, "oddPosition": "right", "showLabels": False},
     )
     html = _compile_photo_grid(block)
-    assert 'grid-template-columns: repeat(2, 1fr);' in html
+    assert '<table class="photo-grid"' in html
+    assert "table-layout: fixed;" in html
     assert "{% if report.images|length > 4 %}" in html
-    assert "grid-column: 2 / span 1;" in html
+    assert 'class="photo-cell-empty"' in html
+    assert "max-height: 85%;" in html
 
 
 def test_compile_photo_grid_respects_configured_count_with_labels():
@@ -98,10 +100,11 @@ def test_compile_photo_grid_respects_configured_count_with_labels():
     )
     html = _compile_photo_grid(block)
     assert "{% if report.images|length > 2 %}" in html
-    assert '<div class="photo-label">ANTES</div>' in html
-    assert '<div class="photo-label">DURANTE</div>' in html
-    assert '<div class="photo-label">DESPUES</div>' in html
-    assert "grid-column: 1 / span 2; width: 50%; justify-self: center;" in html
+    assert "ANTES</div>" in html
+    assert "DURANTE</div>" in html
+    assert "DESPUES</div>" in html
+    assert "photo-cell-center" in html
+    assert "width: 48%;" in html
 
 
 def test_sanitize_html_fallback_removes_javascript_and_suspicious_data_urls(monkeypatch):
@@ -112,3 +115,62 @@ def test_sanitize_html_fallback_removes_javascript_and_suspicious_data_urls(monk
     assert "javascript:" not in cleaned.lower()
     assert "onerror" not in cleaned.lower()
     assert "data:text/html" not in cleaned.lower()
+
+
+def test_compile_signature_renders_dynamic_title_and_name():
+    template_json = TemplateJson(
+        reportType="generic",
+        sections=[
+            EditorSection(
+                id="s-signature",
+                type="body",
+                title="Body",
+                blocks=[
+                    EditorBlock(
+                        id="sig-1",
+                        type="signature",
+                        metadata={
+                            "layout": {"x": 12.5, "y": 230, "width": 70, "height": 22},
+                            "title": "SUPERVISOR",
+                            "name": "Ing. Juan Perez",
+                        },
+                    )
+                ],
+            )
+        ],
+        protectionRules=ProtectionRules(required_block_ids=[], editable_placeholder_by_block={}),
+    )
+
+    html = compileTemplateJsonToJinja(template_json)
+    assert "class=\"element signature\"" in html
+    assert "SUPERVISOR" in html
+    assert "Ing. Juan Perez" in html
+    assert "left: 12.5mm" in html
+    assert "top: 230.0mm" in html
+
+
+def test_compile_signature_supports_legacy_signature_config_fallback():
+    template_json = TemplateJson(
+        reportType="generic",
+        sections=[
+            EditorSection(
+                id="s-signature-legacy",
+                type="body",
+                title="Body",
+                blocks=[
+                    EditorBlock(
+                        id="sig-legacy",
+                        type="signature",
+                        metadata={
+                            "signatureConfig": [{"title": "CONTRATISTA", "name": "Maria Torres"}],
+                        },
+                    )
+                ],
+            )
+        ],
+        protectionRules=ProtectionRules(required_block_ids=[], editable_placeholder_by_block={}),
+    )
+
+    html = compileTemplateJsonToJinja(template_json)
+    assert "CONTRATISTA" in html
+    assert "Maria Torres" in html
