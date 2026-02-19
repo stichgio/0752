@@ -13,9 +13,12 @@ interface CanvasElementProps {
     dataPreview?: Record<string, unknown>;
     onSelect: (id: string, multi: boolean) => void;
     onUpdateElement: (id: string, updates: Partial<TemplateElement>) => void;
-    onDragStart: (e: React.MouseEvent, id: string) => void;
-    onResizeStart: (e: React.MouseEvent, element: TemplateElement, direction: string) => void;
-    onRotateStart: (e: React.MouseEvent, element: TemplateElement) => void;
+    onDragStart: (e: React.PointerEvent, id: string) => void;
+    onResizeStart: (e: React.PointerEvent, element: TemplateElement, direction: string) => void;
+    onRotateStart: (e: React.PointerEvent, element: TemplateElement) => void;
+    isDragging?: boolean;
+    suppressPointerEvents?: boolean;
+    onSetNodeRef?: (id: string, node: HTMLDivElement | null) => void;
     disableInteraction?: boolean;
 }
 
@@ -90,7 +93,7 @@ const NOOP_DRAG = () => {};
 const NOOP_RESIZE = () => {};
 const NOOP_ROTATE = () => {};
 
-export const CanvasElement = memo(function CanvasElement({
+function CanvasElementComponent({
     element,
     scale,
     isSelected,
@@ -100,6 +103,9 @@ export const CanvasElement = memo(function CanvasElement({
     onDragStart,
     onResizeStart,
     onRotateStart,
+    isDragging = false,
+    suppressPointerEvents = false,
+    onSetNodeRef,
     disableInteraction = false,
 }: CanvasElementProps) {
     if (element.visible === false) return null;
@@ -107,8 +113,10 @@ export const CanvasElement = memo(function CanvasElement({
     const { position, size, style, type, content, id, locked, rotation = 0 } = element;
     const isInlineTextEditable = (type === 'text' || type === 'heading') && !locked && !disableInteraction;
     const [isEditing, setIsEditing] = useState(false);
-    const [draftContent, setDraftContent] = useState(content || '');
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const editableRef = useRef<HTMLDivElement>(null);
+    const draftContentRef = useRef(content || '');
+    const initialContentRef = useRef(content || '');
+    const cancelEditRef = useRef(false);
     const hasLoadedMedia = (type === 'image' || type === 'logo') && !!element.imageUrl;
     const hasDefaultMediaFrame =
         hasLoadedMedia &&
@@ -121,37 +129,88 @@ export const CanvasElement = memo(function CanvasElement({
     const height = mmToPx(size.height);
 
     useEffect(() => {
-        if (!isEditing) {
-            setDraftContent(content || '');
-        }
+        if (isEditing) return;
+        draftContentRef.current = content || '';
+        initialContentRef.current = content || '';
     }, [content, isEditing]);
 
     useEffect(() => {
-        if (!isEditing || !textareaRef.current) return;
-        const textarea = textareaRef.current;
-        textarea.focus();
-        const cursorPos = textarea.value.length;
-        textarea.setSelectionRange(cursorPos, cursorPos);
+        if (!isEditing || !editableRef.current) return;
+        const node = editableRef.current;
+        node.textContent = draftContentRef.current;
+        node.focus();
+        placeCaretAtEnd(node);
     }, [isEditing]);
+
+    const contentEditableMode = useMemo<React.HTMLAttributes<HTMLDivElement>['contentEditable']>(() => {
+        if (typeof document === 'undefined') return true;
+        const probe = document.createElement('div');
+        probe.setAttribute('contenteditable', 'plaintext-only');
+        return probe.contentEditable === 'plaintext-only' ? 'plaintext-only' : true;
+    }, []);
 
     const handleInlineEditCommit = useCallback(() => {
         if (!isInlineTextEditable) return;
-        if (draftContent !== (content || '')) {
-            onUpdateElement(id, { content: draftContent });
+        const nextContent = draftContentRef.current;
+        if (nextContent !== (content || '')) {
+            onUpdateElement(id, { content: nextContent });
         }
         setIsEditing(false);
-    }, [isInlineTextEditable, draftContent, content, onUpdateElement, id]);
+    }, [isInlineTextEditable, content, onUpdateElement, id]);
+
+    const handleInlineEditCancel = useCallback(() => {
+        cancelEditRef.current = true;
+        draftContentRef.current = initialContentRef.current;
+        if (editableRef.current) {
+            editableRef.current.textContent = initialContentRef.current;
+        }
+    }, []);
+
+    const startInlineEdit = useCallback(() => {
+        if (!isInlineTextEditable) return;
+        onSelect(id, false);
+        cancelEditRef.current = false;
+        draftContentRef.current = content || '';
+        initialContentRef.current = content || '';
+        setIsEditing(true);
+    }, [isInlineTextEditable, onSelect, id, content]);
 
     const handleTextDoubleClick = useCallback((e: React.MouseEvent) => {
         if (!isInlineTextEditable) return;
         e.preventDefault();
         e.stopPropagation();
-        onSelect(id, false);
-        setDraftContent(content || '');
-        setIsEditing(true);
-    }, [isInlineTextEditable, onSelect, id, content]);
+        startInlineEdit();
+    }, [isInlineTextEditable, startInlineEdit]);
+
+    const handleInlineEditorInput = useCallback((e: React.FormEvent<HTMLDivElement>) => {
+        draftContentRef.current = e.currentTarget.textContent || '';
+    }, []);
+
+    const handleInlineEditorBlur = useCallback(() => {
+        if (cancelEditRef.current) {
+            cancelEditRef.current = false;
+            setIsEditing(false);
+            return;
+        }
+        handleInlineEditCommit();
+    }, [handleInlineEditCommit]);
+
+    const handleInlineEditorKeyDown = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
+        e.stopPropagation();
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            handleInlineEditCancel();
+            e.currentTarget.blur();
+            return;
+        }
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+            e.preventDefault();
+            e.currentTarget.blur();
+        }
+    }, [handleInlineEditCancel]);
 
     const accentColor = TYPE_COLORS[type] || '#3b82f6';
+    const rotationTransform = rotation ? ` rotate(${rotation}deg)` : '';
 
     const containerStyle: React.CSSProperties = useMemo(() => ({
         position: 'absolute',
@@ -159,15 +218,31 @@ export const CanvasElement = memo(function CanvasElement({
         top: y,
         width,
         height,
-        transform: rotation ? `rotate(${rotation}deg)` : undefined,
+        transform: `translate(var(--drag-tx, 0px), var(--drag-ty, 0px))${rotationTransform}`,
         transformOrigin: 'center center',
         zIndex: style.zIndex || 1,
         opacity: style.opacity ?? 1,
         cursor: disableInteraction ? 'default' : locked ? 'default' : isEditing ? 'text' : isSelected ? 'move' : 'pointer',
         outline: isSelected ? `2px solid ${accentColor}` : 'none',
         outlineOffset: '1px',
-        pointerEvents: disableInteraction ? 'none' as const : 'auto' as const,
-    }), [x, y, width, height, rotation, style.zIndex, style.opacity, disableInteraction, locked, isEditing, isSelected, accentColor]);
+        pointerEvents: (disableInteraction || suppressPointerEvents) ? 'none' as const : 'auto' as const,
+        willChange: isDragging ? 'transform' : undefined,
+    }), [
+        x,
+        y,
+        width,
+        height,
+        rotationTransform,
+        style.zIndex,
+        style.opacity,
+        disableInteraction,
+        suppressPointerEvents,
+        isDragging,
+        locked,
+        isEditing,
+        isSelected,
+        accentColor,
+    ]);
 
     const innerStyle: React.CSSProperties = useMemo(() => ({
         width: '100%',
@@ -192,29 +267,43 @@ export const CanvasElement = memo(function CanvasElement({
         boxSizing: 'border-box' as const,
     }), [style, hasLoadedMedia, hasDefaultMediaFrame]);
 
-    const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    const handlePointerDown = useCallback((e: React.PointerEvent) => {
         e.stopPropagation();
         if (disableInteraction) return;
         if (locked) return;
         if (isEditing) return;
+
+        const isInlineEditableSurface = isInlineTextEditable || type === 'table';
+        if (isInlineEditableSurface && !isSelected) {
+            // First click selects editable elements without starting drag,
+            // so double-click can reliably enter inline edit mode.
+            onSelect(id, e.shiftKey);
+            return;
+        }
+
         if ((isInlineTextEditable || type === 'table') && e.detail === 2) {
             onSelect(id, e.shiftKey);
             return;
         }
         onSelect(id, e.shiftKey);
         onDragStart(e, id);
-    }, [disableInteraction, locked, isEditing, isInlineTextEditable, type, onSelect, onDragStart, id]);
+    }, [disableInteraction, locked, isEditing, isInlineTextEditable, type, isSelected, onSelect, onDragStart, id]);
 
-    const inlineTextareaStyle: React.CSSProperties = useMemo(() => ({
+    const setWrapperNodeRef = useCallback(
+        (node: HTMLDivElement | null) => {
+            onSetNodeRef?.(id, node);
+        },
+        [id, onSetNodeRef],
+    );
+
+    const inlineEditorStyle: React.CSSProperties = useMemo(() => ({
         position: 'absolute',
         inset: 0,
         width: '100%',
         height: '100%',
-        margin: 0,
         border: 'none',
         outline: 'none',
         boxSizing: 'border-box',
-        resize: 'none',
         backgroundColor: 'transparent',
         color: style.color || '#111827',
         fontSize: style.fontSize ? `${style.fontSize}px` : undefined,
@@ -225,6 +314,11 @@ export const CanvasElement = memo(function CanvasElement({
         letterSpacing: style.letterSpacing ? `${style.letterSpacing}px` : undefined,
         padding: '2px 4px',
         overflow: 'hidden',
+        whiteSpace: 'pre-wrap',
+        wordBreak: 'break-word',
+        pointerEvents: 'auto',
+        userSelect: 'text',
+        cursor: 'text',
     }), [style.color, style.fontSize, style.fontFamily, style.fontWeight, style.textAlign, style.lineHeight, style.letterSpacing]);
 
     const variableTemplate = useMemo(() => {
@@ -258,30 +352,31 @@ export const CanvasElement = memo(function CanvasElement({
             case 'text':
             case 'heading':
                 return (
-                    <div style={{ position: 'relative', width: '100%', height: '100%' }} onDoubleClick={handleTextDoubleClick}>
-                        <div style={{ whiteSpace: 'pre-wrap', padding: '2px 4px', opacity: isEditing ? 0 : 1 }}>
-                            {content || (
-                                <span style={{ color: '#aaa', fontStyle: 'italic' }}>
-                                    {type === 'heading' ? 'Título' : 'Texto...'}
-                                </span>
-                            )}
-                        </div>
+                    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+                        {!isEditing && (
+                            <div style={{ whiteSpace: 'pre-wrap', padding: '2px 4px' }}>
+                                {content || (
+                                    <span style={{ color: '#aaa', fontStyle: 'italic' }}>
+                                        {type === 'heading' ? 'Título' : 'Texto...'}
+                                    </span>
+                                )}
+                            </div>
+                        )}
                         {isEditing && (
-                            <textarea
-                                ref={textareaRef}
-                                value={draftContent}
-                                onChange={(e) => setDraftContent(e.target.value)}
-                                onBlur={handleInlineEditCommit}
+                            <div
+                                ref={editableRef}
+                                role="textbox"
+                                data-inline-editor="true"
+                                contentEditable={contentEditableMode}
+                                suppressContentEditableWarning
+                                spellCheck={false}
+                                onInput={handleInlineEditorInput}
+                                onBlur={handleInlineEditorBlur}
+                                onKeyDown={handleInlineEditorKeyDown}
+                                onPointerDown={(e) => e.stopPropagation()}
                                 onMouseDown={(e) => e.stopPropagation()}
                                 onDoubleClick={(e) => e.stopPropagation()}
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && e.shiftKey) {
-                                        e.preventDefault();
-                                        e.currentTarget.blur();
-                                    }
-                                }}
-                                style={inlineTextareaStyle}
-                                spellCheck={false}
+                                style={inlineEditorStyle}
                             />
                         )}
                     </div>
@@ -578,10 +673,12 @@ export const CanvasElement = memo(function CanvasElement({
 
     return (
         <div
+            ref={setWrapperNodeRef}
             className="canvas-element-wrapper"
             data-element-id={id}
             style={containerStyle}
-            onMouseDown={handleMouseDown}
+            onPointerDown={handlePointerDown}
+            onDoubleClick={isInlineTextEditable ? handleTextDoubleClick : undefined}
         >
             <div style={innerStyle}>
                 {renderContent()}
@@ -631,7 +728,7 @@ export const CanvasElement = memo(function CanvasElement({
                                 boxShadow: `0 0 ${2 / scale}px rgba(0,0,0,0.15)`,
                                 ...getHandlePosition(dir, width, height, handleSz),
                             }}
-                            onMouseDown={(e) => {
+                            onPointerDown={(e) => {
                                 e.stopPropagation();
                                 onResizeStart(e, element, dir);
                             }}
@@ -665,7 +762,7 @@ export const CanvasElement = memo(function CanvasElement({
                                     cursor: 'grab',
                                     boxShadow: `0 1px ${3 / scale}px rgba(0,0,0,0.15)`,
                                 }}
-                                onMouseDown={(e) => {
+                                onPointerDown={(e) => {
                                     e.stopPropagation();
                                     onRotateStart(e, element);
                                 }}
@@ -687,7 +784,79 @@ export const CanvasElement = memo(function CanvasElement({
             )}
         </div>
     );
-});
+}
+
+function placeCaretAtEnd(node: HTMLElement) {
+    if (typeof window === 'undefined') return;
+    const selection = window.getSelection();
+    if (!selection) return;
+    const range = document.createRange();
+    range.selectNodeContents(node);
+    range.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(range);
+}
+
+function areObjectsShallowEqual(
+    a: Record<string, unknown> | undefined,
+    b: Record<string, unknown> | undefined,
+): boolean {
+    if (a === b) return true;
+    if (!a || !b) return false;
+
+    const aKeys = Object.keys(a);
+    const bKeys = Object.keys(b);
+    if (aKeys.length !== bKeys.length) return false;
+
+    for (const key of aKeys) {
+        if (a[key] !== b[key]) return false;
+    }
+    return true;
+}
+
+function areElementsRenderEqual(prev: TemplateElement, next: TemplateElement): boolean {
+    if (prev === next) return true;
+    if (prev.id !== next.id) return false;
+    if (prev.position.x !== next.position.x || prev.position.y !== next.position.y) return false;
+    if (prev.size.width !== next.size.width || prev.size.height !== next.size.height) return false;
+    if (!areObjectsShallowEqual(prev.style as Record<string, unknown>, next.style as Record<string, unknown>)) {
+        return false;
+    }
+
+    // Keep non-layout render updates responsive (text/media/type changes).
+    if (prev.type !== next.type) return false;
+    if (prev.content !== next.content) return false;
+    if (prev.rotation !== next.rotation) return false;
+    if (prev.visible !== next.visible) return false;
+    if (prev.locked !== next.locked) return false;
+    if (prev.name !== next.name) return false;
+    if (prev.imageUrl !== next.imageUrl) return false;
+    if (prev.variableName !== next.variableName) return false;
+    if (prev.title !== next.title) return false;
+    if (prev.signatureName !== next.signatureName) return false;
+    if (prev.tableData !== next.tableData) return false;
+    if (prev.photoConfig !== next.photoConfig) return false;
+    if (prev.shapeConfig !== next.shapeConfig) return false;
+    if (prev.dividerConfig !== next.dividerConfig) return false;
+    if (prev.qrConfig !== next.qrConfig) return false;
+    if (prev.signatureConfig !== next.signatureConfig) return false;
+    if (prev.groupChildren !== next.groupChildren) return false;
+    if (prev.children !== next.children) return false;
+
+    return true;
+}
+
+function areCanvasElementPropsEqual(prev: CanvasElementProps, next: CanvasElementProps): boolean {
+    if (prev.scale !== next.scale) return false;
+    if (prev.isSelected !== next.isSelected) return false;
+    if (prev.disableInteraction !== next.disableInteraction) return false;
+    if (prev.isDragging !== next.isDragging) return false;
+    if (prev.suppressPointerEvents !== next.suppressPointerEvents) return false;
+    if (prev.dataPreview !== next.dataPreview) return false;
+    return areElementsRenderEqual(prev.element, next.element);
+}
+
+export const CanvasElement = memo(CanvasElementComponent, areCanvasElementPropsEqual);
 
 function getHandlePosition(dir: string, w: number, h: number, size: number): React.CSSProperties {
     const half = size / 2;

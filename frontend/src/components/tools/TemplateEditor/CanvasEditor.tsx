@@ -1,5 +1,18 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { CanvasDocument, TemplateElement, createElement, generateId, ElementType, ElementPreset, BlockPreset, PageSettings } from './canvasTypes';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import {
+  CanvasDocument,
+  TemplateElement,
+  VariableDefinition,
+  createElement,
+  generateId,
+  ElementType,
+  ElementPreset,
+  BlockPreset,
+  PageSettings,
+  normalizeVariableRegistry,
+  deriveVariableDefinitionsFromElements,
+} from './canvasTypes';
 import { PRESET_BLOCKS } from './utils/presetBlocks';
 import { SidebarRoot } from './sidebar/SidebarRoot';
 import { CanvasArea } from './canvas/CanvasArea';
@@ -77,6 +90,29 @@ function cloneElementWithFreshIds(source: TemplateElement): TemplateElement {
   return clone;
 }
 
+function getAvailableVariables(doc: CanvasDocument): VariableDefinition[] {
+  const registry = normalizeVariableRegistry(doc.variables);
+  if (registry.length > 0) return registry;
+  return deriveVariableDefinitionsFromElements(doc.elements);
+}
+
+function createAutoVariableDefinition(existing: VariableDefinition[]): VariableDefinition {
+  const existingKeys = new Set(existing.map((item) => item.key.toLocaleLowerCase('es')));
+  let index = 1;
+  let key = `variable_${index}`;
+
+  while (existingKeys.has(key.toLocaleLowerCase('es'))) {
+    index += 1;
+    key = `variable_${index}`;
+  }
+
+  return {
+    key,
+    label: `Variable ${index}`,
+    type: 'string',
+  };
+}
+
 interface CanvasEditorProps {
   document: CanvasDocument;
   pageSettings: PageSettings;
@@ -98,8 +134,11 @@ export default function CanvasEditor({
 }: CanvasEditorProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [zoom, setZoom] = useState(75);
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
+  const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   const [snapConfig, setSnapConfig] = useState<SnapConfig>(() => loadSnapConfig());
   const hasMigrated = useRef(false);
+  const variableRegistry = useMemo(() => normalizeVariableRegistry(doc.variables), [doc.variables]);
 
   useEffect(() => {
     try {
@@ -108,6 +147,20 @@ export default function CanvasEditor({
       // Persist failure should not block editing.
     }
   }, [snapConfig]);
+
+  useEffect(() => {
+    const notifyLayoutResize = () => {
+      window.dispatchEvent(new Event('resize'));
+    };
+
+    const frameId = window.requestAnimationFrame(notifyLayoutResize);
+    const timeoutId = window.setTimeout(notifyLayoutResize, 320);
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      window.clearTimeout(timeoutId);
+    };
+  }, [isLeftSidebarOpen, isRightSidebarOpen]);
 
   const handleSnapEnabledChange = useCallback((enabled: boolean) => {
     setSnapConfig(prev => ({ ...prev, enabled }));
@@ -120,6 +173,10 @@ export default function CanvasEditor({
   const handleShowGridChange = useCallback((showGrid: boolean) => {
     setSnapConfig(prev => ({ ...prev, showGrid }));
   }, []);
+
+  const handleUpdateVariables = useCallback((variables: VariableDefinition[]) => {
+    onChange({ ...doc, variables: normalizeVariableRegistry(variables) });
+  }, [doc, onChange]);
 
   // Migration — run once
   useEffect(() => {
@@ -158,6 +215,7 @@ export default function CanvasEditor({
       y: (pageSettings.height / 2) - 25,
     };
     const newEl = createElement(type, position, overrides);
+    let nextDoc = doc;
 
     if (presetId === 'photo-panel') {
       newEl.name = `Panel fotografico ${Math.floor(Math.random() * 1000)}`;
@@ -215,12 +273,35 @@ export default function CanvasEditor({
       newEl.qrConfig = { content: 'https://example.com', errorLevel: 'M', foreground: '#000', background: '#fff' };
     }
 
-    const maxZ = Math.max(0, ...doc.elements.map(e => e.style.zIndex || 0));
+    if (type === 'variable') {
+      const requestedKey = typeof overrides?.variableName === 'string'
+        ? overrides.variableName.trim()
+        : '';
+      const available = getAvailableVariables(nextDoc);
+      let resolvedKey = requestedKey || available[0]?.key || '';
+
+      if (!resolvedKey) {
+        const autoDef = createAutoVariableDefinition(variableRegistry);
+        resolvedKey = autoDef.key;
+        nextDoc = {
+          ...nextDoc,
+          variables: normalizeVariableRegistry([...variableRegistry, autoDef]),
+        };
+      }
+
+      newEl.variableName = resolvedKey;
+
+      if (!overrides?.content) {
+        newEl.content = `{{${resolvedKey}}}`;
+      }
+    }
+
+    const maxZ = Math.max(0, ...nextDoc.elements.map(e => e.style.zIndex || 0));
     newEl.style.zIndex = maxZ + 1;
 
-    onChange({ ...doc, elements: [...doc.elements, newEl] });
+    onChange({ ...nextDoc, elements: [...nextDoc.elements, newEl] });
     setSelectedIds([newEl.id]);
-  }, [doc, onChange, pageSettings.height, pageSettings.width]);
+  }, [doc, onChange, pageSettings.height, pageSettings.width, variableRegistry]);
 
   const handleAddBlock = useCallback((blockId: BlockPreset, dropPos?: { x: number; y: number }) => {
     const block = PRESET_BLOCKS.find((b) => b.id === blockId);
@@ -491,10 +572,14 @@ export default function CanvasEditor({
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      const editableContainer =
+        e.target instanceof HTMLElement
+          ? e.target.closest('[contenteditable="true"], [contenteditable="plaintext-only"]')
+          : null;
       const isTypingTarget =
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement ||
-        (e.target instanceof HTMLElement && e.target.isContentEditable);
+        (e.target instanceof HTMLElement && (e.target.isContentEditable || !!editableContainer));
       if (isTypingTarget) return;
 
       if (e.key === 'Escape') {
@@ -646,27 +731,57 @@ export default function CanvasEditor({
         onUngroup={handleUngroup}
       />
 
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden min-w-0">
         {/* Sidebar */}
-        <SidebarRoot
-          onAddElement={handleAddElement}
-          onAddBlock={handleAddBlock}
-          elements={doc.elements}
-          selectedIds={selectedIds}
-          onSelect={(id: string, multi: boolean) => {
-            if (multi) setSelectedIds(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
-            else setSelectedIds([id]);
-          }}
-          onToggleLock={handleToggleLock}
-          onToggleVisible={handleToggleVisible}
-          onReorder={handleReorder}
-          onLoadTemplate={onLoadTemplate}
-          currentDocName={doc.name}
-          isDirty={isDirty}
-        />
+        <div
+          className={`relative flex-none transition-all duration-300 ease-in-out ${isLeftSidebarOpen
+            ? 'max-w-[320px] opacity-100 overflow-visible'
+            : 'max-w-0 opacity-0 overflow-hidden pointer-events-none'
+            }`}
+          aria-hidden={!isLeftSidebarOpen}
+        >
+          <SidebarRoot
+            onAddElement={handleAddElement}
+            onAddBlock={handleAddBlock}
+            elements={doc.elements}
+            variables={variableRegistry}
+            onVariablesChange={handleUpdateVariables}
+            selectedIds={selectedIds}
+            onSelect={(id: string, multi: boolean) => {
+              if (multi) setSelectedIds(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
+              else setSelectedIds([id]);
+            }}
+            onToggleLock={handleToggleLock}
+            onToggleVisible={handleToggleVisible}
+            onReorder={handleReorder}
+            onLoadTemplate={onLoadTemplate}
+            currentDocName={doc.name}
+            isDirty={isDirty}
+          />
+        </div>
 
         {/* Canvas Area */}
         <div className="flex-1 relative flex flex-col min-w-0">
+          <button
+            type="button"
+            onClick={() => setIsLeftSidebarOpen((prev) => !prev)}
+            className="absolute left-3 top-3 z-20 h-8 w-8 rounded-md border border-neutral-200 bg-white/95 text-neutral-600 shadow-sm backdrop-blur hover:bg-white hover:text-violet-700 transition-colors flex items-center justify-center"
+            title={isLeftSidebarOpen ? 'Ocultar panel izquierdo' : 'Mostrar panel izquierdo'}
+            aria-label={isLeftSidebarOpen ? 'Ocultar panel izquierdo' : 'Mostrar panel izquierdo'}
+          >
+            {isLeftSidebarOpen ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsRightSidebarOpen((prev) => !prev)}
+            className="absolute right-3 top-3 z-20 h-8 w-8 rounded-md border border-neutral-200 bg-white/95 text-neutral-600 shadow-sm backdrop-blur hover:bg-white hover:text-violet-700 transition-colors flex items-center justify-center"
+            title={isRightSidebarOpen ? 'Ocultar inspector' : 'Mostrar inspector'}
+            aria-label={isRightSidebarOpen ? 'Ocultar inspector' : 'Mostrar inspector'}
+          >
+            {isRightSidebarOpen ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
+          </button>
+
           <CanvasArea
             document={doc}
             pageSettings={pageSettings}
@@ -698,13 +813,21 @@ export default function CanvasEditor({
         </div>
 
         {/* Inspector */}
-        <InspectorRoot
-          selectedIds={selectedIds}
-          elements={doc.elements}
-          onUpdateElement={handleUpdateElement}
-          pageSettings={pageSettings}
-          onPageSettingsChange={onPageSettingsChange}
-        />
+        <div
+          className={`relative flex-none transition-all duration-300 ease-in-out ${isRightSidebarOpen
+            ? 'w-[260px] opacity-100 overflow-visible'
+            : 'w-0 opacity-0 overflow-hidden pointer-events-none'
+            }`}
+          aria-hidden={!isRightSidebarOpen}
+        >
+          <InspectorRoot
+            selectedIds={selectedIds}
+            elements={doc.elements}
+            onUpdateElement={handleUpdateElement}
+            pageSettings={pageSettings}
+            onPageSettingsChange={onPageSettingsChange}
+          />
+        </div>
       </div>
     </div>
   );
