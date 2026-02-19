@@ -270,6 +270,16 @@ function makeFichaTecnica(): CanvasDocument {
         size: { width: W, height: 40 },
         style: { backgroundColor: '#ffffff', borderColor: '#cbd5e1', borderWidth: 1, fontSize: 8, zIndex: 7 },
         tableData: {
+          rowCount: 3,
+          colCount: 6,
+          borderColor: '#cbd5e1',
+          colWidths: [16.667, 16.667, 16.667, 16.667, 16.667, 16.665],
+          rowHeights: [33.333, 33.333, 33.334],
+          data: [
+            ['Campo', 'Valor', 'Campo', 'Valor', 'Campo', 'Valor'],
+            ['Codigo Infraestructura', "{{ report.data.get('codigo_infraestructura', '-') }}", 'Suministro', "{{ report.data.get('suministro', '-') }}", 'Contratista', "{{ report.data.get('contratista', '-') }}"],
+            ['CS', "{{ report.data.get('cs', '-') }}", 'Fecha corte', "{{ report.data.get('fecha_corte', '-') }}", '', ''],
+          ],
           headers: ['Campo', 'Valor', 'Campo', 'Valor', 'Campo', 'Valor'],
           rows: [
             ['Código Infraestructura', "{{ report.data.get('codigo_infraestructura', '-') }}", 'Suministro', "{{ report.data.get('suministro', '-') }}", 'Contratista', "{{ report.data.get('contratista', '-') }}"],
@@ -860,6 +870,667 @@ function makeVolanteo(): CanvasDocument {
   };
 }
 
+// --- Template 7: Informe de Limpieza Estandar (full page) --------------------
+
+function makeInformeLimpiezaEstandar(): CanvasDocument {
+  const W = PAGE.width - 20;
+  return {
+    id: uid('doc'),
+    name: 'Informe de Limpieza Estandar',
+    pageSettings: PAGE,
+    version: 1,
+    status: 'draft',
+    createdAt: now(),
+    updatedAt: now(),
+    elements: [
+      // Header
+      el({
+        type: 'logo',
+        name: 'Logo izquierdo',
+        position: { x: 10, y: 5 },
+        size: { width: 40, height: 18 },
+        style: { backgroundColor: '#f3f4f6', borderColor: '#d1d5db', borderWidth: 1, objectFit: 'contain', zIndex: 1 },
+        variableName: 'logo_left',
+      }),
+      el({
+        type: 'heading',
+        name: 'Titulo',
+        position: { x: 56, y: 8 },
+        size: { width: 98, height: 12 },
+        style: { fontSize: 12, fontWeight: 'bold', textAlign: 'center', color: '#115e59', textTransform: 'uppercase', zIndex: 2 },
+        content: 'INFORME DE LIMPIEZA ESTANDAR',
+      }),
+      el({
+        type: 'logo',
+        name: 'Logo derecho',
+        position: { x: 160, y: 5 },
+        size: { width: 40, height: 18 },
+        style: { backgroundColor: '#f3f4f6', borderColor: '#d1d5db', borderWidth: 1, objectFit: 'contain', zIndex: 1 },
+        variableName: 'logo_right',
+      }),
+      el({
+        type: 'divider',
+        name: 'Separador header',
+        position: { x: 10, y: 24 },
+        size: { width: W, height: 1 },
+        style: { zIndex: 3 },
+        dividerConfig: { orientation: 'horizontal', color: '#d1d5db', thickness: 1.4, style: 'solid' },
+      }),
+
+      // Info bar
+      el({
+        type: 'rectangle',
+        name: 'Fondo info',
+        position: { x: 10, y: 26 },
+        size: { width: W, height: 12 },
+        style: { backgroundColor: '#f0fdfa', borderColor: '#99f6e4', borderWidth: 1, borderStyle: 'solid', zIndex: 4 },
+      }),
+      el({
+        type: 'variable',
+        name: 'Cliente',
+        position: { x: 12, y: 28 },
+        size: { width: 58, height: 7 },
+        style: { fontSize: 8, color: '#134e4a', zIndex: 5 },
+        content: 'Cliente: ',
+        variableName: rvar('cliente'),
+      }),
+      el({
+        type: 'variable',
+        name: 'Ubicacion',
+        position: { x: 73, y: 28 },
+        size: { width: 60, height: 7 },
+        style: { fontSize: 8, color: '#134e4a', zIndex: 5 },
+        content: 'Ubicacion: ',
+        variableName: rvar('ubicacion'),
+      }),
+      el({
+        type: 'variable',
+        name: 'Fecha',
+        position: { x: 136, y: 28 },
+        size: { width: 64, height: 7 },
+        style: { fontSize: 8, color: '#134e4a', zIndex: 5 },
+        content: 'Fecha: ',
+        variableName: rvar('fecha'),
+      }),
+      el({
+        type: 'variable',
+        name: 'Orden servicio',
+        position: { x: 12, y: 32 },
+        size: { width: 58, height: 7 },
+        style: { fontSize: 8, color: '#134e4a', zIndex: 5 },
+        content: 'Orden: ',
+        variableName: rvar('orden_servicio'),
+      }),
+      el({
+        type: 'variable',
+        name: 'Inspector',
+        position: { x: 73, y: 32 },
+        size: { width: 127, height: 7 },
+        style: { fontSize: 8, color: '#134e4a', zIndex: 5 },
+        content: 'Inspector: ',
+        variableName: rvar('inspector'),
+      }),
+
+      // Section 1
+      el({
+        type: 'heading',
+        name: 'Seccion resumen',
+        position: { x: 10, y: 41 },
+        size: { width: W, height: 7 },
+        style: { fontSize: 8, fontWeight: 'bold', textTransform: 'uppercase', color: '#0f766e', borderBottomWidth: 1, borderColor: '#0f766e', borderStyle: 'solid', zIndex: 6 },
+        content: '1. RESUMEN DEL SERVICIO',
+      }),
+      el({
+        type: 'table',
+        name: 'Tabla resumen',
+        position: { x: 10, y: 49 },
+        size: { width: W, height: 42 },
+        style: { backgroundColor: '#ffffff', borderColor: '#cbd5e1', borderWidth: 1, fontSize: 8, zIndex: 7 },
+        tableData: {
+          rowCount: 4,
+          colCount: 4,
+          borderColor: '#cbd5e1',
+          colWidths: [25, 25, 25, 25],
+          rowHeights: [25, 25, 25, 25],
+          data: [
+            ['Campo', 'Valor', 'Campo', 'Valor'],
+            ['Tipo de servicio', "{{ report.data.get('tipo_servicio', '-') }}", 'Area intervenida', "{{ report.data.get('area_intervenida', '-') }}"],
+            ['Responsable', "{{ report.data.get('responsable', '-') }}", 'Turno', "{{ report.data.get('turno', '-') }}"],
+            ['Producto principal', "{{ report.data.get('producto_principal', '-') }}", 'Resultado', "{{ report.data.get('resultado', '-') }}"],
+          ],
+        },
+      }),
+
+      // Section 2
+      el({
+        type: 'heading',
+        name: 'Seccion checklist',
+        position: { x: 10, y: 94 },
+        size: { width: W, height: 7 },
+        style: { fontSize: 8, fontWeight: 'bold', textTransform: 'uppercase', color: '#0f766e', borderBottomWidth: 1, borderColor: '#0f766e', borderStyle: 'solid', zIndex: 8 },
+        content: '2. CHECKLIST DE LIMPIEZA',
+      }),
+      el({
+        type: 'table',
+        name: 'Tabla checklist',
+        position: { x: 10, y: 102 },
+        size: { width: W, height: 66 },
+        style: { backgroundColor: '#ffffff', borderColor: '#cbd5e1', borderWidth: 1, fontSize: 7.6, zIndex: 9 },
+        tableData: {
+          rowCount: 6,
+          colCount: 4,
+          borderColor: '#cbd5e1',
+          colWidths: [12, 48, 20, 20],
+          rowHeights: [16.667, 16.667, 16.667, 16.667, 16.666, 16.666],
+          data: [
+            ['#', 'Actividad', 'Estado', 'Observacion'],
+            ['1', 'Retiro de residuos visibles', 'OK', ''],
+            ['2', 'Desinfeccion de superficies', 'OK', ''],
+            ['3', 'Limpieza de puntos de contacto', 'OK', ''],
+            ['4', 'Control de olores', 'OK', ''],
+            ['5', 'Cierre y validacion', "{{ report.data.get('estado_validacion', '-') }}", "{{ report.data.get('observaciones', '-') }}"],
+          ],
+        },
+      }),
+
+      // Section 3
+      el({
+        type: 'heading',
+        name: 'Seccion evidencia',
+        position: { x: 10, y: 172 },
+        size: { width: W, height: 7 },
+        style: { fontSize: 8, fontWeight: 'bold', textTransform: 'uppercase', color: '#0f766e', borderBottomWidth: 1, borderColor: '#0f766e', borderStyle: 'solid', zIndex: 10 },
+        content: '3. EVIDENCIA FOTOGRAFICA',
+      }),
+      el({
+        type: 'photo-grid',
+        name: 'Fotos limpieza',
+        position: { x: 10, y: 180 },
+        size: { width: W, height: 78 },
+        style: { backgroundColor: '#f0fdfa', borderColor: '#14b8a6', borderWidth: 1.2, borderStyle: 'solid', borderRadius: 3, zIndex: 11 },
+        photoConfig: { count: 4, labels: ['ANTES', 'PROCESO', 'DESPUES', 'DETALLE'], showLabels: true },
+      }),
+
+      // Signatures
+      el({
+        type: 'signature',
+        name: 'Firma supervisor',
+        position: { x: 20, y: 264 },
+        size: { width: 55, height: 20 },
+        style: { borderTopWidth: 1, borderColor: '#0f172a', borderStyle: 'solid', textAlign: 'center', fontSize: 8, zIndex: 12 },
+        signatureConfig: [{ title: 'SUPERVISOR', name: '' }],
+      }),
+      el({
+        type: 'signature',
+        name: 'Firma cliente',
+        position: { x: 85, y: 264 },
+        size: { width: 55, height: 20 },
+        style: { borderTopWidth: 1, borderColor: '#0f172a', borderStyle: 'solid', textAlign: 'center', fontSize: 8, zIndex: 12 },
+        signatureConfig: [{ title: 'CLIENTE', name: '' }],
+      }),
+      el({
+        type: 'signature',
+        name: 'Firma contratista',
+        position: { x: 150, y: 264 },
+        size: { width: 50, height: 20 },
+        style: { borderTopWidth: 1, borderColor: '#0f172a', borderStyle: 'solid', textAlign: 'center', fontSize: 8, zIndex: 12 },
+        signatureConfig: [{ title: 'CONTRATISTA', name: '' }],
+      }),
+      el({
+        type: 'text',
+        name: 'Footer',
+        position: { x: 10, y: 289 },
+        size: { width: W, height: 5 },
+        style: { fontSize: 7, color: '#64748b', textAlign: 'center', borderTopWidth: 1, borderColor: '#cbd5e1', borderStyle: 'solid', zIndex: 13 },
+        content: 'Informe de limpieza estandar - Documento interno',
+      }),
+    ],
+  };
+}
+
+// --- Template 8: Acta de Conformidad (full page) ------------------------------
+
+function makeActaConformidad(): CanvasDocument {
+  const W = PAGE.width - 20;
+  return {
+    id: uid('doc'),
+    name: 'Acta de Conformidad',
+    pageSettings: { ...PAGE, backgroundColor: '#fffdf8' },
+    version: 1,
+    status: 'draft',
+    createdAt: now(),
+    updatedAt: now(),
+    elements: [
+      // Decorative frame
+      el({
+        type: 'rectangle',
+        name: 'Marco principal',
+        position: { x: 6, y: 6 },
+        size: { width: 198, height: 285 },
+        style: { backgroundColor: 'transparent', borderColor: '#a16207', borderWidth: 2, borderStyle: 'solid', zIndex: 1 },
+      }),
+
+      // Header
+      el({
+        type: 'logo',
+        name: 'Logo izquierda',
+        position: { x: 12, y: 11 },
+        size: { width: 35, height: 16 },
+        style: { backgroundColor: '#fffbeb', borderColor: '#fcd34d', borderWidth: 1, objectFit: 'contain', zIndex: 2 },
+        variableName: 'logo_left',
+      }),
+      el({
+        type: 'heading',
+        name: 'Titulo acta',
+        position: { x: 48, y: 14 },
+        size: { width: 114, height: 12 },
+        style: { fontSize: 14, fontWeight: 'bold', textAlign: 'center', color: '#7c2d12', textTransform: 'uppercase', zIndex: 3 },
+        content: 'ACTA DE CONFORMIDAD',
+      }),
+      el({
+        type: 'logo',
+        name: 'Logo derecha',
+        position: { x: 163, y: 11 },
+        size: { width: 35, height: 16 },
+        style: { backgroundColor: '#fffbeb', borderColor: '#fcd34d', borderWidth: 1, objectFit: 'contain', zIndex: 2 },
+        variableName: 'logo_right',
+      }),
+      el({
+        type: 'divider',
+        name: 'Separador cabecera',
+        position: { x: 10, y: 29 },
+        size: { width: W, height: 1 },
+        style: { zIndex: 4 },
+        dividerConfig: { orientation: 'horizontal', color: '#f59e0b', thickness: 1.4, style: 'solid' },
+      }),
+
+      // Detail box
+      el({
+        type: 'rectangle',
+        name: 'Fondo datos',
+        position: { x: 10, y: 33 },
+        size: { width: W, height: 26 },
+        style: { backgroundColor: '#fff7ed', borderColor: '#fdba74', borderWidth: 1, borderStyle: 'solid', zIndex: 5 },
+      }),
+      el({
+        type: 'variable',
+        name: 'Numero acta',
+        position: { x: 13, y: 36 },
+        size: { width: 85, height: 7 },
+        style: { fontSize: 8, color: '#7c2d12', zIndex: 6 },
+        content: 'No. Acta: ',
+        variableName: rvar('acta_numero'),
+      }),
+      el({
+        type: 'variable',
+        name: 'Fecha acta',
+        position: { x: 136, y: 36 },
+        size: { width: 64, height: 7 },
+        style: { fontSize: 8, color: '#7c2d12', zIndex: 6 },
+        content: 'Fecha: ',
+        variableName: rvar('fecha'),
+      }),
+      el({
+        type: 'variable',
+        name: 'Cliente',
+        position: { x: 13, y: 43 },
+        size: { width: 90, height: 7 },
+        style: { fontSize: 8, color: '#7c2d12', zIndex: 6 },
+        content: 'Cliente: ',
+        variableName: rvar('cliente'),
+      }),
+      el({
+        type: 'variable',
+        name: 'Proyecto',
+        position: { x: 106, y: 43 },
+        size: { width: 94, height: 7 },
+        style: { fontSize: 8, color: '#7c2d12', zIndex: 6 },
+        content: 'Proyecto: ',
+        variableName: rvar('proyecto'),
+      }),
+      el({
+        type: 'variable',
+        name: 'Ubicacion',
+        position: { x: 13, y: 50 },
+        size: { width: 187, height: 7 },
+        style: { fontSize: 8, color: '#7c2d12', zIndex: 6 },
+        content: 'Ubicacion: ',
+        variableName: rvar('ubicacion'),
+      }),
+
+      // Section 1
+      el({
+        type: 'heading',
+        name: 'Seccion detalle',
+        position: { x: 10, y: 63 },
+        size: { width: W, height: 7 },
+        style: { fontSize: 8, fontWeight: 'bold', textTransform: 'uppercase', color: '#9a3412', borderBottomWidth: 1, borderColor: '#9a3412', borderStyle: 'solid', zIndex: 7 },
+        content: '1. DETALLE DE CONFORMIDAD',
+      }),
+      el({
+        type: 'table',
+        name: 'Tabla conformidad',
+        position: { x: 10, y: 71 },
+        size: { width: W, height: 82 },
+        style: { backgroundColor: '#ffffff', borderColor: '#cbd5e1', borderWidth: 1, fontSize: 7.6, zIndex: 8 },
+        tableData: {
+          rowCount: 5,
+          colCount: 4,
+          borderColor: '#cbd5e1',
+          colWidths: [12, 46, 16, 26],
+          rowHeights: [20, 20, 20, 20, 20],
+          data: [
+            ['Item', 'Descripcion', 'Cumple', 'Observacion'],
+            ['1', 'Entrega de servicio segun alcance', 'SI', ''],
+            ['2', 'Calidad de ejecucion', "{{ report.data.get('calidad_ejecucion', '-') }}", ''],
+            ['3', 'Plazo de entrega', "{{ report.data.get('cumplimiento_plazo', '-') }}", ''],
+            ['4', 'Comentario final', "{{ report.data.get('estado_conformidad', '-') }}", "{{ report.data.get('observaciones', '-') }}"],
+          ],
+        },
+      }),
+
+      // Section 2
+      el({
+        type: 'heading',
+        name: 'Seccion declaracion',
+        position: { x: 10, y: 157 },
+        size: { width: W, height: 7 },
+        style: { fontSize: 8, fontWeight: 'bold', textTransform: 'uppercase', color: '#9a3412', borderBottomWidth: 1, borderColor: '#9a3412', borderStyle: 'solid', zIndex: 9 },
+        content: '2. DECLARACION',
+      }),
+      el({
+        type: 'rectangle',
+        name: 'Area declaracion',
+        position: { x: 10, y: 165 },
+        size: { width: W, height: 50 },
+        style: { backgroundColor: '#fffefb', borderColor: '#fed7aa', borderWidth: 1, borderStyle: 'dotted', zIndex: 10 },
+      }),
+      el({
+        type: 'text',
+        name: 'Texto declaracion',
+        position: { x: 14, y: 170 },
+        size: { width: W - 8, height: 16 },
+        style: { fontSize: 8, color: '#7c2d12', lineHeight: 1.6, zIndex: 11 },
+        content: 'Se deja constancia que el servicio ha sido recibido a satisfaccion y cumple los criterios definidos por las partes.',
+      }),
+      el({
+        type: 'variable',
+        name: 'Detalle conformidad',
+        position: { x: 14, y: 190 },
+        size: { width: W - 8, height: 8 },
+        style: { fontSize: 8, color: '#7c2d12', zIndex: 11 },
+        content: 'Detalle: ',
+        variableName: rvar('detalle_conformidad'),
+      }),
+      el({
+        type: 'variable',
+        name: 'Representante cliente',
+        position: { x: 14, y: 200 },
+        size: { width: W - 8, height: 8 },
+        style: { fontSize: 8, color: '#7c2d12', zIndex: 11 },
+        content: 'Representante cliente: ',
+        variableName: rvar('representante_cliente'),
+      }),
+
+      el({
+        type: 'divider',
+        name: 'Separador firmas',
+        position: { x: 10, y: 220 },
+        size: { width: W, height: 1 },
+        style: { zIndex: 12 },
+        dividerConfig: { orientation: 'horizontal', color: '#f59e0b', thickness: 1.2, style: 'solid' },
+      }),
+
+      // Signatures
+      el({
+        type: 'signature',
+        name: 'Firma cliente',
+        position: { x: 20, y: 237 },
+        size: { width: 55, height: 22 },
+        style: { borderTopWidth: 1, borderColor: '#7c2d12', borderStyle: 'solid', textAlign: 'center', fontSize: 8, zIndex: 13 },
+        signatureConfig: [{ title: 'CLIENTE', name: '' }],
+      }),
+      el({
+        type: 'signature',
+        name: 'Firma supervisor',
+        position: { x: 85, y: 237 },
+        size: { width: 55, height: 22 },
+        style: { borderTopWidth: 1, borderColor: '#7c2d12', borderStyle: 'solid', textAlign: 'center', fontSize: 8, zIndex: 13 },
+        signatureConfig: [{ title: 'SUPERVISOR', name: '' }],
+      }),
+      el({
+        type: 'signature',
+        name: 'Firma contratista',
+        position: { x: 150, y: 237 },
+        size: { width: 50, height: 22 },
+        style: { borderTopWidth: 1, borderColor: '#7c2d12', borderStyle: 'solid', textAlign: 'center', fontSize: 8, zIndex: 13 },
+        signatureConfig: [{ title: 'CONTRATISTA', name: '' }],
+      }),
+
+      // Footer
+      el({
+        type: 'text',
+        name: 'Footer acta',
+        position: { x: 10, y: 289 },
+        size: { width: W, height: 5 },
+        style: { fontSize: 7, color: '#78716c', textAlign: 'center', borderTopWidth: 1, borderColor: '#fdba74', borderStyle: 'solid', zIndex: 14 },
+        content: 'Acta de conformidad - Documento formal',
+      }),
+    ],
+  };
+}
+
+// --- Template 9: Hoja Membretada Base (full page) -----------------------------
+
+function makeHojaMembretadaBase(): CanvasDocument {
+  const W = PAGE.width - 20;
+  return {
+    id: uid('doc'),
+    name: 'Hoja Membretada Base',
+    pageSettings: PAGE,
+    version: 1,
+    status: 'draft',
+    createdAt: now(),
+    updatedAt: now(),
+    elements: [
+      // Header band
+      el({
+        type: 'rectangle',
+        name: 'Banda superior',
+        position: { x: 10, y: 6 },
+        size: { width: W, height: 26 },
+        style: { backgroundColor: '#e0f2fe', borderColor: '#7dd3fc', borderWidth: 1, borderStyle: 'solid', zIndex: 1 },
+      }),
+      el({
+        type: 'logo',
+        name: 'Logo izquierdo',
+        position: { x: 14, y: 9 },
+        size: { width: 34, height: 18 },
+        style: { backgroundColor: '#f8fafc', borderColor: '#cbd5e1', borderWidth: 1, objectFit: 'contain', zIndex: 2 },
+        variableName: 'logo_left',
+      }),
+      el({
+        type: 'heading',
+        name: 'Titulo membretado',
+        position: { x: 52, y: 11 },
+        size: { width: 106, height: 10 },
+        style: { fontSize: 12, fontWeight: 'bold', textAlign: 'center', color: '#0c4a6e', textTransform: 'uppercase', zIndex: 3 },
+        content: 'HOJA MEMBRETADA BASE',
+      }),
+      el({
+        type: 'text',
+        name: 'Subtitulo entidad',
+        position: { x: 52, y: 20 },
+        size: { width: 106, height: 7 },
+        style: { fontSize: 8, color: '#0369a1', textAlign: 'center', zIndex: 3 },
+        content: 'Area administrativa - Control documental',
+      }),
+      el({
+        type: 'logo',
+        name: 'Logo derecho',
+        position: { x: 162, y: 9 },
+        size: { width: 34, height: 18 },
+        style: { backgroundColor: '#f8fafc', borderColor: '#cbd5e1', borderWidth: 1, objectFit: 'contain', zIndex: 2 },
+        variableName: 'logo_right',
+      }),
+      el({
+        type: 'divider',
+        name: 'Separador header',
+        position: { x: 10, y: 34 },
+        size: { width: W, height: 1 },
+        style: { zIndex: 4 },
+        dividerConfig: { orientation: 'horizontal', color: '#0284c7', thickness: 1.4, style: 'solid' },
+      }),
+
+      // Metadata table
+      el({
+        type: 'table',
+        name: 'Tabla metadatos',
+        position: { x: 10, y: 38 },
+        size: { width: W, height: 24 },
+        style: { backgroundColor: '#ffffff', borderColor: '#cbd5e1', borderWidth: 1, fontSize: 8, zIndex: 5 },
+        tableData: {
+          rowCount: 2,
+          colCount: 4,
+          borderColor: '#cbd5e1',
+          colWidths: [28, 24, 24, 24],
+          rowHeights: [45, 55],
+          data: [
+            ['Cliente', 'Fecha', 'Codigo', 'Version'],
+            ["{{ report.data.get('cliente', '-') }}", "{{ report.data.get('fecha', '-') }}", "{{ report.data.get('codigo_documento', '-') }}", "{{ report.data.get('version_documento', '-') }}"],
+          ],
+        },
+      }),
+
+      // Body area
+      el({
+        type: 'heading',
+        name: 'Titulo cuerpo',
+        position: { x: 10, y: 67 },
+        size: { width: W, height: 7 },
+        style: { fontSize: 8, fontWeight: 'bold', textTransform: 'uppercase', color: '#0c4a6e', borderBottomWidth: 1, borderColor: '#0c4a6e', borderStyle: 'solid', zIndex: 6 },
+        content: 'CUERPO DEL DOCUMENTO',
+      }),
+      el({
+        type: 'rectangle',
+        name: 'Area de contenido',
+        position: { x: 10, y: 75 },
+        size: { width: W, height: 186 },
+        style: { backgroundColor: '#ffffff', borderColor: '#cbd5e1', borderWidth: 1, borderStyle: 'dotted', zIndex: 7 },
+      }),
+      el({
+        type: 'text',
+        name: 'Ayuda contenido',
+        position: { x: 13, y: 79 },
+        size: { width: W - 6, height: 10 },
+        style: { fontSize: 8, color: '#64748b', zIndex: 8 },
+        content: 'Escriba aqui el contenido principal del documento.',
+      }),
+
+      // Writing guide lines
+      el({
+        type: 'divider',
+        name: 'Linea guia 1',
+        position: { x: 13, y: 92 },
+        size: { width: W - 6, height: 1 },
+        style: { zIndex: 8 },
+        dividerConfig: { orientation: 'horizontal', color: '#cbd5e1', thickness: 0.8, style: 'dashed' },
+      }),
+      el({
+        type: 'divider',
+        name: 'Linea guia 2',
+        position: { x: 13, y: 107 },
+        size: { width: W - 6, height: 1 },
+        style: { zIndex: 8 },
+        dividerConfig: { orientation: 'horizontal', color: '#cbd5e1', thickness: 0.8, style: 'dashed' },
+      }),
+      el({
+        type: 'divider',
+        name: 'Linea guia 3',
+        position: { x: 13, y: 122 },
+        size: { width: W - 6, height: 1 },
+        style: { zIndex: 8 },
+        dividerConfig: { orientation: 'horizontal', color: '#cbd5e1', thickness: 0.8, style: 'dashed' },
+      }),
+      el({
+        type: 'divider',
+        name: 'Linea guia 4',
+        position: { x: 13, y: 137 },
+        size: { width: W - 6, height: 1 },
+        style: { zIndex: 8 },
+        dividerConfig: { orientation: 'horizontal', color: '#cbd5e1', thickness: 0.8, style: 'dashed' },
+      }),
+      el({
+        type: 'divider',
+        name: 'Linea guia 5',
+        position: { x: 13, y: 152 },
+        size: { width: W - 6, height: 1 },
+        style: { zIndex: 8 },
+        dividerConfig: { orientation: 'horizontal', color: '#cbd5e1', thickness: 0.8, style: 'dashed' },
+      }),
+      el({
+        type: 'divider',
+        name: 'Linea guia 6',
+        position: { x: 13, y: 167 },
+        size: { width: W - 6, height: 1 },
+        style: { zIndex: 8 },
+        dividerConfig: { orientation: 'horizontal', color: '#cbd5e1', thickness: 0.8, style: 'dashed' },
+      }),
+
+      // Approval section
+      el({
+        type: 'heading',
+        name: 'Seccion firmas',
+        position: { x: 10, y: 225 },
+        size: { width: W, height: 7 },
+        style: { fontSize: 8, fontWeight: 'bold', textTransform: 'uppercase', color: '#0c4a6e', borderBottomWidth: 1, borderColor: '#0c4a6e', borderStyle: 'solid', zIndex: 9 },
+        content: 'FIRMAS DE APROBACION',
+      }),
+      el({
+        type: 'signature',
+        name: 'Firma elaboro',
+        position: { x: 18, y: 242 },
+        size: { width: 52, height: 20 },
+        style: { borderTopWidth: 1, borderColor: '#0f172a', borderStyle: 'solid', textAlign: 'center', fontSize: 8, zIndex: 10 },
+        signatureConfig: [{ title: 'ELABORO', name: '' }],
+      }),
+      el({
+        type: 'signature',
+        name: 'Firma reviso',
+        position: { x: 79, y: 242 },
+        size: { width: 52, height: 20 },
+        style: { borderTopWidth: 1, borderColor: '#0f172a', borderStyle: 'solid', textAlign: 'center', fontSize: 8, zIndex: 10 },
+        signatureConfig: [{ title: 'REVISO', name: '' }],
+      }),
+      el({
+        type: 'signature',
+        name: 'Firma aprobo',
+        position: { x: 140, y: 242 },
+        size: { width: 52, height: 20 },
+        style: { borderTopWidth: 1, borderColor: '#0f172a', borderStyle: 'solid', textAlign: 'center', fontSize: 8, zIndex: 10 },
+        signatureConfig: [{ title: 'APROBO', name: '' }],
+      }),
+      el({
+        type: 'variable',
+        name: 'Contacto',
+        position: { x: 10, y: 282 },
+        size: { width: W, height: 7 },
+        style: { fontSize: 7.5, color: '#0369a1', textAlign: 'center', zIndex: 11 },
+        content: 'Contacto: ',
+        variableName: rvar('contacto_empresa'),
+      }),
+      el({
+        type: 'text',
+        name: 'Footer membretado',
+        position: { x: 10, y: 289 },
+        size: { width: W, height: 5 },
+        style: { fontSize: 7, color: '#64748b', textAlign: 'center', borderTopWidth: 1, borderColor: '#bae6fd', borderStyle: 'solid', zIndex: 12 },
+        content: 'Hoja membretada base - Uso interno',
+      }),
+    ],
+  };
+}
+
 // ─── Catalog ───────────────────────────────────────────────────────────────────
 
 export interface PresetTemplate {
@@ -908,6 +1579,33 @@ export const PRESET_TEMPLATES: PresetTemplate[] = [
     thumbnail: '#10b981',
     tags: ['volanteo', 'visita', 'tabla', 'fotos'],
     build: makeVolanteo,
+  },
+  {
+    id: 'informe-limpieza-estandar',
+    name: 'Informe de Limpieza Estandar',
+    description: 'Formato integral con resumen, checklist tabular, evidencia fotografica y firmas.',
+    category: 'reportes',
+    thumbnail: '#14b8a6',
+    tags: ['limpieza', 'checklist', 'tabla', 'nuevo'],
+    build: makeInformeLimpiezaEstandar,
+  },
+  {
+    id: 'acta-conformidad',
+    name: 'Acta de Conformidad',
+    description: 'Acta formal con marco, tabla de conformidad, declaracion y area de firmas.',
+    category: 'certificados',
+    thumbnail: '#f59e0b',
+    tags: ['acta', 'conformidad', 'tabla', 'nuevo'],
+    build: makeActaConformidad,
+  },
+  {
+    id: 'hoja-membretada-base',
+    name: 'Hoja Membretada Base',
+    description: 'Membrete corporativo con metadatos, lineas guia de contenido y firmas de aprobacion.',
+    category: 'basico',
+    thumbnail: '#0284c7',
+    tags: ['membretada', 'base', 'corporativo', 'nuevo'],
+    build: makeHojaMembretadaBase,
   },
   {
     id: 'certificado',

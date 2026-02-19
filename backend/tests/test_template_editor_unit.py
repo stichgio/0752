@@ -6,7 +6,7 @@ import pytest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 import template_editor.validators as validators_module
-from template_editor.compiler import _compile_photo_grid, compileTemplateJsonToJinja
+from template_editor.compiler import _compile_photo_grid, _compile_table, compileTemplateJsonToJinja
 from template_editor.models import EditorBlock, EditorSection, ProtectionRules, TemplateJson
 from template_editor.validators import sanitizeHtml, validateProtectedBlocks, validateVariables
 
@@ -105,6 +105,63 @@ def test_compile_photo_grid_respects_configured_count_with_labels():
     assert "DESPUES</div>" in html
     assert "photo-cell-center" in html
     assert "width: 48%;" in html
+
+
+def test_compile_table_uses_table_data_matrix_with_safe_bounds():
+    block = EditorBlock(
+        id="tbl-1",
+        type="table",
+        metadata={
+            "layout": {"x": 12, "y": 34, "width": 100, "height": 25},
+            "tableData": {
+                "rowCount": 2,
+                "colCount": 3,
+                "borderColor": "#9ca3af",
+                "colWidths": [30, 40, 30],
+                "rowHeights": [60, 40],
+                "data": [
+                    ["A1", "A2", "A3"],
+                    ["B1"],
+                ],
+            },
+        },
+    )
+
+    html = _compile_table(block)
+    assert 'class="element table"' in html
+    assert "left: 12.0mm" in html
+    assert "top: 34.0mm" in html
+    assert "A1" in html
+    assert "A2" in html
+    assert "A3" in html
+    assert "B1" in html
+    assert html.count("<td") == 6
+    assert "<colgroup>" in html
+    assert '<col style="width: 30.0000%;">' in html
+    assert '<col style="width: 40.0000%;">' in html
+    assert '<tr style="height: 60.0000%;">' in html
+
+
+def test_compile_table_keeps_legacy_headers_rows_shape():
+    block = EditorBlock(
+        id="tbl-legacy",
+        type="table",
+        metadata={
+            "headers": ["Campo", "Valor"],
+            "rows": [["NIS", "123"], ["Distrito", "ATE"]],
+            "borderColor": "#cbd5e1",
+            "headerBg": "#f5f5f5",
+        },
+    )
+
+    html = _compile_table(block)
+    assert "<thead" in html
+    assert "<th>Campo</th>" in html
+    assert "<th>Valor</th>" in html
+    assert "<td>NIS</td>" in html
+    assert "<td>123</td>" in html
+    assert "<td>Distrito</td>" in html
+    assert "<td>ATE</td>" in html
 
 
 def test_sanitize_html_fallback_removes_javascript_and_suspicious_data_urls(monkeypatch):

@@ -1,17 +1,88 @@
 import React, { useState, useCallback, useEffect, useRef } from 'react';
-import { CanvasDocument, TemplateElement, createElement, generateId, ElementType, ElementPreset, PageSettings } from './canvasTypes';
+import { CanvasDocument, TemplateElement, createElement, generateId, ElementType, ElementPreset, BlockPreset, PageSettings } from './canvasTypes';
+import { PRESET_BLOCKS } from './utils/presetBlocks';
 import { SidebarRoot } from './sidebar/SidebarRoot';
 import { CanvasArea } from './canvas/CanvasArea';
 import { InspectorRoot } from './inspector/InspectorRoot';
 import { StatusBar } from './toolbar/StatusBar';
 import { ContextToolbar } from './toolbar/ContextToolbar';
 import { migrateToCanvas } from './utils/elementDefaults';
+import type { CanvasChangeOptions } from './historyTypes';
+
+const CLIPBOARD_STORAGE_KEY = 'canvas_clipboard';
+const SNAP_CONFIG_STORAGE_KEY = 'canvas_snap_config';
+const SNAP_GRID_SIZE_OPTIONS = [1, 2, 5, 10] as const;
+type SnapGridSize = (typeof SNAP_GRID_SIZE_OPTIONS)[number];
+
+interface SnapConfig {
+  enabled: boolean;
+  gridSize: SnapGridSize;
+  showGrid: boolean;
+}
+
+const DEFAULT_SNAP_CONFIG: SnapConfig = {
+  enabled: true,
+  gridSize: 5,
+  showGrid: true,
+};
+
+function toSnapGridSize(value: unknown): SnapGridSize {
+  if (typeof value !== 'number') return DEFAULT_SNAP_CONFIG.gridSize;
+  if (SNAP_GRID_SIZE_OPTIONS.includes(value as SnapGridSize)) return value as SnapGridSize;
+  return DEFAULT_SNAP_CONFIG.gridSize;
+}
+
+function loadSnapConfig(): SnapConfig {
+  if (typeof window === 'undefined') return DEFAULT_SNAP_CONFIG;
+
+  try {
+    const raw = window.localStorage.getItem(SNAP_CONFIG_STORAGE_KEY);
+    if (!raw) return DEFAULT_SNAP_CONFIG;
+    const parsed = JSON.parse(raw) as Partial<SnapConfig>;
+
+    return {
+      enabled: typeof parsed.enabled === 'boolean' ? parsed.enabled : DEFAULT_SNAP_CONFIG.enabled,
+      gridSize: toSnapGridSize(parsed.gridSize),
+      showGrid: typeof parsed.showGrid === 'boolean' ? parsed.showGrid : DEFAULT_SNAP_CONFIG.showGrid,
+    };
+  } catch {
+    return DEFAULT_SNAP_CONFIG;
+  }
+}
+
+function cloneGroupChildrenWithFreshIds(children: TemplateElement[] | undefined): TemplateElement[] {
+  if (!Array.isArray(children) || children.length === 0) return [];
+
+  return children.map((child) => {
+    const clonedChild: TemplateElement = JSON.parse(JSON.stringify(child));
+    clonedChild.id = generateId();
+    if (clonedChild.type === 'group') {
+      clonedChild.children = [];
+      clonedChild.groupChildren = [];
+    }
+    return clonedChild;
+  });
+}
+
+function cloneElementWithFreshIds(source: TemplateElement): TemplateElement {
+  const clone: TemplateElement = JSON.parse(JSON.stringify(source));
+  clone.id = generateId();
+
+  if (clone.type === 'group') {
+    const freshGroupChildren = cloneGroupChildrenWithFreshIds(clone.groupChildren);
+    clone.groupChildren = freshGroupChildren;
+    clone.children = freshGroupChildren.map((child) => child.id);
+  }
+
+  return clone;
+}
 
 interface CanvasEditorProps {
   document: CanvasDocument;
   pageSettings: PageSettings;
-  onChange: (doc: CanvasDocument) => void;
+  onChange: (doc: CanvasDocument, options?: CanvasChangeOptions) => void;
   onPageSettingsChange: (settings: PageSettings) => void;
+  dataPreview?: Record<string, unknown>;
   isDirty?: boolean;
   onLoadTemplate?: (doc: CanvasDocument) => void;
 }
@@ -21,12 +92,34 @@ export default function CanvasEditor({
   pageSettings,
   onChange,
   onPageSettingsChange,
+  dataPreview,
   isDirty,
   onLoadTemplate,
 }: CanvasEditorProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [zoom, setZoom] = useState(75);
+  const [snapConfig, setSnapConfig] = useState<SnapConfig>(() => loadSnapConfig());
   const hasMigrated = useRef(false);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(SNAP_CONFIG_STORAGE_KEY, JSON.stringify(snapConfig));
+    } catch {
+      // Persist failure should not block editing.
+    }
+  }, [snapConfig]);
+
+  const handleSnapEnabledChange = useCallback((enabled: boolean) => {
+    setSnapConfig(prev => ({ ...prev, enabled }));
+  }, []);
+
+  const handleSnapGridSizeChange = useCallback((gridSize: number) => {
+    setSnapConfig(prev => ({ ...prev, gridSize: toSnapGridSize(gridSize) }));
+  }, []);
+
+  const handleShowGridChange = useCallback((showGrid: boolean) => {
+    setSnapConfig(prev => ({ ...prev, showGrid }));
+  }, []);
 
   // Migration — run once
   useEffect(() => {
@@ -54,12 +147,17 @@ export default function CanvasEditor({
     onChange({ ...doc, elements: newElements });
   }, [doc, onChange]);
 
-  const handleAddElement = useCallback((type: ElementType, pos?: { x: number; y: number }, presetId?: ElementPreset) => {
+  const handleAddElement = useCallback((
+    type: ElementType,
+    pos?: { x: number; y: number },
+    presetId?: ElementPreset,
+    overrides?: Partial<TemplateElement>,
+  ) => {
     const position = pos || {
       x: (pageSettings.width / 2) - 25,
       y: (pageSettings.height / 2) - 25,
     };
-    const newEl = createElement(type, position);
+    const newEl = createElement(type, position, overrides);
 
     if (presetId === 'photo-panel') {
       newEl.name = `Panel fotografico ${Math.floor(Math.random() * 1000)}`;
@@ -94,6 +192,8 @@ export default function CanvasEditor({
           ['FECHA', ''],
           ['OBSERVACION', ''],
         ],
+        colWidths: [50, 50],
+        rowHeights: [20, 20, 20, 20, 20],
       };
       newEl.style = {
         ...newEl.style,
@@ -122,6 +222,43 @@ export default function CanvasEditor({
     setSelectedIds([newEl.id]);
   }, [doc, onChange, pageSettings.height, pageSettings.width]);
 
+  const handleAddBlock = useCallback((blockId: BlockPreset, dropPos?: { x: number; y: number }) => {
+    const block = PRESET_BLOCKS.find((b) => b.id === blockId);
+    if (!block) return;
+
+    // Calculate base position: centered on page or at drop point
+    const basePos = dropPos || {
+      x: pageSettings.margins?.left ?? 10,
+      y: (pageSettings.height / 2) - 20,
+    };
+
+    const maxZ = Math.max(0, ...doc.elements.map((e) => e.style.zIndex || 0));
+    const newElements: TemplateElement[] = [];
+
+    block.elements.forEach((def, i) => {
+      const el = createElement(def.type, {
+        x: basePos.x + def.relativePosition.x,
+        y: basePos.y + def.relativePosition.y,
+      });
+
+      el.name = `${def.name} ${Math.floor(Math.random() * 1000)}`;
+      el.size = { ...def.size };
+      el.style = { ...def.style, zIndex: maxZ + 1 + i };
+      if (def.content !== undefined) el.content = def.content;
+      if (def.variableName !== undefined) el.variableName = def.variableName;
+      if (def.tableData) el.tableData = JSON.parse(JSON.stringify(def.tableData));
+      if (def.signatureConfig) el.signatureConfig = JSON.parse(JSON.stringify(def.signatureConfig));
+      if (def.dividerConfig) el.dividerConfig = JSON.parse(JSON.stringify(def.dividerConfig));
+      if (def.title !== undefined) el.title = def.title;
+      if (def.signatureName !== undefined) el.signatureName = def.signatureName;
+
+      newElements.push(el);
+    });
+
+    onChange({ ...doc, elements: [...doc.elements, ...newElements] });
+    setSelectedIds(newElements.map((e) => e.id));
+  }, [doc, onChange, pageSettings]);
+
   const handleDelete = useCallback(() => {
     if (!selectedIds.length) return;
     const newElements = doc.elements.filter(el => !selectedIds.includes(el.id));
@@ -135,8 +272,7 @@ export default function CanvasEditor({
     const newIds: string[] = [];
 
     doc.elements.filter(el => selectedIds.includes(el.id)).forEach(el => {
-      const clone: TemplateElement = JSON.parse(JSON.stringify(el));
-      clone.id = generateId();
+      const clone = cloneElementWithFreshIds(el);
       clone.name = `${el.name} (copia)`;
       clone.position = { x: el.position.x + 5, y: el.position.y + 5 };
       clone.style = {
@@ -149,6 +285,114 @@ export default function CanvasEditor({
 
     onChange({ ...doc, elements: newElements });
     setSelectedIds(newIds);
+  }, [doc, selectedIds, onChange]);
+
+  const handleGroup = useCallback(() => {
+    if (selectedIds.length < 2) return;
+
+    const selectedSet = new Set(selectedIds);
+    const selectedElements = doc.elements.filter((element) => selectedSet.has(element.id));
+
+    if (selectedElements.length < 2) return;
+    if (selectedElements.some((element) => element.type === 'group')) return;
+
+    const minX = Math.min(...selectedElements.map((element) => element.position.x));
+    const minY = Math.min(...selectedElements.map((element) => element.position.y));
+    const maxX = Math.max(...selectedElements.map((element) => element.position.x + element.size.width));
+    const maxY = Math.max(...selectedElements.map((element) => element.position.y + element.size.height));
+
+    const groupChildren = selectedElements.map((element) => {
+      const child: TemplateElement = JSON.parse(JSON.stringify(element));
+      child.position = {
+        x: element.position.x - minX,
+        y: element.position.y - minY,
+      };
+      return child;
+    });
+
+    const groupElement: TemplateElement = {
+      id: generateId(),
+      type: 'group',
+      name: `Grupo ${Math.floor(Math.random() * 1000)}`,
+      position: { x: minX, y: minY },
+      size: {
+        width: Math.max(1, maxX - minX),
+        height: Math.max(1, maxY - minY),
+      },
+      style: {
+        backgroundColor: 'transparent',
+        borderColor: '#60a5fa',
+        borderWidth: 1,
+        borderStyle: 'dashed',
+        zIndex: Math.max(0, ...selectedElements.map((element) => element.style.zIndex || 0)),
+      },
+      visible: true,
+      locked: false,
+      children: groupChildren.map((child) => child.id),
+      groupChildren,
+    };
+
+    const groupedElements: TemplateElement[] = [];
+    let insertedGroup = false;
+
+    doc.elements.forEach((element) => {
+      if (selectedSet.has(element.id)) {
+        if (!insertedGroup) {
+          groupedElements.push(groupElement);
+          insertedGroup = true;
+        }
+        return;
+      }
+
+      groupedElements.push(element);
+    });
+
+    if (!insertedGroup) groupedElements.push(groupElement);
+
+    onChange({ ...doc, elements: groupedElements });
+    setSelectedIds([groupElement.id]);
+  }, [doc, selectedIds, onChange]);
+
+  const handleUngroup = useCallback(() => {
+    if (selectedIds.length !== 1) return;
+
+    const selectedGroup = doc.elements.find((element) => element.id === selectedIds[0]);
+    if (!selectedGroup || selectedGroup.type !== 'group') return;
+
+    const sourceChildren = Array.isArray(selectedGroup.groupChildren) ? selectedGroup.groupChildren : [];
+    if (sourceChildren.length === 0) {
+      onChange({ ...doc, elements: doc.elements.filter((element) => element.id !== selectedGroup.id) });
+      setSelectedIds([]);
+      return;
+    }
+
+    const baseZ = selectedGroup.style.zIndex || 1;
+    const restoredChildren = [...sourceChildren]
+      .sort((a, b) => (a.style.zIndex || 0) - (b.style.zIndex || 0))
+      .map((child, index) => {
+        const restored: TemplateElement = JSON.parse(JSON.stringify(child));
+        restored.position = {
+          x: selectedGroup.position.x + child.position.x,
+          y: selectedGroup.position.y + child.position.y,
+        };
+        restored.style = {
+          ...restored.style,
+          zIndex: baseZ + index,
+        };
+        return restored;
+      });
+
+    const ungroupedElements: TemplateElement[] = [];
+    doc.elements.forEach((element) => {
+      if (element.id === selectedGroup.id) {
+        ungroupedElements.push(...restoredChildren);
+        return;
+      }
+      ungroupedElements.push(element);
+    });
+
+    onChange({ ...doc, elements: ungroupedElements });
+    setSelectedIds(restoredChildren.map((child) => child.id));
   }, [doc, selectedIds, onChange]);
 
   // Alignment
@@ -247,7 +491,11 @@ export default function CanvasEditor({
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      const isTypingTarget =
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        (e.target instanceof HTMLElement && e.target.isContentEditable);
+      if (isTypingTarget) return;
 
       if (e.key === 'Escape') {
         setSelectedIds([]);
@@ -262,6 +510,85 @@ export default function CanvasEditor({
       if ((e.ctrlKey || e.metaKey) && e.key === 'd') {
         e.preventDefault();
         handleDuplicate();
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'g') {
+        e.preventDefault();
+        if (e.shiftKey) {
+          handleUngroup();
+        } else {
+          handleGroup();
+        }
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
+        const selectedElements = doc.elements.filter(el => selectedIds.includes(el.id));
+        if (!selectedElements.length) return;
+
+        e.preventDefault();
+        const serialized = JSON.stringify(selectedElements);
+
+        try {
+          localStorage.setItem(CLIPBOARD_STORAGE_KEY, serialized);
+        } catch {
+          // Silent fallback: clipboard feature should never crash editor.
+        }
+
+        if (navigator.clipboard?.writeText) {
+          void navigator.clipboard.writeText(serialized).catch(() => {
+            // Silent fallback if browser blocks clipboard API.
+          });
+        }
+        return;
+      }
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
+        e.preventDefault();
+
+        let rawClipboard: string | null = null;
+        try {
+          rawClipboard = localStorage.getItem(CLIPBOARD_STORAGE_KEY);
+        } catch {
+          rawClipboard = null;
+        }
+        if (!rawClipboard) return;
+
+        let parsedClipboard: unknown;
+        try {
+          parsedClipboard = JSON.parse(rawClipboard);
+        } catch {
+          return;
+        }
+        if (!Array.isArray(parsedClipboard) || parsedClipboard.length === 0) return;
+
+        const maxZ = Math.max(0, ...doc.elements.map(el => el.style.zIndex || 0));
+        const pastedElements: TemplateElement[] = [];
+        const newIds: string[] = [];
+
+        parsedClipboard.forEach(item => {
+          if (!item || typeof item !== 'object') return;
+
+          const source = item as TemplateElement;
+          const clone = cloneElementWithFreshIds(source);
+          clone.position = {
+            x: (source.position?.x ?? 0) + 10,
+            y: (source.position?.y ?? 0) + 10,
+          };
+          clone.style = {
+            ...(source.style || {}),
+            zIndex: maxZ + 1,
+          };
+
+          pastedElements.push(clone);
+          newIds.push(clone.id);
+        });
+
+        if (!pastedElements.length) return;
+
+        onChange({ ...doc, elements: [...doc.elements, ...pastedElements] });
+        setSelectedIds(newIds);
         return;
       }
 
@@ -284,8 +611,22 @@ export default function CanvasEditor({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleDelete, handleDuplicate, doc.elements, selectedIds, handleUpdateElements]);
+  }, [handleDelete, handleDuplicate, handleGroup, handleUngroup, doc, doc.elements, selectedIds, handleUpdateElements, onChange]);
 
+  const selectedElements = doc.elements.filter((element) => selectedIds.includes(element.id));
+  const selectedElement = selectedElements.length === 1 ? selectedElements[0] : null;
+  const canGroup =
+    selectedElements.length >= 2 && selectedElements.every((element) => element.type !== 'group');
+  const canUngroup = selectedElement?.type === 'group';
+
+  const selectedElementMetrics = selectedElement
+    ? {
+      x: selectedElement.position.x,
+      y: selectedElement.position.y,
+      width: selectedElement.size.width,
+      height: selectedElement.size.height,
+    }
+    : null;
 
   return (
     <div className="flex flex-col h-full w-full bg-neutral-100 overflow-hidden relative">
@@ -299,12 +640,17 @@ export default function CanvasEditor({
         isLocked={doc.elements.find(e => selectedIds.includes(e.id))?.locked || false}
         onBringToFront={handleBringToFront}
         onSendToBack={handleSendToBack}
+        canGroup={canGroup}
+        canUngroup={canUngroup}
+        onGroup={handleGroup}
+        onUngroup={handleUngroup}
       />
 
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar */}
         <SidebarRoot
           onAddElement={handleAddElement}
+          onAddBlock={handleAddBlock}
           elements={doc.elements}
           selectedIds={selectedIds}
           onSelect={(id: string, multi: boolean) => {
@@ -328,14 +674,26 @@ export default function CanvasEditor({
             selectedIds={selectedIds}
             onSelect={setSelectedIds}
             onAddElement={handleAddElement}
+            onAddBlock={handleAddBlock}
             zoom={zoom}
             onZoomChange={setZoom}
+            snapEnabled={snapConfig.enabled}
+            gridSize={snapConfig.gridSize}
+            showGrid={snapConfig.showGrid}
+            dataPreview={dataPreview}
           />
 
           <StatusBar
             zoom={zoom}
             onZoomChange={setZoom}
             selectionCount={selectedIds.length}
+            selectedElementMetrics={selectedElementMetrics}
+            snapEnabled={snapConfig.enabled}
+            snapGridSize={snapConfig.gridSize}
+            showGrid={snapConfig.showGrid}
+            onSnapEnabledChange={handleSnapEnabledChange}
+            onSnapGridSizeChange={handleSnapGridSizeChange}
+            onShowGridChange={handleShowGridChange}
           />
         </div>
 

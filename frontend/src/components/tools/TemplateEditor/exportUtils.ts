@@ -39,10 +39,43 @@ function escapeHtmlPreserveJinja(text: string): string {
   );
 }
 
+function flattenElementsForExport(elements: TemplateElement[]): TemplateElement[] {
+  const flattened: TemplateElement[] = [];
+
+  elements.forEach((element) => {
+    if (element.visible === false) return;
+
+    if (element.type !== 'group') {
+      flattened.push(element);
+      return;
+    }
+
+    const groupChildren = (element.groupChildren || [])
+      .filter((child) => child.visible !== false && child.type !== 'group')
+      .sort((a, b) => (a.style.zIndex || 0) - (b.style.zIndex || 0));
+    const groupZ = element.style.zIndex || 1;
+
+    groupChildren.forEach((child, index) => {
+      const absoluteChild: TemplateElement = JSON.parse(JSON.stringify(child));
+      absoluteChild.position = {
+        x: element.position.x + child.position.x,
+        y: element.position.y + child.position.y,
+      };
+      absoluteChild.style = {
+        ...absoluteChild.style,
+        zIndex: (groupZ * 1000) + (child.style.zIndex || index + 1),
+      };
+      flattened.push(absoluteChild);
+    });
+  });
+
+  return flattened;
+}
+
 // ─── Jinja2 / HTML export ──────────────────────────────────────────────────────
 
 export function exportToJinja2(doc: CanvasDocument): string {
-  const elements = doc.elements.filter(el => el.visible !== false);
+  const elements = flattenElementsForExport(doc.elements);
   const pageSettings = normalizePageSettings(doc.pageSettings);
 
   // Sort by z-index
@@ -66,7 +99,9 @@ export function exportToJinja2(doc: CanvasDocument): string {
     body {
       margin: 0;
       padding: 0;
-      font-family: 'Segoe UI', Arial, sans-serif;
+      font-family: Arial, 'Segoe UI', Helvetica, sans-serif;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
 
     .template-container {
@@ -83,28 +118,34 @@ export function exportToJinja2(doc: CanvasDocument): string {
       overflow: hidden;
     }
 
-    .photo-grid {
-      display: grid;
-      gap: 2mm;
-      padding: 2mm;
+    /* WeasyPrint-compatible photo grid using table layout */
+    .photo-grid-table {
+      width: 100%;
+      height: 100%;
+      border-collapse: separate;
+      border-spacing: 2mm;
+      table-layout: fixed;
     }
 
-    .photo-item {
+    .photo-cell {
+      text-align: center;
+      vertical-align: middle;
       background: #f3f4f6;
       border: 1px solid #d1d5db;
       border-radius: 1.4mm;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
+      padding: 1mm;
     }
 
-    .photo-item img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      object-position: center;
+    .photo-cell img {
+      max-width: 100%;
+      max-height: 85%;
+      display: block;
+      margin: 0 auto;
+    }
+
+    .photo-cell-empty {
+      border: 1px solid transparent;
+      background: transparent;
     }
 
     .photo-label {
@@ -261,8 +302,13 @@ function generateElementStyle(el: TemplateElement): string {
     styles.push(`opacity: ${el.style.opacity}`);
   }
 
-  if (el.style.boxShadow) {
-    styles.push(`box-shadow: ${el.style.boxShadow}`);
+  // box-shadow is NOT supported by WeasyPrint — omit for PDF fidelity
+  // if (el.style.boxShadow) { styles.push(`box-shadow: ${el.style.boxShadow}`); }
+
+  // Rotation: WeasyPrint supports CSS transforms
+  if (el.rotation) {
+    styles.push(`transform: rotate(${el.rotation}deg)`);
+    styles.push(`transform-origin: center center`);
   }
 
   return styles.join('; ');
@@ -273,31 +319,84 @@ function generateElementStyle(el: TemplateElement): string {
  * be rendered purely via CSS (rectangle, container) — the caller skips
  * emitting a DOM node for those.
  */
-function getPhotoGridColumns(count: number): number {
-  if (count <= 1) return 1;
-  return 2;
-}
 
-function getOddPhotoItemInlineStyle(
-  index: number,
+/**
+ * Build a WeasyPrint-compatible photo grid using <table> layout instead
+ * of CSS Grid (which WeasyPrint does not fully support).
+ */
+function buildPhotoGridTable(
   count: number,
-  oddPosition: 'left' | 'center' | 'right'
+  oddPosition: 'left' | 'center' | 'right',
+  labels: string[],
+  showLabels: boolean,
 ): string {
-  if (count % 2 === 0 || index !== count - 1) return '';
+  // Organize photos into rows of 2
+  const rows: Array<{ type: 'pair'; slots: (number | null)[] } | { type: 'center'; slot: number }> = [];
 
-  if (oddPosition === 'right') {
-    return 'grid-column: 2 / span 1;';
+  for (let i = 0; i < count - 1; i += 2) {
+    rows.push({ type: 'pair', slots: [i, i + 1] });
   }
 
-  if (oddPosition === 'center') {
-    return 'grid-column: 1 / span 2; width: 50%; justify-self: center;';
+  // Handle odd last photo
+  if (count % 2 === 1) {
+    const lastSlot = count - 1;
+    if (oddPosition === 'center') {
+      rows.push({ type: 'center', slot: lastSlot });
+    } else if (oddPosition === 'right') {
+      rows.push({ type: 'pair', slots: [null, lastSlot] });
+    } else {
+      rows.push({ type: 'pair', slots: [lastSlot, null] });
+    }
   }
 
-  return 'grid-column: 1 / span 1;';
+  const rowHeight = rows.length > 0 ? `${Math.floor(100 / rows.length)}%` : '100%';
+
+  let html = '<table class="photo-grid-table"><tbody>';
+
+  for (const row of rows) {
+    html += `<tr style="height: ${rowHeight};">`;
+
+    if (row.type === 'center') {
+      const i = row.slot;
+      const label = labels[i] || `Foto ${i + 1}`;
+      const labelHtml = showLabels ? `<div class="photo-label">${escapeHtml(label)}</div>` : '';
+      html += `<td class="photo-cell-empty" style="width: 25%;"></td>`;
+      html += `<td class="photo-cell" colspan="1" style="width: 50%;">`;
+      html += `{% if report.images|length > ${i} %}`;
+      html += `<img src="{{ report.images[${i}].path }}" alt="{{ report.images[${i}].name | default('${escapeHtml(label)}') }}" />`;
+      html += `{% else %}<span style="color:#999;">Sin foto</span>{% endif %}`;
+      html += labelHtml;
+      html += `</td>`;
+      html += `<td class="photo-cell-empty" style="width: 25%;"></td>`;
+    } else {
+      for (const slotIndex of row.slots) {
+        if (slotIndex === null) {
+          html += `<td class="photo-cell-empty" style="width: 50%;"></td>`;
+        } else {
+          const label = labels[slotIndex] || `Foto ${slotIndex + 1}`;
+          const labelHtml = showLabels ? `<div class="photo-label">${escapeHtml(label)}</div>` : '';
+          html += `<td class="photo-cell" style="width: 50%;">`;
+          html += `{% if report.images|length > ${slotIndex} %}`;
+          html += `<img src="{{ report.images[${slotIndex}].path }}" alt="{{ report.images[${slotIndex}].name | default('${escapeHtml(label)}') }}" />`;
+          html += `{% else %}<span style="color:#999;">Sin foto</span>{% endif %}`;
+          html += labelHtml;
+          html += `</td>`;
+        }
+      }
+    }
+
+    html += '</tr>';
+  }
+
+  html += '</tbody></table>';
+  return html;
 }
 
 function generateElementContent(el: TemplateElement): string | null {
   switch (el.type) {
+    case 'group':
+      return null;
+
     case 'text':
     case 'heading':
       return escapeHtml(el.content || '');
@@ -325,37 +424,15 @@ function generateElementContent(el: TemplateElement): string | null {
 
     case 'photo-grid': {
       const count = el.photoConfig?.count || 2;
-      const cols = getPhotoGridColumns(count);
       const oddPosition = el.photoConfig?.oddPosition || 'center';
+      const showLabels = el.photoConfig?.showLabels || false;
+      const labels = el.photoConfig?.labels || [];
       let gridHtml = '';
       if (el.content) {
         gridHtml += `<div style="font-weight: bold; font-size: 7.5pt; margin-bottom: 1mm; text-transform: uppercase;">${escapeHtml(el.content)}</div>`;
       }
-      gridHtml += `<div class="photo-grid" style="grid-template-columns: repeat(${cols}, 1fr); height: ${el.content ? 'calc(100% - 6mm)' : '100%'};">`;
-
-      for (let i = 0; i < count; i++) {
-        const label = el.photoConfig?.labels?.[i] || `Foto ${i + 1}`;
-        const oddItemStyle = getOddPhotoItemInlineStyle(i, count, oddPosition);
-        const oddStyleAttr = oddItemStyle ? ` style="${oddItemStyle}"` : '';
-        // Use report.images[i].path — compatible with the backend report context
-        // Wrap in {% if %} guard so partial image lists don't error
-        gridHtml += `{% if report.images|length > ${i} %}`;
-        gridHtml += `<div class="photo-item"${oddStyleAttr}>`;
-        gridHtml += `<img src="{{ report.images[${i}].path }}" alt="{{ report.images[${i}].name | default('${escapeHtml(label)}') }}" />`;
-        if (el.photoConfig?.showLabels) {
-          gridHtml += `<div class="photo-label">${escapeHtml(label)}</div>`;
-        }
-        gridHtml += `</div>`;
-        gridHtml += `{% else %}`;
-        const emptyStyle = `background: #f0f0f0;${oddItemStyle ? ` ${oddItemStyle}` : ''}`;
-        gridHtml += `<div class="photo-item" style="${emptyStyle}"><span style="color:#999;">Sin foto</span>`;
-        if (el.photoConfig?.showLabels) {
-          gridHtml += `<div class="photo-label">${escapeHtml(label)}</div>`;
-        }
-        gridHtml += `</div>{% endif %}\n`;
-      }
-
-      gridHtml += '</div>';
+      // Use table-based layout for WeasyPrint compatibility (CSS Grid not supported)
+      gridHtml += buildPhotoGridTable(count, oddPosition, labels, showLabels);
       return gridHtml;
     }
 
@@ -364,10 +441,17 @@ function generateElementContent(el: TemplateElement): string | null {
       const table = normalizeTableData(el);
 
       let tableHtml = '<table style="width: 100%; height: 100%; border-collapse: collapse; table-layout: fixed;">';
-      tableHtml += '<tbody>';
-      for (const row of table.data) {
-        tableHtml += '<tr>';
-        for (const cell of row) {
+      tableHtml += '<colgroup>';
+      for (const width of table.colWidths) {
+        tableHtml += `<col style="width: ${width}%;">`;
+      }
+      tableHtml += '</colgroup><tbody>';
+      for (let rowIndex = 0; rowIndex < table.rowCount; rowIndex++) {
+        const row = table.data[rowIndex] || [];
+        const rowHeight = table.rowHeights[rowIndex] ?? 0;
+        tableHtml += `<tr style="height: ${rowHeight}%;">`;
+        for (let colIndex = 0; colIndex < table.colCount; colIndex++) {
+          const cell = row[colIndex] || '';
           // Use smart escape to preserve {{ jinja }} expressions in cells
           tableHtml += `<td style="border: 1px solid ${table.borderColor}; padding: 1.5mm 2mm;">${escapeHtmlPreserveJinja(cell)}</td>`;
         }

@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { TemplateElement } from '../canvasTypes';
-import { Eye, EyeOff, Lock, Unlock, GripVertical, Layers } from 'lucide-react';
+import { Eye, EyeOff, Lock, Unlock, GripVertical, Layers, ChevronRight, ChevronDown } from 'lucide-react';
 import {
     Type, Heading, Image, Square, Circle, Minus,
     Table, PenTool, Braces, LayoutGrid, Box, SeparatorHorizontal, QrCode,
@@ -22,6 +22,7 @@ const TYPE_ICONS: Record<string, React.ReactNode> = {
     'photo-grid': <LayoutGrid size={12} />,
     signature: <PenTool size={12} />,
     container: <Box size={12} />,
+    group: <Box size={12} />,
 };
 
 interface LayersPanelProps {
@@ -39,7 +40,11 @@ export function LayersPanel({
     onSelect,
     onToggleLock,
     onToggleVisible,
+    onReorder,
 }: LayersPanelProps) {
+    void onReorder;
+    const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+
     const sortedElements = useMemo(() => {
         return [...elements].sort((a, b) => (b.style.zIndex || 0) - (a.style.zIndex || 0));
     }, [elements]);
@@ -51,59 +56,101 @@ export function LayersPanel({
                     <Layers size={18} className="text-neutral-300" />
                 </div>
                 <p className="text-sm text-neutral-400">No hay capas</p>
-                <p className="text-xs text-neutral-300 mt-0.5">Añade elementos desde la paleta</p>
+                <p className="text-xs text-neutral-300 mt-0.5">AÃ±ade elementos desde la paleta</p>
             </div>
         );
     }
 
     return (
         <div className="flex flex-col p-1.5 space-y-0.5">
-            {sortedElements.map((el, index) => {
+            {sortedElements.map((el) => {
                 const isSelected = selectedIds.includes(el.id);
                 const isHidden = el.visible === false;
                 const isLocked = !!el.locked;
+                const isGroup = el.type === 'group';
+                const isCollapsed = collapsedGroups[el.id] ?? false;
+                const groupChildren = isGroup
+                    ? [...(el.groupChildren || [])].sort((a, b) => (b.style.zIndex || 0) - (a.style.zIndex || 0))
+                    : [];
 
                 return (
-                    <div
-                        key={el.id}
-                        className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs cursor-pointer transition-all ${isSelected
+                    <div key={el.id} className="space-y-0.5">
+                        <div
+                            className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs cursor-pointer transition-all ${isSelected
                                 ? 'bg-violet-50 ring-1 ring-violet-200 text-violet-800'
                                 : 'hover:bg-neutral-50 text-neutral-600'
-                            } ${isHidden ? 'opacity-40' : ''}`}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onSelect(el.id, e.shiftKey || e.ctrlKey);
-                        }}
-                    >
-                        <GripVertical size={12} className="text-neutral-300 cursor-grab flex-shrink-0" />
+                                } ${isHidden ? 'opacity-40' : ''}`}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onSelect(el.id, e.shiftKey || e.ctrlKey);
+                            }}
+                        >
+                            <GripVertical size={12} className="text-neutral-300 cursor-grab flex-shrink-0" />
 
-                        <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${isSelected ? 'bg-violet-100 text-violet-600' : 'bg-neutral-100 text-neutral-400'
-                            }`}>
-                            {TYPE_ICONS[el.type] || <Box size={12} />}
+                            {isGroup ? (
+                                <button
+                                    className="p-0.5 rounded text-neutral-400 hover:text-neutral-700"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setCollapsedGroups((prev) => ({ ...prev, [el.id]: !isCollapsed }));
+                                    }}
+                                    title={isCollapsed ? 'Expandir grupo' : 'Colapsar grupo'}
+                                >
+                                    {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
+                                </button>
+                            ) : (
+                                <div className="w-3.5" />
+                            )}
+
+                            <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${isSelected ? 'bg-violet-100 text-violet-600' : 'bg-neutral-100 text-neutral-400'
+                                }`}>
+                                {TYPE_ICONS[el.type] || <Box size={12} />}
+                            </div>
+
+                            <div className="flex-1 min-w-0">
+                                <div className="truncate font-medium text-[11px] leading-tight">{el.name || el.type}</div>
+                                <div className="text-[9px] text-neutral-400 leading-tight">
+                                    z: {el.style.zIndex || 0}
+                                    {isGroup ? ` · ${groupChildren.length} hijos` : ''}
+                                </div>
+                            </div>
+
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onToggleVisible(el.id); }}
+                                className={`p-0.5 rounded transition-colors flex-shrink-0 ${isHidden ? 'text-red-400 hover:text-red-600' : 'text-neutral-300 hover:text-neutral-600'
+                                    }`}
+                                title={isHidden ? 'Mostrar' : 'Ocultar'}
+                            >
+                                {isHidden ? <EyeOff size={12} /> : <Eye size={12} />}
+                            </button>
+
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onToggleLock(el.id); }}
+                                className={`p-0.5 rounded transition-colors flex-shrink-0 ${isLocked ? 'text-amber-500 hover:text-amber-600' : 'text-neutral-300 hover:text-neutral-600'
+                                    }`}
+                                title={isLocked ? 'Desbloquear' : 'Bloquear'}
+                            >
+                                {isLocked ? <Lock size={12} /> : <Unlock size={12} />}
+                            </button>
                         </div>
 
-                        <div className="flex-1 min-w-0">
-                            <div className="truncate font-medium text-[11px] leading-tight">{el.name || el.type}</div>
-                            <div className="text-[9px] text-neutral-400 leading-tight">z: {el.style.zIndex || 0}</div>
-                        </div>
-
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onToggleVisible(el.id); }}
-                            className={`p-0.5 rounded transition-colors flex-shrink-0 ${isHidden ? 'text-red-400 hover:text-red-600' : 'text-neutral-300 hover:text-neutral-600'
-                                }`}
-                            title={isHidden ? 'Mostrar' : 'Ocultar'}
-                        >
-                            {isHidden ? <EyeOff size={12} /> : <Eye size={12} />}
-                        </button>
-
-                        <button
-                            onClick={(e) => { e.stopPropagation(); onToggleLock(el.id); }}
-                            className={`p-0.5 rounded transition-colors flex-shrink-0 ${isLocked ? 'text-amber-500 hover:text-amber-600' : 'text-neutral-300 hover:text-neutral-600'
-                                }`}
-                            title={isLocked ? 'Desbloquear' : 'Bloquear'}
-                        >
-                            {isLocked ? <Lock size={12} /> : <Unlock size={12} />}
-                        </button>
+                        {isGroup && !isCollapsed && groupChildren.map((child) => {
+                            const isChildHidden = child.visible === false;
+                            return (
+                                <div
+                                    key={`${el.id}:${child.id}`}
+                                    className={`ml-8 mr-1 flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] border border-dashed border-neutral-200 bg-neutral-50/70 text-neutral-500 ${isChildHidden ? 'opacity-40' : ''
+                                        }`}
+                                    title="Elemento hijo (se edita seleccionando el grupo)"
+                                >
+                                    <div className="w-4 h-4 rounded flex items-center justify-center bg-white text-neutral-400 border border-neutral-200">
+                                        {TYPE_ICONS[child.type] || <Box size={10} />}
+                                    </div>
+                                    <div className="truncate flex-1">{child.name || child.type}</div>
+                                    <span className="text-[9px] text-neutral-400">z: {child.style.zIndex || 0}</span>
+                                </div>
+                            );
+                        })}
                     </div>
                 );
             })}

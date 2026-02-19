@@ -101,21 +101,6 @@ export function InspectorRoot({
             {/* Style */}
             <StylePanel element={primaryElement} onUpdate={onUpdateElement} />
 
-            {/* Content editing for text */}
-            {(primaryElement.type === 'text' || primaryElement.type === 'heading') && (
-                <div className="px-3 py-3 border-b border-neutral-100">
-                    <label className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 block mb-1.5">
-                        Contenido
-                    </label>
-                    <textarea
-                        value={primaryElement.content || ''}
-                        onChange={(e) => onUpdateElement(primaryElement.id, { content: e.target.value })}
-                        className="w-full h-20 px-2 py-1.5 text-sm border border-neutral-200 rounded-md resize-none focus:outline-none focus:ring-1 focus:ring-violet-400 focus:border-violet-400"
-                        placeholder="Escribe aqui..."
-                    />
-                </div>
-            )}
-
             {/* Variable - Jinja2 expression with backend presets */}
             {primaryElement.type === 'variable' && (
                 <div className="px-3 py-3 border-b border-neutral-100 space-y-2">

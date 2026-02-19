@@ -1,14 +1,22 @@
 import React, { useEffect, useState } from 'react';
-import { Layers, Grid, LayoutTemplate, Settings2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Layers, Grid, LayoutTemplate, Settings2, ChevronLeft, ChevronRight, Braces } from 'lucide-react';
 import { ElementsPalette } from './ElementsPalette';
 import { LayersPanel } from './LayersPanel';
 import { TemplatesPanel } from './TemplatesPanel';
-import { ElementType, ElementPreset } from '../canvasTypes';
+import { VariablesPanel } from './VariablesPanel';
+import { ElementType, ElementPreset, BlockPreset } from '../canvasTypes';
+import type { TemplateElement } from '../canvasTypes';
 import type { CanvasDocument } from '../canvasTypes';
 
 interface SidebarRootProps {
-    onAddElement: (type: ElementType, pos?: { x: number; y: number }, presetId?: ElementPreset) => void;
-    elements: any[];
+    onAddElement: (
+        type: ElementType,
+        pos?: { x: number; y: number },
+        presetId?: ElementPreset,
+        overrides?: Partial<TemplateElement>,
+    ) => void;
+    onAddBlock?: (blockId: BlockPreset, pos?: { x: number; y: number }) => void;
+    elements: TemplateElement[];
     selectedIds: string[];
     onSelect: (id: string, multi: boolean) => void;
     onToggleLock: (id: string) => void;
@@ -19,10 +27,11 @@ interface SidebarRootProps {
     isDirty?: boolean;
 }
 
-type TabId = 'elements' | 'layers' | 'templates' | 'settings';
+type TabId = 'elements' | 'variables' | 'layers' | 'templates' | 'settings';
 
 const TABS: { id: TabId; icon: React.ReactNode; label: string }[] = [
     { id: 'elements', icon: <Grid size={18} />, label: 'Elementos' },
+    { id: 'variables', icon: <Braces size={18} />, label: 'Variables' },
     { id: 'layers', icon: <Layers size={18} />, label: 'Capas' },
     { id: 'templates', icon: <LayoutTemplate size={18} />, label: 'Plantillas' },
     { id: 'settings', icon: <Settings2 size={18} />, label: 'Ajustes' },
@@ -90,7 +99,13 @@ export function SidebarRoot(props: SidebarRootProps) {
 
                     <div className="flex-1 overflow-y-auto min-h-0">
                         {activeTab === 'elements' && (
-                            <ElementsPalette onAddElement={(type, presetId) => props.onAddElement(type, undefined, presetId)} />
+                            <ElementsPalette
+                                onAddElement={(type, presetId) => props.onAddElement(type, undefined, presetId)}
+                                onAddBlock={props.onAddBlock ? (blockId) => props.onAddBlock!(blockId) : undefined}
+                            />
+                        )}
+                        {activeTab === 'variables' && (
+                            <VariablesPanel onAddElement={props.onAddElement} />
                         )}
                         {activeTab === 'layers' && (
                             <LayersPanel
