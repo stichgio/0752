@@ -1410,14 +1410,29 @@ def _canvas_element_content(block: EditorBlock) -> Optional[str]:
 
     if t == "logo":
         image_url = _get_meta(block, "imageUrl", "")
-        variable_name = _get_meta(block, "variableName", "logo_left")
+        variable_name = _get_meta(block, "variableName", "")
         layout_meta = meta.get("layout") or {}
         w = _to_float(layout_meta.get("width"), 0)
         h = _to_float(layout_meta.get("height"), 0)
+        x = _to_float(layout_meta.get("x"), 0)
+        
+        # Si no hay variable explícita, inferir por x
+        if not variable_name or variable_name == "logo_left":
+            if x > 105:
+                variable_name = "logo_right"
+            else:
+                variable_name = "logo_left"
+                
         img_css = _image_css("contain", w, h)
         if image_url:
             safe_url = url_to_base64(image_url)
-            return f'<img src="{_escape_html(safe_url)}" style="{img_css}" />'
+            return (
+                f'{{% if {variable_name} %}}'
+                f'<img src="{{{{ {variable_name} }}}}" style="{img_css}" />'
+                f'{{% else %}}'
+                f'<img src="{_escape_html(safe_url)}" style="{img_css}" />'
+                f'{{% endif %}}'
+            )
         return (
             f'{{% if {variable_name} %}}'
             f'<img src="{{{{ {variable_name} }}}}" style="{img_css}" />'
@@ -1639,36 +1654,7 @@ def compile_canvas_to_html(canvas_doc: dict, variables: Optional[dict] = None) -
     # VALIDACIONES 2) Loguear dimensiones de página para debug:
     print(f"[compiler] Page: {page_width}mm x {page_height}mm, Elements: {len(elements)}")
 
-    def resolve_logo_src(element: dict, variables: dict) -> str:
-        # Intentar primero el imageUrl guardado en el elemento del canvas
-        src = element.get('imageUrl', '')
-        
-        # Detectar si es logo izquierdo o derecho
-        elem_id = (element.get('id', '') + element.get('variableName', '')).lower()
-        
-        if 'right' in elem_id or 'der' in elem_id:
-            # Logo derecho: buscar en variables en orden de prioridad
-            src = (variables.get('logo_right') or
-                   variables.get('logoRight') or
-                   variables.get('logo_der') or
-                   src or '')
-        elif 'left' in elem_id or 'izq' in elem_id:
-            # Logo izquierdo
-            src = (variables.get('logo_left') or
-                   variables.get('logoLeft') or
-                   variables.get('logo_izq') or
-                   src or '')
-        
-        # Si src es URL externa o ruta relativa → convertir a base64
-        if src and not src.startswith('data:'):
-            try:
-                from .utils import url_to_base64
-                src = url_to_base64(src)
-            except Exception as e:
-                print(f"[compiler] Warning: no se pudo convertir logo a base64: {e}")
-                src = ''
 
-        return src
 
     elementos_html = []
     
@@ -1836,11 +1822,42 @@ def compile_canvas_to_html(canvas_doc: dict, variables: Optional[dict] = None) -
         # ------------- LOGO HANDLER -------------
         elif t == "logo":
             el_for_logo = {**el, **({"imageUrl": el.get("imageUrl", meta.get("imageUrl", ""))})}
-            el_for_logo["id"] = el.get("id", meta.get("id", ""))
-            el_for_logo["variableName"] = el.get("variableName", meta.get("variableName", ""))
-            src = resolve_logo_src(el_for_logo, variables)
+            var_name = el_for_logo.get("variableName", meta.get("variableName", ""))
+            
+            # Use X position to infer right or left if not specified
+            if not var_name or var_name == "logo_left":
+                if x > 105:
+                    var_name = "logo_right"
+                else:
+                    var_name = "logo_left"
+                    
             img_style_logo = f"display: block; width: 100%; height: 100%; max-width: {w}mm; max-height: {h}mm; object-fit: contain;"
-            content_html = f'<img src="{src}" style="{img_style_logo}">' if src else ''
+            
+            safe_img = el_for_logo.get("imageUrl", "")
+            if safe_img and not safe_img.startswith('data:'):
+                try:
+                    from .utils import url_to_base64
+                    safe_img = url_to_base64(safe_img)
+                except Exception:
+                    pass
+
+            if variables:
+                # If variables are provided, we are generating final PDF output. Use the variable!
+                src = variables.get(var_name, safe_img or "")
+                # If variables were provided but the logo var is empty, it falls back to safe_img
+                if src and not src.startswith('data:'):
+                    try:
+                        from .utils import url_to_base64
+                        src = url_to_base64(src)
+                    except Exception:
+                        pass
+                content_html = f'<img src="{src}" style="{img_style_logo}">' if src else ''
+            else:
+                # We are generating PREVIEW HTML to be processed by Jinja in `render_template_endpoint`
+                if safe_img:
+                    content_html = f'{{% if {var_name} %}}<img src="{{{{ {var_name} }}}}" style="{img_style_logo}">{{% else %}}<img src="{safe_img}" style="{img_style_logo}">{{% endif %}}'
+                else:
+                    content_html = f'{{% if {var_name} %}}<img src="{{{{ {var_name} }}}}" style="{img_style_logo}">{{% endif %}}'
             
         # ------------- TEXT HANDLER -------------
         elif t in ("text", "heading"):
