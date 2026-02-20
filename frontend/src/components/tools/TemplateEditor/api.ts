@@ -253,10 +253,16 @@ export const templateEditorApi = {
     body: JSON.stringify({ status: 'draft', author }),
   }),
 
-  preview: async (id: string, sampleData: Record<string, unknown> = {}) => requestJson('/template-editor/templates/' + encodeURIComponent(id) + '/preview', {
+  preview: async (id: string, sampleData: Record<string, unknown> = {}, logos?: { logo_left?: string; logo_right?: string }) => requestJson('/template-editor/templates/' + encodeURIComponent(id) + '/preview', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sampleData }),
+    body: JSON.stringify({ sampleData, logo_left: logos?.logo_left || null, logo_right: logos?.logo_right || null }),
+  }),
+
+  render: async (id: string, sampleData: Record<string, unknown> = {}, logos?: { logo_left?: string; logo_right?: string }) => requestJson<{ templateId: string; previewHtml: string }>('/template-editor/templates/' + encodeURIComponent(id) + '/render', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sampleData, logo_left: logos?.logo_left || null, logo_right: logos?.logo_right || null }),
   }),
 
   delete: async (id: string, author = 'editor') => requestJson('/template-editor/templates/' + encodeURIComponent(id) + '?author=' + encodeURIComponent(author), {

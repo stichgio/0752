@@ -115,11 +115,64 @@ async def validate_template_endpoint(template_id: str, payload: ValidateTemplate
 
 
 def _render_preview_html(compiled_html: str, sample_data: Dict[str, Any]) -> str:
+    """Regex-only fallback for simple {{ var }} substitution."""
     rendered = compiled_html
     for key, value in sample_data.items():
         pattern = re.compile(r"{{\s*" + re.escape(str(key)) + r"(?:\|[a-zA-Z_][a-zA-Z0-9_]*)?\s*}}")
         rendered = pattern.sub(str(value), rendered)
     return rendered
+
+
+def _render_compiled_html(
+    compiled_html: str,
+    sample_data: Dict[str, Any],
+    logo_left: str = "",
+    logo_right: str = "",
+) -> str:
+    """Render compiled Jinja2 HTML with proper variable context.
+
+    Uses Jinja2 Template rendering to handle ``{% if logo_left %}`` conditional
+    blocks and ``{{ variable }}`` expressions.  Falls back to regex substitution
+    if Jinja2 rendering fails.
+    """
+    from jinja2 import Template as J2Template
+
+    # Build a report context matching the PDF pipeline structure
+    report_entry: Dict[str, Any] = {
+        "data": sample_data,
+        "images": [],
+        "layout_mode": "2x2",
+        "img_count": 0,
+    }
+
+    context: Dict[str, Any] = {
+        # Top-level variables for {{ var_name }} substitution
+        **sample_data,
+        # Report list for {% for report in reports %}
+        "reports": [report_entry],
+        "report": report_entry,
+        # Legacy single-report variables
+        "data": sample_data,
+        "images": [],
+        "layout_mode": "2x2",
+        "img_count": 0,
+        "title": sample_data.get("title", ""),
+        # Logos
+        "logo_left": logo_left,
+        "logo_right": logo_right,
+    }
+
+    try:
+        template = J2Template(compiled_html)
+        return template.render(**context)
+    except Exception:
+        # Fallback to regex substitution for simple {{ var }} patterns
+        all_vars = dict(sample_data)
+        if logo_left:
+            all_vars["logo_left"] = logo_left
+        if logo_right:
+            all_vars["logo_right"] = logo_right
+        return _render_preview_html(compiled_html, all_vars)
 
 
 @router.post("/templates/{template_id}/preview")
@@ -131,7 +184,12 @@ async def preview_template_endpoint(template_id: str, payload: PreviewTemplatePa
         compiled_html = get_preview_html(template_id)
         if not compiled_html:
             raise HTTPException(status_code=404, detail="Template or draft not found")
-        return _render_preview_html(compiled_html, payload.sampleData)
+        return _render_compiled_html(
+            compiled_html,
+            payload.sampleData,
+            logo_left=payload.logo_left or "",
+            logo_right=payload.logo_right or "",
+        )
 
     try:
         preview_html = await asyncio.wait_for(_build_preview(), timeout=8.0)
@@ -147,6 +205,9 @@ async def render_template_endpoint(template_id: str, payload: PreviewTemplatePay
     This endpoint re-compiles the template from its stored TemplateJson
     using the canvas pipeline, ensuring the output matches the frontend's
     exportToJinja2() layout with correct absolute positioning.
+
+    Accepts ``logo_left`` and ``logo_right`` (URL or base64 data URI) to
+    resolve logo elements whose ``variableName`` references these variables.
     """
     if not rate_limiter.check(f"render:{request.client.host if request.client else 'local'}"):
         raise HTTPException(status_code=429, detail="Render rate limit exceeded")
@@ -159,13 +220,12 @@ async def render_template_endpoint(template_id: str, payload: PreviewTemplatePay
     if not compiled_html:
         raise HTTPException(status_code=404, detail="Template content not found")
 
-    # Apply variable substitution if sample data is provided
-    if payload.sampleData:
-        rendered = compiled_html
-        for key, value in payload.sampleData.items():
-            pattern = re.compile(r"{{\s*" + re.escape(str(key)) + r"(?:\|[a-zA-Z_][a-zA-Z0-9_]*)?\s*}}")
-            rendered = pattern.sub(str(value), rendered)
-        compiled_html = rendered
+    compiled_html = _render_compiled_html(
+        compiled_html,
+        payload.sampleData,
+        logo_left=payload.logo_left or "",
+        logo_right=payload.logo_right or "",
+    )
 
     return {"templateId": template_id, "previewHtml": compiled_html}
 

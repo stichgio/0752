@@ -1620,84 +1620,356 @@ def _compile_canvas_template(template_json: TemplateJson) -> str:
 
 
 def compile_canvas_to_html(canvas_doc: dict, variables: Optional[dict] = None) -> str:
-    """Compile a canvas document dict to production HTML.
+    """Compile a canvas document dict to production HTML."""
+    from .utils import url_to_base64
+    import re
 
-    ``canvas_doc`` may be either a raw ``CanvasDocument`` JSON or the
-    ``TemplateJson`` dict stored by the editor (with sections/blocks).
+    variables = variables or {}
+    
+    # IMPORTANTE: Valores base de dimensions
+    page_width = canvas_doc.get('pageSize', {}).get('width', 210)
+    page_height = canvas_doc.get('pageSize', {}).get('height', 297)
 
-    If *variables* is provided the Jinja2 expressions are rendered with
-    those values; otherwise the template syntax is preserved for the
-    frontend preview engine to process.
-    """
-    from .models import TemplateJson as TJ
-
-    # Detect format: TemplateJson (has "sections") vs raw CanvasDocument (has "elements")
+    elements = canvas_doc.get("elements", [])
     if "sections" in canvas_doc:
-        try:
-            template_json = TJ(**canvas_doc)
-        except Exception:
-            template_json = TJ(
-                reportType=canvas_doc.get("reportType", "generic"),
-                sections=[],
-                metadata=canvas_doc.get("metadata", {}),
-                variableBindings={},
-                protectionRules={"required_block_ids": [], "editable_placeholder_by_block": {}},
-            )
-    else:
-        # Raw CanvasDocument — wrap elements as blocks
-        from .models import EditorBlock as EB, EditorSection
+        elements = []
+        for sec in canvas_doc.get("sections", []):
+            elements.extend(sec.get("blocks", []))
 
-        elements = canvas_doc.get("elements", [])
-        page_settings = canvas_doc.get("pageSettings", {})
-        blocks = []
-        for el in elements:
-            if not isinstance(el, dict):
-                continue
-            blocks.append(EB(
-                id=str(el.get("id", "")),
-                type=str(el.get("type", "text")),
-                content=str(el.get("content", "")),
-                metadata={
-                    "layout": {
-                        "x": el.get("position", {}).get("x", 0),
-                        "y": el.get("position", {}).get("y", 0),
-                        "width": el.get("size", {}).get("width", 0),
-                        "height": el.get("size", {}).get("height", 0),
-                        "rotation": el.get("rotation", 0),
-                        "zIndex": (el.get("style") or {}).get("zIndex", 0),
-                    },
-                    "style": el.get("style", {}),
-                    **({"variableName": el["variableName"]} if el.get("variableName") else {}),
-                    **({"imageUrl": el["imageUrl"]} if el.get("imageUrl") else {}),
-                    **({"photoConfig": el["photoConfig"]} if el.get("photoConfig") else {}),
-                    **({"tableData": el["tableData"]} if el.get("tableData") else {}),
-                    **({"shapeConfig": el["shapeConfig"]} if el.get("shapeConfig") else {}),
-                    **({"dividerConfig": el["dividerConfig"]} if el.get("dividerConfig") else {}),
-                    **({"signatureConfig": el["signatureConfig"]} if el.get("signatureConfig") else {}),
-                    **({"signatureName": el["signatureName"]} if el.get("signatureName") else {}),
-                    **({"title": el["title"]} if el.get("title") else {}),
-                    **({"qrConfig": el["qrConfig"]} if el.get("qrConfig") else {}),
-                    **({"visible": el["visible"]} if "visible" in el else {}),
-                },
-                locked=bool(el.get("locked", False)),
-            ))
+    # VALIDACIONES 2) Loguear dimensiones de página para debug:
+    print(f"[compiler] Page: {page_width}mm x {page_height}mm, Elements: {len(elements)}")
 
-        template_json = TJ(
-            reportType="generic",
-            sections=[EditorSection(id="canvas-body", type="body", title="Canvas", blocks=blocks, metadata={})],
-            metadata={"source": "canvas-editor-v3", "pageSettings": page_settings},
-            variableBindings={},
-            protectionRules={"required_block_ids": [], "editable_placeholder_by_block": {}},
-        )
+    def resolve_logo_src(element: dict, variables: dict) -> str:
+        # Intentar primero el imageUrl guardado en el elemento del canvas
+        src = element.get('imageUrl', '')
+        
+        # Detectar si es logo izquierdo o derecho
+        elem_id = (element.get('id', '') + element.get('variableName', '')).lower()
+        
+        if 'right' in elem_id or 'der' in elem_id:
+            # Logo derecho: buscar en variables en orden de prioridad
+            src = (variables.get('logo_right') or
+                   variables.get('logoRight') or
+                   variables.get('logo_der') or
+                   src or '')
+        elif 'left' in elem_id or 'izq' in elem_id:
+            # Logo izquierdo
+            src = (variables.get('logo_left') or
+                   variables.get('logoLeft') or
+                   variables.get('logo_izq') or
+                   src or '')
+        
+        # Si src es URL externa o ruta relativa → convertir a base64
+        if src and not src.startswith('data:'):
+            try:
+                from .utils import url_to_base64
+                src = url_to_base64(src)
+            except Exception as e:
+                print(f"[compiler] Warning: no se pudo convertir logo a base64: {e}")
+                src = ''
 
-    html = _compile_canvas_template(template_json)
+        return src
 
+    elementos_html = []
+    
+    for el in elements:
+        t = str(el.get("type", "text"))
+        meta = el.get("metadata", {})
+        
+        if "layout" in meta:
+            pos = meta.get("layout", {})
+            size = pos
+        else:
+            pos = el.get("position", {})
+            size = el.get("size", {})
+            
+        x = float(pos.get("x", 0))
+        y = float(pos.get("y", 0))
+        w = float(size.get("width", 100))
+        h = float(size.get("height", 100))
+        
+        style = el.get("style", meta.get("style", {}))
+        z_index = style.get("zIndex", meta.get("layout", {}).get("zIndex", 1))
+        rot = el.get("rotation", meta.get("layout", {}).get("rotation", 0))
+        
+        base_style = f"position: absolute; left: {x}mm; top: {y}mm; width: {w}mm; height: {h}mm; z-index: {z_index};"
+        if rot:
+            base_style += f" transform: rotate({rot}deg); transform-origin: center center;"
+            
+        bg = style.get("backgroundColor", "")
+        if bg and bg.lower() != "transparent":
+            base_style += f" background-color: {bg};"
+            
+        color = style.get("color", "")
+        if color: base_style += f" color: {color};"
+        font_size = style.get("fontSize", "")
+        if font_size: base_style += f" font-size: {font_size}pt;"
+        font_weight = style.get("fontWeight", "")
+        if font_weight: base_style += f" font-weight: {font_weight};"
+        text_align = style.get("textAlign", "")
+        if text_align: base_style += f" text-align: {text_align};"
+        
+        bw = style.get("borderWidth", 0)
+        if bw:
+            bs = style.get("borderStyle", "solid")
+            bc = style.get("borderColor", "#000")
+            base_style += f" border: {bw}px {bs} {bc};"
+            
+        br = style.get("borderRadius", 0)
+        if br:
+            unit = "%" if t == "circle" else "mm"
+            base_style += f" border-radius: {br}{unit};"
+            
+        content_html = ""
+
+        # ------------- PHOTO GRID HANDLER -------------
+        if t in ("photo-grid", "photo_grid"):
+            cfg = el.get("photoConfig", meta.get("photoConfig", {}))
+            
+            # Calcular dimensiones de celda en mm
+            cols = int(el.get("columns", cfg.get("columns", 2)) or 2)
+            rows = int(el.get("rows", cfg.get("rows", 2)) or 2)
+            if cols <= 0: cols = 2
+            if rows <= 0: rows = 2
+            
+            cell_width = w / cols
+            cell_height = h / rows
+            
+            # CSS de tabla
+            table_style = f"""
+              width: {w}mm;
+              height: {h}mm;
+              border-collapse: collapse;
+              table-layout: fixed;
+            """
+            
+            # CSS de cada celda <td>
+            td_style = f"""
+              width: {cell_width}mm;
+              height: {cell_height}mm;
+              overflow: hidden;
+              padding: 1mm;
+              vertical-align: middle;
+              border: 0.3mm solid #e0e0e0;
+            """
+            
+            # CSS de la imagen dentro de la celda
+            img_wrapper_style = f"""
+              width: {cell_width - 2}mm;
+              height: {cell_height - 4}mm;
+              overflow: hidden;
+              display: block;
+            """
+            
+            # CRÍTICO para WeasyPrint: NO usar object-fit:cover (no soportado bien).
+            # Usar este patrón alternativo:
+            img_style = f"""
+              display: block;
+              width: 100%;
+              height: 100%;
+              max-width: {cell_width}mm;
+              max-height: {cell_height}mm;
+              object-fit: contain;
+            """
+            
+            # Label debajo de la foto (ANTES/DURANTE/DESPUÉS/DETALLE)
+            label_style = """
+              display: block;
+              text-align: center;
+              font-size: 7pt;
+              font-weight: bold;
+              font-family: Arial, sans-serif;
+              color: #333;
+              margin-top: 0.5mm;
+              height: 4mm;
+            """
+
+            labels = cfg.get("labels", [])
+            show_labels = cfg.get("showLabels", False)
+            
+            imgs = []
+            if variables.get("reports"):
+                imgs = variables["reports"][0].get("images", [])
+            else:
+                imgs = variables.get("images", [])
+                
+            tbl = f'<table style="{table_style}">\n'
+            idx = 0
+            for r in range(rows):
+                tbl += "<tr>\n"
+                for c in range(cols):
+                    if idx < len(imgs):
+                        img_path = imgs[idx].get("path", "")
+                        img_name = imgs[idx].get("name", "")
+                        
+                        img_tag = f'<img src="{img_path}" alt="{img_name}" style="{img_style}">'
+                        
+                        label = labels[idx] if idx < len(labels) and labels[idx] else img_name
+                        if not show_labels: label = ""
+                        
+                        # Estructura HTML de cada celda:
+                        cell_html = f"""
+                        <td style="{td_style}">
+                          <div style="{img_wrapper_style}">
+                            {img_tag}  <!-- o placeholder si no hay imagen -->
+                          </div>
+                          <span style="{label_style}">{label}</span>
+                        </td>
+                        """
+                    else:
+                        # Si no hay imagen para esa celda → placeholder:
+                        placeholder_html = f"""
+                        <div style="width:100%;height:100%;background:#f5f5f5;
+                                    display:flex;align-items:center;justify-content:center;
+                                    font-size:7pt;color:#aaa;font-family:Arial;">
+                          Sin foto
+                        </div>
+                        """
+                        cell_html = f'<td style="{td_style}">\n{placeholder_html}\n</td>'
+                        
+                    tbl += cell_html + "\n"
+                    idx += 1
+                tbl += "</tr>\n"
+            tbl += "</table>\n"
+            content_html = tbl
+
+        # ------------- LOGO HANDLER -------------
+        elif t == "logo":
+            el_for_logo = {**el, **({"imageUrl": el.get("imageUrl", meta.get("imageUrl", ""))})}
+            el_for_logo["id"] = el.get("id", meta.get("id", ""))
+            el_for_logo["variableName"] = el.get("variableName", meta.get("variableName", ""))
+            src = resolve_logo_src(el_for_logo, variables)
+            img_style_logo = f"display: block; width: 100%; height: 100%; max-width: {w}mm; max-height: {h}mm; object-fit: contain;"
+            content_html = f'<img src="{src}" style="{img_style_logo}">' if src else ''
+            
+        # ------------- TEXT HANDLER -------------
+        elif t in ("text", "heading"):
+            content_html = str(el.get("content", meta.get("content", "")))
+            
+        # ------------- VARIABLE HANDLER -------------
+        elif t == "variable":
+            var_name = el.get("variableName", meta.get("variableName", ""))
+            val = variables.get(var_name, f"{{{{ {var_name} }}}}")
+            content_html = str(val)
+
+        # ------------- TABLE HANDLER -------------
+        elif t == "table":
+            table_data = el.get("tableData", meta.get("tableData", {}))
+            data_matrix = table_data.get("data", [])
+            row_count = table_data.get("rowCount", len(data_matrix))
+            col_count = table_data.get("colCount", len(data_matrix[0]) if data_matrix else 2)
+            border_col = table_data.get("borderColor", "#cbd5e1")
+            tbl = f'<table style="width:100%; height:100%; border-collapse:collapse; font-size: 7.5pt; table-layout:fixed;"><tbody>'
+            for r in range(row_count):
+                tbl += "<tr>"
+                for c in range(col_count):
+                    val = data_matrix[r][c] if r < len(data_matrix) and c < len(data_matrix[r]) else ""
+                    tbl += f'<td style="border: 1px solid {border_col}; padding: 1.5mm;">{val}</td>'
+                tbl += "</tr>"
+            tbl += "</tbody></table>"
+            content_html = tbl
+
+        # ------------- IMAGE HANDLER -------------
+        elif t == "image":
+            img_url = el.get("imageUrl", meta.get("imageUrl", ""))
+            if img_url:
+                try:
+                    from .utils import url_to_base64
+                    safe_url = url_to_base64(img_url)
+                    img_style_local = f"display: block; width: 100%; height: 100%; max-width: {w}mm; max-height: {h}mm; object-fit: contain;"
+                    content_html = f'<img src="{safe_url}" style="{img_style_local}">'
+                except: pass
+
+        # ------------- SIGNATURE -------------
+        elif t == "signature":
+            cfg = meta.get("signatureConfig", [{}])[0] if isinstance(meta.get("signatureConfig"), list) and meta.get("signatureConfig") else meta.get("signatureConfig", {})
+            if not isinstance(cfg, dict): cfg = {}
+            title = el.get("title", meta.get("title", cfg.get("title", "FIRMA")))
+            name = el.get("name", meta.get("signatureName", meta.get("name", cfg.get("name", ""))))
+            content_html = f'<div style="border-top: 1px solid #333; text-align: center; padding-top: 2mm; font-weight: bold; font-size: 8pt; text-transform: uppercase;">{title}</div>'
+            if name: content_html += f'<div style="font-size: 7.5pt; color: #555; text-align: center;">{name}</div>'
+
+        # ------------- DIVIDER -------------
+        elif t == "divider":
+             div_config = el.get("dividerConfig", meta.get("dividerConfig", {}))
+             thickness = div_config.get("thickness", 1)
+             col = div_config.get("color", "#000")
+             content_html = f'<div style="width: 100%; height: 0; border-top: {thickness}px solid {col};"></div>'
+             
+        elif t == "shape":
+            kind = el.get("shapeConfig", meta.get("shapeConfig", {})).get("kind", "rectangle")
+            if kind == "circle":
+                base_style += " border-radius: 50%;"
+        
+        elif t in ("rectangle", "circle", "container"):
+            if t == "circle":
+                base_style += " border-radius: 50%;"
+
+        if not content_html and t not in ("photo-grid", "photo_grid", "logo", "text", "heading", "variable", "table", "image", "divider", "shape", "rectangle", "circle", "container", "signature"):
+            content_html = ""
+            
+        elementos_html.append(f'<div class="element {t}" style="{base_style} overflow: hidden;">{content_html}</div>')
+
+    elementos_str = "\n".join(elementos_html)
+
+    # HTML base correcto
+    html = f'''<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+  @page {{
+    size: {page_width}mm {page_height}mm;
+    margin: 0mm;   /* ← CRÍTICO: sin márgenes para que el canvas controle todo */
+  }}
+  html, body {{
+    width: {page_width}mm;
+    height: {page_height}mm;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+  }}
+  .canvas-page {{
+    position: relative;
+    width: {page_width}mm;
+    height: {page_height}mm;
+    overflow: hidden;
+    background: white;
+  }}
+</style>
+</head>
+<body>
+  <div class="canvas-page">
+    {elementos_str}
+  </div>
+</body>
+</html>'''
+
+    # Procesar plantillas dinamicas de Jinja si las variables estan present
     if variables:
         from jinja2 import Template as J2Template
         try:
             html = J2Template(html).render(**variables)
         except Exception:
             pass
+
+    # VALIDACIONES ANTES DEL PDF
+    # 1) Verificar que el HTML tiene contenido:
+    if len(html.strip()) < 100:
+        raise ValueError("El HTML compilado está vacío o incompleto")
+       
+    # 3) Convertir TODAS las imágenes a base64 antes de pasar a WeasyPrint
+    def replace_src(match):
+        url = match.group(1)
+        if url.startswith('data:'):
+            return match.group(0)
+        try:
+            from .utils import url_to_base64
+            return f'src="{url_to_base64(url)}"'
+        except:
+            return match.group(0)
+    html = re.sub(r'src="(https?://[^"]+)"', replace_src, html)
 
     return html
 
