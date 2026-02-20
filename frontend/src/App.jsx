@@ -121,8 +121,23 @@ export default function App() {
                         : [];
                 }
 
+                let publishedEditorTemplates = [];
+                try {
+                    const publishedResponse = await fetch(`${API_BASE_URL}/templates/published`);
+                    if (publishedResponse.ok) {
+                        const publishedData = await publishedResponse.json();
+                        publishedEditorTemplates = Array.isArray(publishedData.templates)
+                            ? publishedData.templates
+                                .map((item) => normalizeEditorTemplate(item, item?.status || 'published'))
+                                .filter((item) => item.id && item.name)
+                            : [];
+                    }
+                } catch (publishedError) {
+                    console.warn('Published templates endpoint fallback:', publishedError);
+                }
+
                 const visibleEditorTemplates = selectEditorTemplatesForDropdown(
-                    dbEditorTemplates,
+                    publishedEditorTemplates.length > 0 ? publishedEditorTemplates : dbEditorTemplates,
                     legacyEditorTemplates
                 );
 
@@ -275,28 +290,26 @@ export default function App() {
         if (!editorTemplateId) return;
 
         try {
-            const res = await fetch(`${API_BASE_URL}/template-editor/templates/${editorTemplateId}`);
-            if (!res.ok) throw new Error("Failed to load editor template");
-            const data = await res.json();
+            const res = await fetch(`${API_BASE_URL}/templates/${editorTemplateId}/render`);
+            if (!res.ok) throw new Error("Failed to load published template");
+            const payload = await res.json();
 
-            const versions = data.versions || [];
-            const latest = versions[versions.length - 1];
-            if (!latest || !latest.compiledJinja) {
+            const content = payload?.content;
+            if (!content) {
                 setTemplateStatus('invalid');
-                setTemplateError('La plantilla del editor no tiene HTML compilado.');
+                setTemplateError('La plantilla publicada no tiene HTML renderizado.');
                 return;
             }
 
-            const content = latest.compiledJinja;
-            // Editor templates are always valid (compiled from blocks)
             const listedTemplate = editorTemplates.find((tpl) => tpl.id === editorTemplateId);
             setCustomTemplate({
-                name: data.name,
+                name: payload?.name || listedTemplate?.name || 'Plantilla publicada',
                 content,
-                isBackendTemplate: false,
+                isBackendTemplate: true,
                 isEditorTemplate: true,
                 editorTemplateId,
-                editorTemplateStatus: normalizeTemplateStatus(data.status || listedTemplate?.status),
+                editorTemplateStatus: normalizeTemplateStatus(payload?.status || listedTemplate?.status || 'published'),
+                editorTemplateJson: payload?.templateJson || null,
             });
             setTemplateStatus('valid');
             setTemplateError('');
@@ -312,7 +325,7 @@ export default function App() {
         } catch (err) {
             console.error(err);
             setTemplateStatus('invalid');
-            setTemplateError("Error al cargar plantilla del editor: " + err.message);
+            setTemplateError("Error al cargar plantilla publicada: " + err.message);
         }
     };
 
@@ -776,7 +789,7 @@ export default function App() {
                                             </optgroup>
                                         )}
                                         {editorTemplates.length > 0 && (
-                                            <optgroup label="Plantillas del Editor">
+                                            <optgroup label="Mis Plantillas Publicadas">
                                                 {editorTemplates.map(t => (
                                                     <option key={t.id} value={`editor:${t.id}`}>{`${t.name} [${normalizeTemplateStatus(t.status)}]`}</option>
                                                 ))}

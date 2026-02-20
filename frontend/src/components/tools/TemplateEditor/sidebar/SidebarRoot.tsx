@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Layers, Grid, LayoutTemplate, Settings2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Layers, Grid, LayoutTemplate, Library, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ElementsPalette } from './ElementsPalette';
 import { LayersPanel } from './LayersPanel';
 import { TemplatesPanel } from './TemplatesPanel';
+import { PublishedTemplatesPanel } from './PublishedTemplatesPanel';
 import { ElementType, ElementPreset, BlockPreset } from '../canvasTypes';
 import type { TemplateElement, VariableDefinition } from '../canvasTypes';
 import type { CanvasDocument } from '../canvasTypes';
@@ -27,15 +28,18 @@ interface SidebarRootProps {
     onLoadTemplate?: (doc: CanvasDocument) => void;
     currentDocName?: string;
     isDirty?: boolean;
+    activePublishedTemplateId?: string | null;
+    publishedTemplatesRefreshKey?: number;
+    onUnpublishTemplate?: (templateId: string) => Promise<void> | void;
 }
 
-type TabId = 'elements' | 'layers' | 'templates' | 'settings';
+type TabId = 'elements' | 'layers' | 'templates' | 'published';
 
 const TABS: { id: TabId; icon: React.ReactNode; label: string }[] = [
     { id: 'elements', icon: <Grid size={18} />, label: 'Elementos' },
     { id: 'layers', icon: <Layers size={18} />, label: 'Capas' },
     { id: 'templates', icon: <LayoutTemplate size={18} />, label: 'Plantillas' },
-    { id: 'settings', icon: <Settings2 size={18} />, label: 'Ajustes' },
+    { id: 'published', icon: <Library size={18} />, label: 'Plantillas publicadas' },
 ];
 
 const SIDEBAR_EXPANDED_WIDTH = 280;
@@ -123,14 +127,12 @@ export function SidebarRoot(props: SidebarRootProps) {
                                 isDirty={props.isDirty}
                             />
                         )}
-                        {activeTab === 'settings' && (
-                            <div className="p-4 text-center">
-                                <div className="w-12 h-12 bg-neutral-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                                    <Settings2 size={20} className="text-neutral-400" />
-                                </div>
-                                <p className="text-sm text-neutral-500">Ajustes de pagina</p>
-                                <p className="text-xs text-neutral-400 mt-1">Proximamente</p>
-                            </div>
+                        {activeTab === 'published' && (
+                            <PublishedTemplatesPanel
+                                refreshKey={props.publishedTemplatesRefreshKey}
+                                activeTemplateId={props.activePublishedTemplateId}
+                                onUnpublishTemplate={props.onUnpublishTemplate}
+                            />
                         )}
                     </div>
                 </div>

@@ -18,6 +18,10 @@ DATA_DIR.mkdir(exist_ok=True)
 SERVER_HOST = os.getenv("HOST", "0.0.0.0")
 SERVER_PORT = int(os.getenv("PORT", "7860"))
 
+# Configuración de Supabase
+SUPABASE_URL = os.getenv("SUPABASE_URL", "")
+SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", os.getenv("SUPABASE_KEY", ""))
+
 # Configuración de CORS
 CORS_ORIGINS = os.getenv("CORS_ORIGINS", "*").split(",")
 CORS_ALLOW_CREDENTIALS = os.getenv("CORS_CREDENTIALS", "false").lower() == "true"
