@@ -138,7 +138,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
             const imageCountGteRegex = /\{%\s*if\s+report\.images\|length\s*>=\s*(\d+)\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
             html = html.replace(imageCountGteRegex, (match, count, content) => {
                 return imageCount >= parseInt(count, 10) ? content : '';
-            });
+                });
 
             // Handle if image count < X patterns
             const imageCountLtRegex = /\{%\s*if\s+report\.images\|length\s*<\s*(\d+)\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
@@ -152,7 +152,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                 return (imageCount !== parseInt(count1, 10) && imageCount !== parseInt(count2, 10)) ? content : '';
             });
 
-            // Handle templates that compute image count in a variable:
+            // Handle templates that comp ute image count in a variable:
             // {% set img_count = report.images|length %}
             // {% if img_count == 3 %}...{% else %}...{% endif %}
             html = html.replace(/\{%\s*set\s+img_count\s*=\s*report\.images\|length\s*%\}/g, '');
@@ -188,24 +188,30 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
             const reportImagesIfElseRegex = /\{%\s*if\s+report\.images\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
             html = html.replace(reportImagesIfElseRegex, (match, ifContent, elseContent) => (imageCount > 0 ? ifContent : elseContent));
 
-            const logoLeftRegex = /\{%\s*if\s+logo_left\b[^%]*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            const logoLeftRegex = /\{%\s*if\s+logo_left\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
             html = html.replace(logoLeftRegex, (match, ifPart, elsePart) => logoLeft ? ifPart : elsePart);
 
-            const logoRightRegex = /\{%\s*if\s+logo_right\b[^%]*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            const logoRightRegex = /\{%\s*if\s+logo_right\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
             html = html.replace(logoRightRegex, (match, ifPart, elsePart) => logoRight ? ifPart : elsePart);
 
             // Handle {% if logo_left %}...{% endif %} (no else branch — from canvas editor)
-            const logoLeftNoElseRegex = /\{%\s*if\s+logo_left\b[^%]*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            const logoLeftNoElseRegex = /\{%\s*if\s+logo_left\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
             html = html.replace(logoLeftNoElseRegex, (match, content) => logoLeft ? content : '');
 
-            const logoRightNoElseRegex = /\{%\s*if\s+logo_right\b[^%]*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            const logoRightNoElseRegex = /\{%\s*if\s+logo_right\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
             html = html.replace(logoRightNoElseRegex, (match, content) => logoRight ? content : '');
 
 
-            // Replace simple variables (with optional spaces/filters)
-            html = html.replace(/\{\{\s*title\s*\}\}/g, 'PANEL FOTOGRÁFICO VOLANTEO');
-            html = html.replace(/\{\{\s*logo_left(?:\s*\|[^}]*)?\s*\}\}/g, logoLeft || emptyPixel);
-            html = html.replace(/\{\{\s*logo_right(?:\s*\|[^}]*)?\s*\}\}/g, logoRight || emptyPixel);
+            const replacements = {
+                '{{ title }}': 'PANEL FOTOGRÁFICO VOLANTEO',
+                '{{ logo_left }}': logoLeft || emptyPixel,
+                '{{ logo_right }}': logoRight || emptyPixel,
+            };
+
+            // Replace simple variables
+            Object.keys(replacements).forEach(key => {
+                html = html.replaceAll(key, replacements[key]);
+            });
 
             // Replace {{ report.data.get('KEY', '-') }}
             // Regex to match {{ report.data.get('KEY', 'DEFAULT') }}
@@ -218,7 +224,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
             });
 
             // Handle direct image access by index: {{ report.images[0].path }}
-            const directImageRegex = /\{\{\s*report\.images\[(\d+)\]\.(path|name)(?:\s*\|[^}]*)?\s*\}\}/g;
+            const directImageRegex = /\{\{\s*report\.images\[(\d+)\]\.(path|name)\s*\}\}/g;
             html = html.replace(directImageRegex, (match, indexStr, property) => {
                 const index = parseInt(indexStr);
                 if (images && images[index]) {
@@ -249,9 +255,8 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
 
                 // Check if this loop (or its content) has a suffix filter like '_1.' in img.name
                 // Could be in the loop declaration OR in an if statement inside the loop
-                const suffixPattern = /["']_(\d+)\.["']\s+in\s+img\.name/;
-                const suffixMatch = fullMatch.match(suffixPattern) ||
-                    loopContent.match(suffixPattern);
+                const suffixMatch = fullMatch.match(/'_(\d+)\.'\s+in\s+img\.name/) ||
+                    loopContent.match(/'_(\d+)\.'\s+in\s+img\.name/);
 
                 let generatedLoopHtml = '';
                 let imagesToRender = [];
@@ -280,10 +285,10 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                     const img = imagesToRender[i];
                     const imgUrl = URL.createObjectURL(img);
                     let itemHtml = loopContent;
-
+87
                     // Replace {{ img.path }}
-                    itemHtml = itemHtml.replace(/\{\{\s*img\.path(?:\s*\|[^}]*)?\s*\}\}/g, imgUrl);
-                    itemHtml = itemHtml.replace(/\{\{\s*img\.name(?:\s*\|[^}]*)?\s*\}\}/g, img.name);
+                    itemHtml = itemHtml.replaceAll('{{ img.path }}', imgUrl);
+                    itemHtml = itemHtml.replaceAll('{{ img.name }}', img.name);
 
                     // Mock metadata
                     const dateStr = new Date(img.lastModified).toLocaleString();
@@ -293,8 +298,8 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
 
                     // Strip namespace and condition statements, just show the inner content
                     itemHtml = itemHtml.replace(/\{%\s*if\s+loop\.first\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g, (m, c) => i === 0 ? c : '');
-                    itemHtml = itemHtml.replace(/\{%\s*if\s+not\s+ns\d*\.found\s+and\s+["']_\d+\.["']\s+in\s+img\.name\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g, '$1');
-                    itemHtml = itemHtml.replace(/\{%\s*set\s+ns\d*\.found\s*=\s*true\s*%\}/g, '');
+                    itemHtml = itemHtml.replace(/\{%\s*if\s+not\s+ns\.found\s+and\s+'_\d+\.'\s+in\s+img\.name\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g, '$1');
+                    itemHtml = itemHtml.replace(/\{%\s*set\s+ns\.found\s*=\s*true\s*%\}/g, '');
 
                     generatedLoopHtml += itemHtml;
                 }

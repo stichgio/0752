@@ -140,6 +140,36 @@ async def preview_template_endpoint(template_id: str, payload: PreviewTemplatePa
     return {"templateId": template_id, "previewHtml": preview_html}
 
 
+@router.post("/templates/{template_id}/render")
+async def render_template_endpoint(template_id: str, payload: PreviewTemplatePayload, request: Request):
+    """Compile a canvas template on-the-fly with variable substitution.
+
+    This endpoint re-compiles the template from its stored TemplateJson
+    using the canvas pipeline, ensuring the output matches the frontend's
+    exportToJinja2() layout with correct absolute positioning.
+    """
+    if not rate_limiter.check(f"render:{request.client.host if request.client else 'local'}"):
+        raise HTTPException(status_code=429, detail="Render rate limit exceeded")
+
+    record = get_template(template_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+    compiled_html = get_preview_html(template_id)
+    if not compiled_html:
+        raise HTTPException(status_code=404, detail="Template content not found")
+
+    # Apply variable substitution if sample data is provided
+    if payload.sampleData:
+        rendered = compiled_html
+        for key, value in payload.sampleData.items():
+            pattern = re.compile(r"{{\s*" + re.escape(str(key)) + r"(?:\|[a-zA-Z_][a-zA-Z0-9_]*)?\s*}}")
+            rendered = pattern.sub(str(value), rendered)
+        compiled_html = rendered
+
+    return {"templateId": template_id, "previewHtml": compiled_html}
+
+
 @router.post("/templates/{template_id}/publish")
 async def publish_template_endpoint(template_id: str, payload: PublishTemplatePayload):
     if not _feature_enabled():
