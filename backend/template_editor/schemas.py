@@ -26,6 +26,8 @@ class ValidateTemplatePayload(BaseModel):
 
 class PreviewTemplatePayload(BaseModel):
     sampleData: Dict[str, Any] = Field(default_factory=dict)
+    logo_left: Optional[str] = None   # URL or base64 data URI
+    logo_right: Optional[str] = None  # URL or base64 data URI
 
 
 class PublishTemplatePayload(BaseModel):
