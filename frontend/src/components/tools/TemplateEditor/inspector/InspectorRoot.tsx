@@ -14,6 +14,7 @@ const PHOTO_COUNT_OPTIONS: Array<{ value: PhotoGridCount; label: string }> = [
 ];
 
 interface InspectorRootProps {
+    width?: number;
     selectedIds: string[];
     elements: TemplateElement[];
     onUpdateElement: (id: string, updates: Partial<TemplateElement>) => void;
@@ -22,6 +23,7 @@ interface InspectorRootProps {
 }
 
 export function InspectorRoot({
+    width = 260,
     selectedIds,
     elements,
     onUpdateElement,
@@ -33,6 +35,7 @@ export function InspectorRoot({
     if (selectedElementId === null) {
         return (
             <PageSettingsPanel
+                width={width}
                 pageSettings={pageSettings}
                 onChange={onPageSettingsChange}
             />
@@ -71,7 +74,7 @@ export function InspectorRoot({
     };
 
     return (
-        <div className="h-full border-l border-neutral-200 bg-white flex flex-col overflow-y-auto" style={{ width: 260 }}>
+        <div className="h-full flex-none border-l border-neutral-200 bg-white flex flex-col overflow-y-auto" style={{ width }}>
             {/* Header */}
             <div className="px-3 py-2.5 border-b border-neutral-100 flex items-center gap-2">
                 <Sliders size={14} className="text-neutral-400" />

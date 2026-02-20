@@ -4,7 +4,12 @@ import {
   Redo2, Save, Send, Undo2, X, Eye, Download, Upload,
 } from 'lucide-react';
 import type { CanvasDocument, PageSettings } from './canvasTypes';
-import { createDefaultPageSettings, createEmptyDocument, normalizePageSettings } from './canvasTypes';
+import {
+  createDefaultPageSettings,
+  createEmptyDocument,
+  normalizePageSettings,
+  normalizeVariableRegistry,
+} from './canvasTypes';
 import CanvasEditor from './CanvasEditor';
 import { exportToJinja2, exportToJSON, importFromJSON, generatePreviewHtml } from './exportUtils';
 import { useUndoableState } from './hooks/useUndoableState';
@@ -155,6 +160,14 @@ function isSamePageSettings(a: PageSettings, b: PageSettings): boolean {
   );
 }
 
+function normalizeDocument(doc: CanvasDocument): CanvasDocument {
+  return {
+    ...doc,
+    pageSettings: normalizePageSettings(doc.pageSettings),
+    variables: normalizeVariableRegistry(doc.variables),
+  };
+}
+
 // ─── Toast ────────────────────────────────────────────────────────────────────
 
 type Toast = { id: number; msg: string; type: 'ok' | 'err' | 'info' };
@@ -241,6 +254,8 @@ export default function TemplateEditor() {
   const [showPreview, setShowPreview] = useState(false);
   const [previewHtml, setPreviewHtml] = useState('');
   const [dataPreview, setDataPreview] = useState<Record<string, unknown> | undefined>(undefined);
+  const [leftWidth, setLeftWidth] = useState(320);
+  const [rightWidth, setRightWidth] = useState(320);
   const importRef = useRef<HTMLInputElement>(null);
 
   const toast = useCallback((msg: string, type: Toast['type'] = 'info') => {
@@ -257,9 +272,9 @@ export default function TemplateEditor() {
       if (raw) {
         const s = JSON.parse(raw);
         if (s?.doc?.elements) {
-          const normalizedPageSettings = normalizePageSettings(s.doc.pageSettings);
-          resetDocHistory({ ...s.doc, pageSettings: normalizedPageSettings });
-          setPageSettings(normalizedPageSettings);
+          const normalizedDoc = normalizeDocument(s.doc as CanvasDocument);
+          resetDocHistory(normalizedDoc);
+          setPageSettings(normalizedDoc.pageSettings);
           setStatus((s.status as PublishStatus) || 'draft');
         }
       }
@@ -341,10 +356,7 @@ export default function TemplateEditor() {
       return;
     }
 
-    const normalizedDoc = {
-      ...newDoc,
-      pageSettings: normalizePageSettings(newDoc.pageSettings),
-    };
+    const normalizedDoc = normalizeDocument(newDoc);
 
     setDocHistory(normalizedDoc, {
       commitToHistory: options?.commitToHistory !== false,
@@ -419,17 +431,16 @@ export default function TemplateEditor() {
 
   /** Load a preset or imported doc into the editor */
   const loadDocument = useCallback((newDoc: CanvasDocument) => {
-    const normalizedPageSettings = normalizePageSettings(newDoc.pageSettings);
+    const normalizedDoc = normalizeDocument(newDoc);
     setDocHistory({
-      ...newDoc,
-      pageSettings: normalizedPageSettings,
+      ...normalizedDoc,
       status: 'draft',
       updatedAt: new Date().toISOString(),
     });
-    setPageSettings(normalizedPageSettings);
+    setPageSettings(normalizedDoc.pageSettings);
     setStatus('draft');
     setDirty(true);
-    toast(`Plantilla "${newDoc.name}" cargada`, 'ok');
+    toast(`Plantilla "${normalizedDoc.name}" cargada`, 'ok');
   }, [setDocHistory, toast]);
 
   const exportHtml = useCallback(() => {
@@ -609,6 +620,10 @@ export default function TemplateEditor() {
           dataPreview={dataPreview}
           isDirty={dirty}
           onLoadTemplate={loadDocument}
+          leftSidebarWidth={leftWidth}
+          rightSidebarWidth={rightWidth}
+          onLeftSidebarWidthChange={setLeftWidth}
+          onRightSidebarWidthChange={setRightWidth}
         />
       </div>
 

@@ -21,6 +21,18 @@ export type ElementPreset = 'photo-panel' | 'technical-table';
 export type BlockPreset = 'header-logos' | 'datos-generales' | 'firmas-dual';
 export type PhotoGridCount = 2 | 3 | 4 | 5 | 6;
 export type PhotoGridOddPosition = 'left' | 'center' | 'right';
+export type VariableType = 'string' | 'number' | 'date' | 'boolean' | 'list';
+export const VARIABLE_KEY_PATTERN = /^[a-z0-9_]+$/;
+
+export interface VariableDefinition {
+  key: string;
+  label: string;
+  type: VariableType;
+  required?: boolean;
+  default?: string | number | boolean;
+  format?: string;
+  options?: string[];
+}
 
 export interface Position {
   x: number;
@@ -172,6 +184,7 @@ export interface CanvasDocument {
   id: string;
   name: string;
   elements: TemplateElement[];
+  variables?: VariableDefinition[];
   pageSettings: PageSettings;
   version: number;
   status: 'draft' | 'published' | 'archived';
@@ -202,7 +215,7 @@ export const DEFAULT_TOOLS: ToolItem[] = [
     icon: 'Type',
     label: 'Texto',
     category: 'text',
-    defaultSize: { width: 150, height: 40 },
+    defaultSize: { width: 60, height: 10 },
     defaultStyle: {
       fontSize: 12,
       fontFamily: 'Arial',
@@ -215,7 +228,7 @@ export const DEFAULT_TOOLS: ToolItem[] = [
     icon: 'Heading',
     label: 'Título',
     category: 'text',
-    defaultSize: { width: 200, height: 50 },
+    defaultSize: { width: 80, height: 14 },
     defaultStyle: {
       fontSize: 24,
       fontFamily: 'Arial',
@@ -229,7 +242,7 @@ export const DEFAULT_TOOLS: ToolItem[] = [
     icon: 'Braces',
     label: 'Variable',
     category: 'data',
-    defaultSize: { width: 120, height: 30 },
+    defaultSize: { width: 55, height: 12 },
     defaultStyle: {
       fontSize: 11,
       fontFamily: 'monospace',
@@ -246,7 +259,7 @@ export const DEFAULT_TOOLS: ToolItem[] = [
     icon: 'Square',
     label: 'Rectángulo',
     category: 'shapes',
-    defaultSize: { width: 100, height: 100 },
+    defaultSize: { width: 40, height: 30 },
     defaultStyle: {
       backgroundColor: '#e5e7eb',
       borderColor: '#9ca3af',
@@ -259,7 +272,7 @@ export const DEFAULT_TOOLS: ToolItem[] = [
     icon: 'Circle',
     label: 'Círculo',
     category: 'shapes',
-    defaultSize: { width: 100, height: 100 },
+    defaultSize: { width: 35, height: 35 },
     defaultStyle: {
       backgroundColor: '#e5e7eb',
       borderColor: '#9ca3af',
@@ -273,7 +286,7 @@ export const DEFAULT_TOOLS: ToolItem[] = [
     icon: 'Minus',
     label: 'Línea',
     category: 'shapes',
-    defaultSize: { width: 200, height: 2 },
+    defaultSize: { width: 70, height: 1 },
     defaultStyle: {
       backgroundColor: '#374151',
       borderWidth: 0,
@@ -284,7 +297,7 @@ export const DEFAULT_TOOLS: ToolItem[] = [
     icon: 'Image',
     label: 'Imagen',
     category: 'media',
-    defaultSize: { width: 150, height: 150 },
+    defaultSize: { width: 50, height: 50 },
     defaultStyle: {
       backgroundColor: 'transparent',
       borderWidth: 0,
@@ -296,7 +309,7 @@ export const DEFAULT_TOOLS: ToolItem[] = [
     icon: 'Image',
     label: 'Logo',
     category: 'media',
-    defaultSize: { width: 60, height: 60 },
+    defaultSize: { width: 30, height: 30 },
     defaultStyle: {
       backgroundColor: 'transparent',
       borderWidth: 0,
@@ -308,7 +321,7 @@ export const DEFAULT_TOOLS: ToolItem[] = [
     icon: 'LayoutGrid',
     label: 'Grid Fotos',
     category: 'media',
-    defaultSize: { width: 300, height: 200 },
+    defaultSize: { width: 120, height: 80 },
     defaultStyle: {
       backgroundColor: '#fef3c7',
       borderColor: '#f59e0b',
@@ -321,7 +334,7 @@ export const DEFAULT_TOOLS: ToolItem[] = [
     icon: 'Table',
     label: 'Tabla',
     category: 'data',
-    defaultSize: { width: 300, height: 150 },
+    defaultSize: { width: 80, height: 40 },
     defaultStyle: {
       backgroundColor: '#ffffff',
       borderColor: '#d1d5db',
@@ -334,7 +347,7 @@ export const DEFAULT_TOOLS: ToolItem[] = [
     icon: 'PenTool',
     label: 'Firma',
     category: 'data',
-    defaultSize: { width: 150, height: 80 },
+    defaultSize: { width: 60, height: 20 },
     defaultStyle: {
       backgroundColor: 'transparent',
       borderColor: '#374151',
@@ -349,7 +362,7 @@ export const DEFAULT_TOOLS: ToolItem[] = [
     icon: 'Box',
     label: 'Contenedor',
     category: 'basic',
-    defaultSize: { width: 200, height: 150 },
+    defaultSize: { width: 90, height: 60 },
     defaultStyle: {
       backgroundColor: '#f9fafb',
       borderColor: '#e5e7eb',
@@ -367,6 +380,7 @@ export function createEmptyDocument(): CanvasDocument {
     id: `doc_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     name: 'Nueva Plantilla',
     elements: [],
+    variables: [],
     pageSettings: createDefaultPageSettings(),
     version: 1,
     status: 'draft',
@@ -411,6 +425,130 @@ function inferFormat(width: number, height: number): PageFormat {
 
 function inferOrientation(width: number, height: number): PageOrientation {
   return width > height ? 'landscape' : 'portrait';
+}
+
+function toTrimmedString(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function toVariableType(value: unknown): VariableType {
+  return value === 'string' ||
+    value === 'number' ||
+    value === 'date' ||
+    value === 'boolean' ||
+    value === 'list'
+    ? value
+    : 'string';
+}
+
+function parseVariableDefault(rawDefault: unknown): string | number | boolean | undefined {
+  if (typeof rawDefault === 'string' || typeof rawDefault === 'number' || typeof rawDefault === 'boolean') {
+    return rawDefault;
+  }
+  return undefined;
+}
+
+function normalizeVariableOptions(rawOptions: unknown): string[] | undefined {
+  if (!Array.isArray(rawOptions)) return undefined;
+
+  const seen = new Set<string>();
+  const options: string[] = [];
+
+  rawOptions.forEach((value) => {
+    const option = toTrimmedString(value);
+    if (!option) return;
+
+    const normalized = option.toLocaleLowerCase('es');
+    if (seen.has(normalized)) return;
+
+    seen.add(normalized);
+    options.push(option);
+  });
+
+  return options.length > 0 ? options : undefined;
+}
+
+export function normalizeVariableRegistry(raw: unknown): VariableDefinition[] {
+  if (!Array.isArray(raw)) return [];
+
+  const byKey = new Map<string, VariableDefinition>();
+
+  raw.forEach((item) => {
+    if (!item || typeof item !== 'object') return;
+
+    const maybe = item as Record<string, unknown>;
+    const key = toTrimmedString(maybe.key);
+    if (!key) return;
+
+    const normalizedKey = key.toLocaleLowerCase('es');
+    if (byKey.has(normalizedKey)) return;
+
+    const label = toTrimmedString(maybe.label) || key;
+    const type = toVariableType(maybe.type);
+    const required = typeof maybe.required === 'boolean' ? maybe.required : undefined;
+    const defaultValue = parseVariableDefault(maybe.default);
+    const format = toTrimmedString(maybe.format) || undefined;
+    const options = normalizeVariableOptions(maybe.options);
+
+    byKey.set(normalizedKey, {
+      key,
+      label,
+      type,
+      ...(required !== undefined ? { required } : {}),
+      ...(defaultValue !== undefined ? { default: defaultValue } : {}),
+      ...(format ? { format } : {}),
+      ...(options ? { options } : {}),
+    });
+  });
+
+  return Array.from(byKey.values()).sort((a, b) =>
+    a.key.localeCompare(b.key, 'es', { sensitivity: 'base' }),
+  );
+}
+
+function keyToLabel(key: string): string {
+  const normalized = key.replace(/[._-]+/g, ' ').trim();
+  return normalized || key;
+}
+
+function extractElementVariableKey(element: TemplateElement): string {
+  const keyFromField = toTrimmedString(element.variableName);
+  if (keyFromField) return keyFromField;
+  if (element.type !== 'variable') return '';
+
+  const rawContent = toTrimmedString(element.content);
+  if (!rawContent) return '';
+
+  const match = rawContent.match(/\{\{\s*([^{}]+?)\s*\}\}/);
+  return toTrimmedString(match?.[1]);
+}
+
+export function deriveVariableDefinitionsFromElements(
+  elements: TemplateElement[] | null | undefined,
+): VariableDefinition[] {
+  if (!Array.isArray(elements) || elements.length === 0) return [];
+
+  const byKey = new Map<string, VariableDefinition>();
+
+  elements.forEach((element) => {
+    if (!element) return;
+
+    const key = extractElementVariableKey(element);
+    if (!key) return;
+
+    const normalizedKey = key.toLocaleLowerCase('es');
+    if (byKey.has(normalizedKey)) return;
+
+    byKey.set(normalizedKey, {
+      key,
+      label: keyToLabel(key),
+      type: 'string',
+    });
+  });
+
+  return Array.from(byKey.values()).sort((a, b) =>
+    a.key.localeCompare(b.key, 'es', { sensitivity: 'base' }),
+  );
 }
 
 export function normalizePageSettings(raw: unknown): PageSettings {

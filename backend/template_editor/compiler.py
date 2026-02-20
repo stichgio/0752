@@ -8,6 +8,7 @@ The generated HTML must be fully compatible with the existing PDF pipeline
 from typing import Any, Dict, List
 
 from .models import EditorBlock, TemplateJson
+from .utils import url_to_base64
 
 # ─── CSS that matches the existing hand-crafted templates ───
 
@@ -345,7 +346,8 @@ PHOTO_CENTER_INNER_STYLE = (
     "width: 48%; height: 100%; margin: 0 auto; box-sizing: border-box; text-align: center; "
     "vertical-align: middle; background: #f3f4f6; border: 1px solid #d1d5db; padding: 1mm;"
 )
-PHOTO_IMAGE_STYLE = "max-width: 100%; max-height: 85%; margin: 0 auto; display: block;"
+# fix: imagen-cortada — added object-fit: contain for WeasyPrint
+PHOTO_IMAGE_STYLE = "max-width: 100%; max-height: 85%; margin: 0 auto; display: block; object-fit: contain;"
 PHOTO_LABEL_STYLE = (
     "font-weight: 700; font-size: 7.5pt; text-transform: uppercase; margin-top: 2mm; "
     "letter-spacing: 0.02em;"
@@ -866,6 +868,25 @@ def _style_css(block: EditorBlock) -> str:
     return " ".join(parts)
 
 
+# fix: imagen-cortada — Generate WeasyPrint-compatible image CSS with objectFit fallback
+def _image_css(object_fit: str, width_mm: float = 0, height_mm: float = 0) -> str:
+    """Generate inline CSS for images that works reliably in WeasyPrint."""
+    base = "display: block"
+    if object_fit == "fill":
+        return f"{base}; width: 100%; height: 100%; object-fit: fill"
+    if object_fit == "none":
+        return f"{base}; object-fit: none"
+    if object_fit == "cover":
+        return f"{base}; width: 100%; height: 100%; object-fit: cover"
+    # contain (default): add max-width/height as WeasyPrint fallback
+    css = f"{base}; width: 100%; height: 100%; object-fit: contain"
+    if width_mm > 0:
+        css += f"; max-width: {width_mm}mm"
+    if height_mm > 0:
+        css += f"; max-height: {height_mm}mm"
+    return css
+
+
 def _compile_heading(block: EditorBlock) -> str:
     """Canvas heading element."""
     layout = _layout_style(block)
@@ -881,16 +902,23 @@ def _compile_logo(block: EditorBlock) -> str:
     image_url = _get_meta(block, "imageUrl", "")
     variable_name = _get_meta(block, "variableName", "logo_left")
 
+    # fix: imagen-cortada — extract dimensions for CSS fallback
+    layout_meta = (block.metadata or {}).get("layout") or {}
+    w = _to_float(layout_meta.get("width"), 0)
+    h = _to_float(layout_meta.get("height"), 0)
+    img_css = _image_css("contain", w, h)
+
     if image_url:
+        safe_url = url_to_base64(image_url)  # fix: imagen-cortada
         return (
             f'<div class="element logo" style="{layout} {style} overflow: hidden;">'
-            f'<img src="{_escape_html(image_url)}" style="width: 100%; height: 100%; object-fit: contain;" />'
+            f'<img src="{_escape_html(safe_url)}" style="{img_css}" />'
             '</div>'
         )
     return (
         f'{{% if {variable_name} %}}'
         f'<div class="element logo" style="{layout} {style} overflow: hidden;">'
-        f'<img src="{{{{ {variable_name} }}}}" style="width: 100%; height: 100%; object-fit: contain;" />'
+        f'<img src="{{{{ {variable_name} }}}}" style="{img_css}" />'
         '</div>'
         '{% endif %}'
     )
@@ -901,12 +929,20 @@ def _compile_canvas_image(block: EditorBlock) -> str:
     layout = _layout_style(block)
     style = _style_css(block)
     image_url = _get_meta(block, "imageUrl", "")
-    object_fit = ((block.metadata or {}).get("style") or {}).get("objectFit", "cover")
+    # fix: imagen-cortada — default to contain instead of cover
+    object_fit = ((block.metadata or {}).get("style") or {}).get("objectFit", "contain")
+
+    # fix: imagen-cortada — extract dimensions for CSS fallback
+    layout_meta = (block.metadata or {}).get("layout") or {}
+    w = _to_float(layout_meta.get("width"), 0)
+    h = _to_float(layout_meta.get("height"), 0)
+    img_css = _image_css(object_fit, w, h)
 
     if image_url:
+        safe_url = url_to_base64(image_url)  # fix: imagen-cortada
         return (
             f'<div class="element image" style="{layout} {style} overflow: hidden;">'
-            f'<img src="{_escape_html(image_url)}" style="width: 100%; height: 100%; object-fit: {object_fit};" />'
+            f'<img src="{_escape_html(safe_url)}" style="{img_css}" />'
             '</div>'
         )
     return f'<div class="element image" style="{layout} {style} overflow: hidden;">{block.content or ""}</div>'

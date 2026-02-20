@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { PanelLeftClose, PanelLeftOpen, PanelRightClose, PanelRightOpen } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   CanvasDocument,
   TemplateElement,
@@ -121,6 +121,10 @@ interface CanvasEditorProps {
   dataPreview?: Record<string, unknown>;
   isDirty?: boolean;
   onLoadTemplate?: (doc: CanvasDocument) => void;
+  leftSidebarWidth: number;
+  rightSidebarWidth: number;
+  onLeftSidebarWidthChange: (width: number) => void;
+  onRightSidebarWidthChange: (width: number) => void;
 }
 
 export default function CanvasEditor({
@@ -131,13 +135,22 @@ export default function CanvasEditor({
   dataPreview,
   isDirty,
   onLoadTemplate,
+  leftSidebarWidth,
+  rightSidebarWidth,
+  onLeftSidebarWidthChange,
+  onRightSidebarWidthChange,
 }: CanvasEditorProps) {
+  const MIN_SIDEBAR_WIDTH = 250;
+  const MAX_SIDEBAR_WIDTH = 500;
+
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [zoom, setZoom] = useState(75);
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
+  const [activeResizer, setActiveResizer] = useState<'left' | 'right' | null>(null);
   const [snapConfig, setSnapConfig] = useState<SnapConfig>(() => loadSnapConfig());
   const hasMigrated = useRef(false);
+  const bodyRef = useRef<HTMLDivElement>(null);
   const variableRegistry = useMemo(() => normalizeVariableRegistry(doc.variables), [doc.variables]);
 
   useEffect(() => {
@@ -160,7 +173,55 @@ export default function CanvasEditor({
       window.cancelAnimationFrame(frameId);
       window.clearTimeout(timeoutId);
     };
-  }, [isLeftSidebarOpen, isRightSidebarOpen]);
+  }, [isLeftSidebarOpen, isRightSidebarOpen, leftSidebarWidth, rightSidebarWidth]);
+
+  const clampSidebarWidth = useCallback((value: number) => {
+    return Math.max(MIN_SIDEBAR_WIDTH, Math.min(MAX_SIDEBAR_WIDTH, Math.round(value)));
+  }, []);
+
+  const startResize = useCallback((side: 'left' | 'right', event: React.MouseEvent<HTMLDivElement>) => {
+    if (!bodyRef.current) return;
+
+    event.preventDefault();
+    setActiveResizer(side);
+
+    const containerRect = bodyRef.current.getBoundingClientRect();
+    const previousCursor = document.body.style.cursor;
+    const previousUserSelect = document.body.style.userSelect;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      if (side === 'left') {
+        const nextWidth = clampSidebarWidth(moveEvent.clientX - containerRect.left);
+        onLeftSidebarWidthChange(nextWidth);
+        return;
+      }
+
+      const nextWidth = clampSidebarWidth(containerRect.right - moveEvent.clientX);
+      onRightSidebarWidthChange(nextWidth);
+    };
+
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = previousCursor;
+      document.body.style.userSelect = previousUserSelect;
+      setActiveResizer(null);
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [clampSidebarWidth, onLeftSidebarWidthChange, onRightSidebarWidthChange]);
+
+  useEffect(() => {
+    return () => {
+      if (activeResizer) {
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      }
+    };
+  }, [activeResizer]);
 
   const handleSnapEnabledChange = useCallback((enabled: boolean) => {
     setSnapConfig(prev => ({ ...prev, enabled }));
@@ -731,57 +792,46 @@ export default function CanvasEditor({
         onUngroup={handleUngroup}
       />
 
-      <div className="flex-1 flex overflow-hidden min-w-0">
+      <div ref={bodyRef} className="relative flex-1 flex overflow-hidden min-w-0">
         {/* Sidebar */}
-        <div
-          className={`relative flex-none transition-all duration-300 ease-in-out ${isLeftSidebarOpen
-            ? 'max-w-[320px] opacity-100 overflow-visible'
-            : 'max-w-0 opacity-0 overflow-hidden pointer-events-none'
-            }`}
-          aria-hidden={!isLeftSidebarOpen}
-        >
-          <SidebarRoot
-            onAddElement={handleAddElement}
-            onAddBlock={handleAddBlock}
-            elements={doc.elements}
-            variables={variableRegistry}
-            onVariablesChange={handleUpdateVariables}
-            selectedIds={selectedIds}
-            onSelect={(id: string, multi: boolean) => {
-              if (multi) setSelectedIds(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
-              else setSelectedIds([id]);
-            }}
-            onToggleLock={handleToggleLock}
-            onToggleVisible={handleToggleVisible}
-            onReorder={handleReorder}
-            onLoadTemplate={onLoadTemplate}
-            currentDocName={doc.name}
-            isDirty={isDirty}
-          />
-        </div>
+        {isLeftSidebarOpen && (
+          <>
+            <SidebarRoot
+              width={leftSidebarWidth}
+              onAddElement={handleAddElement}
+              onAddBlock={handleAddBlock}
+              elements={doc.elements}
+              variables={variableRegistry}
+              onVariablesChange={handleUpdateVariables}
+              selectedIds={selectedIds}
+              onSelect={(id: string, multi: boolean) => {
+                if (multi) setSelectedIds(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
+                else setSelectedIds([id]);
+              }}
+              onToggleLock={handleToggleLock}
+              onToggleVisible={handleToggleVisible}
+              onReorder={handleReorder}
+              onLoadTemplate={onLoadTemplate}
+              currentDocName={doc.name}
+              isDirty={isDirty}
+            />
+            <div
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Redimensionar panel izquierdo"
+              className="group relative w-2 flex-none cursor-col-resize select-none"
+              onMouseDown={(event) => startResize('left', event)}
+            >
+              <div
+                className={`absolute inset-y-0 left-1/2 w-px -translate-x-1/2 transition-colors ${activeResizer === 'left' ? 'bg-blue-500' : 'bg-neutral-200 group-hover:bg-blue-500'
+                  }`}
+              />
+            </div>
+          </>
+        )}
 
         {/* Canvas Area */}
-        <div className="flex-1 relative flex flex-col min-w-0">
-          <button
-            type="button"
-            onClick={() => setIsLeftSidebarOpen((prev) => !prev)}
-            className="absolute left-3 top-3 z-20 h-8 w-8 rounded-md border border-neutral-200 bg-white/95 text-neutral-600 shadow-sm backdrop-blur hover:bg-white hover:text-violet-700 transition-colors flex items-center justify-center"
-            title={isLeftSidebarOpen ? 'Ocultar panel izquierdo' : 'Mostrar panel izquierdo'}
-            aria-label={isLeftSidebarOpen ? 'Ocultar panel izquierdo' : 'Mostrar panel izquierdo'}
-          >
-            {isLeftSidebarOpen ? <PanelLeftClose size={16} /> : <PanelLeftOpen size={16} />}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsRightSidebarOpen((prev) => !prev)}
-            className="absolute right-3 top-3 z-20 h-8 w-8 rounded-md border border-neutral-200 bg-white/95 text-neutral-600 shadow-sm backdrop-blur hover:bg-white hover:text-violet-700 transition-colors flex items-center justify-center"
-            title={isRightSidebarOpen ? 'Ocultar inspector' : 'Mostrar inspector'}
-            aria-label={isRightSidebarOpen ? 'Ocultar inspector' : 'Mostrar inspector'}
-          >
-            {isRightSidebarOpen ? <PanelRightClose size={16} /> : <PanelRightOpen size={16} />}
-          </button>
-
+        <div className="flex-1 relative flex flex-col min-w-0 overflow-hidden">
           <CanvasArea
             document={doc}
             pageSettings={pageSettings}
@@ -812,22 +862,42 @@ export default function CanvasEditor({
           />
         </div>
 
-        {/* Inspector */}
-        <div
-          className={`relative flex-none transition-all duration-300 ease-in-out ${isRightSidebarOpen
-            ? 'w-[260px] opacity-100 overflow-visible'
-            : 'w-0 opacity-0 overflow-hidden pointer-events-none'
-            }`}
-          aria-hidden={!isRightSidebarOpen}
+        <button
+          type="button"
+          onClick={() => setIsRightSidebarOpen((prev) => !prev)}
+          className="absolute top-1/2 z-30 h-14 w-7 -translate-y-1/2 rounded-full border border-neutral-800 bg-white text-violet-600 shadow-sm transition-colors hover:bg-neutral-50 flex items-center justify-center"
+          style={{ right: isRightSidebarOpen ? rightSidebarWidth + 2 - 14 : 6 }}
+          title={isRightSidebarOpen ? 'Ocultar inspector' : 'Mostrar inspector'}
+          aria-label={isRightSidebarOpen ? 'Ocultar inspector' : 'Mostrar inspector'}
         >
-          <InspectorRoot
-            selectedIds={selectedIds}
-            elements={doc.elements}
-            onUpdateElement={handleUpdateElement}
-            pageSettings={pageSettings}
-            onPageSettingsChange={onPageSettingsChange}
-          />
-        </div>
+          {isRightSidebarOpen ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+        </button>
+
+        {/* Inspector */}
+        {isRightSidebarOpen && (
+          <>
+            <div
+              role="separator"
+              aria-orientation="vertical"
+              aria-label="Redimensionar panel derecho"
+              className="group relative w-2 flex-none cursor-col-resize select-none"
+              onMouseDown={(event) => startResize('right', event)}
+            >
+              <div
+                className={`absolute inset-y-0 left-1/2 w-px -translate-x-1/2 transition-colors ${activeResizer === 'right' ? 'bg-blue-500' : 'bg-neutral-200 group-hover:bg-blue-500'
+                  }`}
+              />
+            </div>
+            <InspectorRoot
+              width={rightSidebarWidth}
+              selectedIds={selectedIds}
+              elements={doc.elements}
+              onUpdateElement={handleUpdateElement}
+              pageSettings={pageSettings}
+              onPageSettingsChange={onPageSettingsChange}
+            />
+          </>
+        )}
       </div>
     </div>
   );

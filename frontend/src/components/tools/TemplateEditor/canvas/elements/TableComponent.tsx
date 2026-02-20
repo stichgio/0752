@@ -220,7 +220,7 @@ export function TableComponent({ tableData, style, disabled = false, onTableData
                             return (
                                 <td
                                     key={colIndex}
-                                    onDoubleClick={(event) => startCellEdit(event, rowIndex, colIndex)}
+                                    onClick={(event) => startCellEdit(event, rowIndex, colIndex)}
                                     style={{
                                         border: `1px solid ${table.borderColor}`,
                                         padding: '2px 4px',
@@ -232,8 +232,8 @@ export function TableComponent({ tableData, style, disabled = false, onTableData
                                     <div
                                         style={{
                                             overflow: 'hidden',
-                                            textOverflow: 'ellipsis',
-                                            whiteSpace: 'nowrap',
+                                            whiteSpace: 'pre-wrap',
+                                            wordBreak: 'break-word',
                                             minHeight: 12,
                                             opacity: isEditingCurrentCell ? 0 : 1,
                                         }}
@@ -289,6 +289,7 @@ export function TableComponent({ tableData, style, disabled = false, onTableData
                                     {colIndex < table.colCount - 1 && !disabled && (
                                         <div
                                             data-table-resize-handle="col"
+                                            onPointerDown={(event) => event.stopPropagation()}
                                             onMouseDown={(event) => startResize(event, 'col', colIndex)}
                                             style={{
                                                 position: 'absolute',
@@ -305,6 +306,7 @@ export function TableComponent({ tableData, style, disabled = false, onTableData
                                     {rowIndex < table.rowCount - 1 && !disabled && (
                                         <div
                                             data-table-resize-handle="row"
+                                            onPointerDown={(event) => event.stopPropagation()}
                                             onMouseDown={(event) => startResize(event, 'row', rowIndex)}
                                             style={{
                                                 position: 'absolute',
