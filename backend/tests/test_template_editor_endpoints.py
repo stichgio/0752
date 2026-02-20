@@ -255,3 +255,43 @@ def test_create_template_payload_validation_rejects_missing_name(client):
     payload.pop("name", None)
     res = client.post("/api/template-editor/templates", json=payload)
     assert res.status_code == 422
+
+
+def test_legacy_published_and_render_endpoints_support_status_workflow(client, monkeypatch):
+    monkeypatch.setenv("FEATURE_TEMPLATE_EDITOR", "true")
+
+    create_res = client.post("/api/template-editor/templates", json=_template_payload(name="published-sidebar-template"))
+    assert create_res.status_code == 200
+    template_id = create_res.json()["id"]
+
+    publish_res = client.patch(
+        f"/api/templates/{template_id}",
+        json={"status": "published", "author": "qa"},
+    )
+    assert publish_res.status_code == 200
+    assert publish_res.json()["status"] == "published"
+
+    published_res = client.get("/api/templates/published")
+    assert published_res.status_code == 200
+    published_rows = published_res.json().get("templates", [])
+    assert any(row["id"] == template_id and row.get("status") == "published" for row in published_rows)
+
+    render_res = client.get(f"/api/templates/{template_id}/render")
+    assert render_res.status_code == 200
+    render_payload = render_res.json()
+    assert render_payload["id"] == template_id
+    assert render_payload["status"] == "published"
+    assert isinstance(render_payload.get("content"), str)
+    assert "<!DOCTYPE html>" in render_payload["content"]
+    assert isinstance(render_payload.get("templateJson"), dict)
+
+    unpublish_res = client.patch(
+        f"/api/templates/{template_id}",
+        json={"status": "draft", "author": "qa"},
+    )
+    assert unpublish_res.status_code == 200
+    assert unpublish_res.json()["status"] == "draft"
+
+    published_after = client.get("/api/templates/published")
+    assert published_after.status_code == 200
+    assert all(row["id"] != template_id for row in published_after.json().get("templates", []))

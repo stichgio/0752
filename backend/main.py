@@ -7,12 +7,13 @@ from fastapi.staticfiles import StaticFiles
 import base64
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response, FileResponse
+from pydantic import BaseModel, Field
 import shutil
 import os
 import json
 import tempfile
 import traceback
-from typing import List, Optional
+from typing import Any, Dict, List, Literal, Optional
 from report_service import ReportService
 from pdf_tools import merge_pdfs_interleaved, merge_pdfs_sequential, split_pdf, split_pdf_by_ranges
 import zipfile
@@ -22,7 +23,14 @@ from fichas_tecnicas.router import router as fichas_tecnicas_router
 from image_optimizer.router import router as image_optimizer_router
 from compressor.router import router as compressor_router
 from template_editor.router import router as template_editor_router
-from template_editor.service import get_published_template_by_name, get_all_published_templates
+from template_editor.service import (
+    get_all_published_templates,
+    get_preview_html,
+    get_published_template_by_name,
+    get_template,
+    publish_template,
+    set_template_status,
+)
 from utils.file_utils import save_upload
 
 
@@ -88,6 +96,11 @@ app.add_middleware(
 # Create API Router with prefix
 api_router = APIRouter(prefix="/api")
 
+
+class TemplateStatusUpdatePayload(BaseModel):
+    status: Literal["draft", "published", "archived"] = Field(default="draft")
+    author: str = Field(default="system", min_length=1, max_length=120)
+
 # Include the routers (Only include once)
 app.include_router(technical_reports_router)
 app.include_router(fichas_tecnicas_router)
@@ -107,6 +120,68 @@ async def list_templates():
     editor_templates = get_all_published_templates()
 
     return {"templates": file_templates, "editorTemplates": editor_templates}
+
+
+@api_router.get("/templates/published")
+async def list_published_templates():
+    return {"templates": get_all_published_templates()}
+
+
+@api_router.patch("/templates/{template_id}")
+async def update_template_status_endpoint(template_id: str, payload: TemplateStatusUpdatePayload):
+    try:
+        if payload.status == "published":
+            updated = publish_template(template_id, payload.author)
+        else:
+            updated = set_template_status(template_id, payload.status, payload.author)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"{type(exc).__name__}: {exc}")
+
+    if hasattr(updated, "model_dump"):
+        return updated.model_dump()
+    return updated.dict()
+
+
+@api_router.put("/templates/{template_id}")
+async def update_template_status_put_endpoint(template_id: str, payload: TemplateStatusUpdatePayload):
+    return await update_template_status_endpoint(template_id, payload)
+
+
+@api_router.get("/templates/{template_id}/render")
+async def render_template_by_id(template_id: str):
+    record = get_template(template_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="Template not found")
+
+    compiled_html = get_preview_html(template_id)
+    if not compiled_html:
+        raise HTTPException(status_code=404, detail="Template content not found")
+
+    latest_version = record.versions[-1] if record.versions else None
+    template_json: Optional[Dict[str, Any]] = None
+    if latest_version and latest_version.templateJson:
+        if hasattr(latest_version.templateJson, "model_dump"):
+            template_json = latest_version.templateJson.model_dump()
+        else:
+            template_json = latest_version.templateJson.dict()
+
+    published_at = None
+    for version in reversed(record.versions):
+        if version.status == "published":
+            published_at = version.diffSummary.get("publishedAt") or version.createdAt
+            break
+
+    return {
+        "id": record.id,
+        "name": record.name,
+        "status": record.status,
+        "content": compiled_html,
+        "templateJson": template_json,
+        "publishedAt": published_at,
+        "updatedAt": record.updatedAt,
+    }
 
 @api_router.get("/templates/{filename}")
 async def get_template_content(filename: str):

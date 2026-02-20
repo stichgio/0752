@@ -14,6 +14,7 @@ import CanvasEditor from './CanvasEditor';
 import { exportToJinja2, exportToJSON, importFromJSON, generatePreviewHtml } from './exportUtils';
 import { useUndoableState } from './hooks/useUndoableState';
 import type { CanvasChangeOptions } from './historyTypes';
+import { templateEditorApi } from './api';
 
 const SESSION_KEY = 'canvas-editor-session-v1';
 
@@ -249,6 +250,7 @@ export default function TemplateEditor() {
   } = useUndoableState<CanvasDocument>(createEmptyDocument, { limit: 50 });
   const [pageSettings, setPageSettings] = useState<PageSettings>(createDefaultPageSettings);
   const [status, setStatus] = useState<PublishStatus>('draft');
+  const [serverTemplateId, setServerTemplateId] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [showPreview, setShowPreview] = useState(false);
@@ -256,6 +258,7 @@ export default function TemplateEditor() {
   const [dataPreview, setDataPreview] = useState<Record<string, unknown> | undefined>(undefined);
   const [leftWidth, setLeftWidth] = useState(320);
   const [rightWidth, setRightWidth] = useState(320);
+  const [publishedTemplatesRefreshKey, setPublishedTemplatesRefreshKey] = useState(0);
   const importRef = useRef<HTMLInputElement>(null);
 
   const toast = useCallback((msg: string, type: Toast['type'] = 'info') => {
@@ -276,6 +279,10 @@ export default function TemplateEditor() {
           resetDocHistory(normalizedDoc);
           setPageSettings(normalizedDoc.pageSettings);
           setStatus((s.status as PublishStatus) || 'draft');
+          const storedTemplateId = typeof s.serverTemplateId === 'string'
+            ? s.serverTemplateId
+            : (typeof s.templateId === 'string' ? s.templateId : '');
+          setServerTemplateId(storedTemplateId || null);
         }
       }
     } catch {
@@ -330,10 +337,10 @@ export default function TemplateEditor() {
 
   useEffect(() => {
     const t = setTimeout(() => {
-      localStorage.setItem(SESSION_KEY, JSON.stringify({ doc, status }));
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ doc, status, serverTemplateId }));
     }, 1000);
     return () => clearTimeout(t);
-  }, [doc, status]);
+  }, [doc, status, serverTemplateId]);
 
   // ── Warn on close ─────────────────────────────────────────────────────────
 
@@ -425,6 +432,7 @@ export default function TemplateEditor() {
     setPageSettings(normalizePageSettings(d.pageSettings));
     setDirty(false);
     setStatus('draft');
+    setServerTemplateId(null);
     localStorage.removeItem(SESSION_KEY);
     toast('Nueva plantilla creada', 'ok');
   }, [dirty, resetDocHistory, toast]);
@@ -439,6 +447,7 @@ export default function TemplateEditor() {
     });
     setPageSettings(normalizedDoc.pageSettings);
     setStatus('draft');
+    setServerTemplateId(null);
     setDirty(true);
     toast(`Plantilla "${normalizedDoc.name}" cargada`, 'ok');
   }, [setDocHistory, toast]);
@@ -490,24 +499,91 @@ export default function TemplateEditor() {
     setShowPreview(true);
   }, [doc]);
 
-  const saveLocally = useCallback(() => {
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ doc, status }));
-    setDirty(false);
-    toast('Guardado localmente', 'ok');
-  }, [doc, status, toast]);
+  const saveTemplate = useCallback(async () => {
+    if (!doc.elements.length) {
+      toast('Agrega al menos un elemento antes de guardar', 'err');
+      return;
+    }
+    try {
+      const resolvedTemplateId = await templateEditorApi.upsertDraftFromCanvas({
+        templateId: serverTemplateId,
+        name: doc.name,
+        doc,
+        author: 'editor',
+        role: 'editor',
+        reportType: 'technical-report',
+        featureFlag: true,
+      });
 
-  const publish = useCallback(() => {
+      const updated = {
+        ...doc,
+        id: resolvedTemplateId,
+        updatedAt: new Date().toISOString(),
+      };
+      setDocHistory(updated);
+      setServerTemplateId(resolvedTemplateId);
+      setDirty(false);
+      localStorage.setItem(
+        SESSION_KEY,
+        JSON.stringify({ doc: updated, status, serverTemplateId: resolvedTemplateId }),
+      );
+      toast('Plantilla guardada en la nube', 'ok');
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'Error al guardar en la nube';
+      toast(msg, 'err');
+    }
+  }, [doc, serverTemplateId, status, setDocHistory, toast]);
+
+  const publish = useCallback(async () => {
     if (!doc.elements.length) {
       toast('Agrega al menos un elemento antes de publicar', 'err');
       return;
     }
-    const updated = { ...doc, status: 'published' as const, updatedAt: new Date().toISOString() };
-    setDocHistory(updated);
-    setStatus('published');
-    setDirty(false);
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ doc: updated, status: 'published' }));
-    toast('Plantilla publicada', 'ok');
-  }, [doc, setDocHistory, toast]);
+
+    try {
+      const resolvedTemplateId = await templateEditorApi.upsertDraftFromCanvas({
+        templateId: serverTemplateId,
+        name: doc.name,
+        doc,
+        author: 'editor',
+        role: 'editor',
+        reportType: 'technical-report',
+        featureFlag: true,
+      });
+
+      await templateEditorApi.updateStatus(resolvedTemplateId, 'published', 'editor');
+
+      const nowIso = new Date().toISOString();
+      const updated = {
+        ...doc,
+        id: resolvedTemplateId,
+        status: 'published' as const,
+        updatedAt: nowIso,
+      };
+      setDocHistory(updated);
+      setStatus('published');
+      setServerTemplateId(resolvedTemplateId);
+      setDirty(false);
+      setPublishedTemplatesRefreshKey((prev) => prev + 1);
+      localStorage.setItem(
+        SESSION_KEY,
+        JSON.stringify({ doc: updated, status: 'published', serverTemplateId: resolvedTemplateId }),
+      );
+      toast('Plantilla publicada correctamente', 'ok');
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'No se pudo publicar la plantilla';
+      toast(msg, 'err');
+    }
+  }, [doc, serverTemplateId, setDocHistory, toast]);
+
+  const handleUnpublishTemplate = useCallback(async (templateId: string) => {
+    await templateEditorApi.updateStatus(templateId, 'draft', 'editor');
+    if (serverTemplateId && serverTemplateId === templateId) {
+      setStatus('draft');
+    }
+    setPublishedTemplatesRefreshKey((prev) => prev + 1);
+    toast('Plantilla despublicada correctamente', 'ok');
+  }, [serverTemplateId, toast]);
 
   return (
     <div className="template-editor-root h-full w-full flex flex-col bg-neutral-50">
@@ -591,8 +667,8 @@ export default function TemplateEditor() {
 
           <div className="h-6 w-px bg-neutral-200 mx-1" />
 
-          {/* Save (local) */}
-          <ToolbarBtn onClick={saveLocally} disabled={!dirty} title="Guardar sesión localmente">
+          {/* Save (cloud) */}
+          <ToolbarBtn onClick={saveTemplate} disabled={!dirty} title="Guardar en la nube">
             <Save size={16} />
             Guardar
           </ToolbarBtn>
@@ -624,6 +700,9 @@ export default function TemplateEditor() {
           rightSidebarWidth={rightWidth}
           onLeftSidebarWidthChange={setLeftWidth}
           onRightSidebarWidthChange={setRightWidth}
+          activePublishedTemplateId={serverTemplateId}
+          publishedTemplatesRefreshKey={publishedTemplatesRefreshKey}
+          onUnpublishTemplate={handleUnpublishTemplate}
         />
       </div>
 
