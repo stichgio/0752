@@ -1,7 +1,7 @@
 // Export to Jinja2/HTML
 import type { TemplateElement, CanvasDocument } from './canvasTypes';
 import { normalizeTableData } from './utils/elementDefaults';
-import { normalizePageSettings } from './canvasTypes';
+import { normalizePageSettings, normalizeVariableRegistry } from './canvasTypes';
 
 // ─── SVG placeholder for preview ──────────────────────────────────────────────
 
@@ -136,11 +136,13 @@ export function exportToJinja2(doc: CanvasDocument): string {
       padding: 1mm;
     }
 
+    /* fix: imagen-cortada — object-fit:contain prevents cropping in WeasyPrint */
     .photo-cell img {
       max-width: 100%;
       max-height: 85%;
       display: block;
       margin: 0 auto;
+      object-fit: contain;
     }
 
     .photo-cell-empty {
@@ -392,6 +394,23 @@ function buildPhotoGridTable(
   return html;
 }
 
+/* fix: imagen-cortada — Generate WeasyPrint-compatible image CSS with objectFit fallback */
+function generateImageCss(objectFit: string, widthMm: number, heightMm: number): string {
+  const base = 'display: block';
+  switch (objectFit) {
+    case 'fill':
+      return `${base}; width: 100%; height: 100%; object-fit: fill`;
+    case 'none':
+      return `${base}; object-fit: none`;
+    case 'cover':
+      return `${base}; width: 100%; height: 100%; object-fit: cover`;
+    case 'contain':
+    default:
+      /* fix: imagen-cortada — max-width/max-height as WeasyPrint fallback for object-fit:contain */
+      return `${base}; width: 100%; height: 100%; object-fit: contain; max-width: ${widthMm}mm; max-height: ${heightMm}mm`;
+  }
+}
+
 function generateElementContent(el: TemplateElement): string | null {
   switch (el.type) {
     case 'group':
@@ -406,18 +425,21 @@ function generateElementContent(el: TemplateElement): string | null {
       return `{{ ${el.variableName || 'variable'} }}`;
 
     case 'logo': {
+      /* fix: imagen-cortada */
+      const logoCss = generateImageCss('contain', el.size.width, el.size.height);
       if (el.imageUrl) {
-        return `<img src="${escapeHtml(el.imageUrl)}" style="width: 100%; height: 100%; object-fit: contain" />`;
+        return `<img src="${escapeHtml(el.imageUrl)}" style="${logoCss}" />`;
       }
       // Use variableName as Jinja2 var (defaults to logo_left)
       const logoVar = el.variableName || 'logo_left';
-      return `{% if ${logoVar} %}<img src="{{ ${logoVar} }}" style="width: 100%; height: 100%; object-fit: contain" />{% endif %}`;
+      return `{% if ${logoVar} %}<img src="{{ ${logoVar} }}" style="${logoCss}" />{% endif %}`;
     }
 
     case 'image': {
       if (el.imageUrl) {
-        const objectFit = el.style.objectFit || 'cover';
-        return `<img src="${escapeHtml(el.imageUrl)}" style="width: 100%; height: 100%; object-fit: ${objectFit}" />`;
+        /* fix: imagen-cortada — default to contain instead of cover */
+        const imgCss = generateImageCss(el.style.objectFit || 'contain', el.size.width, el.size.height);
+        return `<img src="${escapeHtml(el.imageUrl)}" style="${imgCss}" />`;
       }
       return '';
     }
@@ -453,7 +475,9 @@ function generateElementContent(el: TemplateElement): string | null {
         for (let colIndex = 0; colIndex < table.colCount; colIndex++) {
           const cell = row[colIndex] || '';
           // Use smart escape to preserve {{ jinja }} expressions in cells
-          tableHtml += `<td style="border: 1px solid ${table.borderColor}; padding: 1.5mm 2mm;">${escapeHtmlPreserveJinja(cell)}</td>`;
+          // Convert newlines to <br> for inline multi-line text
+          const cellHtml = escapeHtmlPreserveJinja(cell).replace(/\n/g, '<br>');
+          tableHtml += `<td style="border: 1px solid ${table.borderColor}; padding: 1.5mm 2mm; vertical-align: middle;">${cellHtml}</td>`;
         }
         tableHtml += '</tr>';
       }
@@ -528,6 +552,7 @@ export function exportToJSON(doc: CanvasDocument): string {
     {
       ...doc,
       pageSettings: normalizePageSettings(doc.pageSettings),
+      variables: normalizeVariableRegistry(doc.variables),
     },
     null,
     2
@@ -543,6 +568,7 @@ export function importFromJSON(json: string): CanvasDocument | null {
     return {
       ...doc,
       pageSettings: normalizePageSettings(doc.pageSettings),
+      variables: normalizeVariableRegistry(doc.variables),
     } as CanvasDocument;
   } catch {
     return null;

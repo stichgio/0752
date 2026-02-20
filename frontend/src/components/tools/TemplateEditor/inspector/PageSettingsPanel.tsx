@@ -3,6 +3,7 @@ import { PageSettings, PageOrientation } from '../canvasTypes';
 import { FileText, Ruler } from 'lucide-react';
 
 interface PageSettingsPanelProps {
+  width?: number;
   pageSettings: PageSettings;
   onChange: (settings: PageSettings) => void;
 }
@@ -68,7 +69,7 @@ function NumericInput({
   );
 }
 
-export function PageSettingsPanel({ pageSettings, onChange }: PageSettingsPanelProps) {
+export function PageSettingsPanel({ width = 260, pageSettings, onChange }: PageSettingsPanelProps) {
   const formatValue = resolveFormatValue(pageSettings);
 
   const handleFormatChange = (value: string) => {
@@ -108,7 +109,7 @@ export function PageSettingsPanel({ pageSettings, onChange }: PageSettingsPanelP
   };
 
   return (
-    <div className="h-full border-l border-neutral-200 bg-white flex flex-col overflow-y-auto" style={{ width: 260 }}>
+    <div className="h-full flex-none border-l border-neutral-200 bg-white flex flex-col overflow-y-auto" style={{ width }}>
       <div className="px-3 py-2.5 border-b border-neutral-100 flex items-center gap-2">
         <FileText size={14} className="text-neutral-400" />
         <h2 className="text-sm font-semibold text-neutral-700">Pagina</h2>

@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Layers, Grid, LayoutTemplate, Settings2, ChevronLeft, ChevronRight, Braces } from 'lucide-react';
+import { Layers, Grid, LayoutTemplate, Settings2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ElementsPalette } from './ElementsPalette';
 import { LayersPanel } from './LayersPanel';
 import { TemplatesPanel } from './TemplatesPanel';
-import { VariablesPanel } from './VariablesPanel';
 import { ElementType, ElementPreset, BlockPreset } from '../canvasTypes';
-import type { TemplateElement } from '../canvasTypes';
+import type { TemplateElement, VariableDefinition } from '../canvasTypes';
 import type { CanvasDocument } from '../canvasTypes';
 
 interface SidebarRootProps {
+    width?: number;
     onAddElement: (
         type: ElementType,
         pos?: { x: number; y: number },
@@ -17,6 +17,8 @@ interface SidebarRootProps {
     ) => void;
     onAddBlock?: (blockId: BlockPreset, pos?: { x: number; y: number }) => void;
     elements: TemplateElement[];
+    variables?: VariableDefinition[] | null;
+    onVariablesChange?: (variables: VariableDefinition[]) => void;
     selectedIds: string[];
     onSelect: (id: string, multi: boolean) => void;
     onToggleLock: (id: string) => void;
@@ -27,11 +29,10 @@ interface SidebarRootProps {
     isDirty?: boolean;
 }
 
-type TabId = 'elements' | 'variables' | 'layers' | 'templates' | 'settings';
+type TabId = 'elements' | 'layers' | 'templates' | 'settings';
 
 const TABS: { id: TabId; icon: React.ReactNode; label: string }[] = [
     { id: 'elements', icon: <Grid size={18} />, label: 'Elementos' },
-    { id: 'variables', icon: <Braces size={18} />, label: 'Variables' },
     { id: 'layers', icon: <Layers size={18} />, label: 'Capas' },
     { id: 'templates', icon: <LayoutTemplate size={18} />, label: 'Plantillas' },
     { id: 'settings', icon: <Settings2 size={18} />, label: 'Ajustes' },
@@ -43,6 +44,7 @@ const SIDEBAR_COLLAPSED_WIDTH = 48;
 export function SidebarRoot(props: SidebarRootProps) {
     const [activeTab, setActiveTab] = useState<TabId>('elements');
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const sidebarWidth = props.width ?? SIDEBAR_EXPANDED_WIDTH;
 
     useEffect(() => {
         const handleShortcut = (e: KeyboardEvent) => {
@@ -69,8 +71,8 @@ export function SidebarRoot(props: SidebarRootProps) {
 
     return (
         <div
-            className="relative flex h-full border-r border-neutral-200 bg-white transition-[width] duration-200 ease-out"
-            style={{ width: isCollapsed ? SIDEBAR_COLLAPSED_WIDTH : SIDEBAR_EXPANDED_WIDTH }}
+            className="relative flex h-full flex-none border-r border-neutral-200 bg-white transition-[width] duration-200 ease-out"
+            style={{ width: isCollapsed ? SIDEBAR_COLLAPSED_WIDTH : sidebarWidth }}
         >
             <div className={`w-12 flex flex-col items-center py-3 gap-1 bg-neutral-50/80 ${isCollapsed ? '' : 'border-r border-neutral-100'}`}>
                 {TABS.map((tab) => (
@@ -103,9 +105,6 @@ export function SidebarRoot(props: SidebarRootProps) {
                                 onAddElement={(type, presetId) => props.onAddElement(type, undefined, presetId)}
                                 onAddBlock={props.onAddBlock ? (blockId) => props.onAddBlock!(blockId) : undefined}
                             />
-                        )}
-                        {activeTab === 'variables' && (
-                            <VariablesPanel onAddElement={props.onAddElement} />
                         )}
                         {activeTab === 'layers' && (
                             <LayersPanel

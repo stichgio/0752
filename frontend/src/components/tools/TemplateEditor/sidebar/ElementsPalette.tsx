@@ -69,7 +69,14 @@ export function ElementsPalette({ onAddElement, onAddBlock }: ElementsPalettePro
     const [blocksExpanded, setBlocksExpanded] = useState(true);
 
     const handleDragStart = (e: React.DragEvent, type: ElementType, presetId?: ElementPreset) => {
+        const payload = JSON.stringify({
+            type,
+            presetId: presetId || null,
+        });
+        e.dataTransfer.setData('elementType', type);
         e.dataTransfer.setData('application/react-dnd', type);
+        e.dataTransfer.setData('application/template-editor-element', payload);
+        e.dataTransfer.setData('text/plain', type);
         if (presetId) {
             e.dataTransfer.setData('application/template-editor-preset', presetId);
         }
@@ -77,7 +84,9 @@ export function ElementsPalette({ onAddElement, onAddBlock }: ElementsPalettePro
     };
 
     const handleBlockDragStart = (e: React.DragEvent, blockId: BlockPreset) => {
+        e.dataTransfer.setData('blockType', blockId);
         e.dataTransfer.setData('application/template-editor-block', blockId);
+        e.dataTransfer.setData('text/plain', `block:${blockId}`);
         e.dataTransfer.effectAllowed = 'copy';
     };
 

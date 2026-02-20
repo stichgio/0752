@@ -273,18 +273,22 @@ function CanvasElementComponent({
         if (locked) return;
         if (isEditing) return;
 
-        const isInlineEditableSurface = isInlineTextEditable || type === 'table';
-        if (isInlineEditableSurface && !isSelected) {
-            // First click selects editable elements without starting drag,
-            // so double-click can reliably enter inline edit mode.
+        // Text/heading: first click selects without drag, double-click edits
+        if (isInlineTextEditable && !isSelected) {
             onSelect(id, e.shiftKey);
             return;
         }
 
-        if ((isInlineTextEditable || type === 'table') && e.detail === 2) {
+        if (isInlineTextEditable && e.detail === 2) {
             onSelect(id, e.shiftKey);
             return;
         }
+
+        // Tables: when selected, don't drag — let clicks reach cells for editing
+        if (type === 'table' && isSelected) {
+            return;
+        }
+
         onSelect(id, e.shiftKey);
         onDragStart(e, id);
     }, [disableInteraction, locked, isEditing, isInlineTextEditable, type, isSelected, onSelect, onDragStart, id]);

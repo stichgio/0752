@@ -1,4 +1,8 @@
-import { CanvasDocument, TemplateElement, normalizePageSettings } from './canvasTypes';
+import {
+    CanvasDocument,
+    TemplateElement,
+    normalizePageSettings,
+} from './canvasTypes';
 
 // Matches the backend structure expectation if necessary
 interface LegacyTemplateBlock {
@@ -118,6 +122,7 @@ export function legacyTemplateToDocument(json: LegacyTemplate, id: string, name:
         id,
         name: json.name || name,
         elements,
+        variables: [],
         pageSettings: normalizePageSettings(json.metadata?.pageSettings),
         version: json.metadata?.version || 1,
         status: 'draft',
