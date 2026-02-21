@@ -211,6 +211,16 @@ function CanvasElementComponent({
 
     const accentColor = TYPE_COLORS[type] || '#3b82f6';
     const rotationTransform = rotation ? ` rotate(${rotation}deg)` : '';
+    const effectiveOpacity = isDragging ? Math.min(style.opacity ?? 1, 0.85) : (style.opacity ?? 1);
+    const elementCursor = disableInteraction
+        ? 'default'
+        : locked
+            ? 'default'
+            : isEditing
+                ? 'text'
+                : isDragging
+                    ? 'grabbing'
+                    : 'grab';
 
     const containerStyle: React.CSSProperties = useMemo(() => ({
         position: 'absolute',
@@ -221,12 +231,14 @@ function CanvasElementComponent({
         transform: `translate(var(--drag-tx, 0px), var(--drag-ty, 0px))${rotationTransform}`,
         transformOrigin: 'center center',
         zIndex: style.zIndex || 1,
-        opacity: style.opacity ?? 1,
-        cursor: disableInteraction ? 'default' : locked ? 'default' : isEditing ? 'text' : isSelected ? 'move' : 'pointer',
+        opacity: effectiveOpacity,
+        cursor: elementCursor,
         outline: isSelected ? `2px solid ${accentColor}` : 'none',
         outlineOffset: '1px',
         pointerEvents: (disableInteraction || suppressPointerEvents) ? 'none' as const : 'auto' as const,
-        willChange: isDragging ? 'transform' : undefined,
+        boxShadow: isDragging ? '0 8px 18px rgba(15, 23, 42, 0.18)' : style.boxShadow,
+        willChange: isDragging ? 'transform, box-shadow' : undefined,
+        transition: isDragging ? undefined : 'box-shadow 120ms ease, opacity 120ms ease',
     }), [
         x,
         y,
@@ -234,12 +246,12 @@ function CanvasElementComponent({
         height,
         rotationTransform,
         style.zIndex,
-        style.opacity,
+        style.boxShadow,
+        effectiveOpacity,
+        elementCursor,
         disableInteraction,
         suppressPointerEvents,
         isDragging,
-        locked,
-        isEditing,
         isSelected,
         accentColor,
     ]);
@@ -410,7 +422,7 @@ function CanvasElementComponent({
                         style={{
                             width: '100%',
                             height: '100%',
-                            objectFit: style.objectFit || (type === 'logo' ? 'contain' : 'cover')
+                            objectFit: style.objectFit || 'contain'
                         }}
                         draggable={false}
                     />
@@ -572,6 +584,7 @@ function CanvasElementComponent({
             case 'photo-grid': {
                 const count = element.photoConfig?.count || 2;
                 const cols = getPhotoGridColumns(count);
+                const gridRows = Math.ceil(count / cols);
                 const oddPosition = (element.photoConfig?.oddPosition || 'center') as OddPhotoPosition;
                 return (
                     <div style={{ width: '100%', height: '100%', padding: 4 }}>
@@ -581,6 +594,7 @@ function CanvasElementComponent({
                         <div style={{
                             display: 'grid',
                             gridTemplateColumns: `repeat(${cols}, 1fr)`,
+                            gridTemplateRows: `repeat(${gridRows}, 1fr)`,
                             gap: 4,
                             height: content ? 'calc(100% - 20px)' : '100%',
                         }}>
@@ -593,11 +607,13 @@ function CanvasElementComponent({
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     borderRadius: 4,
+                                    overflow: 'hidden',
+                                    minHeight: 0,
                                     ...getOddPhotoItemStyle(i, count, oddPosition),
                                 }}>
                                     <Image size={16} color="#ccc" />
                                     {element.photoConfig?.showLabels && (
-                                        <span style={{ fontSize: 8, color: '#aaa', marginTop: 2 }}>
+                                        <span style={{ fontSize: 8, color: '#aaa', marginTop: 2, flexShrink: 0 }}>
                                             {element.photoConfig.labels?.[i] || `Foto ${i + 1}`}
                                         </span>
                                     )}

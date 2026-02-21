@@ -128,21 +128,41 @@ export function exportToJinja2(doc: CanvasDocument): string {
     }
 
     .photo-cell {
-      text-align: center;
-      vertical-align: middle;
       background: #f3f4f6;
       border: 1px solid #d1d5db;
       border-radius: 1.4mm;
-      padding: 1mm;
+      padding: 0;
+      overflow: hidden;
+      vertical-align: top;
     }
 
-    /* fix: imagen-cortada — object-fit:contain prevents cropping in WeasyPrint */
-    .photo-cell img {
-      max-width: 100%;
-      max-height: 85%;
-      display: block;
-      margin: 0 auto;
+    .photo-cell-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
+      width: 100%;
+      height: 100%;
+      padding: 1mm;
+      box-sizing: border-box;
+    }
+
+    .photo-media {
+      flex: 1 1 auto;
+      min-height: 0;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .photo-cell-wrap img {
+      width: 100%;
+      height: 100%;
       object-fit: contain;
+      object-position: center;
+      display: block;
     }
 
     .photo-cell-empty {
@@ -151,11 +171,13 @@ export function exportToJinja2(doc: CanvasDocument): string {
     }
 
     .photo-label {
+      flex-shrink: 0;
       font-weight: 700;
       font-size: 7.5pt;
       text-transform: uppercase;
       margin-top: 1mm;
       letter-spacing: 0.02em;
+      line-height: 1.2;
     }
 
     table {
@@ -364,11 +386,14 @@ function buildPhotoGridTable(
       const labelHtml = showLabels ? `<div class="photo-label">${escapeHtml(label)}</div>` : '';
       html += `<td class="photo-cell-empty" style="width: 25%;"></td>`;
       html += `<td class="photo-cell" colspan="1" style="width: 50%;">`;
+      html += `<div class="photo-cell-wrap">`;
+      html += `<div class="photo-media">`;
       html += `{% if report.images|length > ${i} %}`;
       html += `<img src="{{ report.images[${i}].path }}" alt="{{ report.images[${i}].name | default('${escapeHtml(label)}') }}" />`;
       html += `{% else %}<span style="color:#999;">Sin foto</span>{% endif %}`;
+      html += `</div>`;
       html += labelHtml;
-      html += `</td>`;
+      html += `</div></td>`;
       html += `<td class="photo-cell-empty" style="width: 25%;"></td>`;
     } else {
       for (const slotIndex of row.slots) {
@@ -378,11 +403,14 @@ function buildPhotoGridTable(
           const label = labels[slotIndex] || `Foto ${slotIndex + 1}`;
           const labelHtml = showLabels ? `<div class="photo-label">${escapeHtml(label)}</div>` : '';
           html += `<td class="photo-cell" style="width: 50%;">`;
+          html += `<div class="photo-cell-wrap">`;
+          html += `<div class="photo-media">`;
           html += `{% if report.images|length > ${slotIndex} %}`;
           html += `<img src="{{ report.images[${slotIndex}].path }}" alt="{{ report.images[${slotIndex}].name | default('${escapeHtml(label)}') }}" />`;
           html += `{% else %}<span style="color:#999;">Sin foto</span>{% endif %}`;
+          html += `</div>`;
           html += labelHtml;
-          html += `</td>`;
+          html += `</div></td>`;
         }
       }
     }

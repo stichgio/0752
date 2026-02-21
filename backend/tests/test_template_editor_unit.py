@@ -84,7 +84,7 @@ def test_compile_photo_grid_respects_configured_count_and_odd_position():
     assert "table-layout: fixed;" in html
     assert "{% if report.images|length > 4 %}" in html
     assert 'class="photo-cell-empty"' in html
-    assert "max-height: 85%;" in html
+    assert "width: 100%; height: 100%;" in html
 
 
 def test_compile_photo_grid_respects_configured_count_with_labels():

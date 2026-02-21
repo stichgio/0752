@@ -5,6 +5,54 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
     const [layoutMode, setLayoutMode] = useState('grid');
     const [renderedHtml, setRenderedHtml] = useState('');
 
+    const normalizePhotoGridTemplate = (sourceHtml) => {
+        if (!sourceHtml || typeof sourceHtml !== 'string') return sourceHtml;
+
+        let normalized = sourceHtml;
+
+        // Legacy templates may place <img> directly in .photo-cell-wrap with flex-grow,
+        // which can stretch/crop images inconsistently. Wrap media content explicitly.
+        normalized = normalized.replace(
+            /<div class="photo-cell-wrap">\s*(\{%\s*if\s+report\.images\|length\s*>\s*\d+\s*%\}[\s\S]*?\{%\s*endif\s*%\})\s*(<div class="photo-label">)/g,
+            '<div class="photo-cell-wrap"><div class="photo-media">$1</div>$2'
+        );
+
+        const compatCss = `
+<style id="photo-grid-compat-fix">
+  .photo-cell-wrap { align-items: stretch !important; justify-content: flex-start !important; }
+  .photo-media {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+  }
+  .photo-cell-wrap > img,
+  .photo-cell-wrap img {
+    flex: 0 1 auto !important;
+    width: auto !important;
+    height: auto !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: contain !important;
+    object-position: center !important;
+    image-orientation: from-image !important;
+    display: block !important;
+    margin: 0 auto !important;
+  }
+</style>`;
+
+        if (/<\/head>/i.test(normalized)) {
+            normalized = normalized.replace(/<\/head>/i, `${compatCss}</head>`);
+        } else {
+            normalized = `${compatCss}${normalized}`;
+        }
+
+        return normalized;
+    };
+
     // Helper to get mapped value with optional date formatting
     const getValue = (fieldId, isDateField = false) => {
         if (!data || !mappings[fieldId]) return '-';
@@ -20,7 +68,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
         }
 
         const renderTemplate = async () => {
-            let html = customTemplate.content;
+            let html = normalizePhotoGridTemplate(customTemplate.content);
 
             // 1. Prepare Data
             const reportData = {};
@@ -285,7 +333,6 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                     const img = imagesToRender[i];
                     const imgUrl = URL.createObjectURL(img);
                     let itemHtml = loopContent;
-87
                     // Replace {{ img.path }}
                     itemHtml = itemHtml.replaceAll('{{ img.path }}', imgUrl);
                     itemHtml = itemHtml.replaceAll('{{ img.name }}', img.name);

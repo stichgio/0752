@@ -284,6 +284,22 @@ export default function CanvasEditor({
     const newEl = createElement(type, position, overrides);
     let nextDoc = doc;
 
+    if (type === 'photo-grid' && !newEl.photoConfig) {
+      newEl.photoConfig = {
+        count: 4,
+        labels: ['ANTES', 'DURANTE', 'DESPUES', 'DETALLE'],
+        showLabels: true,
+        oddPosition: 'center',
+      };
+      newEl.style = {
+        ...newEl.style,
+        backgroundColor: '#f7f6ff',
+        borderColor: '#6d4cff',
+        borderWidth: 1.2,
+        borderStyle: 'solid',
+      };
+    }
+
     if (presetId === 'photo-panel') {
       newEl.name = `Panel fotografico ${Math.floor(Math.random() * 1000)}`;
       newEl.content = 'Panel fotografico';
