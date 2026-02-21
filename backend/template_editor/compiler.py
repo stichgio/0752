@@ -5,8 +5,12 @@ The generated HTML must be fully compatible with the existing PDF pipeline
 (WeasyPrint) and match the structure of hand-crafted templates in /templates/.
 """
 
+import base64
+import mimetypes
+import os
 import re
 from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
 
 from .models import EditorBlock, TemplateJson
 from .utils import url_to_base64
@@ -138,7 +142,7 @@ body { font-family: Arial, 'Segoe UI', Helvetica, sans-serif; font-size: 8pt; co
     padding: 1mm;
 }
 .photo-item { width: 100%; height: 100%; }
-.photo-item img { max-width: 100%; max-height: 85%; margin: 0 auto; display: block; }
+.photo-item img { width: 100%; height: 100%; object-fit: contain; object-position: center; display: block; }
 .no-photos { border: 1px dashed #ccc; color: #999; font-style: italic; border-radius: 1.2mm; text-align: center; padding: 8mm 2mm; }
 
 /* Photo labels */
@@ -348,7 +352,7 @@ PHOTO_CENTER_INNER_STYLE = (
     "vertical-align: middle; background: #f3f4f6; border: 1px solid #d1d5db; padding: 1mm;"
 )
 # fix: imagen-cortada — added object-fit: contain for WeasyPrint
-PHOTO_IMAGE_STYLE = "max-width: 100%; max-height: 85%; margin: 0 auto; display: block; object-fit: contain;"
+PHOTO_IMAGE_STYLE = "width: 100%; height: 100%; object-fit: contain; object-position: center; display: block;"
 PHOTO_LABEL_STYLE = (
     "font-weight: 700; font-size: 7.5pt; text-transform: uppercase; margin-top: 2mm; "
     "letter-spacing: 0.02em;"
@@ -1149,19 +1153,41 @@ CANVAS_CSS_TEMPLATE = """\
 
     .photo-cell {{
       text-align: center;
-      vertical-align: middle;
+      vertical-align: top;
       background: #f3f4f6;
       border: 1px solid #d1d5db;
       border-radius: 1.4mm;
+      padding: 0;
+      overflow: hidden;
+    }}
+
+    .photo-cell-wrap {{
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+      justify-content: flex-start;
+      width: 100%;
+      height: 100%;
       padding: 1mm;
+      box-sizing: border-box;
+    }}
+
+    .photo-media {{
+      flex: 1 1 auto;
+      min-height: 0;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
     }}
 
     .photo-cell img {{
-      max-width: 100%;
-      max-height: 85%;
-      display: block;
-      margin: 0 auto;
+      width: 100%;
+      height: 100%;
       object-fit: contain;
+      object-position: center;
+      display: block;
     }}
 
     .photo-cell-empty {{
@@ -1354,13 +1380,17 @@ def _build_canvas_photo_grid(
             )
             html += '<td class="photo-cell-empty" style="width: 25%;"></td>'
             html += '<td class="photo-cell" colspan="1" style="width: 50%;">'
+            html += '<div class="photo-cell-wrap">'
+            html += '<div class="photo-media">'
             html += f'{{% if report.images|length > {i} %}}'
             html += (
                 f'<img src="{{{{ report.images[{i}].path }}}}" '
                 f'alt="{{{{ report.images[{i}].name | default(\'{_escape_html(label)}\') }}}}" />'
             )
             html += '{% else %}<span style="color:#999;">Sin foto</span>{% endif %}'
+            html += '</div>'
             html += label_html
+            html += '</div>'
             html += '</td>'
             html += '<td class="photo-cell-empty" style="width: 25%;"></td>'
         else:
@@ -1373,13 +1403,17 @@ def _build_canvas_photo_grid(
                         f'<div class="photo-label">{_escape_html(label)}</div>' if show_labels else ""
                     )
                     html += '<td class="photo-cell" style="width: 50%;">'
+                    html += '<div class="photo-cell-wrap">'
+                    html += '<div class="photo-media">'
                     html += f'{{% if report.images|length > {slot} %}}'
                     html += (
                         f'<img src="{{{{ report.images[{slot}].path }}}}" '
                         f'alt="{{{{ report.images[{slot}].name | default(\'{_escape_html(label)}\') }}}}" />'
                     )
                     html += '{% else %}<span style="color:#999;">Sin foto</span>{% endif %}'
+                    html += '</div>'
                     html += label_html
+                    html += '</div>'
                     html += '</td>'
 
         html += '</tr>'
@@ -1633,11 +1667,107 @@ def _compile_canvas_template(template_json: TemplateJson) -> str:
         '</html>'
     )
 
+def _extract_canvas_images(variables: Dict[str, Any]) -> List[Any]:
+    reports = variables.get("reports")
+    if isinstance(reports, list) and reports:
+        first_report = reports[0]
+        if isinstance(first_report, dict):
+            report_images = first_report.get("images", [])
+        else:
+            report_images = getattr(first_report, "images", [])
+        if isinstance(report_images, list):
+            return report_images
+
+    direct_images = variables.get("images", [])
+    return direct_images if isinstance(direct_images, list) else []
+
+
+def _image_entry_values(image_entry: Any) -> tuple[str, str]:
+    if isinstance(image_entry, dict):
+        path = str(image_entry.get("path", "") or "").strip()
+        name = str(image_entry.get("name", "") or "").strip()
+        return path, name
+
+    path = str(getattr(image_entry, "path", "") or "").strip()
+    name = str(getattr(image_entry, "name", "") or "").strip()
+    return path, name
+
+
+def _bytes_to_data_uri(content: bytes, content_type: str = "") -> Optional[str]:
+    if not content:
+        return None
+    mime = (content_type or "").split(";")[0].strip().lower()
+    if not mime.startswith("image/"):
+        mime = "image/jpeg"
+    encoded = base64.b64encode(content).decode("ascii")
+    return f"data:{mime};base64,{encoded}"
+
+
+def _is_supabase_storage_url(url: str) -> bool:
+    if not url.startswith(("http://", "https://")):
+        return False
+    try:
+        host = urlparse(url).netloc.lower()
+    except Exception:
+        return False
+    return host.endswith(".supabase.co")
+
+
+def _local_image_to_base64(path: str) -> Optional[str]:
+    source = str(path or "").strip()
+    if not source:
+        return None
+
+    if source.lower().startswith("file://"):
+        source = source[7:]
+
+    if not os.path.isfile(source):
+        return None
+
+    try:
+        with open(source, "rb") as image_file:
+            payload = image_file.read()
+        guessed_type = mimetypes.guess_type(source)[0] or "image/jpeg"
+        return _bytes_to_data_uri(payload, guessed_type)
+    except Exception:
+        return None
+
+
+def _photo_grid_src_to_base64(src: str) -> Optional[str]:
+    source = str(src or "").strip()
+    if not source:
+        return None
+
+    if source.startswith("data:"):
+        return source
+
+    if source.startswith(("http://", "https://")):
+        if _is_supabase_storage_url(source):
+            try:
+                import httpx
+
+                response = httpx.get(source, timeout=15, follow_redirects=True)
+                response.raise_for_status()
+                return _bytes_to_data_uri(
+                    response.content,
+                    response.headers.get("content-type", "image/jpeg"),
+                )
+            except Exception:
+                return None
+
+        converted_remote = url_to_base64(source)
+        return converted_remote if converted_remote.startswith("data:") else None
+
+    converted_local = _local_image_to_base64(source)
+    if converted_local:
+        return converted_local
+
+    converted_fallback = url_to_base64(source)
+    return converted_fallback if converted_fallback.startswith("data:") else None
+
 
 def compile_canvas_to_html(canvas_doc: dict, variables: Optional[dict] = None) -> str:
     """Compile a canvas document dict to production HTML."""
-    from .utils import url_to_base64
-    import re
 
     variables = variables or {}
     
@@ -1711,114 +1841,110 @@ def compile_canvas_to_html(canvas_doc: dict, variables: Optional[dict] = None) -
         # ------------- PHOTO GRID HANDLER -------------
         if t in ("photo-grid", "photo_grid"):
             cfg = el.get("photoConfig", meta.get("photoConfig", {}))
-            
-            # Calcular dimensiones de celda en mm
+            if not isinstance(cfg, dict):
+                cfg = {}
+
             cols = int(el.get("columns", cfg.get("columns", 2)) or 2)
             rows = int(el.get("rows", cfg.get("rows", 2)) or 2)
-            if cols <= 0: cols = 2
-            if rows <= 0: rows = 2
-            
-            cell_width = w / cols
-            cell_height = h / rows
-            
-            # CSS de tabla
-            table_style = f"""
-              width: {w}mm;
-              height: {h}mm;
-              border-collapse: collapse;
-              table-layout: fixed;
-            """
-            
-            # CSS de cada celda <td>
-            td_style = f"""
-              width: {cell_width}mm;
-              height: {cell_height}mm;
-              overflow: hidden;
-              padding: 1mm;
-              vertical-align: middle;
-              border: 0.3mm solid #e0e0e0;
-            """
-            
-            # CSS de la imagen dentro de la celda
-            img_wrapper_style = f"""
-              width: {cell_width - 2}mm;
-              height: {cell_height - 4}mm;
-              overflow: hidden;
-              display: block;
-            """
-            
-            # CRÍTICO para WeasyPrint: NO usar object-fit:cover (no soportado bien).
-            # Usar este patrón alternativo:
-            img_style = f"""
-              display: block;
-              width: 100%;
-              height: 100%;
-              max-width: {cell_width}mm;
-              max-height: {cell_height}mm;
-              object-fit: contain;
-            """
-            
-            # Label debajo de la foto (ANTES/DURANTE/DESPUÉS/DETALLE)
-            label_style = """
-              display: block;
-              text-align: center;
-              font-size: 7pt;
-              font-weight: bold;
-              font-family: Arial, sans-serif;
-              color: #333;
-              margin-top: 0.5mm;
-              height: 4mm;
-            """
+            if cols <= 0:
+                cols = 2
+            if rows <= 0:
+                rows = 2
 
-            labels = cfg.get("labels", [])
-            show_labels = cfg.get("showLabels", False)
-            
-            imgs = []
-            if variables.get("reports"):
-                imgs = variables["reports"][0].get("images", [])
-            else:
-                imgs = variables.get("images", [])
-                
-            tbl = f'<table style="{table_style}">\n'
-            idx = 0
-            for r in range(rows):
-                tbl += "<tr>\n"
-                for c in range(cols):
-                    if idx < len(imgs):
-                        img_path = imgs[idx].get("path", "")
-                        img_name = imgs[idx].get("name", "")
-                        
-                        img_tag = f'<img src="{img_path}" alt="{img_name}" style="{img_style}">'
-                        
-                        label = labels[idx] if idx < len(labels) and labels[idx] else img_name
-                        if not show_labels: label = ""
-                        
-                        # Estructura HTML de cada celda:
-                        cell_html = f"""
-                        <td style="{td_style}">
-                          <div style="{img_wrapper_style}">
-                            {img_tag}  <!-- o placeholder si no hay imagen -->
-                          </div>
-                          <span style="{label_style}">{label}</span>
-                        </td>
-                        """
-                    else:
-                        # Si no hay imagen para esa celda → placeholder:
-                        placeholder_html = f"""
-                        <div style="width:100%;height:100%;background:#f5f5f5;
-                                    display:flex;align-items:center;justify-content:center;
-                                    font-size:7pt;color:#aaa;font-family:Arial;">
-                          Sin foto
-                        </div>
-                        """
-                        cell_html = f'<td style="{td_style}">\n{placeholder_html}\n</td>'
-                        
-                    tbl += cell_html + "\n"
-                    idx += 1
-                tbl += "</tr>\n"
-            tbl += "</table>\n"
-            content_html = tbl
+            total_w = _to_float(size.get("width"), w)
+            total_h = _to_float(size.get("height"), h)
+            gap = 1.5
+            label_h = 5.0
 
+            cell_w = (total_w - gap * (cols + 1)) / cols
+            cell_h = (total_h - gap * (rows + 1)) / rows
+            if cell_w <= 0:
+                cell_w = max(total_w / cols, 1.0)
+            if cell_h <= 0:
+                cell_h = max(total_h / rows, 1.0)
+            img_h = max(cell_h - label_h, 1.0)
+
+            total_cells = cols * rows
+            raw_labels = el.get("cellLabels", meta.get("cellLabels", []))
+            if not isinstance(raw_labels, list):
+                raw_labels = []
+
+            default_labels = [
+                "ANTES",
+                "DURANTE",
+                "DESPUÉS",
+                "DETALLE",
+                "FOTO 5",
+                "FOTO 6",
+                "FOTO 7",
+                "FOTO 8",
+            ]
+            labels: List[str] = []
+            for idx in range(total_cells):
+                if idx < len(raw_labels) and str(raw_labels[idx]).strip():
+                    labels.append(str(raw_labels[idx]).strip())
+                elif idx < len(default_labels):
+                    labels.append(default_labels[idx])
+                else:
+                    labels.append(f"FOTO {idx + 1}")
+
+            images = _extract_canvas_images(variables)
+            cells_html: List[str] = []
+            for idx in range(total_cells):
+                col = idx % cols
+                row = idx // cols
+                cell_x = gap + col * (cell_w + gap)
+                cell_y = gap + row * (cell_h + gap)
+                label = labels[idx]
+                label_html = _escape_html(label)
+
+                src_base64 = None
+                image_name = ""
+                if idx < len(images):
+                    image_src, image_name = _image_entry_values(images[idx])
+                    src_base64 = _photo_grid_src_to_base64(image_src)
+
+                if src_base64:
+                    alt_text = _escape_html(image_name or label)
+                    media_html = (
+                        f'<div style="width:{cell_w:.3f}mm;height:{img_h:.3f}mm;'
+                        'overflow:hidden;display:block;">'
+                        f'<img src="{src_base64}" alt="{alt_text}" '
+                        f'style="display:block;width:{cell_w:.3f}mm;'
+                        f'height:{img_h:.3f}mm;object-fit:contain;">'
+                        '</div>'
+                    )
+                else:
+                    media_html = (
+                        f'<div style="width:{cell_w:.3f}mm;height:{img_h:.3f}mm;'
+                        'background:#f5f5f5;overflow:hidden;display:flex;'
+                        'align-items:center;justify-content:center;font-size:7pt;'
+                        'color:#aaa;font-family:Arial,sans-serif;'
+                        'border:0.3mm dashed #ddd;">'
+                        'Sin foto'
+                        '</div>'
+                    )
+
+                cells_html.append(
+                    f'<div style="position:absolute;left:{cell_x:.3f}mm;top:{cell_y:.3f}mm;'
+                    f'width:{cell_w:.3f}mm;height:{cell_h:.3f}mm;overflow:hidden;'
+                    'background:white;border:0.3mm solid #e0e0e0;border-radius:1mm;">'
+                    f'{media_html}'
+                    f'<div style="width:{cell_w:.3f}mm;height:{label_h:.3f}mm;'
+                    'text-align:center;font-size:6.5pt;font-weight:bold;'
+                    'font-family:Arial,sans-serif;color:#333;'
+                    f'line-height:{label_h:.3f}mm;overflow:hidden;">'
+                    f'{label_html}'
+                    '</div>'
+                    '</div>'
+                )
+
+            content_html = (
+                f'<div style="position:absolute;left:0mm;top:0mm;'
+                f'width:{total_w:.3f}mm;height:{total_h:.3f}mm;overflow:hidden;">'
+                f'{"".join(cells_html)}'
+                '</div>'
+            )
         # ------------- LOGO HANDLER -------------
         elif t == "logo":
             el_for_logo = {**el, **({"imageUrl": el.get("imageUrl", meta.get("imageUrl", ""))})}
@@ -2078,4 +2204,5 @@ def _compile_legacy(template_json: TemplateJson) -> str:
         f"{html_body}"
         "</body></html>"
     )
+
 

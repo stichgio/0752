@@ -10,7 +10,6 @@ import {
 } from '../canvasTypes';
 import { CanvasElement } from './CanvasElement';
 import { useSnapGrid } from '../hooks/useSnapGrid';
-import { resolveSmartGuideSnap } from '../hooks/useSmartGuides';
 import { Lock } from 'lucide-react';
 
 interface CanvasAreaProps {
@@ -88,7 +87,111 @@ interface PaletteDragPayload {
     overrides?: Partial<TemplateElement>;
 }
 
+interface AlignmentGuide {
+    axis: 'x' | 'y';
+    position: number;
+}
+
+interface DragResolution {
+    anchorX: number;
+    anchorY: number;
+    deltaX: number;
+    deltaY: number;
+    guides: AlignmentGuide[];
+}
+
 const MIN_SIZE_MM = 2;
+
+function getElementAxes(position: { x: number; y: number }, size: { width: number; height: number }) {
+    const left = position.x;
+    const top = position.y;
+    const right = position.x + size.width;
+    const bottom = position.y + size.height;
+
+    return {
+        left,
+        right,
+        centerX: left + size.width / 2,
+        top,
+        bottom,
+        centerY: top + size.height / 2,
+    };
+}
+
+function resolveAlignmentGuideSnap(
+    elements: TemplateElement[],
+    draggingId: string,
+    dragIds: string[],
+    candidatePosition: { x: number; y: number },
+    draggingSize: { width: number; height: number },
+    page: PageSettings,
+    thresholdMm: number,
+): { x?: number; y?: number; guides: AlignmentGuide[] } {
+    const excludedIds = new Set(dragIds);
+    const movingAxes = getElementAxes(candidatePosition, draggingSize);
+    const xReferences: number[] = [0, page.width / 2, page.width];
+    const yReferences: number[] = [0, page.height / 2, page.height];
+
+    elements.forEach((element) => {
+        if (element.visible === false) return;
+        if (element.id === draggingId || excludedIds.has(element.id)) return;
+        const axes = getElementAxes(element.position, element.size);
+        xReferences.push(axes.left, axes.right, axes.centerX);
+        yReferences.push(axes.top, axes.bottom, axes.centerY);
+    });
+
+    let bestXDistance = Number.POSITIVE_INFINITY;
+    let snappedX: number | undefined;
+    let xGuide: number | undefined;
+
+    xReferences.forEach((referenceX) => {
+        const candidates = [
+            { distance: Math.abs(movingAxes.left - referenceX), snapped: referenceX },
+            { distance: Math.abs(movingAxes.right - referenceX), snapped: referenceX - draggingSize.width },
+            {
+                distance: Math.abs(movingAxes.centerX - referenceX),
+                snapped: referenceX - draggingSize.width / 2,
+            },
+        ];
+
+        candidates.forEach((candidate) => {
+            if (candidate.distance > thresholdMm) return;
+            if (candidate.distance >= bestXDistance) return;
+            bestXDistance = candidate.distance;
+            snappedX = candidate.snapped;
+            xGuide = referenceX;
+        });
+    });
+
+    let bestYDistance = Number.POSITIVE_INFINITY;
+    let snappedY: number | undefined;
+    let yGuide: number | undefined;
+
+    yReferences.forEach((referenceY) => {
+        const candidates = [
+            { distance: Math.abs(movingAxes.top - referenceY), snapped: referenceY },
+            { distance: Math.abs(movingAxes.bottom - referenceY), snapped: referenceY - draggingSize.height },
+            {
+                distance: Math.abs(movingAxes.centerY - referenceY),
+                snapped: referenceY - draggingSize.height / 2,
+            },
+        ];
+
+        candidates.forEach((candidate) => {
+            if (candidate.distance > thresholdMm) return;
+            if (candidate.distance >= bestYDistance) return;
+            bestYDistance = candidate.distance;
+            snappedY = candidate.snapped;
+            yGuide = referenceY;
+        });
+    });
+
+    const guides: AlignmentGuide[] = [];
+    if (xGuide !== undefined) guides.push({ axis: 'x', position: xGuide });
+    if (yGuide !== undefined) guides.push({ axis: 'y', position: yGuide });
+
+    return { x: snappedX, y: snappedY, guides };
+}
 
 export function CanvasArea({
     document: doc,
@@ -124,9 +227,13 @@ export function CanvasArea({
     const dragRafRef = useRef<number | null>(null);
     const pendingDragPointRef = useRef<{ clientX: number; clientY: number } | null>(null);
     const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+    const dragPointerOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+    const lastResolvedDragRef = useRef<DragResolution | null>(null);
     const activeDragPointerIdRef = useRef<number | null>(null);
     const activeDragPointerTargetRef = useRef<HTMLElement | null>(null);
     const elementNodeMapRef = useRef<Map<string, HTMLDivElement>>(new Map());
+    const verticalGuideRef = useRef<HTMLDivElement>(null);
+    const horizontalGuideRef = useRef<HTMLDivElement>(null);
     const snapEnabledRef = useRef(snapEnabled);
 
     docRef.current = doc;
@@ -185,18 +292,198 @@ export function CanvasArea({
         });
     }, []);
 
+    const clearAlignmentGuideVisual = useCallback(() => {
+        if (verticalGuideRef.current) {
+            verticalGuideRef.current.style.display = 'none';
+        }
+        if (horizontalGuideRef.current) {
+            horizontalGuideRef.current.style.display = 'none';
+        }
+    }, []);
+
+    const applyAlignmentGuideVisual = useCallback(
+        (guides: AlignmentGuide[]) => {
+            const xGuide = guides.find((guide) => guide.axis === 'x');
+            const yGuide = guides.find((guide) => guide.axis === 'y');
+
+            if (verticalGuideRef.current) {
+                if (xGuide) {
+                    verticalGuideRef.current.style.display = 'block';
+                    verticalGuideRef.current.style.left = `${mmToCanvasPx(xGuide.position)}px`;
+                } else {
+                    verticalGuideRef.current.style.display = 'none';
+                }
+            }
+
+            if (horizontalGuideRef.current) {
+                if (yGuide) {
+                    horizontalGuideRef.current.style.display = 'block';
+                    horizontalGuideRef.current.style.top = `${mmToCanvasPx(yGuide.position)}px`;
+                } else {
+                    horizontalGuideRef.current.style.display = 'none';
+                }
+            }
+        },
+        [mmToCanvasPx],
+    );
+
+    const getCanvasPointFromClient = useCallback((clientX: number, clientY: number) => {
+        if (!pageRef.current) return null;
+
+        const sc = scaleRef.current;
+        if (sc <= 0) return null;
+
+        const pageRect = pageRef.current.getBoundingClientRect();
+        return {
+            x: pxToMm((clientX - pageRect.left) / sc),
+            y: pxToMm((clientY - pageRect.top) / sc),
+        };
+    }, []);
+
+    const clampDragDelta = useCallback(
+        (
+            deltaX: number,
+            deltaY: number,
+            dragIds: string[],
+            dragInitialPositions: Record<string, { x: number; y: number }>,
+            elementMap: Map<string, TemplateElement>,
+        ) => {
+            const page = pageSettingsRef.current;
+            let minDeltaX = Number.NEGATIVE_INFINITY;
+            let maxDeltaX = Number.POSITIVE_INFINITY;
+            let minDeltaY = Number.NEGATIVE_INFINITY;
+            let maxDeltaY = Number.POSITIVE_INFINITY;
+
+            dragIds.forEach((dragId) => {
+                const initial = dragInitialPositions[dragId];
+                const element = elementMap.get(dragId);
+                if (!initial || !element) return;
+
+                minDeltaX = Math.max(minDeltaX, -initial.x);
+                maxDeltaX = Math.min(maxDeltaX, page.width - element.size.width - initial.x);
+                minDeltaY = Math.max(minDeltaY, -initial.y);
+                maxDeltaY = Math.min(maxDeltaY, page.height - element.size.height - initial.y);
+            });
+
+            if (!Number.isFinite(minDeltaX) || !Number.isFinite(maxDeltaX)) {
+                return { x: deltaX, y: deltaY };
+            }
+
+            if (minDeltaX > maxDeltaX) {
+                const clamped = Math.min(minDeltaX, maxDeltaX);
+                minDeltaX = clamped;
+                maxDeltaX = clamped;
+            }
+
+            if (minDeltaY > maxDeltaY) {
+                const clamped = Math.min(minDeltaY, maxDeltaY);
+                minDeltaY = clamped;
+                maxDeltaY = clamped;
+            }
+
+            return {
+                x: Math.max(minDeltaX, Math.min(maxDeltaX, deltaX)),
+                y: Math.max(minDeltaY, Math.min(maxDeltaY, deltaY)),
+            };
+        },
+        [],
+    );
+
+    const resolveDragAt = useCallback(
+        (clientX: number, clientY: number): DragResolution | null => {
+            const state = interactionRef.current;
+            if (state.mode !== 'drag' || !state.elementId) return null;
+
+            const pointer = getCanvasPointFromClient(clientX, clientY);
+            if (!pointer) return null;
+
+            const draggedIds = state.dragIds.length > 0 ? state.dragIds : [state.elementId];
+            const elementMap = new Map(docRef.current.elements.map((element) => [element.id, element]));
+            const anchorInitial = state.dragInitialPositions[state.elementId] ?? state.initialPos;
+            const primaryElement = elementMap.get(state.elementId);
+            if (!primaryElement) return null;
+
+            let anchorX = pointer.x - dragPointerOffsetRef.current.x;
+            let anchorY = pointer.y - dragPointerOffsetRef.current.y;
+
+            const initialClamp = clampDragDelta(
+                anchorX - anchorInitial.x,
+                anchorY - anchorInitial.y,
+                draggedIds,
+                state.dragInitialPositions,
+                elementMap,
+            );
+
+            anchorX = anchorInitial.x + initialClamp.x;
+            anchorY = anchorInitial.y + initialClamp.y;
+
+            let guides: AlignmentGuide[] = [];
+
+            if (snapEnabledRef.current) {
+                const thresholdPx = 4;
+                const thresholdMm = pxToMm(thresholdPx / Math.max(scaleRef.current, 0.001));
+                const guideSnap = resolveAlignmentGuideSnap(
+                    docRef.current.elements,
+                    state.elementId,
+                    draggedIds,
+                    { x: anchorX, y: anchorY },
+                    primaryElement.size,
+                    pageSettingsRef.current,
+                    thresholdMm,
+                );
+
+                anchorX = guideSnap.x ?? snapToGrid(anchorX);
+                anchorY = guideSnap.y ?? snapToGrid(anchorY);
+                guides = guideSnap.guides;
+
+                const snappedClamp = clampDragDelta(
+                    anchorX - anchorInitial.x,
+                    anchorY - anchorInitial.y,
+                    draggedIds,
+                    state.dragInitialPositions,
+                    elementMap,
+                );
+
+                const wasXClamped = Math.abs(snappedClamp.x - (anchorX - anchorInitial.x)) > 0.001;
+                const wasYClamped = Math.abs(snappedClamp.y - (anchorY - anchorInitial.y)) > 0.001;
+
+                anchorX = anchorInitial.x + snappedClamp.x;
+                anchorY = anchorInitial.y + snappedClamp.y;
+
+                if (wasXClamped || wasYClamped) {
+                    guides = guides.filter((guide) => {
+                        if (guide.axis === 'x' && wasXClamped) return false;
+                        if (guide.axis === 'y' && wasYClamped) return false;
+                        return true;
+                    });
+                }
+            }
+
+            const deltaX = anchorX - anchorInitial.x;
+            const deltaY = anchorY - anchorInitial.y;
+
+            return {
+                anchorX,
+                anchorY,
+                deltaX,
+                deltaY,
+                guides,
+            };
+        },
+        [clampDragDelta, getCanvasPointFromClient, snapToGrid],
+    );
+
     const applyDragVisualAt = useCallback(
         (clientX: number, clientY: number) => {
             const state = interactionRef.current;
             if (state.mode !== 'drag' || !state.elementId) return;
 
-            const sc = scaleRef.current;
-            const dxPx = clientX - state.startClientX;
-            const dyPx = clientY - state.startClientY;
-            const dxMm = pxToMm(dxPx / sc);
-            const dyMm = pxToMm(dyPx / sc);
+            const resolved = resolveDragAt(clientX, clientY);
+            if (!resolved) return;
 
-            dragOffsetRef.current = { x: dxMm, y: dyMm };
+            lastResolvedDragRef.current = resolved;
+            dragOffsetRef.current = { x: resolved.deltaX, y: resolved.deltaY };
+            applyAlignmentGuideVisual(resolved.guides);
 
             const translateXPx = mmToCanvasPx(dragOffsetRef.current.x);
             const translateYPx = mmToCanvasPx(dragOffsetRef.current.y);
@@ -209,7 +496,7 @@ export function CanvasArea({
                 node.style.setProperty('--drag-ty', `${translateYPx}px`);
             });
         },
-        [mmToCanvasPx],
+        [applyAlignmentGuideVisual, mmToCanvasPx, resolveDragAt],
     );
 
     const flushPendingDragFrame = useCallback(() => {
@@ -226,37 +513,17 @@ export function CanvasArea({
         dragRafRef.current = window.requestAnimationFrame(flushPendingDragFrame);
     }, [flushPendingDragFrame]);
 
-    const commitDragAt = useCallback(
-        (clientX: number, clientY: number) => {
+    const commitDrag = useCallback(
+        () => {
             const state = interactionRef.current;
             if (state.mode !== 'drag' || !state.elementId) return;
 
-            const sc = scaleRef.current;
-            const dxPx = clientX - state.startClientX;
-            const dyPx = clientY - state.startClientY;
-            const dxMm = pxToMm(dxPx / sc);
-            const dyMm = pxToMm(dyPx / sc);
+            const resolved = lastResolvedDragRef.current;
+            if (!resolved) return;
 
             const draggedIds = state.dragIds.length > 0 ? state.dragIds : [state.elementId];
-            const anchorInitial = state.dragInitialPositions[state.elementId] ?? state.initialPos;
-
-            let anchorX = anchorInitial.x + dxMm;
-            let anchorY = anchorInitial.y + dyMm;
-
-            if (snapEnabledRef.current) {
-                const guideSnap = resolveSmartGuideSnap(
-                    docRef.current.elements,
-                    state.elementId,
-                    { x: anchorX, y: anchorY },
-                    pageSettingsRef.current,
-                );
-
-                anchorX = guideSnap.x ?? snapToGrid(anchorX);
-                anchorY = guideSnap.y ?? snapToGrid(anchorY);
-            }
-
-            const deltaX = anchorX - anchorInitial.x;
-            const deltaY = anchorY - anchorInitial.y;
+            const deltaX = resolved.deltaX;
+            const deltaY = resolved.deltaY;
             const updates = new Map<string, Partial<TemplateElement>>();
             const elementMap = new Map(docRef.current.elements.map((el) => [el.id, el]));
 
@@ -286,7 +553,7 @@ export function CanvasArea({
             }
             updateElements(updates);
         },
-        [snapToGrid, updateElement, updateElements],
+        [updateElement, updateElements],
     );
 
     const finishDrag = useCallback(
@@ -301,10 +568,12 @@ export function CanvasArea({
 
             const finalPoint = pendingDragPointRef.current ?? { clientX, clientY };
             applyDragVisualAt(finalPoint.clientX, finalPoint.clientY);
-            commitDragAt(finalPoint.clientX, finalPoint.clientY);
+            commitDrag();
 
             const draggedIds = state.dragIds.length > 0 ? state.dragIds : [state.elementId];
             clearDragVisual(draggedIds);
+            clearAlignmentGuideVisual();
+            dragPointerOffsetRef.current = { x: 0, y: 0 };
 
             const pointerId = activeDragPointerIdRef.current;
             const pointerTarget = activeDragPointerTargetRef.current;
@@ -319,10 +588,11 @@ export function CanvasArea({
             activeDragPointerIdRef.current = null;
             activeDragPointerTargetRef.current = null;
             pendingDragPointRef.current = null;
+            lastResolvedDragRef.current = null;
             setDragSession({ active: false, primaryId: null, dragIds: [] });
             interactionRef.current = { ...defaultInteraction };
         },
-        [applyDragVisualAt, clearDragVisual, commitDragAt],
+        [applyDragVisualAt, clearAlignmentGuideVisual, clearDragVisual, commitDrag],
     );
 
     const handleGlobalMouseMove = useCallback(
@@ -485,23 +755,25 @@ export function CanvasArea({
         [onSelect, snapToGrid, updateElement],
     );
 
-    const handleGlobalMouseUp = useCallback(
-        () => {
-            const state = interactionRef.current;
+    const handleGlobalMouseUp = useCallback(() => {
+        const state = interactionRef.current;
 
-            if (state.mode === 'drag') {
-                return;
-            }
+        if (state.mode === 'drag') {
+            const point = pendingDragPointRef.current ?? {
+                clientX: state.startClientX,
+                clientY: state.startClientY,
+            };
+            finishDrag(point.clientX, point.clientY);
+            return;
+        }
 
-            if (state.mode === 'marquee') {
-                setMarquee(null);
-            }
+        if (state.mode === 'marquee') {
+            setMarquee(null);
+        }
 
-            setAspectLockIndicator(null);
-            interactionRef.current = { ...defaultInteraction };
-        },
-        [],
-    );
+        setAspectLockIndicator(null);
+        interactionRef.current = { ...defaultInteraction };
+    }, [finishDrag]);
 
     useEffect(() => {
         window.addEventListener('mousemove', handleGlobalMouseMove);
@@ -517,9 +789,85 @@ export function CanvasArea({
             if (state.mode === 'drag' && state.elementId) {
                 const draggedIds = state.dragIds.length > 0 ? state.dragIds : [state.elementId];
                 clearDragVisual(draggedIds);
+                clearAlignmentGuideVisual();
             }
         };
-    }, [clearDragVisual, handleGlobalMouseMove, handleGlobalMouseUp]);
+    }, [clearAlignmentGuideVisual, clearDragVisual, handleGlobalMouseMove, handleGlobalMouseUp]);
+
+    useEffect(() => {
+        const handleWindowPointerMove = (e: PointerEvent) => {
+            const state = interactionRef.current;
+            if (state.mode !== 'drag' || !state.elementId) return;
+
+            const activePointerId = activeDragPointerIdRef.current;
+            if (activePointerId === null || e.pointerId !== activePointerId) return;
+
+            pendingDragPointRef.current = {
+                clientX: e.clientX,
+                clientY: e.clientY,
+            };
+            scheduleDragFrame();
+        };
+
+        const handleWindowPointerUp = (e: PointerEvent) => {
+            const state = interactionRef.current;
+            if (state.mode !== 'drag' || !state.elementId) return;
+
+            const activePointerId = activeDragPointerIdRef.current;
+            if (activePointerId === null || e.pointerId !== activePointerId) return;
+
+            pendingDragPointRef.current = {
+                clientX: e.clientX,
+                clientY: e.clientY,
+            };
+            finishDrag(e.clientX, e.clientY);
+        };
+
+        const handleWindowPointerCancel = (e: PointerEvent) => {
+            const state = interactionRef.current;
+            if (state.mode !== 'drag' || !state.elementId) return;
+
+            const activePointerId = activeDragPointerIdRef.current;
+            if (activePointerId === null || e.pointerId !== activePointerId) return;
+
+            finishDrag(e.clientX, e.clientY);
+        };
+
+        const handleWindowBlur = () => {
+            const state = interactionRef.current;
+            if (state.mode !== 'drag' || !state.elementId) return;
+            const point = pendingDragPointRef.current ?? {
+                clientX: state.startClientX,
+                clientY: state.startClientY,
+            };
+            finishDrag(point.clientX, point.clientY);
+        };
+
+        window.addEventListener('pointermove', handleWindowPointerMove);
+        window.addEventListener('pointerup', handleWindowPointerUp);
+        window.addEventListener('pointercancel', handleWindowPointerCancel);
+        window.addEventListener('blur', handleWindowBlur);
+        return () => {
+            window.removeEventListener('pointermove', handleWindowPointerMove);
+            window.removeEventListener('pointerup', handleWindowPointerUp);
+            window.removeEventListener('pointercancel', handleWindowPointerCancel);
+            window.removeEventListener('blur', handleWindowBlur);
+        };
+    }, [finishDrag, scheduleDragFrame]);
+
+    useEffect(() => {
+        if (!dragSession.active) return;
+
+        const previousUserSelect = document.body.style.userSelect;
+        const previousCursor = document.body.style.cursor;
+        document.body.style.userSelect = 'none';
+        document.body.style.cursor = 'grabbing';
+
+        return () => {
+            document.body.style.userSelect = previousUserSelect;
+            document.body.style.cursor = previousCursor;
+        };
+    }, [dragSession.active]);
 
     const handleDragStart = useCallback(
         (e: React.PointerEvent, id: string) => {
@@ -551,6 +899,11 @@ export function CanvasArea({
                 dragInitialPositions[targetId] = { ...target.position };
             });
 
+            const pointerInCanvas = getCanvasPointFromClient(e.clientX, e.clientY);
+            if (!pointerInCanvas) return;
+
+            const primaryInitialPos = dragInitialPositions[id] ?? element.position;
+
             e.preventDefault();
             const pointerTarget = e.currentTarget as HTMLElement;
             pointerTarget.setPointerCapture(e.pointerId);
@@ -563,8 +916,20 @@ export function CanvasArea({
             }
 
             clearDragVisual(dragIds);
+            clearAlignmentGuideVisual();
             dragOffsetRef.current = { x: 0, y: 0 };
+            dragPointerOffsetRef.current = {
+                x: pointerInCanvas.x - primaryInitialPos.x,
+                y: pointerInCanvas.y - primaryInitialPos.y,
+            };
             pendingDragPointRef.current = { clientX: e.clientX, clientY: e.clientY };
+            lastResolvedDragRef.current = {
+                anchorX: primaryInitialPos.x,
+                anchorY: primaryInitialPos.y,
+                deltaX: 0,
+                deltaY: 0,
+                guides: [],
+            };
 
             interactionRef.current = {
                 ...defaultInteraction,
@@ -583,7 +948,7 @@ export function CanvasArea({
                 dragIds,
             });
         },
-        [clearDragVisual],
+        [clearAlignmentGuideVisual, clearDragVisual, getCanvasPointFromClient],
     );
 
     const handleResizeStart = useCallback((e: React.PointerEvent, element: TemplateElement, direction: string) => {
@@ -633,53 +998,6 @@ export function CanvasArea({
             initialRotation: element.rotation || 0,
         };
     }, []);
-
-    const handleCanvasPointerMove = useCallback(
-        (e: React.PointerEvent<HTMLDivElement>) => {
-            const state = interactionRef.current;
-            if (state.mode !== 'drag' || !state.elementId) return;
-
-            const activePointerId = activeDragPointerIdRef.current;
-            if (activePointerId === null || e.pointerId !== activePointerId) return;
-
-            pendingDragPointRef.current = {
-                clientX: e.clientX,
-                clientY: e.clientY,
-            };
-            scheduleDragFrame();
-        },
-        [scheduleDragFrame],
-    );
-
-    const handleCanvasPointerUp = useCallback(
-        (e: React.PointerEvent<HTMLDivElement>) => {
-            const state = interactionRef.current;
-            if (state.mode !== 'drag' || !state.elementId) return;
-
-            const activePointerId = activeDragPointerIdRef.current;
-            if (activePointerId === null || e.pointerId !== activePointerId) return;
-
-            pendingDragPointRef.current = {
-                clientX: e.clientX,
-                clientY: e.clientY,
-            };
-            finishDrag(e.clientX, e.clientY);
-        },
-        [finishDrag],
-    );
-
-    const handleCanvasPointerCancel = useCallback(
-        (e: React.PointerEvent<HTMLDivElement>) => {
-            const state = interactionRef.current;
-            if (state.mode !== 'drag' || !state.elementId) return;
-
-            const activePointerId = activeDragPointerIdRef.current;
-            if (activePointerId === null || e.pointerId !== activePointerId) return;
-
-            finishDrag(e.clientX, e.clientY);
-        },
-        [finishDrag],
-    );
 
     const handleSelect = useCallback(
         (id: string, multi: boolean) => {
@@ -835,11 +1153,9 @@ export function CanvasArea({
                 background: 'linear-gradient(135deg, #f0f0f3 0%, #e8e8ed 50%, #f0f0f3 100%)',
                 backgroundImage: 'radial-gradient(circle at 20px 20px, rgba(0,0,0,0.02) 1px, transparent 0)',
                 backgroundSize: '40px 40px',
+                cursor: dragSession.active ? 'grabbing' : undefined,
             }}
             onMouseDown={handleCanvasMouseDown}
-            onPointerMove={handleCanvasPointerMove}
-            onPointerUp={handleCanvasPointerUp}
-            onPointerCancel={handleCanvasPointerCancel}
             onDrop={onDrop}
             onDragOver={onDragOver}
         >
@@ -900,6 +1216,34 @@ export function CanvasArea({
                         }}
                     />
 
+                    <div
+                        ref={verticalGuideRef}
+                        className="absolute pointer-events-none"
+                        style={{
+                            display: 'none',
+                            top: 0,
+                            bottom: 0,
+                            width: 1,
+                            backgroundColor: '#4F46E5',
+                            zIndex: 9999,
+                            transform: 'translateX(-0.5px)',
+                        }}
+                    />
+
+                    <div
+                        ref={horizontalGuideRef}
+                        className="absolute pointer-events-none"
+                        style={{
+                            display: 'none',
+                            left: 0,
+                            right: 0,
+                            height: 1,
+                            backgroundColor: '#4F46E5',
+                            zIndex: 9999,
+                            transform: 'translateY(-0.5px)',
+                        }}
+                    />
+
                     {doc.elements
                         .filter((el) => el.visible !== false)
                         .sort((a, b) => (a.style.zIndex || 0) - (b.style.zIndex || 0))
@@ -915,7 +1259,7 @@ export function CanvasArea({
                                 onResizeStart={handleResizeStart}
                                 onRotateStart={handleRotateStart}
                                 dataPreview={dataPreview}
-                                isDragging={dragSession.active && dragSession.primaryId === el.id}
+                                isDragging={dragSession.active && dragSession.dragIds.includes(el.id)}
                                 suppressPointerEvents={dragSession.active}
                                 onSetNodeRef={setElementNodeRef}
                             />

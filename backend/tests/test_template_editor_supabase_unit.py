@@ -49,6 +49,55 @@ def _sample_json(content: str = "<p>{{cs}}</p>") -> TemplateJson:
     )
 
 
+def _sample_canvas_json() -> TemplateJson:
+    return TemplateJson(
+        reportType="technical-report",
+        sections=[
+            EditorSection(
+                id="sec-canvas",
+                type="body",
+                title="Canvas",
+                blocks=[
+                    EditorBlock(
+                        id="blk-canvas-heading",
+                        type="heading",
+                        content="PANEL FOTOGRAFICO",
+                        variables=[],
+                        placeholders=[],
+                        metadata={
+                            "layout": {"x": 10, "y": 8, "width": 120, "height": 12, "zIndex": 2},
+                            "style": {"fontSize": 13, "fontWeight": "bold"},
+                        },
+                        locked=False,
+                    ),
+                    EditorBlock(
+                        id="blk-canvas-grid",
+                        type="photo-grid",
+                        content="Panel fotografico",
+                        variables=[],
+                        placeholders=[],
+                        metadata={
+                            "layout": {"x": 10, "y": 47, "width": 190, "height": 215, "zIndex": 7},
+                            "style": {"backgroundColor": "#f7f6ff", "borderColor": "#6d4cff", "borderWidth": 1.2},
+                            "photoConfig": {
+                                "count": 4,
+                                "labels": ["ANTES", "DURANTE", "DESPUES", "DETALLE"],
+                                "showLabels": True,
+                                "oddPosition": "center",
+                            },
+                        },
+                        locked=False,
+                    ),
+                ],
+                metadata={},
+            )
+        ],
+        metadata={},
+        variableBindings={},
+        protectionRules=ProtectionRules(required_block_ids=[], editable_placeholder_by_block={}),
+    )
+
+
 class FakeSupabaseTemplateClient:
     def __init__(self):
         self.templates = {}
@@ -200,3 +249,27 @@ def test_supabase_store_update_after_publish_sets_template_back_to_draft():
     updated, validation = store.update_template(created.id, _sample_json("<p>{{cs|lower}}</p>"), author="qa", role="admin")
     assert validation.valid is True
     assert updated.status == "draft"
+
+
+def test_get_published_template_by_name_recompiles_canvas_templates():
+    fake_client = FakeSupabaseTemplateClient()
+    store = SupabaseTemplateStore(fake_client)
+    created = store.create_template(
+        name="canvas-resolver-template",
+        report_type="technical-report",
+        template_json=_sample_canvas_json(),
+        author="qa",
+        feature_flag=True,
+    )
+    published = store.publish_template(created.id, author="qa")
+    assert published.status == "published"
+
+    current_version = fake_client.get_template(created.id)["current_version"]
+    version_row = fake_client.get_template_version(created.id, current_version)
+    compiled_path = str(version_row.get("compiled_html_path"))
+    fake_client.storage[compiled_path] = "<!-- stale compiled html -->"
+
+    compiled = store.get_published_template_by_name("canvas-resolver-template")
+    assert compiled is not None
+    assert "<!-- stale compiled html -->" not in compiled
+    assert '<table class="photo-grid-table">' in compiled

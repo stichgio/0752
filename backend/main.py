@@ -13,6 +13,7 @@ import os
 import json
 import tempfile
 import traceback
+import re
 from typing import Any, Dict, List, Literal, Optional
 from report_service import ReportService
 from pdf_tools import merge_pdfs_interleaved, merge_pdfs_sequential, split_pdf, split_pdf_by_ranges
@@ -41,6 +42,57 @@ def _cleanup_file(path: str):
             os.remove(path)
     except Exception as e:
         print(f"Error removing temp file {path}: {e}")
+
+
+def _normalize_photo_grid_template_compat(template_html: Optional[str]) -> Optional[str]:
+    """Backwards-compatible photo-grid fix for legacy template-editor exports."""
+    if not template_html or not isinstance(template_html, str):
+        return template_html
+
+    normalized = template_html
+    if "photo-cell-wrap" not in normalized:
+        return normalized
+
+    normalized = re.sub(
+        r'<div class="photo-cell-wrap">\s*(\{%\s*if\s+report\.images\|length\s*>\s*\d+\s*%\}[\s\S]*?\{%\s*endif\s*%\})\s*(<div class="photo-label">)',
+        r'<div class="photo-cell-wrap"><div class="photo-media">\1</div>\2',
+        normalized,
+    )
+
+    compat_css = """
+<style id="photo-grid-compat-fix">
+  .photo-cell-wrap { align-items: stretch !important; justify-content: flex-start !important; }
+  .photo-media {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    overflow: hidden !important;
+  }
+  .photo-cell-wrap > img,
+  .photo-cell-wrap img {
+    flex: 0 1 auto !important;
+    width: auto !important;
+    height: auto !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: contain !important;
+    object-position: center !important;
+    image-orientation: from-image !important;
+    display: block !important;
+    margin: 0 auto !important;
+  }
+</style>
+"""
+
+    if "</head>" in normalized:
+        normalized = normalized.replace("</head>", f"{compat_css}</head>", 1)
+    else:
+        normalized = f"{compat_css}{normalized}"
+
+    return normalized
 
 
 def _validate_pdf_file(file: UploadFile) -> bool:
@@ -224,6 +276,8 @@ async def generate_single_pdf(
             if compiled_template:
                 resolved_custom_template = compiled_template
                 resolved_template_name = None
+
+        resolved_custom_template = _normalize_photo_grid_template_compat(resolved_custom_template)
 
         # Validate against Pydantic model to ensure defaults and legacy patching.
         # The root_validator in TechnicalReport handles all legacy/incomplete data

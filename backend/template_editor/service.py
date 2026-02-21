@@ -637,6 +637,21 @@ class SupabaseTemplateStore:
         template_id = str(row.get("id"))
         current_version = int(row.get("current_version") or 0)
 
+        # Keep PDF generation aligned with preview rendering:
+        # for canvas templates, always compile from templateJson so older
+        # stored compiledJinja versions do not keep legacy photo-grid CSS.
+        try:
+            record = self.get_template(template_id)
+            if record and record.versions:
+                current = next(
+                    (v for v in record.versions if int(v.version) == int(record.currentVersion)),
+                    None,
+                ) or record.versions[-1]
+                if current.templateJson and _has_canvas_layout(current.templateJson):
+                    return _compile_canvas_template(current.templateJson)
+        except Exception:
+            pass
+
         if current_version >= 0:
             version_row = self.client.get_template_version(template_id, current_version)
             if version_row:
