@@ -142,7 +142,7 @@ body { font-family: Arial, 'Segoe UI', Helvetica, sans-serif; font-size: 8pt; co
     padding: 1mm;
 }
 .photo-item { width: 100%; height: 100%; }
-.photo-item img { width: 100%; height: 100%; object-fit: contain; object-position: center; display: block; }
+.photo-item img { width: 100%; height: 100%; object-fit: cover; object-position: center; display: block; }
 .no-photos { border: 1px dashed #ccc; color: #999; font-style: italic; border-radius: 1.2mm; text-align: center; padding: 8mm 2mm; }
 
 /* Photo labels */
@@ -351,8 +351,8 @@ PHOTO_CENTER_INNER_STYLE = (
     "width: 48%; height: 100%; margin: 0 auto; box-sizing: border-box; text-align: center; "
     "vertical-align: middle; background: #f3f4f6; border: 1px solid #d1d5db; padding: 1mm;"
 )
-# fix: imagen-cortada — added object-fit: contain for WeasyPrint
-PHOTO_IMAGE_STYLE = "width: 100%; height: 100%; object-fit: contain; object-position: center; display: block;"
+# fill-based auto-fit for photo-grid cells
+PHOTO_IMAGE_STYLE = "width: 100%; height: 100%; object-fit: cover; object-position: center; display: block;"
 PHOTO_LABEL_STYLE = (
     "font-weight: 700; font-size: 7.5pt; text-transform: uppercase; margin-top: 2mm; "
     "letter-spacing: 0.02em;"
@@ -1182,11 +1182,12 @@ CANVAS_CSS_TEMPLATE = """\
       overflow: hidden;
     }}
 
+    .photo-media > img,
     .photo-cell img {{
       width: 100%;
       height: 100%;
-      object-fit: contain;
-      object-position: center;
+      object-fit: cover;
+      object-position: center center;
       display: block;
     }}
 
@@ -1911,7 +1912,7 @@ def compile_canvas_to_html(canvas_doc: dict, variables: Optional[dict] = None) -
                         'overflow:hidden;display:block;">'
                         f'<img src="{src_base64}" alt="{alt_text}" '
                         f'style="display:block;width:{cell_w:.3f}mm;'
-                        f'height:{img_h:.3f}mm;object-fit:contain;">'
+                        f'height:{img_h:.3f}mm;object-fit:cover;">'
                         '</div>'
                     )
                 else:
