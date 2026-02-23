@@ -23,6 +23,7 @@ import {
     selectEditorTemplatesForDropdown,
 } from '@/utils/editorTemplateSelector';
 import { excelSerialToDate, formatDateValue, isDateColumn } from '@/utils';
+import { templateEditorApi } from './api';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -168,6 +169,17 @@ function TemplatePreview({
    ReportGenerator – Independent PDF generator for Template Editor
    ═══════════════════════════════════════════════════════════════════ */
 
+function extractCompiledTemplate(record: any): { content: string; templateJson: any } {
+    if (!record || !Array.isArray(record.versions) || record.versions.length === 0) {
+        return { content: '', templateJson: null };
+    }
+    const versions = record.versions;
+    const currentVersion = Number(record.currentVersion);
+    const current = versions.find((v: any) => Number(v?.version) === currentVersion) || versions[versions.length - 1];
+    const content = typeof current?.compiledJinja === 'string' ? current.compiledJinja : '';
+    return { content, templateJson: current?.templateJson ?? null };
+}
+
 interface ReportGeneratorProps {
     isVisible: boolean;
     onClose: () => void;
@@ -229,10 +241,25 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     // Rendered preview
     const [renderedHtml, setRenderedHtml] = useState('');
 
+    // Store blob URLs for cleanup
+    const blobUrlsRef = useRef<string[]>([]);
+
     // Save custom columns
     useEffect(() => {
         localStorage.setItem('generatorCustomColumns', JSON.stringify(customColumns));
     }, [customColumns]);
+
+    // Cleanup blob URLs on unmount
+    useEffect(() => {
+        return () => {
+            blobUrlsRef.current.forEach((url) => {
+                try {
+                    URL.revokeObjectURL(url);
+                } catch { }
+            });
+            blobUrlsRef.current = [];
+        };
+    }, []);
 
     // ── Fetch ONLY editor templates (published) ──────────────────────
     useEffect(() => {
@@ -288,24 +315,57 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
         if (!editorTemplateId) return;
 
         try {
-            const res = await fetch(`${API_BASE_URL}/templates/${editorTemplateId}/render`);
-            if (!res.ok) throw new Error('Failed to load published template');
-            const payload = await res.json();
+            let content = '';
+            let templateJson: any = null;
+            let resolvedName = '';
+            let resolvedStatus = '';
+            let lastError: Error | null = null;
 
-            const content = payload?.content;
+            try {
+                const payload = await templateEditorApi.getRenderedPublishedTemplate(editorTemplateId);
+                const payloadPreview = (payload as { previewHtml?: string }).previewHtml;
+                resolvedName = typeof payload?.name === 'string' ? payload.name : '';
+                resolvedStatus = typeof payload?.status === 'string' ? payload.status : '';
+                if (typeof payload?.content === 'string') {
+                    content = payload.content;
+                } else if (typeof payloadPreview === 'string') {
+                    content = payloadPreview;
+                }
+                if (payload?.templateJson) templateJson = payload.templateJson;
+            } catch (err) {
+                lastError = err instanceof Error ? err : new Error('Failed to load published template');
+            }
+
+            if (!content) {
+                try {
+                    const rawTemplate = await templateEditorApi.getTemplateRaw(editorTemplateId) as any;
+                    if (rawTemplate?.name) resolvedName = resolvedName || String(rawTemplate.name);
+                    if (rawTemplate?.status) resolvedStatus = resolvedStatus || String(rawTemplate.status);
+                    const fallback = extractCompiledTemplate(rawTemplate);
+                    if (fallback.content) content = fallback.content;
+                    if (!templateJson && fallback.templateJson) templateJson = fallback.templateJson;
+                } catch (err) {
+                    lastError = err instanceof Error ? err : new Error('Failed to load template metadata');
+                }
+            }
+
             if (!content) {
                 setTemplateStatus('invalid');
-                setTemplateError('La plantilla publicada no tiene HTML renderizado.');
+                if (lastError) {
+                    setTemplateError('Error al cargar plantilla: ' + lastError.message);
+                } else {
+                    setTemplateError('La plantilla publicada no tiene HTML renderizado.');
+                }
                 return;
             }
 
             const listedTemplate = editorTemplates.find((tpl) => tpl.id === editorTemplateId);
             setSelectedTemplate({
-                name: payload?.name || listedTemplate?.name || 'Plantilla publicada',
+                name: resolvedName || listedTemplate?.name || 'Plantilla publicada',
                 content,
                 editorTemplateId,
-                editorTemplateStatus: normalizeTemplateStatus(payload?.status || listedTemplate?.status || 'published'),
-                editorTemplateJson: payload?.templateJson || null,
+                editorTemplateStatus: normalizeTemplateStatus(resolvedStatus || listedTemplate?.status || 'published'),
+                editorTemplateJson: templateJson,
             });
             setTemplateStatus('valid');
             setTemplateError('');
@@ -357,29 +417,37 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
 
         const reader = new FileReader();
         reader.onload = (evt) => {
-            const bstr = evt.target?.result;
-            const wb = XLSX.read(bstr, { type: 'binary', cellDates: false, cellNF: true });
-            const wsname = wb.SheetNames[0];
-            const ws = wb.Sheets[wsname];
-            const jsonData = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, dateNF: 'dd/mm/yy' }) as any[][];
+            try {
+                const bstr = evt.target?.result;
+                const wb = XLSX.read(bstr, { type: 'binary', cellDates: false, cellNF: true });
+                const wsname = wb.SheetNames[0];
+                const ws = wb.Sheets[wsname];
+                const jsonData = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true, dateNF: 'dd/mm/yy' }) as any[][];
 
-            if (jsonData.length > 0) {
-                const _headers = jsonData[0] as string[];
-                const _data = jsonData.slice(1).map((row: any[]) => {
-                    const obj: Record<string, any> = {};
-                    _headers.forEach((h, i) => {
-                        let cellValue = row[i];
-                        if (isDateColumn(h) && typeof cellValue === 'number' && cellValue > 1000 && cellValue < 100000) {
-                            cellValue = excelSerialToDate(cellValue);
-                        }
-                        obj[h] = cellValue;
+                if (jsonData.length > 0) {
+                    const _headers = jsonData[0] as string[];
+                    const _data = jsonData.slice(1).map((row: any[]) => {
+                        const obj: Record<string, any> = {};
+                        _headers.forEach((h, i) => {
+                            let cellValue = row[i];
+                            if (isDateColumn(h) && typeof cellValue === 'number' && cellValue > 1000 && cellValue < 100000) {
+                                cellValue = excelSerialToDate(cellValue);
+                            }
+                            obj[h] = cellValue;
+                        });
+                        return obj;
                     });
-                    return obj;
-                });
-                setHeaders(_headers);
-                setData(_data);
-                autoMapFields(_headers);
+                    setHeaders(_headers);
+                    setData(_data);
+                    autoMapFields(_headers);
+                }
+            } catch (err) {
+                console.error('Error parsing Excel file:', err);
+                alert('Error al parsear el archivo Excel. Asegúrate de que el formato sea correcto.');
             }
+        };
+        reader.onerror = () => {
+            alert('Error al leer el archivo. Por favor intenta de nuevo.');
         };
         reader.readAsBinaryString(file);
     }, []);
@@ -435,6 +503,14 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
             setRenderedHtml('');
             return;
         }
+
+        // Clean up previous blob URLs
+        blobUrlsRef.current.forEach((url) => {
+            try {
+                URL.revokeObjectURL(url);
+            } catch { }
+        });
+        blobUrlsRef.current = [];
 
         const row = data[Number(selectedIndex)];
         if (!row) {
@@ -510,7 +586,11 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
         html = html.replace(directImageRegex, (_m: string, indexStr: string, property: string) => {
             const index = parseInt(indexStr);
             if (currentImages[index]) {
-                if (property === 'path') return URL.createObjectURL(currentImages[index]);
+                if (property === 'path') {
+                    const url = URL.createObjectURL(currentImages[index]);
+                    blobUrlsRef.current.push(url);
+                    return url;
+                }
                 if (property === 'name') return currentImages[index].name;
             }
             return '';
@@ -530,6 +610,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
             for (let i = 0; i < imagesToRender.length; i++) {
                 const img = imagesToRender[i];
                 const imgUrl = URL.createObjectURL(img);
+                blobUrlsRef.current.push(imgUrl);
                 let itemHtml = loopContent;
                 itemHtml = itemHtml.split('{{ img.path }}').join(imgUrl);
                 itemHtml = itemHtml.split('{{ img.name }}').join(img.name);
@@ -559,6 +640,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
         if (exportScope === 'single' && selectedIndex === '') return;
         if (exportScope === 'all' && data.length === 0) return;
         if (!selectedTemplate) return;
+        if (requiresImages && images.length === 0 && exportScope === 'single') return;
 
         const formatRowData = (row: Record<string, any>) => {
             const rowData: Record<string, any> = {};
@@ -919,7 +1001,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                         <Step
                             number="5"
                             title="Seleccionar y Exportar"
-                            disabled={requiresImages ? images.length === 0 : data.length === 0}
+                            disabled={!selectedTemplate || (requiresImages ? images.length === 0 : data.length === 0)}
                         >
                             <div className="relative mb-2">
                                 <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-neutral-500" size={12} />
@@ -1010,7 +1092,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
 
                             <button
                                 onClick={handleBackendDownload}
-                                disabled={(exportScope === 'single' && selectedIndex === '') || !selectedTemplate}
+                                disabled={(exportScope === 'single' && selectedIndex === '') || (requiresImages ? images.length === 0 : data.length === 0) || !selectedTemplate}
                                 className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-bold p-2.5 rounded disabled:opacity-50 transition-colors shadow-lg text-xs mt-2"
                             >
                                 <Download size={14} /> Descargar PDF
