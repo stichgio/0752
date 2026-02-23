@@ -6,9 +6,7 @@ compartidas por los módulos de merge y split.
 """
 
 import logging
-import os
 from pathlib import Path
-from typing import Any
 
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
@@ -25,20 +23,6 @@ class PDFValidationError(Exception):
 class PDFProcessingError(Exception):
     """Excepción para errores durante el procesamiento de PDF."""
     pass
-
-
-def setup_logging(level: int = logging.INFO) -> None:
-    """
-    Configura el logging para el módulo pdf_tools.
-    
-    Args:
-        level: Nivel de logging (default: INFO)
-    """
-    logging.basicConfig(
-        level=level,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S"
-    )
 
 
 def validate_pdf_file(file_path: str) -> tuple[bool, str]:
@@ -85,57 +69,6 @@ def validate_pdf_file(file_path: str) -> tuple[bool, str]:
         return False, f"Error al leer PDF (archivo corrupto o protegido): {e}"
     except Exception as e:
         return False, f"Error inesperado al validar PDF: {e}"
-
-
-def get_pdf_info(file_path: str) -> dict[str, Any]:
-    """
-    Obtiene información detallada de un archivo PDF.
-    
-    Args:
-        file_path: Ruta al archivo PDF
-        
-    Returns:
-        Diccionario con información del PDF:
-        {
-            'path': str,
-            'filename': str,
-            'num_pages': int,
-            'file_size_mb': float,
-            'metadata': dict,
-            'is_encrypted': bool
-        }
-        
-    Raises:
-        PDFValidationError: Si el archivo no es un PDF válido
-    """
-    is_valid, message = validate_pdf_file(file_path)
-    if not is_valid:
-        raise PDFValidationError(message)
-    
-    path = Path(file_path)
-    reader = PdfReader(file_path)
-    
-    # Extraer metadata del PDF
-    metadata = {}
-    if reader.metadata:
-        metadata = {
-            "title": reader.metadata.get("/Title", ""),
-            "author": reader.metadata.get("/Author", ""),
-            "subject": reader.metadata.get("/Subject", ""),
-            "creator": reader.metadata.get("/Creator", ""),
-            "producer": reader.metadata.get("/Producer", ""),
-        }
-        # Limpiar valores None
-        metadata = {k: v for k, v in metadata.items() if v}
-    
-    return {
-        "path": str(path.absolute()),
-        "filename": path.name,
-        "num_pages": len(reader.pages),
-        "file_size_mb": round(path.stat().st_size / (1024 * 1024), 2),
-        "metadata": metadata,
-        "is_encrypted": reader.is_encrypted,
-    }
 
 
 def ensure_directory(dir_path: str) -> Path:

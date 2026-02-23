@@ -3,16 +3,13 @@ Servicio de generación de documentos Word (DOCX) para Fichas Técnicas.
 Genera documentos que replican la estructura del template HTML/PDF existente.
 """
 from docx import Document
-from docx.shared import Inches, Pt, Cm, Emu, RGBColor
+from docx.shared import Pt, Cm, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.enum.table import WD_TABLE_ALIGNMENT, WD_ALIGN_VERTICAL
-from docx.enum.section import WD_ORIENT
 from docx.oxml.ns import qn, nsdecls
 from docx.oxml import parse_xml
 import io
 import base64
-import tempfile
-import os
 
 
 # ── Estilos y constantes ──────────────────────────────────────────────

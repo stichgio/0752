@@ -20,7 +20,6 @@ from .utils import (
     PDFProcessingError,
     PDFValidationError,
     ensure_directory,
-    get_pdf_info,
     validate_pdf_file,
 )
 

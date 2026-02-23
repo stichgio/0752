@@ -7,7 +7,6 @@ import io
 import gc
 import tempfile
 import hashlib
-from uuid import uuid4
 from jinja2 import Environment, FileSystemLoader
 import jinja2
 
@@ -53,7 +52,6 @@ PDF_ENGINE_AVAILABLE = WEASYPRINT_AVAILABLE or (CHROME_PATH is not None)
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 import piexif
-import pathlib
 from PIL import Image
 import asyncio
 import httpx
@@ -384,42 +382,6 @@ class ReportService:
         s = float(value[2][0]) / float(value[2][1])
         return d + (m / 60.0) + (s / 3600.0)
 
-    def find_images(self, folder_path, pattern_id):
-        """Busca imágenes matching pattern con separadores estrictos para evitar duplicados"""
-        images = []
-        if not os.path.exists(folder_path):
-            return images
-
-        # Regex estricta: Requiere separador (-, _) para sufijos o coincidencia exacta
-        regex = re.compile(rf"^{re.escape(str(pattern_id))}(?:[-_](\d+))?\.(jpg|jpeg|png)$", re.IGNORECASE)
-
-        for file in os.listdir(folder_path):
-            match = regex.match(file)
-            if match:
-                full_path = os.path.join(folder_path, file)
-                metadata = self.get_image_metadata(full_path)
-
-                # Si hay grupo 1 es el orden, si no es la imagen principal (0)
-                order_str = match.group(1)
-                order = int(order_str) if order_str else 0
-
-                images.append({
-                    "path": self._path_to_uri(full_path),
-                    "name": file,
-                    "order": order,
-                    **metadata
-                })
-
-        return sorted(images, key=lambda x: x["order"])
-
-    @staticmethod
-    def _path_to_uri(full_path):
-        try:
-            return pathlib.Path(full_path).as_uri()
-        except Exception:
-            normalized = os.path.abspath(full_path).replace('\\', '/')
-            return f"file:///{normalized}"
-
     def _convert_to_base64_uri(self, image_bytes, mime_type="image/jpeg"):
         """Convert image bytes to base64 data URI"""
         b64_data = base64.b64encode(image_bytes).decode('utf-8')
@@ -612,7 +574,7 @@ class ReportService:
         - Genera PDFs en lotes paralelos (PDF_BATCH_SIZE)
         - Merge incremental para liberar memoria
         """
-        from pypdf import PdfWriter, PdfReader
+        from pypdf import PdfWriter
         from concurrent.futures import ThreadPoolExecutor, as_completed
         import time
 
@@ -863,46 +825,6 @@ class ReportService:
 
         return result
 
-    async def generate_pdf_from_uploads(self, row_data, files, logo_left=None, logo_right=None, output_filename="report.pdf"):
-        """Wrapper para backward compatibility"""
-        return await self.generate_batch_pdf([{
-            "data": row_data,
-            "files": files
-        }], logo_left=logo_left, logo_right=logo_right)
-
-    def generate_pdf_task(self, row_data, folder_path, id_column, output_path):
-        """Single worker task"""
-        item_id = str(row_data.get(id_column, ""))
-        images = self.find_images(folder_path, item_id)
-
-        if not images:
-            return {"id": item_id, "status": "skipped", "message": "No images found"}
-
-        html_out = self.template.render(
-            data=row_data,
-            images=images,
-            title="PANEL FOTOGRÁFICO"
-        )
-
-        pdf_file = os.path.join(output_path, f"Reporte_{item_id}.pdf")
-
-        try:
-            if WEASYPRINT_AVAILABLE:
-                HTML(string=html_out, base_url=folder_path).write_pdf(pdf_file)
-            elif CHROME_PATH:
-                result_path = _render_pdf_with_chrome(html_out)
-                if result_path:
-                    import shutil
-                    shutil.move(result_path, pdf_file)
-                else:
-                    return {"id": item_id, "status": "error", "message": "Chrome PDF rendering failed"}
-            else:
-                return {"id": item_id, "status": "error", "message": "No PDF engine available"}
-            return {"id": item_id, "status": "success", "file": pdf_file}
-        except Exception as e:
-            print(f"Error generating PDF for {item_id}: {e}")
-            return {"id": item_id, "status": "error", "message": str(e)}
-
 
 # ============================================================================
 # HELPER FUNCTIONS - VERSIÓN SEGURA
@@ -967,6 +889,9 @@ def _render_pdf_with_chrome(html_string):
                 '--run-all-compositor-stages-before-draw',
                 f'--print-to-pdf={pdf_file.name}',
                 '--print-to-pdf-no-header',
+                '--no-margins',
+                '--paper-width=8.27',
+                '--paper-height=11.69',
                 html_file.name,
             ],
             capture_output=True,
@@ -988,26 +913,3 @@ def _render_pdf_with_chrome(html_string):
         import traceback
         traceback.print_exc()
         return None
-
-
-def run_batch_generation(df_records, folder_path, id_column, output_path):
-    """Legacy batch generation"""
-    from concurrent.futures import ProcessPoolExecutor
-
-    service = ReportService()
-    results = []
-
-    with ProcessPoolExecutor() as executor:
-        futures = [
-            executor.submit(service.generate_pdf_task, row, folder_path, id_column, output_path)
-            for row in df_records
-        ]
-
-        for future in futures:
-            try:
-                results.append(future.result())
-            except Exception as e:
-                print(f"Error in batch generation: {e}")
-                results.append({"status": "error", "message": str(e)})
-
-    return results

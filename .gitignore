@@ -29,9 +29,42 @@ dist/
 coverage/
 .npm/
 
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.log
+.git
+.mypy_cache
+.pytest_cache
+.hypotheses
+
+# Node
+node_modules/
+dist/
+.env
+.DS_Store
+coverage/
+.npm/
+
 # Local
 uploads/
 output/
 tmp/
 
 
+frontend/src/nul
+**/nul

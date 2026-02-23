@@ -1,8 +1,8 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { formatBytes } from '@/utils/formatBytes';
+import { downloadBlob } from '@/utils/downloadBlob';
 import {
     ChevronLeft,
-    Upload,
     Download,
     Trash2,
     FileDown,
@@ -511,16 +511,7 @@ export default function Compressor() {
     // ============================================================================
     const handleDownloadSingle = useCallback((f: CompressedFile) => {
         if (!f.compressedBlob) return;
-
-        const url = URL.createObjectURL(f.compressedBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = f.originalName;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        URL.revokeObjectURL(url);
-        
+        downloadBlob(f.compressedBlob, f.originalName);
         addToast(`Descargado: ${f.originalName}`, 'success', 2000);
     }, [addToast]);
 
