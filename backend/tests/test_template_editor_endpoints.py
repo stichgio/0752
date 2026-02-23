@@ -8,25 +8,12 @@ from fastapi.testclient import TestClient
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from main import app
-from template_editor.database import db as template_editor_db
 
 
 @pytest.fixture()
 def client():
     with TestClient(app) as c:
         yield c
-
-
-@pytest.fixture(autouse=True)
-def reset_template_editor_db():
-    snapshot = dict(template_editor_db._items)
-    try:
-        template_editor_db._items = {}
-        template_editor_db._save()
-        yield
-    finally:
-        template_editor_db._items = snapshot
-        template_editor_db._save()
 
 
 def _template_payload(name: str = "visual-tech-template"):

@@ -1,23 +1,15 @@
 import React, { useState } from 'react';
 import {
     FileText,
-
     LayoutDashboard,
     Calculator,
     FileStack,
-    Settings,
-    Menu,
     ChevronLeft,
     ChevronRight,
-    Search,
-    Bell,
-    Cpu,
-    Zap,
     ClipboardList,
     Archive,
     Shrink,
     FileCode,
-    Image as ImageIcon
 } from 'lucide-react';
 import PomodoroTimer from './PomodoroTimer';
 

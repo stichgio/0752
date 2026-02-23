@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Settings, Upload } from 'lucide-react';
+import { Save, Settings } from 'lucide-react';
 import { TechnicalReport } from './types';
 
 interface Props {

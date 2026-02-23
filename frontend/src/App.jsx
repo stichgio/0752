@@ -1,10 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
 import html2canvas from 'html2canvas';
-import { FileSpreadsheet, Image as ImageIcon, Printer, Settings, FileCode, CheckCircle, AlertCircle, RotateCcw, Calculator, FileText, ClipboardList, Shrink, Archive, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { downloadBlob } from './utils/downloadBlob';
+import { FileSpreadsheet, Image as ImageIcon, Printer, Settings, FileCode, CheckCircle, AlertCircle, RotateCcw, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import PreviewPanel from './components/PreviewPanel';
-import PomodoroTimer from './components/PomodoroTimer';
 import { Step, LoadingModal } from './components/common';
 import DashboardLayout from './components/DashboardLayout';
 
@@ -646,21 +645,10 @@ export default function App() {
             }
 
             const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-
-            if (exportScope === 'single') {
-                const row = data[selectedIndex];
-                a.download = `Reporte_${row[idColumn] || 'Output'}.pdf`;
-            } else {
-                const dateStr = new Date().toISOString().split('T')[0];
-                a.download = `Paneles_Consolidado_${dateStr}.pdf`;
-            }
-
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
+            const filename = exportScope === 'single'
+                ? `Reporte_${data[selectedIndex][idColumn] || 'Output'}.pdf`
+                : `Paneles_Consolidado_${new Date().toISOString().split('T')[0]}.pdf`;
+            downloadBlob(blob, filename);
 
         } catch (err) {
             setIsPdfLoading(false);
@@ -688,7 +676,7 @@ export default function App() {
         XLSX.utils.book_append_sheet(wb, ws, "Plantilla");
         const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
         const dataBlob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8' });
-        saveAs(dataBlob, 'Plantilla_Importacion.xlsx');
+        downloadBlob(dataBlob, 'Plantilla_Importacion.xlsx');
     };
     const handlePrint = () => {
         window.print();

@@ -6,9 +6,8 @@ from fastapi import FastAPI, UploadFile, File, Form, BackgroundTasks, HTTPExcept
 from fastapi.staticfiles import StaticFiles
 import base64
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import Response, FileResponse
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
-import shutil
 import os
 import json
 import tempfile
@@ -61,13 +60,7 @@ def _normalize_photo_grid_template_compat(template_html: Optional[str]) -> Optio
 
     compat_css = """
 <style id="photo-grid-compat-fix">
-  .photo-cell-wrap {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    justify-content: flex-start !important;
-    min-height: 0 !important;
-  }
+  .photo-cell-wrap { align-items: stretch !important; justify-content: flex-start !important; }
   .photo-media {
     flex: 1 1 auto !important;
     min-height: 0 !important;
@@ -81,18 +74,16 @@ def _normalize_photo_grid_template_compat(template_html: Optional[str]) -> Optio
   .photo-cell > img,
   .photo-cell-wrap > img,
   .photo-cell-wrap img {
-    flex: 1 1 auto !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
+    flex: 0 1 auto !important;
+    width: auto !important;
+    height: auto !important;
     max-width: 100% !important;
     max-height: 100% !important;
-    object-fit: cover !important;
-    object-position: center center !important;
+    object-fit: contain !important;
+    object-position: center !important;
     image-orientation: from-image !important;
     display: block !important;
-    margin: 0 !important;
+    margin: 0 auto !important;
   }
 </style>
 """

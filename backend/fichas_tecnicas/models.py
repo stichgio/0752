@@ -2,7 +2,7 @@
 Modelos Pydantic para Fichas Técnicas de Evaluación de Actividades
 """
 from pydantic import BaseModel
-from typing import Dict, List, Literal, Optional
+from typing import List, Literal
 from datetime import datetime
 
 

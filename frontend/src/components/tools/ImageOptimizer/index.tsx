@@ -1,8 +1,9 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { ChevronLeft, Upload, Download, Trash2, Image as ImageIcon, FileDown, Loader2, CheckCircle, AlertCircle, X, Sliders, RotateCcw, Crop, Maximize2, Eye, Move, Check, RotateCw } from 'lucide-react';
+import { ChevronLeft, Upload, Download, Trash2, Image as ImageIcon, FileDown, Loader2, CheckCircle, AlertCircle, X, Sliders, RotateCcw, Crop, Maximize2, Move, Check, RotateCw } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
 import { ImageFile, CompressionOptions, CompressionStats, OutputFormat, AspectRatio, ASPECT_RATIO_OPTIONS, CropOffset } from './types';
 import { formatBytes } from '@/utils/formatBytes';
+import { downloadBlob } from '@/utils/downloadBlob';
 
 // ============================================================================
 // CONFIGURACION POR DEFECTO
@@ -685,15 +686,7 @@ export default function ImageOptimizer() {
     // ========================================================================
     const handleDownloadSingle = (img: ImageFile) => {
         if (!img.compressedBlob) return;
-
-        const url = URL.createObjectURL(img.compressedBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = getOutputExtension(options.outputFormat, img.originalName);
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        URL.revokeObjectURL(url);
+        downloadBlob(img.compressedBlob, getOutputExtension(options.outputFormat, img.originalName));
     };
 
     const handleDownloadAll = async () => {
@@ -724,14 +717,7 @@ export default function ImageOptimizer() {
             if (!response.ok) throw new Error('Error al crear ZIP');
 
             const blob = await response.blob();
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `imagenes_${Date.now()}.zip`;
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            URL.revokeObjectURL(url);
+            downloadBlob(blob, `imagenes_${Date.now()}.zip`);
         } catch (error) {
             console.error('ZIP download failed, downloading individually:', error);
             completedImages.forEach(img => handleDownloadSingle(img));

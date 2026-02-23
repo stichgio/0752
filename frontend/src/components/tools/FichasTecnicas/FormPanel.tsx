@@ -1,5 +1,5 @@
 import React from 'react';
-import { Save, Image, Upload, Settings } from 'lucide-react';
+import { Save, Settings } from 'lucide-react';
 import { FichaTecnica, ProductoQuimico, SatisfaccionType } from './types';
 
 interface Props {

@@ -2,7 +2,7 @@
 Endpoints API REST para Informes Técnicos
 """
 from fastapi import APIRouter, UploadFile, File, HTTPException, Form, BackgroundTasks
-from fastapi.responses import Response, FileResponse
+from fastapi.responses import FileResponse
 from typing import Optional, List, Dict, Any
 import io
 import csv

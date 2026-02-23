@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState, memo } from 'react';
 import {
-  FileCode2, FileJson, Plus,
+  FileCode2, FileJson, Plus, Printer,
   Redo2, Save, Send, Undo2, X, Eye, Download, Upload,
 } from 'lucide-react';
 import type { CanvasDocument, PageSettings } from './canvasTypes';
@@ -15,6 +15,8 @@ import { exportToJinja2, exportToJSON, importFromJSON, generatePreviewHtml } fro
 import { useUndoableState } from './hooks/useUndoableState';
 import type { CanvasChangeOptions } from './historyTypes';
 import { templateEditorApi } from './api';
+import { downloadBlob } from '@/utils/downloadBlob';
+import ReportGenerator from './ReportGenerator';
 
 const SESSION_KEY = 'canvas-editor-session-v1';
 
@@ -255,6 +257,7 @@ export default function TemplateEditor() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [previewHtml, setPreviewHtml] = useState('');
+  const [showGenerator, setShowGenerator] = useState(false);
   const [dataPreview, setDataPreview] = useState<Record<string, unknown> | undefined>(undefined);
   const [leftWidth, setLeftWidth] = useState(320);
   const [rightWidth, setRightWidth] = useState(320);
@@ -455,24 +458,14 @@ export default function TemplateEditor() {
   const exportHtml = useCallback(() => {
     const html = exportToJinja2(doc);
     const blob = new Blob([html], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${doc.name || 'template'}.html`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, `${doc.name || 'template'}.html`);
     toast('HTML exportado', 'ok');
   }, [doc, toast]);
 
   const exportJson = useCallback(() => {
     const json = exportToJSON(doc);
     const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${doc.name || 'template'}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, `${doc.name || 'template'}.json`);
     toast('JSON exportado', 'ok');
   }, [doc, toast]);
 
@@ -650,6 +643,12 @@ export default function TemplateEditor() {
           </ToolbarBtn>
 
           {/* Import JSON */}
+          {/* Report Generator */}
+          <ToolbarBtn onClick={() => setShowGenerator(true)} title="Generar reportes con plantillas publicadas">
+            <Printer size={16} />
+            Generar
+          </ToolbarBtn>
+
           <label
             className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-sm font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors cursor-pointer"
             title="Importar plantilla JSON"
@@ -773,6 +772,12 @@ export default function TemplateEditor() {
       )}
 
       <ToastStack items={toasts} />
+
+      {/* Report Generator */}
+      <ReportGenerator
+        isVisible={showGenerator}
+        onClose={() => setShowGenerator(false)}
+      />
     </div>
   );
 }
