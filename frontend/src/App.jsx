@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import html2canvas from 'html2canvas';
 import { downloadBlob } from './utils/downloadBlob';
@@ -10,11 +10,6 @@ import DashboardLayout from './components/DashboardLayout';
 import { REPORT_FIELDS, TEMPLATE_KEY_MAP, DATE_FIELDS, TEMPLATE_HEADERS } from './constants';
 import { useFocusMode } from './hooks/useFocusMode';
 import { excelSerialToDate, formatDateValue, isDateColumn } from './utils';
-import {
-    normalizeEditorTemplate,
-    normalizeTemplateStatus,
-    selectEditorTemplatesForDropdown,
-} from './utils/editorTemplateSelector';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
@@ -51,7 +46,6 @@ export default function App() {
     const [templateStatus, setTemplateStatus] = useState(null); // 'valid' | 'invalid' | null
     const [templateError, setTemplateError] = useState('');
     const [availableTemplates, setAvailableTemplates] = useState([]);
-    const [editorTemplates, setEditorTemplates] = useState([]); // [{id, name, status}]
 
     // Custom Columns State
     const [customColumns, setCustomColumns] = useState(() => {
@@ -85,64 +79,18 @@ export default function App() {
 
 
 
-    // Fetch available templates on mount.
-    // Source of truth for editor templates is /api/template-editor/templates (Supabase/local store).
-    // Legacy /api/templates remains as fallback for old deployments.
+    // Fetch available system templates on mount.
     useEffect(() => {
         let cancelled = false;
 
         const loadTemplates = async () => {
             try {
-                const [legacyResult, editorResult] = await Promise.allSettled([
-                    fetch(`${API_BASE_URL}/templates`),
-                    fetch(`${API_BASE_URL}/template-editor/templates`),
-                ]);
-
-                let nextAvailableTemplates = [];
-                let legacyEditorTemplates = [];
-                if (legacyResult.status === 'fulfilled' && legacyResult.value.ok) {
-                    const legacyData = await legacyResult.value.json();
-                    nextAvailableTemplates = Array.isArray(legacyData.templates) ? legacyData.templates : [];
-                    legacyEditorTemplates = Array.isArray(legacyData.editorTemplates)
-                        ? legacyData.editorTemplates
-                            .map((item) => normalizeEditorTemplate(item, 'published'))
-                            .filter((item) => item.id && item.name)
-                        : [];
-                }
-
-                let dbEditorTemplates = [];
-                if (editorResult.status === 'fulfilled' && editorResult.value.ok) {
-                    const editorData = await editorResult.value.json();
-                    dbEditorTemplates = Array.isArray(editorData.templates)
-                        ? editorData.templates
-                            .map((item) => normalizeEditorTemplate(item, item?.status || 'draft'))
-                            .filter((item) => item.id && item.name)
-                        : [];
-                }
-
-                let publishedEditorTemplates = [];
-                try {
-                    const publishedResponse = await fetch(`${API_BASE_URL}/templates/published`);
-                    if (publishedResponse.ok) {
-                        const publishedData = await publishedResponse.json();
-                        publishedEditorTemplates = Array.isArray(publishedData.templates)
-                            ? publishedData.templates
-                                .map((item) => normalizeEditorTemplate(item, item?.status || 'published'))
-                                .filter((item) => item.id && item.name)
-                            : [];
-                    }
-                } catch (publishedError) {
-                    console.warn('Published templates endpoint fallback:', publishedError);
-                }
-
-                const visibleEditorTemplates = selectEditorTemplatesForDropdown(
-                    publishedEditorTemplates.length > 0 ? publishedEditorTemplates : dbEditorTemplates,
-                    legacyEditorTemplates
-                );
+                const res = await fetch(`${API_BASE_URL}/templates`);
+                if (!res.ok) throw new Error('Failed to fetch templates');
+                const data = await res.json();
 
                 if (cancelled) return;
-                setAvailableTemplates(nextAvailableTemplates);
-                setEditorTemplates(visibleEditorTemplates);
+                setAvailableTemplates(Array.isArray(data.templates) ? data.templates : []);
             } catch (err) {
                 console.error("Error fetching templates:", err);
             }
@@ -282,49 +230,6 @@ export default function App() {
             console.error(err);
             setTemplateStatus('invalid');
             setTemplateError("Error al cargar la plantilla: " + err.message);
-        }
-    };
-
-    const handleEditorTemplateSelect = async (editorTemplateId) => {
-        if (!editorTemplateId) return;
-
-        try {
-            const res = await fetch(`${API_BASE_URL}/templates/${editorTemplateId}/render`);
-            if (!res.ok) throw new Error("Failed to load published template");
-            const payload = await res.json();
-
-            const content = payload?.content;
-            if (!content) {
-                setTemplateStatus('invalid');
-                setTemplateError('La plantilla publicada no tiene HTML renderizado.');
-                return;
-            }
-
-            const listedTemplate = editorTemplates.find((tpl) => tpl.id === editorTemplateId);
-            setCustomTemplate({
-                name: payload?.name || listedTemplate?.name || 'Plantilla publicada',
-                content,
-                isBackendTemplate: true,
-                isEditorTemplate: true,
-                editorTemplateId,
-                editorTemplateStatus: normalizeTemplateStatus(payload?.status || listedTemplate?.status || 'published'),
-                editorTemplateJson: payload?.templateJson || null,
-            });
-            setTemplateStatus('valid');
-            setTemplateError('');
-
-            // Auto-detect if template requires images
-            const templateContent = content.toLowerCase();
-            const hasImageBlocks = templateContent.includes('report.images') ||
-                templateContent.includes('photo-grid') ||
-                templateContent.includes('photo-cell') ||
-                templateContent.includes('panel-fotografico') ||
-                templateContent.includes('photo-section');
-            setRequiresImages(hasImageBlocks);
-        } catch (err) {
-            console.error(err);
-            setTemplateStatus('invalid');
-            setTemplateError("Error al cargar plantilla publicada: " + err.message);
         }
     };
 
@@ -750,39 +655,16 @@ export default function App() {
                                     <label className="block text-xs text-neutral-400 mb-1">O seleccionar existente:</label>
                                     <select
                                         className="w-full bg-neutral-900 border border-neutral-700 rounded p-1.5 text-xs text-white focus:border-white outline-none disabled:opacity-50"
-                                        onChange={(e) => {
-                                            const val = e.target.value;
-                                            if (!val) return;
-                                            if (val.startsWith('editor:')) {
-                                                handleEditorTemplateSelect(val.replace('editor:', ''));
-                                            } else {
-                                                handleBackendTemplateSelect(e);
-                                            }
-                                        }}
-                                        value={
-                                            customTemplate?.isEditorTemplate
-                                                ? `editor:${customTemplate?.editorTemplateId || editorTemplates.find(t => t.name === customTemplate?.name)?.id || ''}`
-                                                : availableTemplates.includes(customTemplate?.name) ? customTemplate.name : ""
-                                        }
-                                        disabled={availableTemplates.length === 0 && editorTemplates.length === 0}
+                                        onChange={handleBackendTemplateSelect}
+                                        value={availableTemplates.includes(customTemplate?.name) ? customTemplate.name : ""}
+                                        disabled={availableTemplates.length === 0}
                                     >
                                         <option value="">
-                                            {availableTemplates.length === 0 && editorTemplates.length === 0 ? "Sin plantillas (Verificar Backend)" : "-- Elegir Plantilla --"}
+                                            {availableTemplates.length === 0 ? "Sin plantillas (Verificar Backend)" : "-- Elegir Plantilla --"}
                                         </option>
-                                        {availableTemplates.length > 0 && (
-                                            <optgroup label="Plantillas del Sistema">
-                                                {availableTemplates.map(t => (
-                                                    <option key={t} value={t}>{t}</option>
-                                                ))}
-                                            </optgroup>
-                                        )}
-                                        {editorTemplates.length > 0 && (
-                                            <optgroup label="Mis Plantillas Publicadas">
-                                                {editorTemplates.map(t => (
-                                                    <option key={t.id} value={`editor:${t.id}`}>{`${t.name} [${normalizeTemplateStatus(t.status)}]`}</option>
-                                                ))}
-                                            </optgroup>
-                                        )}
+                                        {availableTemplates.map(t => (
+                                            <option key={t} value={t}>{t}</option>
+                                        ))}
                                     </select>
                                 </div>
 
@@ -798,9 +680,7 @@ export default function App() {
                                     }`}>
                                     <span className="text-neutral-400">Plantilla activa:</span>
                                     <span className={customTemplate ? 'text-green-400 font-medium' : 'text-neutral-500'}>
-                                        {customTemplate
-                                            ? (customTemplate.isEditorTemplate ? `Editor: ${customTemplate.name} (${normalizeTemplateStatus(customTemplate.editorTemplateStatus)})` : 'Personalizada')
-                                            : 'Predeterminada'}
+                                        {customTemplate ? customTemplate.name : 'Predeterminada'}
                                     </span>
                                 </div>
 
