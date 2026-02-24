@@ -120,10 +120,10 @@ export function exportToJinja2(doc: CanvasDocument): string {
 
     /* WeasyPrint-compatible photo grid */
     .photo-grid { display: grid; gap: 2mm; width: 100%; height: 100%; box-sizing: border-box; }
-    .photo-cell { overflow: hidden; min-height: 0; box-sizing: border-box; background: #f9fafb; border: 1px solid #d1d5db; border-radius: 1mm; }
-    .photo-cell-wrap { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; width: 100%; height: 100%; padding: 1mm; box-sizing: border-box; }
-    .photo-media { flex: 1 1 auto; min-height: 0; width: 100%; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-    .photo-media > img { width: 100%; height: 100%; object-fit: contain; object-position: center; display: block; max-width: 100%; max-height: 100%; }
+    .photo-cell { overflow: hidden; min-height: 0; min-width: 0; box-sizing: border-box; background: #f9fafb; border: 1px solid #d1d5db; border-radius: 1mm; }
+    .photo-cell-wrap { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; width: 100%; height: 100%; min-height: 0; padding: 1mm; box-sizing: border-box; overflow: hidden; }
+    .photo-media { flex: 1 1 auto; min-height: 0; width: 100%; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .photo-media > img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; object-position: center; display: block; }
     .photo-label { flex-shrink: 0; font-weight: 700; font-size: 7.5pt; text-transform: uppercase; margin-top: 1mm; text-align: center; }
 
     table {
@@ -319,13 +319,13 @@ function buildPhotoGrid(
       }
     }
 
-    const cellStyle = `${cellGridStyle}width: 100%; height: 100%; overflow: hidden; box-sizing: border-box; min-height: 0;`;
+    const cellStyle = `${cellGridStyle}width: 100%; height: 100%; overflow: hidden; box-sizing: border-box; min-height: 0; min-width: 0;`;
 
     html += `<div class="photo-cell" style="${cellStyle}">`;
     html += `<div class="photo-cell-wrap">`;
-    html += `<div class="photo-media" style="flex: 1 1 auto; min-height: 0; width: 100%; overflow: hidden; display: flex; align-items: center; justify-content: center;">`;
+    html += `<div class="photo-media" style="flex: 1 1 auto; min-height: 0; width: 100%; position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center;">`;
     html += `{% if report.images|length > ${i} %}`;
-    html += `<img src="{{ report.images[${i}].path }}" alt="{{ report.images[${i}].name | default('${escapeHtml(label)}') }}" style="width: 100%; height: 100%; object-fit: contain; object-position: center; max-width: 100%; max-height: 100%; display: block;" />`;
+    html += `<img src="{{ report.images[${i}].path }}" alt="{{ report.images[${i}].name | default('${escapeHtml(label)}') }}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: contain; object-position: center; display: block;" />`;
     html += `{% else %}<span style="color:#999; font-size:10px;">Sin foto</span>{% endif %}`;
     html += `</div>`;
     html += labelHtml;

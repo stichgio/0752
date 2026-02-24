@@ -1159,6 +1159,8 @@ CANVAS_CSS_TEMPLATE = """\
       border-radius: 1.4mm;
       padding: 0;
       overflow: hidden;
+      min-height: 0;
+      min-width: 0;
     }}
 
     .photo-cell-wrap {{
@@ -1168,22 +1170,28 @@ CANVAS_CSS_TEMPLATE = """\
       justify-content: flex-start;
       width: 100%;
       height: 100%;
+      min-height: 0;
       padding: 1mm;
       box-sizing: border-box;
+      overflow: hidden;
     }}
 
     .photo-media {{
       flex: 1 1 auto;
       min-height: 0;
       width: 100%;
+      position: relative;
+      overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
-      overflow: hidden;
     }}
 
     .photo-media > img,
     .photo-cell img {{
+      position: absolute;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
       object-fit: contain;
