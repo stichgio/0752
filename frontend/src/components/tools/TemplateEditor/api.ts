@@ -217,8 +217,10 @@ async function createDraft(input: UpsertDraftInput): Promise<string> {
 
 async function updateDraft(templateId: string, input: UpsertDraftInput): Promise<void> {
   const payload = {
+    name: input.name.trim() || 'Plantilla sin nombre',
     role: input.role || 'editor',
     author: input.author || 'editor',
+    reportType: input.reportType || 'technical-report',
     templateJson: canvasDocumentToTemplateJson(input.doc, input.reportType || 'technical-report'),
   };
   await requestJson('/template-editor/templates/' + encodeURIComponent(templateId), {
@@ -345,7 +347,9 @@ export const templateEditorApi = {
     if (fromGivenId) return fromGivenId;
 
     const byName = templateName ? await findTemplateByName(templateName) : null;
-    if (byName?.id) {
+    // Solo usar el match por nombre si NO tenemos un templateId dado
+    // (evita sobreescribir otra plantilla con el mismo nombre)
+    if (byName?.id && !baseInput.templateId) {
       const updatedByName = await tryUpdate(byName.id);
       if (updatedByName) return updatedByName;
     }
