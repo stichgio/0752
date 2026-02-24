@@ -1353,99 +1353,104 @@ def _build_canvas_photo_grid(
     odd_position: str,
     labels: List[str],
     show_labels: bool,
+    width_mm: float = 190.0,
+    height_mm: float = 215.0,
 ) -> str:
-    """Build a WeasyPrint-compatible photo grid table (matches frontend buildPhotoGridTable)."""
+    """Build a WeasyPrint-compatible photo grid using absolute positioning with mm values.
+
+    This avoids flexbox/table percentage-height issues in WeasyPrint by
+    calculating every dimension explicitly in millimetres.
+    """
+    import math
+
     count = max(int(count), 0) if isinstance(count, (int, float)) else 0
     if count == 0:
         count = 2
     if odd_position not in ("left", "center", "right"):
         odd_position = "center"
 
-    # Organise photos into rows of 2
-    rows: List[Dict[str, Any]] = []
-    for i in range(0, count - 1, 2):
-        rows.append({"type": "pair", "slots": [i, i + 1]})
+    cols = 2 if count > 1 else 1
+    num_rows = math.ceil(count / cols)
+    gap = 2.0  # mm between cells
+    label_h = 5.0 if show_labels else 0.0
 
-    if count % 2 == 1:
-        last = count - 1
-        if odd_position == "center":
-            rows.append({"type": "center", "slot": last})
-        elif odd_position == "right":
-            rows.append({"type": "pair", "slots": [None, last]})
+    cell_w = (width_mm - gap * (cols + 1)) / cols
+    cell_h = (height_mm - gap * (num_rows + 1)) / num_rows
+    if cell_w <= 0:
+        cell_w = max(width_mm / cols, 1.0)
+    if cell_h <= 0:
+        cell_h = max(height_mm / num_rows, 1.0)
+    img_h = max(cell_h - label_h, 1.0)
+
+    html = (
+        f'<div style="position: relative; width: {width_mm:.2f}mm; '
+        f'height: {height_mm:.2f}mm; overflow: hidden;">'
+    )
+
+    for idx in range(count):
+        col = idx % cols
+        row_idx = idx // cols
+        is_last_odd = (idx == count - 1 and count % 2 == 1 and cols == 2)
+
+        if is_last_odd:
+            if odd_position == "center":
+                cell_x = (width_mm - cell_w) / 2.0
+            elif odd_position == "right":
+                cell_x = gap + (cell_w + gap)
+            else:
+                cell_x = gap
         else:
-            rows.append({"type": "pair", "slots": [last, None]})
+            cell_x = gap + col * (cell_w + gap)
 
-    row_height = f"{100 // len(rows)}%" if rows else "100%"
-    html = '<table class="photo-grid-table"><tbody>'
+        cell_y = gap + row_idx * (cell_h + gap)
 
-    for row in rows:
-        html += f'<tr style="height: {row_height};">'
+        label = labels[idx] if idx < len(labels) and labels[idx] else f"Foto {idx + 1}"
+        label_esc = _escape_html(label)
+        label_jinja = label_esc.replace("'", "\\'")
 
-        if row["type"] == "center":
-            i = row["slot"]
-            label = labels[i] if i < len(labels) and labels[i] else f"Foto {i + 1}"
-            label_html = (
-                f'<div class="photo-label">{_escape_html(label)}</div>' if show_labels else ""
-            )
-            _media_style = (
-                "flex: 1 1 auto; min-height: 0; width: 100%; position: relative; "
-                "overflow: hidden; display: flex; align-items: center; justify-content: center;"
-            )
-            _img_style = (
-                "position: absolute; top: 0; left: 0; width: 100%; height: 100%; "
-                "object-fit: contain; object-position: center; display: block;"
-            )
-            html += '<td class="photo-cell-empty" style="width: 25%;"></td>'
-            html += '<td class="photo-cell" colspan="1" style="width: 50%;">'
-            html += '<div class="photo-cell-wrap">'
-            html += f'<div class="photo-media" style="{_media_style}">'
-            html += f'{{% if report.images|length > {i} %}}'
+        # Cell container
+        html += (
+            f'<div style="position: absolute; left: {cell_x:.2f}mm; top: {cell_y:.2f}mm; '
+            f'width: {cell_w:.2f}mm; height: {cell_h:.2f}mm; overflow: hidden; '
+            'background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 1.4mm; '
+            'box-sizing: border-box;">'
+        )
+
+        # Image area
+        html += (
+            f'<div style="width: {cell_w:.2f}mm; height: {img_h:.2f}mm; '
+            'overflow: hidden; display: block; padding: 1mm; box-sizing: border-box;">'
+        )
+        html += f'{{% if report.images|length > {idx} %}}'
+        html += (
+            f'<img src="{{{{ report.images[{idx}].path }}}}" '
+            f'alt="{{{{ report.images[{idx}].name | default(\'{label_jinja}\') }}}}" '
+            f'style="display: block; width: 100%; height: 100%; '
+            f'object-fit: contain; object-position: center;" />'
+        )
+        html += '{% else %}'
+        html += (
+            '<div style="width: 100%; height: 100%; display: flex; align-items: center; '
+            'justify-content: center; color: #999; font-size: 8pt; '
+            'border: 0.3mm dashed #ddd; box-sizing: border-box;">Sin foto</div>'
+        )
+        html += '{% endif %}'
+        html += '</div>'
+
+        # Label
+        if show_labels:
             html += (
-                f'<img src="{{{{ report.images[{i}].path }}}}" '
-                f'alt="{{{{ report.images[{i}].name | default(\'{_escape_html(label)}\') }}}}" '
-                f'style="{_img_style}" />'
+                f'<div style="width: {cell_w:.2f}mm; height: {label_h:.2f}mm; '
+                'text-align: center; font-weight: 700; font-size: 7.5pt; '
+                'text-transform: uppercase; line-height: ' + f'{label_h:.2f}mm; '
+                'overflow: hidden; letter-spacing: 0.02em;">'
+                f'{label_esc}'
+                '</div>'
             )
-            html += '{% else %}<span style="color:#999;">Sin foto</span>{% endif %}'
-            html += '</div>'
-            html += label_html
-            html += '</div>'
-            html += '</td>'
-            html += '<td class="photo-cell-empty" style="width: 25%;"></td>'
-        else:
-            for slot in row["slots"]:
-                if slot is None:
-                    html += '<td class="photo-cell-empty" style="width: 50%;"></td>'
-                else:
-                    label = labels[slot] if slot < len(labels) and labels[slot] else f"Foto {slot + 1}"
-                    label_html = (
-                        f'<div class="photo-label">{_escape_html(label)}</div>' if show_labels else ""
-                    )
-                    _media_style = (
-                        "flex: 1 1 auto; min-height: 0; width: 100%; position: relative; "
-                        "overflow: hidden; display: flex; align-items: center; justify-content: center;"
-                    )
-                    _img_style = (
-                        "position: absolute; top: 0; left: 0; width: 100%; height: 100%; "
-                        "object-fit: contain; object-position: center; display: block;"
-                    )
-                    html += '<td class="photo-cell" style="width: 50%;">'
-                    html += '<div class="photo-cell-wrap">'
-                    html += f'<div class="photo-media" style="{_media_style}">'
-                    html += f'{{% if report.images|length > {slot} %}}'
-                    html += (
-                        f'<img src="{{{{ report.images[{slot}].path }}}}" '
-                        f'alt="{{{{ report.images[{slot}].name | default(\'{_escape_html(label)}\') }}}}" '
-                        f'style="{_img_style}" />'
-                    )
-                    html += '{% else %}<span style="color:#999;">Sin foto</span>{% endif %}'
-                    html += '</div>'
-                    html += label_html
-                    html += '</div>'
-                    html += '</td>'
 
-        html += '</tr>'
+        html += '</div>'  # close cell
 
-    html += '</tbody></table>'
+    html += '</div>'  # close container
     return html
 
 
@@ -1521,12 +1526,20 @@ def _canvas_element_content(block: EditorBlock) -> Optional[str]:
         labels = photo_config.get("labels", [])
         panel_title = (block.content or "").strip()
         title_html = ""
+        title_offset = 0.0
         if panel_title:
             title_html = (
                 '<div style="font-weight: bold; font-size: 7.5pt; margin-bottom: 1mm; '
                 f'text-transform: uppercase;">{_escape_html(panel_title)}</div>'
             )
-        grid_html = _build_canvas_photo_grid(count, odd_position, labels, show_labels)
+            title_offset = 5.0  # approx height of title + margin
+
+        layout = meta.get("layout") or {}
+        el_w = _to_float(layout.get("width"), 190.0)
+        el_h = _to_float(layout.get("height"), 215.0) - title_offset
+        grid_html = _build_canvas_photo_grid(
+            count, odd_position, labels, show_labels, el_w, el_h,
+        )
         return title_html + grid_html
 
     if t == "table":
