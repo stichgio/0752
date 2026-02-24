@@ -88,19 +88,28 @@ function Step({
 }) {
     const [open, setOpen] = useState(defaultOpen);
     return (
-        <div className={`transition-opacity ${disabled ? 'opacity-40 pointer-events-none' : ''}`}>
+        <div className={`border-b border-[#111] ${disabled ? 'opacity-30 pointer-events-none' : ''}`}>
             <button
                 onClick={() => setOpen(!open)}
-                className="flex items-center gap-2 w-full text-left py-1.5 group"
+                className="flex items-center gap-3 w-full text-left py-3 px-4 hover:bg-[#0a0a0a] transition-colors group"
             >
-                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-violet-600/20 text-violet-300 text-[10px] font-bold flex-shrink-0">
+                <span className="w-5 h-5 flex items-center justify-center border border-[#333] group-hover:border-white text-[10px] font-mono font-bold text-[#666] group-hover:text-white transition-all flex-shrink-0">
                     {number}
                 </span>
-                {icon && <span className="text-violet-400">{icon}</span>}
-                <span className="text-xs font-semibold text-neutral-200 flex-1 truncate">{title}</span>
-                {open ? <ChevronUp size={12} className="text-neutral-500" /> : <ChevronDown size={12} className="text-neutral-500" />}
+                {icon && <span className="text-[#555] group-hover:text-white transition-colors">{icon}</span>}
+                <span className="text-[11px] font-mono font-medium tracking-wider uppercase text-[#888] group-hover:text-white flex-1 transition-colors">
+                    {title}
+                </span>
+                {open
+                    ? <ChevronUp size={10} className="text-[#333]" />
+                    : <ChevronDown size={10} className="text-[#333]" />
+                }
             </button>
-            {open && <div className="mt-1 space-y-2">{children}</div>}
+            {open && (
+                <div className="px-4 pb-4 pt-2 space-y-3 bg-[#050505]">
+                    {children}
+                </div>
+            )}
         </div>
     );
 }
@@ -108,10 +117,10 @@ function Step({
 /* ── Loading modal ─────────────────────────────────────────────── */
 function LoadingModal({ message }: { message: string }) {
     return (
-        <div className="fixed inset-0 z-[200] bg-black/70 flex items-center justify-center">
-            <div className="bg-neutral-900 border border-neutral-700 rounded-xl p-6 shadow-2xl flex flex-col items-center gap-4 max-w-sm mx-4">
-                <Loader2 size={32} className="text-violet-400 animate-spin" />
-                <p className="text-white text-sm text-center">{message}</p>
+        <div className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center">
+            <div className="border border-[#1a1a1a] bg-black p-8 flex flex-col items-center gap-4 min-w-[200px]">
+                <div className="w-8 h-8 border border-[#333] border-t-white rounded-full animate-spin" />
+                <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-[#666]">{message}</p>
             </div>
         </div>
     );
@@ -127,10 +136,19 @@ function TemplatePreview({
 }) {
     if (!renderedHtml) {
         return (
-            <div className="flex-1 flex items-center justify-center text-neutral-500 text-sm">
-                <div className="text-center space-y-2">
-                    <FileCode size={40} className="mx-auto text-neutral-600" />
-                    <p>Selecciona una plantilla y un registro para ver la vista previa</p>
+            <div className="flex-1 flex items-center justify-center">
+                <div className="text-center space-y-4">
+                    <div className="w-12 h-12 border border-[#ccc] flex items-center justify-center mx-auto">
+                        <div className="w-5 h-px bg-[#ccc]" />
+                    </div>
+                    <div className="space-y-1">
+                        <p className="text-[11px] font-mono uppercase tracking-[0.25em] text-[#999]">
+                            Sin Plantilla
+                        </p>
+                        <p className="text-[10px] font-mono text-[#bbb] max-w-[200px]">
+                            Selecciona una plantilla publicada para ver la estructura
+                        </p>
+                    </div>
                 </div>
             </div>
         );
@@ -497,10 +515,31 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
         });
     }, [data, selectedIndex, idColumn, images, matchesRecordId]);
 
-    // ── Render preview when template/data/images change ────────────
     useEffect(() => {
-        if (!selectedTemplate || selectedIndex === '') {
+        if (!selectedTemplate) {
             setRenderedHtml('');
+            return;
+        }
+
+        // Si hay plantilla pero no hay fila seleccionada → mostrar estructura
+        if (selectedIndex === '' || data.length === 0) {
+            let previewHtml = selectedTemplate.content;
+            // Reemplazar variables Jinja con placeholders visuales
+            previewHtml = previewHtml.replace(
+                /\{\{\s*report\.data\.get\('([^']+)'[^)]*\)\s*\}\}/g,
+                (_m, key) => `<span style="background:#f0f0f0;color:#999;
+                            font-size:11px;padding:1px 4px;border-radius:2px;
+                            font-family:monospace">[${key}]</span>`
+            );
+            previewHtml = previewHtml.replace(
+                /\{\{(?!%)[^}]+\}\}/g,
+                '<span style="background:#f0f0f0;color:#bbb;font-size:10px;padding:1px 3px;font-family:monospace">[···]</span>'
+            );
+            // Eliminar bloques de control Jinja que no se pueden resolver
+            previewHtml = previewHtml.replace(/\{%[\s\S]*?%\}/g, '');
+            // Eliminar loops for que quedaron sin procesar
+            previewHtml = previewHtml.replace(/\{#[\s\S]*?#\}/g, '');
+            setRenderedHtml(previewHtml);
             return;
         }
 
@@ -774,21 +813,21 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     if (!isVisible) return null;
 
     return (
-        <div className="fixed inset-0 z-[90] flex bg-black/60 backdrop-blur-sm">
-            <div className="flex w-full h-full bg-neutral-950 animate-in fade-in slide-in-from-bottom-4 duration-300">
+        <div className="fixed inset-0 z-[90] flex bg-black">
+            <div className="flex w-full h-full bg-[#000] animate-in fade-in slide-in-from-bottom-4 duration-300">
                 {/* ═══ Sidebar ═══ */}
-                <aside className="w-80 bg-neutral-950 border-r border-neutral-800 flex flex-col flex-shrink-0">
+                <aside className="w-[280px] bg-[#000] border-r border-[#1a1a1a] flex flex-col flex-shrink-0">
                     {/* Header */}
-                    <div className="h-12 flex items-center justify-between px-4 border-b border-neutral-800 flex-shrink-0">
-                        <div className="flex items-center gap-2">
-                            <Printer size={16} className="text-violet-400" />
-                            <span className="text-sm font-bold text-white">Generador de Reportes</span>
+                    <div className="h-11 flex items-center justify-between px-4 border-b border-[#1a1a1a] flex-shrink-0">
+                        <div className="flex items-center gap-3">
+                            <Printer size={14} className="text-white" />
+                            <span className="text-[11px] font-mono font-bold tracking-[0.2em] uppercase text-white">Generador de Reportes</span>
                         </div>
                         <button
                             onClick={onClose}
-                            className="p-1 rounded hover:bg-neutral-800 text-neutral-500 hover:text-white transition-colors"
+                            className="w-6 h-6 flex items-center justify-center text-[#444] hover:text-white transition-colors"
                         >
-                            <X size={16} />
+                            <X size={14} />
                         </button>
                     </div>
 
@@ -797,34 +836,21 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                         {/* Step 0: Logos */}
                         <Step number="0" title="Logos y Cabecera" icon={<Settings size={14} />}>
                             <div className="grid grid-cols-2 gap-2">
-                                <div className="text-center">
-                                    <label className="block text-[10px] text-neutral-400 mb-1">Logo Izq</label>
-                                    <div
-                                        className="border border-dashed border-neutral-700 h-14 rounded flex items-center justify-center cursor-pointer hover:bg-neutral-800 overflow-hidden"
-                                        onClick={() => document.getElementById('genLogoLeft')?.click()}
-                                    >
-                                        {logoLeft ? (
-                                            <img src={logoLeft} className="h-full object-contain" alt="Logo Izq" />
-                                        ) : (
-                                            <span className="text-[10px] text-neutral-500">Subir</span>
-                                        )}
+                                {['Izq', 'Der'].map((side) => (
+                                    <div key={side} className="flex flex-col gap-1">
+                                        <span className="text-[10px] font-mono uppercase tracking-widest text-[#444]">Logo {side}</span>
+                                        <div className="border border-[#222] hover:border-[#444] h-14 flex items-center justify-center cursor-pointer transition-colors overflow-hidden bg-[#050505]"
+                                            onClick={() => document.getElementById(`genLogo${side === 'Izq' ? 'Left' : 'Right'}`)?.click()}
+                                        >
+                                            {(side === 'Izq' ? logoLeft : logoRight) ? (
+                                                <img src={side === 'Izq' ? logoLeft! : logoRight!} className="h-full object-contain p-1" />
+                                            ) : (
+                                                <span className="text-[9px] font-mono uppercase tracking-widest text-[#333]">Subir</span>
+                                            )}
+                                        </div>
+                                        <input id={`genLogo${side === 'Izq' ? 'Left' : 'Right'}`} type="file" hidden accept="image/*" onChange={(e) => handleLogoUpload(e, side === 'Izq' ? 'left' : 'right')} />
                                     </div>
-                                    <input id="genLogoLeft" type="file" hidden accept="image/*" onChange={(e) => handleLogoUpload(e, 'left')} />
-                                </div>
-                                <div className="text-center">
-                                    <label className="block text-[10px] text-neutral-400 mb-1">Logo Der</label>
-                                    <div
-                                        className="border border-dashed border-neutral-700 h-14 rounded flex items-center justify-center cursor-pointer hover:bg-neutral-800 overflow-hidden"
-                                        onClick={() => document.getElementById('genLogoRight')?.click()}
-                                    >
-                                        {logoRight ? (
-                                            <img src={logoRight} className="h-full object-contain" alt="Logo Der" />
-                                        ) : (
-                                            <span className="text-[10px] text-neutral-500">Subir</span>
-                                        )}
-                                    </div>
-                                    <input id="genLogoRight" type="file" hidden accept="image/*" onChange={(e) => handleLogoUpload(e, 'right')} />
-                                </div>
+                                ))}
                             </div>
                         </Step>
 
@@ -832,7 +858,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                         <Step number="1" title="Seleccionar Plantilla" icon={<FileCode size={14} />}>
                             <div className="space-y-2">
                                 <select
-                                    className="w-full bg-neutral-900 border border-neutral-700 rounded p-1.5 text-xs text-white focus:border-violet-400 outline-none disabled:opacity-50"
+                                    className="w-full bg-[#000] border border-[#222] hover:border-[#444] focus:border-white rounded-none px-3 py-2 text-[11px] font-mono text-white outline-none transition-colors disabled:opacity-30"
                                     onChange={(e) => {
                                         const val = e.target.value;
                                         if (val) handleEditorTemplateSelect(val);
@@ -852,37 +878,30 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                                 </select>
 
                                 {templateStatus === 'invalid' && templateError && (
-                                    <div className="text-[10px] text-red-400 px-1">⚠️ {templateError}</div>
+                                    <div className="border border-[#ff3b30]/30 bg-[#ff3b30]/5 text-[#ff3b30] text-[10px] font-mono rounded-none p-2 mb-3 flex items-center gap-2">⚠️ {templateError}</div>
                                 )}
 
-                                <div
-                                    className={`flex items-center justify-between p-2 rounded text-[10px] ${selectedTemplate ? 'bg-violet-500/10 border border-violet-500/30' : 'bg-neutral-800 border border-neutral-700'
-                                        }`}
-                                >
-                                    <span className="text-neutral-400">Plantilla activa:</span>
-                                    <span className={selectedTemplate ? 'text-violet-400 font-medium' : 'text-neutral-500'}>
-                                        {selectedTemplate ? selectedTemplate.name : 'Ninguna'}
+                                <div className="flex items-center justify-between py-2 px-3 border border-[#1a1a1a] bg-[#050505]">
+                                    <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-[#444]">Activa</span>
+                                    <span className={`text-[10px] font-mono truncate max-w-[160px] ${selectedTemplate ? 'text-white' : 'text-[#333]'}`}>
+                                        {selectedTemplate ? selectedTemplate.name : '—'}
                                     </span>
                                 </div>
 
                                 {selectedTemplate && (
                                     <button
                                         onClick={handleResetTemplate}
-                                        className="w-full flex items-center justify-center gap-2 border border-dashed border-neutral-700 hover:border-neutral-500 rounded p-1.5 text-center hover:bg-neutral-800 transition-all text-[10px] text-neutral-400 hover:text-white"
+                                        className="w-full flex items-center justify-center gap-2 border border-[#222] hover:border-white text-[#666] hover:text-white font-mono text-[10px] tracking-wider uppercase py-2 px-4 rounded-none transition-all duration-150"
                                     >
                                         <RotateCcw size={10} /> Quitar Plantilla
                                     </button>
                                 )}
 
                                 {/* Images Required Toggle */}
-                                <div
-                                    className={`flex items-center justify-between p-2 rounded border transition-colors ${requiresImages ? 'bg-neutral-800 border-neutral-700' : 'bg-amber-500/10 border-amber-500/30'
-                                        }`}
-                                >
-                                    <div className="flex items-center gap-2">
-                                        <ImageIcon size={10} className={requiresImages ? 'text-neutral-400' : 'text-amber-400'} />
-                                        <span className="text-[10px] text-neutral-300">Requiere imágenes</span>
-                                    </div>
+                                <div className="flex items-center justify-between py-2 px-3 border border-[#1a1a1a]">
+                                    <span className="text-[10px] font-mono uppercase tracking-wider text-[#666] flex items-center gap-2">
+                                        <ImageIcon size={10} /> Requiere imágenes
+                                    </span>
                                     <label className="relative inline-flex items-center cursor-pointer">
                                         <input
                                             type="checkbox"
@@ -890,7 +909,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                                             onChange={(e) => setRequiresImages(e.target.checked)}
                                             className="sr-only peer"
                                         />
-                                        <div className="w-7 h-3.5 bg-neutral-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-2.5 after:w-2.5 after:transition-all peer-checked:bg-violet-600" />
+                                        <div className="w-7 h-3.5 bg-[#222] peer-focus:outline-none rounded-none peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-none after:h-2.5 after:w-2.5 after:transition-all peer-checked:bg-white" />
                                     </label>
                                 </div>
                             </div>
@@ -899,8 +918,8 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                         {/* Step 2: Data */}
                         <Step number="2" title="Cargar Datos" icon={<FileSpreadsheet size={14} />}>
                             <label className="block w-full cursor-pointer group">
-                                <div className="border border-dashed border-neutral-700 rounded-lg p-2.5 text-center hover:bg-neutral-900 transition-colors">
-                                    <span className="text-neutral-400 text-xs group-hover:text-white transition-colors">
+                                <div className="border border-[#222] hover:border-white rounded-none p-2.5 text-center bg-[#050505] transition-colors">
+                                    <span className="text-[#666] font-mono text-[10px] uppercase tracking-wider group-hover:text-white transition-colors">
                                         {headers.length > 0 ? `${data.length} registros cargados` : 'Seleccionar Excel / CSV'}
                                     </span>
                                 </div>
@@ -911,9 +930,9 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                         {/* Step 3: Mapping */}
                         <Step number="3" title="Mapeo de Columnas" icon={<Settings size={14} />} disabled={headers.length === 0}>
                             <div>
-                                <label className="block text-neutral-400 text-[10px] mb-1 font-semibold">Columna ID (Clave)</label>
+                                <label className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#555] mb-1 block">Columna ID (Clave)</label>
                                 <select
-                                    className="w-full bg-neutral-900 border border-neutral-700 rounded p-1.5 text-xs text-white focus:border-white outline-none"
+                                    className="w-full bg-[#000] border border-[#222] hover:border-[#444] focus:border-white rounded-none px-3 py-2 text-[11px] font-mono text-white outline-none transition-colors disabled:opacity-30"
                                     value={idColumn}
                                     onChange={(e) => setIdColumn(e.target.value)}
                                 >
@@ -927,10 +946,9 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                             <div className="space-y-1 max-h-40 overflow-y-auto pr-1 mt-2">
                                 {REPORT_FIELDS.map((field) => (
                                     <div key={field.id} className="grid grid-cols-2 gap-1 items-center">
-                                        <span className="text-neutral-500 text-[10px] uppercase font-medium truncate">{field.label}</span>
+                                        <span className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#555] truncate block">{field.label}</span>
                                         <select
-                                            className={`bg-neutral-900 border border-neutral-700 rounded px-1.5 py-1 text-[10px] text-white outline-none ${mappings[field.id] ? 'border-l-2 border-l-violet-500' : ''
-                                                }`}
+                                            className="w-full bg-[#000] border border-[#222] hover:border-[#444] focus:border-white rounded-none px-3 py-2 text-[11px] font-mono text-white outline-none transition-colors disabled:opacity-30"
                                             value={mappings[field.id] || ''}
                                             onChange={(e) => setMappings({ ...mappings, [field.id]: e.target.value })}
                                         >
@@ -943,10 +961,10 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                                 ))}
 
                                 {customColumns.map((col) => (
-                                    <div key={col.id} className="grid grid-cols-[1fr_auto_auto] gap-1 items-center bg-neutral-800/50 rounded px-1 py-0.5">
-                                        <span className="text-white text-[10px] uppercase font-medium">{col.name}</span>
+                                    <div key={col.id} className="grid grid-cols-[1fr_auto_auto] gap-1 items-center bg-[#050505] p-1 border border-[#111]">
+                                        <span className="text-white text-[10px] font-mono uppercase tracking-[0.15em]">{col.name}</span>
                                         <select
-                                            className="bg-neutral-900 border border-neutral-700 rounded px-1.5 py-1 text-[10px] text-white outline-none"
+                                            className="bg-[#000] border border-[#222] hover:border-[#444] focus:border-white rounded-none px-3 py-2 text-[11px] font-mono text-white outline-none transition-colors"
                                             value={mappings[col.id] || col.mappedTo || ''}
                                             onChange={(e) => setMappings({ ...mappings, [col.id]: e.target.value })}
                                         >
@@ -957,7 +975,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                                         </select>
                                         <button
                                             onClick={() => removeCustomColumn(col.id)}
-                                            className="text-red-400 hover:text-red-300 text-[10px] px-0.5 hover:bg-red-500/20 rounded transition-colors"
+                                            className="text-[#ff3b30] hover:text-white text-[10px] px-2 hover:bg-[#ff3b30] rounded-none transition-colors"
                                         >
                                             ✕
                                         </button>
@@ -968,7 +986,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                             <button
                                 onClick={() => setShowColumnModal(true)}
                                 disabled={headers.length === 0}
-                                className="w-full mt-2 border border-dashed border-white/40 hover:border-white text-white/60 hover:text-white rounded p-2 text-center hover:bg-white/5 text-[10px] disabled:opacity-50"
+                                className="w-full flex items-center justify-center gap-2 border border-[#222] hover:border-white text-[#666] hover:text-white font-mono text-[10px] tracking-wider uppercase py-2 px-4 rounded-none transition-all duration-150 mt-2"
                             >
                                 + Agregar Columna Personalizada
                             </button>
@@ -983,16 +1001,16 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                         >
                             {requiresImages ? (
                                 <label className="block w-full cursor-pointer group">
-                                    <div className="border border-dashed border-neutral-700 rounded-lg p-2.5 text-center hover:bg-neutral-900 transition-colors">
-                                        <span className="text-neutral-400 text-xs group-hover:text-white transition-colors">
+                                    <div className="border border-[#222] hover:border-white rounded-none p-2.5 text-center bg-[#050505] transition-colors">
+                                        <span className="text-[#666] font-mono text-[10px] uppercase tracking-wider group-hover:text-white transition-colors">
                                             {images.length > 0 ? `${images.length} imágenes` : 'Subir Carpeta de Fotos'}
                                         </span>
                                     </div>
                                     <input type="file" hidden multiple accept="image/*" onChange={handleImageUpload} />
                                 </label>
                             ) : (
-                                <div className="border border-dashed border-neutral-700/50 rounded-lg p-2.5 text-center bg-neutral-800/30">
-                                    <span className="text-neutral-500 text-xs">No requerido para esta plantilla</span>
+                                <div className="border border-[#111] bg-[#050505] rounded-none p-2.5 text-center">
+                                    <span className="text-[#444] font-mono text-[10px] uppercase tracking-wider">No requerido para esta plantilla</span>
                                 </div>
                             )}
                         </Step>
@@ -1004,7 +1022,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                             disabled={!selectedTemplate || (requiresImages ? images.length === 0 : data.length === 0)}
                         >
                             <div className="relative mb-2">
-                                <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-neutral-500" size={12} />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[#333]" size={11} />
                                 <input
                                     type="text"
                                     placeholder="Buscar orden..."
@@ -1023,12 +1041,12 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                                             }
                                         }
                                     }}
-                                    className="w-full pl-7 pr-2 py-1.5 bg-neutral-900 border border-neutral-700 rounded text-white text-xs focus:border-white outline-none placeholder:text-neutral-500"
+                                    className="w-full pl-8 pr-3 py-2 bg-[#000] border border-[#222] hover:border-[#444] focus:border-white rounded-none text-[11px] font-mono text-white outline-none placeholder:text-[#333] transition-colors"
                                 />
                             </div>
 
                             <select
-                                className="w-full bg-white text-black font-bold border border-neutral-300 rounded p-2 text-xs focus:outline-none disabled:opacity-50"
+                                className="w-full bg-white text-black font-mono font-bold border-0 rounded-none p-2 text-[11px] focus:outline-none focus:ring-1 focus:ring-black disabled:opacity-30 disabled:cursor-not-allowed"
                                 value={selectedIndex}
                                 onChange={(e) => {
                                     setSelectedIndex(e.target.value);
@@ -1045,19 +1063,17 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                             </select>
 
                             {/* Export Options */}
-                            <div className="bg-neutral-900 border border-neutral-800 rounded p-2 mt-2">
-                                <h4 className="text-[10px] uppercase text-neutral-500 font-bold mb-2">Exportación</h4>
+                            <div className="bg-[#050505] border border-[#1a1a1a] rounded-none p-2 mt-2">
+                                <h4 className="text-[10px] uppercase font-mono tracking-widest text-[#555] mb-2">Exportación</h4>
                                 <div className="flex gap-2 mb-2">
                                     <button
-                                        className={`flex-1 py-1 px-2 rounded text-[10px] font-medium transition-colors ${exportScope === 'single' ? 'bg-violet-600 text-white' : 'bg-neutral-800 text-neutral-400'
-                                            }`}
+                                        className={`flex-1 ${exportScope === 'single' ? 'bg-white text-black font-mono font-bold text-[10px] tracking-wider uppercase py-2 px-3 rounded-none transition-all' : 'bg-transparent border border-[#222] text-[#555] hover:border-[#444] hover:text-white font-mono text-[10px] tracking-wider uppercase py-2 px-3 rounded-none transition-all'}`}
                                         onClick={() => setExportScope('single')}
                                     >
                                         Solo Actual
                                     </button>
                                     <button
-                                        className={`flex-1 py-1 px-2 rounded text-[10px] font-medium transition-colors ${exportScope === 'all' ? 'bg-violet-600 text-white' : 'bg-neutral-800 text-neutral-400'
-                                            }`}
+                                        className={`flex-1 ${exportScope === 'all' ? 'bg-white text-black font-mono font-bold text-[10px] tracking-wider uppercase py-2 px-3 rounded-none transition-all' : 'bg-transparent border border-[#222] text-[#555] hover:border-[#444] hover:text-white font-mono text-[10px] tracking-wider uppercase py-2 px-3 rounded-none transition-all'}`}
                                         onClick={() => setExportScope('all')}
                                     >
                                         Todo ({data.length})
@@ -1072,19 +1088,19 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                                                 name="genFormat"
                                                 checked={exportFormat === 'consolidated'}
                                                 onChange={() => setExportFormat('consolidated')}
-                                                className="text-violet-500"
+                                                className="text-white bg-[#000] border-[#222]"
                                             />
-                                            <span className="text-white text-[10px]">PDF Consolidado</span>
+                                            <span className="text-white text-[10px] font-mono uppercase tracking-wider">PDF Consolidado</span>
                                         </label>
-                                        <label className="flex items-center gap-2 cursor-pointer opacity-50">
+                                        <label className="flex items-center gap-2 cursor-pointer opacity-30">
                                             <input
                                                 type="radio"
                                                 name="genFormat"
                                                 checked={exportFormat === 'individual'}
                                                 onChange={() => setExportFormat('individual')}
-                                                className="text-violet-500"
+                                                className="text-white bg-[#000] border-[#222]"
                                             />
-                                            <span className="text-white text-[10px]">PDFs Individuales (ZIP)</span>
+                                            <span className="text-white text-[10px] font-mono uppercase tracking-wider">PDFs Individuales (ZIP)</span>
                                         </label>
                                     </div>
                                 )}
@@ -1093,7 +1109,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                             <button
                                 onClick={handleBackendDownload}
                                 disabled={(exportScope === 'single' && selectedIndex === '') || (requiresImages ? images.length === 0 : data.length === 0) || !selectedTemplate}
-                                className="w-full flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-bold p-2.5 rounded disabled:opacity-50 transition-colors shadow-lg text-xs mt-2"
+                                className="w-full flex items-center justify-center gap-2 bg-white hover:bg-[#e5e5e5] text-black font-mono font-bold text-[11px] tracking-wider uppercase py-3 px-4 rounded-none disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-150 mt-2"
                             >
                                 <Download size={14} /> Descargar PDF
                             </button>
@@ -1102,19 +1118,23 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                 </aside>
 
                 {/* ═══ Preview Area ═══ */}
-                <main className="flex-1 flex flex-col h-full overflow-hidden bg-neutral-300">
+                <main className="flex-1 flex flex-col h-full overflow-hidden bg-[#f5f5f5]">
                     {/* Preview header */}
-                    <div className="h-10 flex items-center justify-between px-4 bg-neutral-200 border-b border-neutral-300 flex-shrink-0">
-                        <span className="text-xs font-semibold text-neutral-600">
+                    <div className="h-10 flex items-center justify-between px-5 bg-[#000] border-b border-[#111] flex-shrink-0">
+                        <span className="text-[11px] font-mono uppercase tracking-[0.2em] text-[#555]">
                             Vista Previa
-                            {selectedTemplate && ` — ${selectedTemplate.name}`}
+                            {selectedTemplate && (
+                                <span className="text-white ml-3 normal-case tracking-normal">
+                                    — {selectedTemplate.name}
+                                </span>
+                            )}
                             {selectedIndex !== '' && data[Number(selectedIndex)] && idColumn && ` | ${data[Number(selectedIndex)][idColumn]}`}
                         </span>
                         <button
                             onClick={onClose}
-                            className="text-xs text-neutral-500 hover:text-neutral-800 transition-colors"
+                            className="text-[9px] font-mono uppercase tracking-widest text-[#333] hover:text-white transition-colors"
                         >
-                            ESC para cerrar
+                            ESC · cerrar
                         </button>
                     </div>
 
@@ -1127,34 +1147,35 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
 
             {/* Column modal */}
             {showColumnModal && (
-                <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[200]">
-                    <div className="bg-neutral-900 border border-neutral-700 rounded-lg p-5 w-full max-w-sm mx-4 shadow-2xl">
-                        <h3 className="text-white font-bold text-sm mb-4">+ Agregar Columna</h3>
+                <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-[200]">
+                    <div className="bg-black border border-[#222] p-6 w-full max-w-[320px] mx-4 shadow-2xl">
+                        <h3 className="text-[11px] font-mono uppercase tracking-[0.2em] text-white font-bold mb-5">
+                            + Agregar Columna
+                        </h3>
 
                         {columnError && (
-                            <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-xs rounded p-2 mb-3 flex items-center gap-2">
-                                <AlertCircle size={12} />
-                                {columnError}
+                            <div className="border border-[#ff3b30]/30 bg-[#ff3b30]/5 text-[#ff3b30] text-[10px] font-mono rounded-none p-2 mb-3 flex items-center gap-2">
+                                <AlertCircle size={10} /> {columnError}
                             </div>
                         )}
 
                         <div className="space-y-3">
                             <div>
-                                <label className="block text-neutral-400 text-[10px] mb-1 uppercase">Nombre</label>
+                                <label className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#555] mb-1 block">Nombre</label>
                                 <input
                                     type="text"
                                     value={newColumnName}
                                     onChange={(e) => setNewColumnName(e.target.value)}
                                     placeholder="Ej: FECHA CORTE"
-                                    className="w-full bg-white text-black border-0 rounded p-2 text-xs focus:ring-2 focus:ring-violet-400 outline-none"
+                                    className="w-full bg-[#000] border border-[#222] hover:border-[#444] focus:border-white rounded-none px-3 py-2 text-[11px] font-mono text-white outline-none transition-colors"
                                 />
                             </div>
                             <div>
-                                <label className="block text-neutral-400 text-[10px] mb-1 uppercase">Columna CSV</label>
+                                <label className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#555] mb-1 block">Columna CSV</label>
                                 <select
                                     value={newColumnMapping}
                                     onChange={(e) => setNewColumnMapping(e.target.value)}
-                                    className="w-full bg-neutral-800 border border-neutral-600 rounded p-2 text-xs text-white outline-none"
+                                    className="w-full bg-[#000] border border-[#222] hover:border-[#444] focus:border-white rounded-none px-3 py-2 text-[11px] font-mono text-white outline-none transition-colors"
                                 >
                                     <option value="">-- Seleccionar --</option>
                                     {headers.map((h) => (
@@ -1172,13 +1193,13 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                                     setNewColumnMapping('');
                                     setColumnError('');
                                 }}
-                                className="flex-1 border border-neutral-600 text-neutral-400 hover:text-white rounded py-2 text-xs transition-colors"
+                                className="flex-1 flex items-center justify-center gap-2 border border-[#222] hover:border-white text-[#666] hover:text-white font-mono text-[10px] tracking-wider uppercase py-2 px-4 rounded-none transition-all duration-150"
                             >
                                 Cancelar
                             </button>
                             <button
                                 onClick={addCustomColumn}
-                                className="flex-1 bg-violet-600 hover:bg-violet-700 text-white rounded py-2 text-xs font-semibold transition-colors"
+                                className="flex-1 flex items-center justify-center gap-2 bg-white hover:bg-[#e5e5e5] text-black font-mono font-bold text-[11px] tracking-wider uppercase py-3 px-4 rounded-none disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-150"
                             >
                                 Agregar
                             </button>
