@@ -497,14 +497,13 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     display: grid !important;
     grid-template-columns: repeat(2, 1fr) !important;
     grid-template-rows: repeat(2, 1fr) !important;
-    grid-auto-rows: 1fr !important;
     gap: 4px !important;
     width: 100% !important;
-    min-height: 400px !important;
+    height: 100% !important;
+    flex: 1 !important;
+    min-height: 0 !important;
     overflow: hidden !important;
     box-sizing: border-box !important;
-    /* Anular cualquier flex que tenga el padre */
-    flex: none !important;
   }
 
   /* ── El contenedor padre NO debe hacer flex-direction: column ── */
@@ -517,7 +516,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     flex-direction: column !important;
     flex: 1 !important;
     min-height: 0 !important;
-    overflow: visible !important;  /* permite que el grid crezca */
+    overflow: hidden !important;
   }
 
   /* ── photo-cell: cada celda ocupa su espacio correctamente ── */
@@ -526,8 +525,8 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
   [class*="photoCell"] {
     position: relative !important;
     overflow: hidden !important;
-    min-height: 0 !important;
-    min-width: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
@@ -540,14 +539,11 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
   [class*="photo-cell"] img,
   [class*="photoCell"] img,
   .photo-grid img {
-    max-width: 100% !important;
-    max-height: 100% !important;
     width: 100% !important;
-    height: auto !important;
+    height: 100% !important;
     object-fit: contain !important;
     object-position: center !important;
     display: block !important;
-    flex-shrink: 1 !important;
   }
 
   /* ── Label de la foto (ANTES, DURANTE, etc.) ── */

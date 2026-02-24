@@ -118,13 +118,13 @@ export function exportToJinja2(doc: CanvasDocument): string {
       overflow: hidden;
     }
 
-    /* WeasyPrint-compatible photo grid using table layout */
-    .photo-grid-table {
+    /* WeasyPrint-compatible photo grid */
+    .photo-grid {
+      display: grid;
+      gap: 2mm;
       width: 100%;
       height: 100%;
-      border-collapse: separate;
-      border-spacing: 2mm;
-      table-layout: fixed;
+      box-sizing: border-box;
     }
 
     .photo-cell {
@@ -133,14 +133,17 @@ export function exportToJinja2(doc: CanvasDocument): string {
       border-radius: 1.4mm;
       padding: 0;
       overflow: hidden;
-      vertical-align: top;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
 
     .photo-cell-wrap {
       display: flex;
       flex-direction: column;
-      align-items: stretch;
-      justify-content: flex-start;
+      align-items: center;
+      justify-content: center;
       width: 100%;
       height: 100%;
       padding: 1mm;
@@ -148,9 +151,9 @@ export function exportToJinja2(doc: CanvasDocument): string {
     }
 
     .photo-media {
-      flex: 1 1 auto;
-      min-height: 0;
+      flex: 1;
       width: 100%;
+      height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -346,80 +349,44 @@ function generateElementStyle(el: TemplateElement): string {
  */
 
 /**
- * Build a WeasyPrint-compatible photo grid using <table> layout instead
- * of CSS Grid (which WeasyPrint does not fully support).
+ * Build a photo grid using CSS Grid for perfect scaling.
  */
-function buildPhotoGridTable(
+function buildPhotoGrid(
   count: number,
   oddPosition: 'left' | 'center' | 'right',
   labels: string[],
   showLabels: boolean,
 ): string {
-  // Organize photos into rows of 2
-  const rows: Array<{ type: 'pair'; slots: (number | null)[] } | { type: 'center'; slot: number }> = [];
+  const cols = count > 1 ? 2 : 1;
+  const rows = Math.ceil(count / cols);
 
-  for (let i = 0; i < count - 1; i += 2) {
-    rows.push({ type: 'pair', slots: [i, i + 1] });
-  }
+  let html = `<div class="photo-grid" style="grid-template-columns: repeat(${cols}, 1fr); grid-template-rows: repeat(${rows}, 1fr);">`;
 
-  // Handle odd last photo
-  if (count % 2 === 1) {
-    const lastSlot = count - 1;
-    if (oddPosition === 'center') {
-      rows.push({ type: 'center', slot: lastSlot });
-    } else if (oddPosition === 'right') {
-      rows.push({ type: 'pair', slots: [null, lastSlot] });
-    } else {
-      rows.push({ type: 'pair', slots: [lastSlot, null] });
-    }
-  }
+  for (let i = 0; i < count; i++) {
+    const label = labels[i] || `Foto ${i + 1}`;
+    const labelHtml = showLabels ? `<div class="photo-label">${escapeHtml(label)}</div>` : '';
 
-  const rowHeight = rows.length > 0 ? `${Math.floor(100 / rows.length)}%` : '100%';
-
-  let html = '<table class="photo-grid-table"><tbody>';
-
-  for (const row of rows) {
-    html += `<tr style="height: ${rowHeight};">`;
-
-    if (row.type === 'center') {
-      const i = row.slot;
-      const label = labels[i] || `Foto ${i + 1}`;
-      const labelHtml = showLabels ? `<div class="photo-label">${escapeHtml(label)}</div>` : '';
-      html += `<td class="photo-cell-empty" style="width: 25%;"></td>`;
-      html += `<td class="photo-cell" colspan="1" style="width: 50%;">`;
-      html += `<div class="photo-cell-wrap">`;
-      html += `<div class="photo-media">`;
-      html += `{% if report.images|length > ${i} %}`;
-      html += `<img src="{{ report.images[${i}].path }}" alt="{{ report.images[${i}].name | default('${escapeHtml(label)}') }}" />`;
-      html += `{% else %}<span style="color:#999;">Sin foto</span>{% endif %}`;
-      html += `</div>`;
-      html += labelHtml;
-      html += `</div></td>`;
-      html += `<td class="photo-cell-empty" style="width: 25%;"></td>`;
-    } else {
-      for (const slotIndex of row.slots) {
-        if (slotIndex === null) {
-          html += `<td class="photo-cell-empty" style="width: 50%;"></td>`;
-        } else {
-          const label = labels[slotIndex] || `Foto ${slotIndex + 1}`;
-          const labelHtml = showLabels ? `<div class="photo-label">${escapeHtml(label)}</div>` : '';
-          html += `<td class="photo-cell" style="width: 50%;">`;
-          html += `<div class="photo-cell-wrap">`;
-          html += `<div class="photo-media">`;
-          html += `{% if report.images|length > ${slotIndex} %}`;
-          html += `<img src="{{ report.images[${slotIndex}].path }}" alt="{{ report.images[${slotIndex}].name | default('${escapeHtml(label)}') }}" />`;
-          html += `{% else %}<span style="color:#999;">Sin foto</span>{% endif %}`;
-          html += `</div>`;
-          html += labelHtml;
-          html += `</div></td>`;
-        }
+    let cellStyle = 'width: 100%; height: 100%;';
+    if (i === count - 1 && count % 2 === 1 && cols === 2) {
+      if (oddPosition === 'center') {
+        cellStyle += ' grid-column: 1 / span 2; justify-self: center; width: 50%;';
+      } else if (oddPosition === 'right') {
+        cellStyle += ' grid-column: 2 / span 1;';
       }
     }
 
-    html += '</tr>';
+    html += `<div class="photo-cell" style="${cellStyle}">`;
+    html += `<div class="photo-cell-wrap">`;
+    html += `<div class="photo-media">`;
+    html += `{% if report.images|length > ${i} %}`;
+    html += `<img src="{{ report.images[${i}].path }}" alt="{{ report.images[${i}].name | default('${escapeHtml(label)}') }}" />`;
+    html += `{% else %}<span style="color:#999; font-size:10px;">Sin foto</span>{% endif %}`;
+    html += `</div>`;
+    html += labelHtml;
+    html += `</div></div>`;
   }
 
-  html += '</tbody></table>';
+  html += '</div>';
   return html;
 }
 
@@ -451,24 +418,24 @@ function generateElementContent(el: TemplateElement): string | null {
 
     case 'variable':
       // variableName holds a full Jinja2 expression, e.g. report.data.get('CENTRO', '-')
-      return `{{ ${el.variableName || 'variable'} }}`;
+      return `{ { ${el.variableName || 'variable'} } } `;
 
     case 'logo': {
       /* fix: imagen-cortada */
       const logoCss = generateImageCss('contain', el.size.width, el.size.height);
       if (el.imageUrl) {
-        return `<img src="${escapeHtml(el.imageUrl)}" style="${logoCss}" />`;
+        return `< img src = "${escapeHtml(el.imageUrl)}" style = "${logoCss}" /> `;
       }
       // Use variableName as Jinja2 var (defaults to logo_left)
       const logoVar = el.variableName || 'logo_left';
-      return `{% if ${logoVar} %}<img src="{{ ${logoVar} }}" style="${logoCss}" />{% endif %}`;
+      return `{% if ${logoVar} %} <img src="{{ ${logoVar} }}" style = "${logoCss}" /> {% endif %} `;
     }
 
     case 'image': {
       if (el.imageUrl) {
         /* fix: imagen-cortada — default to contain instead of cover */
         const imgCss = generateImageCss(el.style.objectFit || 'contain', el.size.width, el.size.height);
-        return `<img src="${escapeHtml(el.imageUrl)}" style="${imgCss}" />`;
+        return `< img src = "${escapeHtml(el.imageUrl)}" style = "${imgCss}" /> `;
       }
       return '';
     }
@@ -480,10 +447,9 @@ function generateElementContent(el: TemplateElement): string | null {
       const labels = el.photoConfig?.labels || [];
       let gridHtml = '';
       if (el.content) {
-        gridHtml += `<div style="font-weight: bold; font-size: 7.5pt; margin-bottom: 1mm; text-transform: uppercase;">${escapeHtml(el.content)}</div>`;
+        gridHtml += `< div style = "font-weight: bold; font-size: 7.5pt; margin-bottom: 1mm; text-transform: uppercase;" > ${escapeHtml(el.content)} </div>`;
       }
-      // Use table-based layout for WeasyPrint compatibility (CSS Grid not supported)
-      gridHtml += buildPhotoGridTable(count, oddPosition, labels, showLabels);
+      gridHtml += buildPhotoGrid(count, oddPosition, labels, showLabels);
       return gridHtml;
     }
 
