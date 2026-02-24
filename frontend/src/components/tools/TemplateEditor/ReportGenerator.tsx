@@ -491,13 +491,13 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     const PHOTO_FIX_CSS = `
 <style id="__photo-fix__">
   /* ── Backward compat: old templates have class="element photo-grid" on the
-       outer wrapper.  Reset it so the wrapper stays block-positioned and keeps
-       its inline mm dimensions. Specificity 0,2,0 beats .photo-grid (0,1,0). ── */
+       outer wrapper.  Keep it block-positioned with its inline mm dimensions.
+       Specificity 0,2,0 beats .photo-grid (0,1,0). ── */
   .element.photo-grid {
     display: block !important;
   }
 
-  /* ── Inner photo grid: the actual CSS-Grid container.
+  /* ── CSS Grid container (frontend export path).
        :not(.element) ensures we never touch the outer positioned wrapper. ── */
   .photo-grid:not(.element) {
     display: grid !important;
@@ -510,9 +510,19 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     box-sizing: border-box !important;
   }
 
+  /* ── Table container (backend compiled path).
+       The backend compiles photo-grids as <table class="photo-grid-table">
+       with <td class="photo-cell">.  DO NOT apply display:flex to <td>. ── */
+  .photo-grid-table {
+    width: 100% !important;
+    height: 100% !important;
+    border-collapse: separate !important;
+    border-spacing: 2mm !important;
+    table-layout: fixed !important;
+  }
+
   /* ── Legacy panel-fotografico containers ── */
   .panel-fotografico,
-  [class*="panel-fotografico"],
   [class*="photo-section"] {
     display: flex !important;
     flex-direction: column !important;
@@ -521,17 +531,33 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     overflow: hidden !important;
   }
 
-  /* ── photo-cell: each cell fills its grid slot ── */
+  /* ── photo-cell: generic rules safe for both <td> and <div>.
+       NO display override here — <td> must keep display:table-cell. ── */
   .photo-cell {
-    position: relative !important;
     overflow: hidden !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: center !important;
-    background: #f8f8f8 !important;
     min-height: 0 !important;
     min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  /* ── photo-cell as CSS Grid child (div): needs flex for internal layout ── */
+  .photo-grid:not(.element) > .photo-cell {
+    display: flex !important;
+    flex-direction: column !important;
+    position: relative !important;
+  }
+
+  /* ── Inner flex wrapper: handles layout inside both <td> and grid cells ── */
+  .photo-cell-wrap {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 0 !important;
+    padding: 1mm !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
   }
 
   /* ── photo-media: positioning anchor for absolute images ── */
@@ -546,10 +572,8 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     justify-content: center !important;
   }
 
-  /* ── Images inside cells: absolutely positioned to prevent overflow ── */
-  .photo-media > img,
-  .photo-cell img,
-  .photo-grid:not(.element) img {
+  /* ── Images: absolutely positioned within .photo-media ── */
+  .photo-media > img {
     position: absolute !important;
     top: 0 !important;
     left: 0 !important;
@@ -574,7 +598,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     font-family: Arial, sans-serif !important;
   }
 
-  /* ── Broken or empty images: show clean gray ── */
+  /* ── Broken or empty images: hide but keep space ── */
   img[src=""],
   img:not([src]) {
     visibility: hidden !important;
