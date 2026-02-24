@@ -530,11 +530,29 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     align-items: center !important;
     justify-content: center !important;
     background: #f8f8f8 !important;
+    min-height: 0 !important;
+    min-width: 0 !important;
   }
 
-  /* ── Images inside cells: fill without cropping ── */
+  /* ── photo-media: positioning anchor for absolute images ── */
+  .photo-media {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    position: relative !important;
+    overflow: hidden !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  /* ── Images inside cells: absolutely positioned to prevent overflow ── */
+  .photo-media > img,
   .photo-cell img,
   .photo-grid:not(.element) img {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
     width: 100% !important;
     height: 100% !important;
     object-fit: contain !important;
