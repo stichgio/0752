@@ -233,7 +233,7 @@ export function exportToJinja2(doc: CanvasDocument): string {
     // Skip types that are purely decorative with no HTML content
     if (content === null) continue;
 
-    html += `    <div class="element ${el.type}" style="${style}">${content}</div>\n`;
+    html += `    <div class="element" data-type="${el.type}" style="${style}">${content}</div>\n`;
   }
 
   html += `  </div>
