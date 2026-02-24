@@ -133,6 +133,7 @@ function TemplatePreview({
             sandbox="allow-same-origin"
             title="Template Preview"
             className="bg-white text-black shadow-2xl mx-auto"
+            scrolling="no"
             onLoad={(e) => {
                 const iframe = e.target as HTMLIFrameElement;
                 try {
@@ -150,6 +151,7 @@ function TemplatePreview({
                 minHeight: '297mm',
                 border: 'none',
                 display: 'block',
+                overflow: 'hidden',
             }}
         />
     );
