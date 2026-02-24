@@ -556,27 +556,86 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
         // Si hay plantilla pero no hay fila seleccionada → mostrar estructura
         if (selectedIndex === '' || data.length === 0) {
             let previewHtml = selectedTemplate.content;
-            // Reemplazar variables Jinja con placeholders visuales
-            previewHtml = previewHtml.replace(
-                /\{\{\s*report\.data\.get\('([^']+)'[^)]*\)\s*\}\}/g,
-                (_m, key) => `<span style="background:#f0f0f0;color:#999;
-                            font-size:11px;padding:1px 4px;border-radius:2px;
-                            font-family:monospace">[${key}]</span>`
-            );
-            previewHtml = previewHtml.replace(
-                /\{\{(?!%)[^}]+\}\}/g,
-                '<span style="background:#f0f0f0;color:#bbb;font-size:10px;padding:1px 3px;font-family:monospace">[···]</span>'
-            );
-            // Eliminar bloques de control Jinja que no se pueden resolver
+
+            // ── PASO 1: Eliminar bloques Jinja de control ({% ... %}) ──
             previewHtml = previewHtml.replace(/\{%[\s\S]*?%\}/g, '');
-            // Eliminar loops for que quedaron sin procesar
             previewHtml = previewHtml.replace(/\{#[\s\S]*?#\}/g, '');
 
-            // Inject photo-fix CSS
+            // ── PASO 2: Limpiar variables dentro de atributos HTML ──────
+            previewHtml = previewHtml.replace(
+                /src=["']\s*\{\{[^}]+\}\}\s*["']/g,
+                'src=""'
+            );
+            previewHtml = previewHtml.replace(
+                /href=["']\s*\{\{[^}]+\}\}\s*["']/g,
+                'href="#"'
+            );
+            previewHtml = previewHtml.replace(
+                /alt=["']\s*\{\{[^}]+\}\}\s*["']/g,
+                'alt=""'
+            );
+            previewHtml = previewHtml.replace(
+                /style=["'][^"']*\{\{[^}]+\}\}[^"']*["']/g,
+                'style=""'
+            );
+            previewHtml = previewHtml.replace(
+                /class=["']\s*\{\{[^}]+\}\}\s*["']/g,
+                'class=""'
+            );
+            previewHtml = previewHtml.replace(
+                /=["']\s*\{\{[^}]+\}\}\s*["']/g,
+                '=""'
+            );
+
+            // ── PASO 3: Variables Jinja de datos visibles (en contenido) ─
+            previewHtml = previewHtml.replace(
+                /\{\{\s*report\.data\.get\(\s*['"]([^'"]+)['"]\s*(?:,\s*[^)]+)?\s*\)\s*\}\}/g,
+                (_m: string, key: string) =>
+                    `<span style="background:#f0f0f0;color:#aaa;font-size:10px;` +
+                    `padding:1px 4px;font-family:monospace;border-radius:2px">[${key}]</span>`
+            );
+
+            // ── PASO 4: Variables Jinja simples restantes en contenido ───
+            previewHtml = previewHtml.replace(
+                /\{\{[^}]+\}\}/g,
+                '<span style="display:inline-block;width:40px;height:8px;' +
+                'background:#ececec;border-radius:2px;vertical-align:middle"></span>'
+            );
+
+            // ── PASO 5: Ocultar imágenes rotas con src="" ────────────────
+            const previewNoDataStyles = `
+<style id="__preview-nodata__">
+  img[src=""],
+  img:not([src]) {
+    display: block !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 80px !important;
+    background: #f5f5f5 !important;
+    color: transparent !important;
+    font-size: 0 !important;
+  }
+  img[src=""]::after,
+  img:not([src])::after {
+    display: none !important;
+  }
+  .photo-cell {
+    background: #f0f0f0 !important;
+  }
+  .photo-cell img[src=""] {
+    opacity: 0.3 !important;
+    background: linear-gradient(135deg, #e8e8e8 25%, #d8d8d8 50%, #e8e8e8 75%) !important;
+    background-size: 20px 20px !important;
+  }
+</style>`;
+
+            const allPreviewStyles = photoFixStyles + '\n' + previewNoDataStyles;
             if (previewHtml.includes('</head>')) {
-                previewHtml = previewHtml.replace('</head>', `${photoFixStyles}\n</head>`);
+                previewHtml = previewHtml.replace('</head>', `${allPreviewStyles}\n</head>`);
+            } else if (previewHtml.includes('<head>')) {
+                previewHtml = previewHtml.replace('<head>', `<head>\n${allPreviewStyles}`);
             } else {
-                previewHtml = photoFixStyles + '\n' + previewHtml;
+                previewHtml = allPreviewStyles + '\n' + previewHtml;
             }
 
             setRenderedHtml(previewHtml);
