@@ -185,13 +185,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
 
     // Configuration State
     const [mappings, setMappings] = useState<Record<string, string>>({});
-    const idColumn = useMemo(() => {
-        if (headers.length === 0) return '';
-        const autoMatch = headers.find(h =>
-            /\bot\b|orden|^id/i.test(h)
-        );
-        return autoMatch || headers[0];
-    }, [headers]);
+    const [idColumn, setIdColumn] = useState('');
 
     // Selection State
     const [selectedIndex, setSelectedIndex] = useState('');
@@ -499,6 +493,66 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
             return;
         }
 
+        // ── Inject photo-cell fix styles ──────────────────────
+        const photoFixStyles = `
+<style id="__photo-fix__">
+  /* Auto-fit images inside photo-cell — mirrors backend CSS */
+  .photo-cell {
+    position: relative !important;
+    overflow: hidden !important;
+    min-height: 0 !important;
+    min-width: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .photo-cell img {
+    max-width: 100% !important;
+    max-height: 100% !important;
+    width: auto !important;
+    height: auto !important;
+    object-fit: contain !important;
+    object-position: center !important;
+    display: block !important;
+  }
+  .photo-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 2mm !important;
+    overflow: hidden !important;
+    min-height: 0 !important;
+  }
+  .photo-grid .photo-cell {
+    min-height: 120px;
+    max-height: 280px;
+  }
+  .panel-fotografico {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+  }
+  /* Fallback: any img inside a grid that has no explicit class */
+  .photo-grid img,
+  [class*="photo"] img,
+  [class*="grid"] img {
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: contain !important;
+    display: block !important;
+  }
+  /* Handle direct img tags inside cells that come from blob URLs */
+  .photo-cell > img,
+  .photo-cell > a > img {
+    position: relative !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    width: auto !important;
+    height: auto !important;
+  }
+</style>`;
+
         // Si hay plantilla pero no hay fila seleccionada → mostrar estructura
         if (selectedIndex === '' || data.length === 0) {
             let previewHtml = selectedTemplate.content;
@@ -517,6 +571,14 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
             previewHtml = previewHtml.replace(/\{%[\s\S]*?%\}/g, '');
             // Eliminar loops for que quedaron sin procesar
             previewHtml = previewHtml.replace(/\{#[\s\S]*?#\}/g, '');
+
+            // Inject photo-fix CSS
+            if (previewHtml.includes('</head>')) {
+                previewHtml = previewHtml.replace('</head>', `${photoFixStyles}\n</head>`);
+            } else {
+                previewHtml = photoFixStyles + '\n' + previewHtml;
+            }
+
             setRenderedHtml(previewHtml);
             return;
         }
@@ -649,7 +711,17 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
             html = html.replace(/<div class="photo-placeholder">\s*Sin imagen\s*<\/div>/g, '');
         }
 
-        setRenderedHtml(html);
+        // Inject photo-fix CSS before setting rendered HTML
+        let finalHtml = html;
+        if (finalHtml.includes('</head>')) {
+            finalHtml = finalHtml.replace('</head>', `${photoFixStyles}\n</head>`);
+        } else if (finalHtml.includes('<head>')) {
+            finalHtml = finalHtml.replace('<head>', `<head>\n${photoFixStyles}`);
+        } else {
+            finalHtml = photoFixStyles + '\n' + finalHtml;
+        }
+
+        setRenderedHtml(finalHtml);
     }, [selectedTemplate, data, selectedIndex, mappings, logoLeft, logoRight, images, customColumns, getFilteredImages, idColumn]);
 
     // ── PDF Generation ─────────────────────────────────────────────
@@ -907,6 +979,20 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
 
                         {/* Step 3: Mapping */}
                         <Step number="3" title="Mapeo de Columnas" icon={<Settings size={14} />} disabled={headers.length === 0}>
+                            <div>
+                                <label className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#555] mb-1 block">Columna ID (Clave)</label>
+                                <select
+                                    className="w-full bg-[#000] border border-[#222] hover:border-[#444] focus:border-white rounded-none px-3 py-2 text-[11px] font-mono text-white outline-none transition-colors disabled:opacity-30"
+                                    value={idColumn}
+                                    onChange={(e) => setIdColumn(e.target.value)}
+                                >
+                                    <option value="">-- Seleccionar ID --</option>
+                                    {headers.map((h) => (
+                                        <option key={h} value={h}>{h}</option>
+                                    ))}
+                                </select>
+                            </div>
+
                             <div className="space-y-1 max-h-40 overflow-y-auto pr-1 mt-2">
                                 {REPORT_FIELDS.map((field) => (
                                     <div key={field.id} className="grid grid-cols-2 gap-1 items-center">
@@ -960,7 +1046,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                         <Step
                             number="4"
                             title={requiresImages ? 'Cargar Imágenes' : 'Imágenes (Opcional)'}
-                            disabled={headers.length === 0 || !requiresImages}
+                            disabled={!idColumn || !requiresImages}
                             icon={<ImageIcon size={14} />}
                         >
                             {requiresImages ? (
