@@ -490,28 +490,30 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     // ── Photo-grid fix CSS (shared by both preview modes) ──────────
     const PHOTO_FIX_CSS = `
 <style id="__photo-fix__">
-  /* ── FORZAR layout 2x2 en photo-grid ── */
-  .photo-grid,
-  [class*="photo-grid"],
-  [class*="photoGrid"] {
+  /* ── Backward compat: old templates have class="element photo-grid" on the
+       outer wrapper.  Reset it so the wrapper stays block-positioned and keeps
+       its inline mm dimensions. Specificity 0,2,0 beats .photo-grid (0,1,0). ── */
+  .element.photo-grid {
+    display: block !important;
+  }
+
+  /* ── Inner photo grid: the actual CSS-Grid container.
+       :not(.element) ensures we never touch the outer positioned wrapper. ── */
+  .photo-grid:not(.element) {
     display: grid !important;
     grid-template-columns: repeat(2, 1fr) !important;
-    grid-template-rows: repeat(2, 1fr) !important;
     gap: 4px !important;
     width: 100% !important;
     height: 100% !important;
-    flex: 1 !important;
     min-height: 0 !important;
     overflow: hidden !important;
     box-sizing: border-box !important;
   }
 
-  /* ── El contenedor padre NO debe hacer flex-direction: column ── */
+  /* ── Legacy panel-fotografico containers ── */
   .panel-fotografico,
   [class*="panel-fotografico"],
-  [class*="panelFotografico"],
-  [class*="photo-section"],
-  [class*="photoSection"] {
+  [class*="photo-section"] {
     display: flex !important;
     flex-direction: column !important;
     flex: 1 !important;
@@ -519,14 +521,10 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     overflow: hidden !important;
   }
 
-  /* ── photo-cell: cada celda ocupa su espacio correctamente ── */
-  .photo-cell,
-  [class*="photo-cell"],
-  [class*="photoCell"] {
+  /* ── photo-cell: each cell fills its grid slot ── */
+  .photo-cell {
     position: relative !important;
     overflow: hidden !important;
-    width: 100% !important;
-    height: 100% !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
@@ -534,11 +532,9 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     background: #f8f8f8 !important;
   }
 
-  /* ── Imágenes dentro de celdas: llenar sin cortar ── */
+  /* ── Images inside cells: fill without cropping ── */
   .photo-cell img,
-  [class*="photo-cell"] img,
-  [class*="photoCell"] img,
-  .photo-grid img {
+  .photo-grid:not(.element) img {
     width: 100% !important;
     height: 100% !important;
     object-fit: contain !important;
@@ -546,12 +542,9 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     display: block !important;
   }
 
-  /* ── Label de la foto (ANTES, DURANTE, etc.) ── */
+  /* ── Photo labels (ANTES, DURANTE, etc.) ── */
   .photo-label,
-  .photo-caption,
-  [class*="photo-label"],
-  .photo-cell > span,
-  .photo-cell > div:last-child:not(img) {
+  .photo-caption {
     flex-shrink: 0 !important;
     font-size: 9px !important;
     text-align: center !important;
@@ -563,19 +556,11 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     font-family: Arial, sans-serif !important;
   }
 
-  /* ── Imágenes rotas o src vacío: mostrar fondo gris limpio ── */
+  /* ── Broken or empty images: show clean gray ── */
   img[src=""],
   img:not([src]) {
     visibility: hidden !important;
     background: #f0f0f0 !important;
-  }
-
-  /* ── Anular estilos inline que rompan el grid ── */
-  /* Prevenir que width/height inline en el grid lo rompan */
-  .photo-grid[style] {
-    display: grid !important;
-    grid-template-columns: repeat(2, 1fr) !important;
-    grid-template-rows: repeat(2, 1fr) !important;
   }
 </style>`;
 
