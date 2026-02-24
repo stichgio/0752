@@ -65,24 +65,23 @@ def _normalize_photo_grid_template_compat(template_html: Optional[str]) -> Optio
     flex: 1 1 auto !important;
     min-height: 0 !important;
     width: 100% !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
+    display: block !important;
     overflow: hidden !important;
+    position: relative !important;
   }
   .photo-media > img,
   .photo-cell > img,
   .photo-cell-wrap > img,
   .photo-cell-wrap img {
-    flex: 0 1 auto !important;
-    width: auto !important;
+    position: static !important;
+    display: block !important;
+    width: 100% !important;
     height: auto !important;
     max-width: 100% !important;
     max-height: 100% !important;
     object-fit: contain !important;
     object-position: center !important;
     image-orientation: from-image !important;
-    display: block !important;
     margin: 0 auto !important;
   }
 </style>
