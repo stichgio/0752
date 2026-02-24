@@ -135,25 +135,27 @@ export function exportToJinja2(doc: CanvasDocument): string {
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      align-items: stretch;
+      justify-content: stretch;
+      min-height: 0;
     }
 
     .photo-cell-wrap {
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      align-items: stretch;
+      justify-content: flex-start;
       width: 100%;
       height: 100%;
       padding: 1mm;
       box-sizing: border-box;
+      min-height: 0;
     }
 
     .photo-media {
-      flex: 1;
+      flex: 1 1 auto;
+      min-height: 0;
       width: 100%;
-      height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -166,6 +168,8 @@ export function exportToJinja2(doc: CanvasDocument): string {
       height: 100%;
       object-fit: contain;
       object-position: center;
+      max-width: 100%;
+      max-height: 100%;
       display: block;
     }
 
@@ -360,22 +364,23 @@ function buildPhotoGrid(
   const cols = count > 1 ? 2 : 1;
   const rows = Math.ceil(count / cols);
 
-  let html = `<div class="photo-grid" style="grid-template-columns: repeat(${cols}, 1fr); grid-template-rows: repeat(${rows}, 1fr);">`;
+  const rowPct = (100 / rows).toFixed(4);
+  let html = `<div class="photo-grid" style="grid-template-columns: repeat(${cols}, 1fr); grid-template-rows: repeat(${rows}, ${rowPct}%);">`;
 
   for (let i = 0; i < count; i++) {
     const label = labels[i] || `Foto ${i + 1}`;
     const labelHtml = showLabels ? `<div class="photo-label">${escapeHtml(label)}</div>` : '';
 
-    let cellStyle = 'width: 100%; height: 100%;';
+    let cellStyle = '';
     if (i === count - 1 && count % 2 === 1 && cols === 2) {
       if (oddPosition === 'center') {
-        cellStyle += ' grid-column: 1 / span 2; justify-self: center; width: 50%;';
+        cellStyle = 'grid-column: 1 / span 2; justify-self: center; width: 50%;';
       } else if (oddPosition === 'right') {
-        cellStyle += ' grid-column: 2 / span 1;';
+        cellStyle = 'grid-column: 2 / span 1;';
       }
     }
 
-    html += `<div class="photo-cell" style="${cellStyle}">`;
+    html += `<div class="photo-cell"${cellStyle ? ` style="${cellStyle}"` : ''}>`;
     html += `<div class="photo-cell-wrap">`;
     html += `<div class="photo-media">`;
     html += `{% if report.images|length > ${i} %}`;
