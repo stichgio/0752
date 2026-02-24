@@ -487,71 +487,107 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
         });
     }, [data, selectedIndex, idColumn, images, matchesRecordId]);
 
-    useEffect(() => {
-        if (!selectedTemplate) {
-            setRenderedHtml('');
-            return;
-        }
-
-        // ── Inject photo-cell fix styles ──────────────────────
-        const photoFixStyles = `
+    // ── Photo-grid fix CSS (shared by both preview modes) ──────────
+    const PHOTO_FIX_CSS = `
 <style id="__photo-fix__">
-  /* Auto-fit images inside photo-cell — mirrors backend CSS */
-  .photo-cell {
+  /* ── FORZAR layout 2x2 en photo-grid ── */
+  .photo-grid,
+  [class*="photo-grid"],
+  [class*="photoGrid"] {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    grid-template-rows: repeat(2, 1fr) !important;
+    grid-auto-rows: 1fr !important;
+    gap: 4px !important;
+    width: 100% !important;
+    min-height: 400px !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    /* Anular cualquier flex que tenga el padre */
+    flex: none !important;
+  }
+
+  /* ── El contenedor padre NO debe hacer flex-direction: column ── */
+  .panel-fotografico,
+  [class*="panel-fotografico"],
+  [class*="panelFotografico"],
+  [class*="photo-section"],
+  [class*="photoSection"] {
+    display: flex !important;
+    flex-direction: column !important;
+    flex: 1 !important;
+    min-height: 0 !important;
+    overflow: visible !important;  /* permite que el grid crezca */
+  }
+
+  /* ── photo-cell: cada celda ocupa su espacio correctamente ── */
+  .photo-cell,
+  [class*="photo-cell"],
+  [class*="photoCell"] {
     position: relative !important;
     overflow: hidden !important;
     min-height: 0 !important;
     min-width: 0 !important;
     display: flex !important;
+    flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
+    background: #f8f8f8 !important;
   }
-  .photo-cell img {
+
+  /* ── Imágenes dentro de celdas: llenar sin cortar ── */
+  .photo-cell img,
+  [class*="photo-cell"] img,
+  [class*="photoCell"] img,
+  .photo-grid img {
     max-width: 100% !important;
     max-height: 100% !important;
-    width: auto !important;
+    width: 100% !important;
     height: auto !important;
     object-fit: contain !important;
     object-position: center !important;
     display: block !important;
+    flex-shrink: 1 !important;
   }
-  .photo-grid {
+
+  /* ── Label de la foto (ANTES, DURANTE, etc.) ── */
+  .photo-label,
+  .photo-caption,
+  [class*="photo-label"],
+  .photo-cell > span,
+  .photo-cell > div:last-child:not(img) {
+    flex-shrink: 0 !important;
+    font-size: 9px !important;
+    text-align: center !important;
+    padding: 2px 0 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    color: #444 !important;
+    font-weight: bold !important;
+    font-family: Arial, sans-serif !important;
+  }
+
+  /* ── Imágenes rotas o src vacío: mostrar fondo gris limpio ── */
+  img[src=""],
+  img:not([src]) {
+    visibility: hidden !important;
+    background: #f0f0f0 !important;
+  }
+
+  /* ── Anular estilos inline que rompan el grid ── */
+  /* Prevenir que width/height inline en el grid lo rompan */
+  .photo-grid[style] {
     display: grid !important;
     grid-template-columns: repeat(2, 1fr) !important;
-    gap: 2mm !important;
-    overflow: hidden !important;
-    min-height: 0 !important;
-  }
-  .photo-grid .photo-cell {
-    min-height: 120px;
-    max-height: 280px;
-  }
-  .panel-fotografico {
-    flex: 1 !important;
-    display: flex !important;
-    flex-direction: column !important;
-    min-height: 0 !important;
-    overflow: hidden !important;
-  }
-  /* Fallback: any img inside a grid that has no explicit class */
-  .photo-grid img,
-  [class*="photo"] img,
-  [class*="grid"] img {
-    max-width: 100% !important;
-    max-height: 100% !important;
-    object-fit: contain !important;
-    display: block !important;
-  }
-  /* Handle direct img tags inside cells that come from blob URLs */
-  .photo-cell > img,
-  .photo-cell > a > img {
-    position: relative !important;
-    max-width: 100% !important;
-    max-height: 100% !important;
-    width: auto !important;
-    height: auto !important;
+    grid-template-rows: repeat(2, 1fr) !important;
   }
 </style>`;
+
+    useEffect(() => {
+        if (!selectedTemplate) {
+            setRenderedHtml('');
+            return;
+        }
 
         // Si hay plantilla pero no hay fila seleccionada → mostrar estructura
         if (selectedIndex === '' || data.length === 0) {
@@ -602,6 +638,53 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                 'background:#ececec;border-radius:2px;vertical-align:middle"></span>'
             );
 
+            // ── PASO 4.5: Detectar photo-grid vacío y llenar con 4 celdas placeholder ──
+            // Después de eliminar los {% for %} los grids quedan:
+            // <div class="photo-grid"></div>  o  <div class="photo-grid">   </div>
+            previewHtml = previewHtml.replace(
+                /(<div[^>]*class="[^"]*photo-grid[^"]*"[^>]*>)\s*(<\/div>)/g,
+                (_m: string, openTag: string) => {
+                    const labels = ['ANTES', 'DURANTE', 'DESPUÉS', 'DETALLE'];
+                    const cells = labels.map(label => `
+        <div class="photo-cell" style="
+          background: #f0f0f0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          min-height: 120px;
+          border: 1px solid #e0e0e0;
+        ">
+          <div style="
+            width: 36px; height: 36px;
+            border: 1.5px solid #ccc;
+            border-radius: 4px;
+            display: flex; align-items: center; justify-content: center;
+            margin-bottom: 6px;
+          ">
+            <div style="
+              width: 16px; height: 12px;
+              border: 1.5px solid #ccc;
+              border-radius: 2px;
+              position: relative;
+            ">
+              <div style="
+                position: absolute; top: -4px; left: 5px;
+                width: 6px; height: 6px;
+                border: 1.5px solid #ccc;
+                border-radius: 50%;
+              "></div>
+            </div>
+          </div>
+          <span style="
+            font-size: 9px; font-family: Arial, sans-serif;
+            color: #bbb; text-transform: uppercase; letter-spacing: 1px;
+          ">${label}</span>
+        </div>`).join('');
+                    return openTag + cells + '</div>';
+                }
+            );
+
             // ── PASO 5: Ocultar imágenes rotas con src="" ────────────────
             const previewNoDataStyles = `
 <style id="__preview-nodata__">
@@ -629,7 +712,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
   }
 </style>`;
 
-            const allPreviewStyles = photoFixStyles + '\n' + previewNoDataStyles;
+            const allPreviewStyles = PHOTO_FIX_CSS + '\n' + previewNoDataStyles;
             if (previewHtml.includes('</head>')) {
                 previewHtml = previewHtml.replace('</head>', `${allPreviewStyles}\n</head>`);
             } else if (previewHtml.includes('<head>')) {
@@ -773,11 +856,11 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
         // Inject photo-fix CSS before setting rendered HTML
         let finalHtml = html;
         if (finalHtml.includes('</head>')) {
-            finalHtml = finalHtml.replace('</head>', `${photoFixStyles}\n</head>`);
+            finalHtml = finalHtml.replace('</head>', `${PHOTO_FIX_CSS}\n</head>`);
         } else if (finalHtml.includes('<head>')) {
-            finalHtml = finalHtml.replace('<head>', `<head>\n${photoFixStyles}`);
+            finalHtml = finalHtml.replace('<head>', `<head>\n${PHOTO_FIX_CSS}`);
         } else {
-            finalHtml = photoFixStyles + '\n' + finalHtml;
+            finalHtml = PHOTO_FIX_CSS + '\n' + finalHtml;
         }
 
         setRenderedHtml(finalHtml);
