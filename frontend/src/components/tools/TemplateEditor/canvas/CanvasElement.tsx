@@ -87,11 +87,11 @@ const TYPE_ICONS: Record<string, React.ReactNode> = {
     group: <Box size={10} />,
 };
 
-const NOOP_SELECT = () => {};
-const NOOP_UPDATE = () => {};
-const NOOP_DRAG = () => {};
-const NOOP_RESIZE = () => {};
-const NOOP_ROTATE = () => {};
+const NOOP_SELECT = () => { };
+const NOOP_UPDATE = () => { };
+const NOOP_DRAG = () => { };
+const NOOP_RESIZE = () => { };
+const NOOP_ROTATE = () => { };
 
 function CanvasElementComponent({
     element,
@@ -587,7 +587,7 @@ function CanvasElementComponent({
                 const gridRows = Math.ceil(count / cols);
                 const oddPosition = (element.photoConfig?.oddPosition || 'center') as OddPhotoPosition;
                 return (
-                    <div style={{ width: '100%', height: '100%', padding: 4 }}>
+                    <div style={{ width: '100%', height: '100%', padding: 0, boxSizing: 'border-box' }}>
                         {content && (
                             <div style={{ fontWeight: 'bold', fontSize: 10, marginBottom: 4 }}>{content}</div>
                         )}
@@ -596,7 +596,9 @@ function CanvasElementComponent({
                             gridTemplateColumns: `repeat(${cols}, 1fr)`,
                             gridTemplateRows: `repeat(${gridRows}, 1fr)`,
                             gap: 4,
-                            height: content ? 'calc(100% - 20px)' : '100%',
+                            height: content ? 'calc(100% - 18px)' : '100%',
+                            minHeight: 0,
+                            boxSizing: 'border-box',
                         }}>
                             {Array.from({ length: count }).map((_, i) => (
                                 <div key={i} style={{
@@ -609,14 +611,17 @@ function CanvasElementComponent({
                                     borderRadius: 4,
                                     overflow: 'hidden',
                                     minHeight: 0,
+                                    minWidth: 0,
                                     ...getOddPhotoItemStyle(i, count, oddPosition),
                                 }}>
-                                    <Image size={16} color="#ccc" />
-                                    {element.photoConfig?.showLabels && (
-                                        <span style={{ fontSize: 8, color: '#aaa', marginTop: 2, flexShrink: 0 }}>
-                                            {element.photoConfig.labels?.[i] || `Foto ${i + 1}`}
-                                        </span>
-                                    )}
+                                    <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                                        <Image size={16} color="#ccc" />
+                                        {element.photoConfig?.showLabels && (
+                                            <span style={{ fontSize: 8, color: '#aaa', marginTop: 2, flexShrink: 0 }}>
+                                                {element.photoConfig.labels?.[i] || `Foto ${i + 1}`}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             ))}
                         </div>

@@ -20,29 +20,31 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
         const compatCss = `
 <style id="photo-grid-compat-fix">
   .photo-grid {
-    min-height: 0 !important;
+    display: grid !important;
+    width: 100% !important;
+    height: 100% !important;
+    box-sizing: border-box !important;
   }
   .photo-cell {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: stretch !important;
-    justify-content: stretch !important;
-    min-height: 0 !important;
     overflow: hidden !important;
+    min-height: 0 !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
   }
   .photo-cell-wrap {
     display: flex !important;
     flex-direction: column !important;
-    align-items: stretch !important;
+    align-items: center !important;
     justify-content: flex-start !important;
     width: 100% !important;
     height: 100% !important;
-    min-height: 0 !important;
+    padding: 1mm !important;
     box-sizing: border-box !important;
   }
   .photo-media {
     flex: 1 1 auto !important;
     min-height: 0 !important;
+    min-width: 0 !important;
     width: 100% !important;
     display: flex !important;
     align-items: center !important;
@@ -53,6 +55,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
   .photo-cell > img,
   .photo-cell-wrap > img,
   .photo-cell-wrap img {
+    flex: 0 0 auto !important;
     width: 100% !important;
     height: 100% !important;
     max-width: 100% !important;
@@ -205,7 +208,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
             const imageCountGteRegex = /\{%\s*if\s+report\.images\|length\s*>=\s*(\d+)\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
             html = html.replace(imageCountGteRegex, (match, count, content) => {
                 return imageCount >= parseInt(count, 10) ? content : '';
-                });
+            });
 
             // Handle if image count < X patterns
             const imageCountLtRegex = /\{%\s*if\s+report\.images\|length\s*<\s*(\d+)\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
