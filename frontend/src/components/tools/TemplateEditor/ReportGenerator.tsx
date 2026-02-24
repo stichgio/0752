@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
     FileSpreadsheet,
     Image as ImageIcon,
@@ -32,42 +32,14 @@ const REPORT_FIELDS = [
     { id: 'centro', label: 'CENTRO' },
     { id: 'nis', label: 'NIS' },
     { id: 'ot', label: 'OT' },
-    { id: 'direccion', label: 'DIRECCIÓN' },
-    { id: 'localidad', label: 'LOCALIDAD' },
-    { id: 'distrito', label: 'DISTRITO' },
-    { id: 'estado', label: 'ESTADO' },
-    { id: 'tipo-red', label: 'TIPO RED' },
-    { id: 'sector', label: 'SECTOR' },
-    { id: 'actividad', label: 'ACTIVIDAD' },
-    { id: 'contrata', label: 'CONTRATA' },
-    { id: 'subactividad', label: 'SUBACTIVIDAD' },
-    { id: 'cuadrilla', label: 'CUADRILLA' },
-    { id: 'obs-sedapal', label: 'OBS SEDAPAL' },
-    { id: 'obs-contrata', label: 'OBS CONTRATA' },
-    { id: 'fecha-corte', label: 'FECHA CORTE' },
-    { id: 'direcciones-afectadas', label: 'DIR. AFECTADAS' },
 ];
 
-const DATE_FIELDS = ['fecha-corte', 'fecha_corte'];
+const DATE_FIELDS: string[] = [];
 
 const TEMPLATE_KEY_MAP: Record<string, string> = {
     centro: 'CENTRO',
     nis: 'NIS',
     ot: 'Nro OT',
-    direccion: 'DIRECCION',
-    localidad: 'LOCALIDAD',
-    distrito: 'DISTRITO',
-    estado: 'ESTADO',
-    'tipo-red': 'TIPO RED',
-    sector: 'SECTOR',
-    actividad: 'ACTIVIDAD',
-    contrata: 'CONTRATA',
-    subactividad: 'SUBACTIVIDAD',
-    cuadrilla: 'CUADRILLA',
-    'obs-sedapal': 'OBSERVACION SEDAPAL',
-    'obs-contrata': 'OBSERVACION CONTRATA',
-    'fecha-corte': 'FECHA CORTE',
-    'direcciones-afectadas': 'DIRECCIONES AFECTADAS',
 };
 
 /* ── Custom Step component ────────────────────────────────────── */
@@ -213,7 +185,13 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
 
     // Configuration State
     const [mappings, setMappings] = useState<Record<string, string>>({});
-    const [idColumn, setIdColumn] = useState('');
+    const idColumn = useMemo(() => {
+        if (headers.length === 0) return '';
+        const autoMatch = headers.find(h =>
+            /\bot\b|orden|^id/i.test(h)
+        );
+        return autoMatch || headers[0];
+    }, [headers]);
 
     // Selection State
     const [selectedIndex, setSelectedIndex] = useState('');
@@ -929,20 +907,6 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
 
                         {/* Step 3: Mapping */}
                         <Step number="3" title="Mapeo de Columnas" icon={<Settings size={14} />} disabled={headers.length === 0}>
-                            <div>
-                                <label className="text-[10px] font-mono uppercase tracking-[0.15em] text-[#555] mb-1 block">Columna ID (Clave)</label>
-                                <select
-                                    className="w-full bg-[#000] border border-[#222] hover:border-[#444] focus:border-white rounded-none px-3 py-2 text-[11px] font-mono text-white outline-none transition-colors disabled:opacity-30"
-                                    value={idColumn}
-                                    onChange={(e) => setIdColumn(e.target.value)}
-                                >
-                                    <option value="">-- Seleccionar ID --</option>
-                                    {headers.map((h) => (
-                                        <option key={h} value={h}>{h}</option>
-                                    ))}
-                                </select>
-                            </div>
-
                             <div className="space-y-1 max-h-40 overflow-y-auto pr-1 mt-2">
                                 {REPORT_FIELDS.map((field) => (
                                     <div key={field.id} className="grid grid-cols-2 gap-1 items-center">
@@ -996,7 +960,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                         <Step
                             number="4"
                             title={requiresImages ? 'Cargar Imágenes' : 'Imágenes (Opcional)'}
-                            disabled={!idColumn || !requiresImages}
+                            disabled={headers.length === 0 || !requiresImages}
                             icon={<ImageIcon size={14} />}
                         >
                             {requiresImages ? (
