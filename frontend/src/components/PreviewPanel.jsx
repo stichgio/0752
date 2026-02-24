@@ -19,6 +19,17 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
 
         const compatCss = `
 <style id="photo-grid-compat-fix">
+  /* Remove iframe internal scrollbars */
+  html::-webkit-scrollbar, body::-webkit-scrollbar {
+    display: none !important;
+  }
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    -ms-overflow-style: none !important;
+    scrollbar-width: none !important;
+  }
   .photo-grid {
     display: grid !important;
     width: 100% !important;
@@ -519,6 +530,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                     ref={ref}
                     srcDoc={renderedHtml}
                     sandbox="allow-same-origin"
+                    scrolling="no"
                     title="Custom Template Preview"
                     className="bg-white text-black shadow-2xl"
                     onLoad={handleIframeLoad}
@@ -527,6 +539,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                         minHeight: '297mm',
                         border: 'none',
                         display: 'block',
+                        overflow: 'hidden',
                     }}
                 />
             </div>

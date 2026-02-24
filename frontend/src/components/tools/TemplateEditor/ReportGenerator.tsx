@@ -900,21 +900,25 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
             const rowData: Record<string, any> = {};
             Object.keys(mappings).forEach((key) => {
                 const excelHeader = mappings[key];
-                let value = row[excelHeader];
+                if (!excelHeader) return;
+                let value = row[excelHeader] ?? '-';
                 if (DATE_FIELDS.includes(key)) value = formatDateValue(value);
                 if (TEMPLATE_KEY_MAP[key]) rowData[TEMPLATE_KEY_MAP[key]] = value;
+                rowData[key.toUpperCase()] = value;
+                rowData[key] = value;
             });
             customColumns.forEach((col) => {
                 if (mappings[col.id]) {
-                    let value = row[mappings[col.id]];
+                    let value = row[mappings[col.id]] ?? '-';
                     const colNameUpper = col.name.toUpperCase();
                     if (colNameUpper.includes('FECHA') || colNameUpper.includes('DATE')) {
                         value = formatDateValue(value);
                     }
                     rowData[col.name] = value;
+                    rowData[col.name.toLowerCase()] = value;
                 }
             });
-            if (idColumn) rowData['Nro OT'] = row[idColumn];
+            if (idColumn) rowData['Nro OT'] = row[idColumn] ?? '-';
             return rowData;
         };
 
@@ -948,7 +952,11 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
         if (logoLeftFile) formData.append('logoLeft', logoLeftFile);
         if (logoRightFile) formData.append('logoRight', logoRightFile);
 
-        // Always send the template name for editor templates
+        // Send the compiled template HTML directly so the backend doesn't
+        // need to look it up by name (avoids name-mismatch / lookup failures)
+        if (selectedTemplate.content) {
+            formData.append('customTemplate', selectedTemplate.content);
+        }
         formData.append('templateName', selectedTemplate.name);
 
         try {
