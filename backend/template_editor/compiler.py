@@ -1180,17 +1180,21 @@ CANVAS_CSS_TEMPLATE = """\
       flex: 1 1 auto;
       min-height: 0;
       width: 100%;
+      position: relative;
       overflow: hidden;
-      display: block;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }}
 
     .photo-media > img,
     .photo-cell img {{
+      position: absolute;
+      top: 0;
+      left: 0;
       display: block;
       width: 100%;
-      height: auto;
-      max-width: 100%;
-      max-height: 100%;
+      height: 100%;
       object-fit: contain;
       object-position: center;
     }}
@@ -1383,14 +1387,23 @@ def _build_canvas_photo_grid(
             label_html = (
                 f'<div class="photo-label">{_escape_html(label)}</div>' if show_labels else ""
             )
+            _media_style = (
+                "flex: 1 1 auto; min-height: 0; width: 100%; position: relative; "
+                "overflow: hidden; display: flex; align-items: center; justify-content: center;"
+            )
+            _img_style = (
+                "position: absolute; top: 0; left: 0; width: 100%; height: 100%; "
+                "object-fit: contain; object-position: center; display: block;"
+            )
             html += '<td class="photo-cell-empty" style="width: 25%;"></td>'
             html += '<td class="photo-cell" colspan="1" style="width: 50%;">'
             html += '<div class="photo-cell-wrap">'
-            html += '<div class="photo-media">'
+            html += f'<div class="photo-media" style="{_media_style}">'
             html += f'{{% if report.images|length > {i} %}}'
             html += (
                 f'<img src="{{{{ report.images[{i}].path }}}}" '
-                f'alt="{{{{ report.images[{i}].name | default(\'{_escape_html(label)}\') }}}}" />'
+                f'alt="{{{{ report.images[{i}].name | default(\'{_escape_html(label)}\') }}}}" '
+                f'style="{_img_style}" />'
             )
             html += '{% else %}<span style="color:#999;">Sin foto</span>{% endif %}'
             html += '</div>'
@@ -1407,13 +1420,22 @@ def _build_canvas_photo_grid(
                     label_html = (
                         f'<div class="photo-label">{_escape_html(label)}</div>' if show_labels else ""
                     )
+                    _media_style = (
+                        "flex: 1 1 auto; min-height: 0; width: 100%; position: relative; "
+                        "overflow: hidden; display: flex; align-items: center; justify-content: center;"
+                    )
+                    _img_style = (
+                        "position: absolute; top: 0; left: 0; width: 100%; height: 100%; "
+                        "object-fit: contain; object-position: center; display: block;"
+                    )
                     html += '<td class="photo-cell" style="width: 50%;">'
                     html += '<div class="photo-cell-wrap">'
-                    html += '<div class="photo-media">'
+                    html += f'<div class="photo-media" style="{_media_style}">'
                     html += f'{{% if report.images|length > {slot} %}}'
                     html += (
                         f'<img src="{{{{ report.images[{slot}].path }}}}" '
-                        f'alt="{{{{ report.images[{slot}].name | default(\'{_escape_html(label)}\') }}}}" />'
+                        f'alt="{{{{ report.images[{slot}].name | default(\'{_escape_html(label)}\') }}}}" '
+                        f'style="{_img_style}" />'
                     )
                     html += '{% else %}<span style="color:#999;">Sin foto</span>{% endif %}'
                     html += '</div>'
