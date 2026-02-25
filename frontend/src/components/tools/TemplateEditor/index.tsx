@@ -578,6 +578,43 @@ export default function TemplateEditor() {
     toast('Plantilla despublicada correctamente', 'ok');
   }, [serverTemplateId, toast]);
 
+  const handleEditPublishedTemplate = useCallback(async (templateId: string) => {
+    if (dirty && !window.confirm('¿Descartar cambios sin guardar y cargar la plantilla publicada?')) return;
+
+    try {
+      const { doc: loadedDoc } = await templateEditorApi.loadPublishedForEditing(templateId);
+      const normalizedDoc = normalizeDocument(loadedDoc);
+      resetDocHistory(normalizedDoc);
+      setPageSettings(normalizedDoc.pageSettings);
+      setServerTemplateId(templateId);
+      setStatus('published');
+      setDirty(false);
+      localStorage.setItem(
+        SESSION_KEY,
+        JSON.stringify({ doc: normalizedDoc, status: 'published', serverTemplateId: templateId }),
+      );
+      toast(`Plantilla "${normalizedDoc.name}" cargada para editar`, 'ok');
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'No se pudo cargar la plantilla';
+      toast(msg, 'err');
+    }
+  }, [dirty, resetDocHistory, toast]);
+
+  const handleDeletePublishedTemplate = useCallback(async (templateId: string) => {
+    try {
+      await templateEditorApi.delete(templateId);
+      if (serverTemplateId && serverTemplateId === templateId) {
+        setServerTemplateId(null);
+        setStatus('draft');
+      }
+      setPublishedTemplatesRefreshKey((prev) => prev + 1);
+      toast('Plantilla eliminada correctamente', 'ok');
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'No se pudo eliminar la plantilla';
+      toast(msg, 'err');
+    }
+  }, [serverTemplateId, toast]);
+
   return (
     <div className="template-editor-root h-full w-full flex flex-col bg-neutral-50">
       {/* Header */}
@@ -702,6 +739,8 @@ export default function TemplateEditor() {
           activePublishedTemplateId={serverTemplateId}
           publishedTemplatesRefreshKey={publishedTemplatesRefreshKey}
           onUnpublishTemplate={handleUnpublishTemplate}
+          onEditPublishedTemplate={handleEditPublishedTemplate}
+          onDeletePublishedTemplate={handleDeletePublishedTemplate}
         />
       </div>
 

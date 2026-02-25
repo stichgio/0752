@@ -31,6 +31,8 @@ interface SidebarRootProps {
     activePublishedTemplateId?: string | null;
     publishedTemplatesRefreshKey?: number;
     onUnpublishTemplate?: (templateId: string) => Promise<void> | void;
+    onEditPublishedTemplate?: (templateId: string) => Promise<void> | void;
+    onDeletePublishedTemplate?: (templateId: string) => Promise<void> | void;
 }
 
 type TabId = 'elements' | 'layers' | 'templates' | 'published';
@@ -132,6 +134,8 @@ export function SidebarRoot(props: SidebarRootProps) {
                                 refreshKey={props.publishedTemplatesRefreshKey}
                                 activeTemplateId={props.activePublishedTemplateId}
                                 onUnpublishTemplate={props.onUnpublishTemplate}
+                                onEditPublishedTemplate={props.onEditPublishedTemplate}
+                                onDeletePublishedTemplate={props.onDeletePublishedTemplate}
                             />
                         )}
                     </div>

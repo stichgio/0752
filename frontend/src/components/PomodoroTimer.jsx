@@ -1,6 +1,30 @@
 import React, { useState, useRef, useMemo, useEffect, memo } from 'react';
 import { Zap, RotateCcw, Play, Pause } from 'lucide-react';
 
+const STORAGE_KEY = 'pomodoro-state';
+
+const MODE_DURATIONS = {
+    work: 25 * 60,
+    short: 5 * 60,
+    long: 15 * 60,
+};
+
+const ALARM_SOUNDS = [
+    'https://res.cloudinary.com/dzhp64paw/video/upload/v1769028824/Pvta_hbf66q.mp3',
+    'https://res.cloudinary.com/dzhp64paw/video/upload/v1769875111/Staying_wcbczi.mp3',
+];
+
+const loadSavedState = () => {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return null;
+        return JSON.parse(raw);
+    } catch {
+        localStorage.removeItem(STORAGE_KEY);
+        return null;
+    }
+};
+
 // Memoized Progress Bar component
 const PomodoroProgressBar = memo(({ activeCount }) => (
     <>
@@ -14,12 +38,36 @@ const PomodoroProgressBar = memo(({ activeCount }) => (
 ));
 
 const PomodoroTimer = () => {
-    // Pomodoro State
-    const [pomodoroTime, setPomodoroTime] = useState(25 * 60);
-    const [isPomodoroActive, setIsPomodoroActive] = useState(false);
-    const [pomodoroMode, setPomodoroMode] = useState('work'); // 'work', 'short', 'long'
+    // Restore saved state once on mount
+    const savedState = useMemo(() => loadSavedState(), []);
 
-    const pomodoroAlarmRef = useRef(null); // Reference to the alarm audio for loop control
+    const [pomodoroMode, setPomodoroMode] = useState(
+        () => savedState?.mode || 'work'
+    );
+
+    const [pomodoroTime, setPomodoroTime] = useState(() => {
+        if (!savedState) return MODE_DURATIONS['work'];
+        if (savedState.isActive && savedState.endTime) {
+            const remaining = Math.round((savedState.endTime - Date.now()) / 1000);
+            return Math.max(0, remaining);
+        }
+        return savedState.remainingSeconds ?? MODE_DURATIONS[savedState.mode || 'work'];
+    });
+
+    const [isPomodoroActive, setIsPomodoroActive] = useState(() => {
+        if (!savedState?.isActive) return false;
+        if (savedState.endTime && savedState.endTime > Date.now()) return true;
+        return false;
+    });
+
+    const [isOpen, setIsOpen] = useState(false);
+
+    // Refs
+    const endTimeRef = useRef(null);
+    const workerRef = useRef(null);
+    const pomodoroAlarmRef = useRef(null);
+    const audioUnlockedRef = useRef(false);
+    const preloadedAudioRef = useRef([]);
 
     // Helper function to stop the Pomodoro alarm completely
     const stopPomodoroAlarm = () => {
@@ -30,53 +78,133 @@ const PomodoroTimer = () => {
         }
     };
 
-    // Pomodoro Logic
+    // Unlock AudioContext on first user interaction so alarm can play in background tabs
+    const unlockAudio = () => {
+        if (audioUnlockedRef.current) return;
+        audioUnlockedRef.current = true;
+
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const buffer = ctx.createBuffer(1, 1, 22050);
+            const source = ctx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(ctx.destination);
+            source.start(0);
+            if (ctx.state === 'suspended') {
+                ctx.resume();
+            }
+        } catch (err) {
+            console.log('AudioContext unlock failed:', err);
+        }
+
+        // Preload alarm sounds so they're cached and ready
+        preloadedAudioRef.current = ALARM_SOUNDS.map(url => {
+            const audio = new Audio();
+            audio.preload = 'auto';
+            audio.src = url;
+            audio.load();
+            return audio;
+        });
+    };
+
+    // Effect A: Worker lifecycle — create on mount, terminate on unmount
     useEffect(() => {
-        let interval = null;
-        if (isPomodoroActive && pomodoroTime > 0) {
-            interval = setInterval(() => {
-                setPomodoroTime((time) => time - 1);
-            }, 1000);
-        } else if (pomodoroTime === 0 && !pomodoroAlarmRef.current) {
-            // Only play alarm if timer reaches 0 and no alarm is already playing
+        workerRef.current = new Worker(
+            new URL('../workers/pomodoroWorker.js', import.meta.url),
+            { type: 'module' }
+        );
+
+        workerRef.current.onmessage = (e) => {
+            if (e.data.type === 'tick') {
+                if (endTimeRef.current !== null) {
+                    const remaining = Math.max(
+                        0,
+                        Math.round((endTimeRef.current - Date.now()) / 1000)
+                    );
+                    setPomodoroTime(remaining);
+                }
+            }
+        };
+
+        // If restoring an active timer from localStorage, start the worker immediately
+        const saved = loadSavedState();
+        if (saved?.isActive && saved?.endTime && saved.endTime > Date.now()) {
+            endTimeRef.current = saved.endTime;
+            workerRef.current.postMessage({ type: 'start' });
+        }
+
+        return () => {
+            if (workerRef.current) {
+                workerRef.current.terminate();
+                workerRef.current = null;
+            }
+        };
+    }, []);
+
+    // Effect B: Alarm trigger when time reaches 0
+    useEffect(() => {
+        if (pomodoroTime === 0 && !pomodoroAlarmRef.current) {
             setIsPomodoroActive(false);
-            // Array of alarm sounds - randomly select one
-            const alarmSounds = [
-                'https://res.cloudinary.com/dzhp64paw/video/upload/v1769028824/Pvta_hbf66q.mp3',
-                'https://res.cloudinary.com/dzhp64paw/video/upload/v1769875111/Staying_wcbczi.mp3'
-            ];
-            const randomIndex = Math.floor(Math.random() * alarmSounds.length);
-            const alarmAudio = new Audio(alarmSounds[randomIndex]);
-            alarmAudio.loop = true; // Loop continuously until manually stopped
+            endTimeRef.current = null;
+            workerRef.current?.postMessage({ type: 'stop' });
+
+            const randomIndex = Math.floor(Math.random() * ALARM_SOUNDS.length);
+            let alarmAudio;
+            if (preloadedAudioRef.current[randomIndex]) {
+                alarmAudio = preloadedAudioRef.current[randomIndex];
+                alarmAudio.currentTime = 0;
+            } else {
+                alarmAudio = new Audio(ALARM_SOUNDS[randomIndex]);
+            }
+            alarmAudio.loop = true;
             pomodoroAlarmRef.current = alarmAudio;
             alarmAudio.play().catch(err => console.log('Audio playback failed:', err));
         }
-        return () => clearInterval(interval);
-    }, [isPomodoroActive, pomodoroTime]);
+    }, [pomodoroTime]);
+
+    // Effect C: Persist state to localStorage on every relevant change
+    useEffect(() => {
+        const state = {
+            mode: pomodoroMode,
+            endTime: endTimeRef.current,
+            remainingSeconds: pomodoroTime,
+            isActive: isPomodoroActive,
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }, [pomodoroMode, pomodoroTime, isPomodoroActive]);
 
     const togglePomodoro = () => {
-        // Stop the alarm completely when user presses Play/Pause
         stopPomodoroAlarm();
-        setIsPomodoroActive(!isPomodoroActive);
+
+        if (!isPomodoroActive) {
+            // Starting the timer
+            unlockAudio();
+            endTimeRef.current = Date.now() + pomodoroTime * 1000;
+            workerRef.current?.postMessage({ type: 'start' });
+            setIsPomodoroActive(true);
+        } else {
+            // Pausing the timer
+            endTimeRef.current = null;
+            workerRef.current?.postMessage({ type: 'stop' });
+            setIsPomodoroActive(false);
+        }
     };
 
     const resetPomodoro = () => {
-        // Stop the alarm completely when user presses Reset
         stopPomodoroAlarm();
+        workerRef.current?.postMessage({ type: 'stop' });
+        endTimeRef.current = null;
         setIsPomodoroActive(false);
-        if (pomodoroMode === 'work') setPomodoroTime(25 * 60);
-        else if (pomodoroMode === 'short') setPomodoroTime(5 * 60);
-        else if (pomodoroMode === 'long') setPomodoroTime(15 * 60);
+        setPomodoroTime(MODE_DURATIONS[pomodoroMode]);
     };
 
     const changePomodoroMode = (mode) => {
-        // Stop the alarm completely when changing mode
         stopPomodoroAlarm();
+        workerRef.current?.postMessage({ type: 'stop' });
+        endTimeRef.current = null;
         setPomodoroMode(mode);
         setIsPomodoroActive(false);
-        if (mode === 'work') setPomodoroTime(25 * 60);
-        else if (mode === 'short') setPomodoroTime(5 * 60);
-        else if (mode === 'long') setPomodoroTime(15 * 60);
+        setPomodoroTime(MODE_DURATIONS[mode]);
     };
 
     const formatTime = (seconds) => {
@@ -86,18 +214,12 @@ const PomodoroTimer = () => {
     };
 
     // Memoized progress bar data to prevent re-renders
-    const totalSeconds = useMemo(() => {
-        if (pomodoroMode === 'work') return 25 * 60;
-        if (pomodoroMode === 'short') return 5 * 60;
-        return 15 * 60;
-    }, [pomodoroMode]);
+    const totalSeconds = useMemo(() => MODE_DURATIONS[pomodoroMode], [pomodoroMode]);
 
     const progressBarActiveCount = useMemo(() => {
         const progress = (totalSeconds - pomodoroTime) / totalSeconds;
         return Math.floor(progress * 20);
     }, [pomodoroTime, totalSeconds]);
-
-    const [isOpen, setIsOpen] = useState(false);
 
     // Keyboard shortcut to toggle pomodoro (CTRL + Q)
     useEffect(() => {

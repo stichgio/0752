@@ -1,4 +1,5 @@
-import type { CanvasDocument, TemplateElement } from './canvasTypes';
+import type { CanvasDocument, TemplateElement, PageSettings } from './canvasTypes';
+import { createDefaultPageSettings } from './canvasTypes';
 
 type TemplateStatus = 'draft' | 'published' | 'archived';
 
@@ -142,6 +143,44 @@ function elementToBlock(element: TemplateElement): EditorBlockPayload {
     metadata,
     locked: !!element.locked,
   };
+}
+
+function blockToElement(block: EditorBlockPayload): TemplateElement {
+  const layout = (block.metadata?.layout ?? {}) as Record<string, unknown>;
+  const style = (block.metadata?.style ?? {}) as Record<string, unknown>;
+
+  const element: TemplateElement = {
+    id: block.id,
+    type: block.type as TemplateElement['type'],
+    name: String((block.metadata as Record<string, unknown>)?.title || block.type || ''),
+    content: block.content,
+    position: {
+      x: Number(layout.x) || 0,
+      y: Number(layout.y) || 0,
+    },
+    size: {
+      width: Number(layout.width) || 100,
+      height: Number(layout.height) || 50,
+    },
+    rotation: Number(layout.rotation) || 0,
+    style: { ...style, zIndex: Number(layout.zIndex) || 0 } as TemplateElement['style'],
+    locked: !!block.locked,
+    visible: (block.metadata as Record<string, unknown>)?.visible !== false,
+  };
+
+  const meta = block.metadata as Record<string, unknown>;
+  if (meta?.variableName) element.variableName = String(meta.variableName);
+  if (meta?.tableData) element.tableData = meta.tableData as TemplateElement['tableData'];
+  if (meta?.photoConfig) element.photoConfig = meta.photoConfig as TemplateElement['photoConfig'];
+  if (meta?.shapeConfig) element.shapeConfig = meta.shapeConfig as TemplateElement['shapeConfig'];
+  if (meta?.dividerConfig) element.dividerConfig = meta.dividerConfig as TemplateElement['dividerConfig'];
+  if (meta?.signatureConfig) element.signatureConfig = meta.signatureConfig as TemplateElement['signatureConfig'];
+  if (meta?.signatureName) element.signatureName = String(meta.signatureName);
+  if (meta?.title) element.title = String(meta.title);
+  if (meta?.imageUrl) element.imageUrl = String(meta.imageUrl);
+  if (meta?.qrConfig) element.qrConfig = meta.qrConfig as TemplateElement['qrConfig'];
+
+  return element;
 }
 
 export function canvasDocumentToTemplateJson(
@@ -365,4 +404,50 @@ export const templateEditorApi = {
     templateJson?: Record<string, unknown>;
     publishedAt?: string;
   }> => requestJson('/templates/' + encodeURIComponent(id) + '/render'),
+
+  loadPublishedForEditing: async (id: string): Promise<{ doc: CanvasDocument; name: string }> => {
+    const raw = await requestJson<{
+      id: string;
+      name: string;
+      status: string;
+      reportType?: string;
+      updatedAt?: string;
+      versions?: Array<{
+        version: number;
+        templateJson?: {
+          sections?: Array<{ blocks?: EditorBlockPayload[] }>;
+          metadata?: Record<string, unknown>;
+          variableBindings?: Record<string, unknown>;
+        };
+      }>;
+    }>('/template-editor/templates/' + encodeURIComponent(id));
+
+    const versions = raw.versions || [];
+    const latestVersion = versions[versions.length - 1];
+    if (!latestVersion?.templateJson) {
+      throw new Error('No se encontraron datos de la plantilla');
+    }
+
+    const templateJson = latestVersion.templateJson;
+    const metadata = templateJson.metadata || {};
+    const blocks = templateJson.sections?.[0]?.blocks || [];
+    const elements = blocks.map(blockToElement);
+    const pageSettings: PageSettings = (metadata.pageSettings as PageSettings) || createDefaultPageSettings();
+
+    const now = new Date().toISOString();
+    return {
+      name: raw.name,
+      doc: {
+        id: raw.id,
+        name: raw.name,
+        elements,
+        variables: [],
+        pageSettings,
+        version: Number(metadata.version) || 1,
+        status: (raw.status as CanvasDocument['status']) || 'draft',
+        createdAt: now,
+        updatedAt: raw.updatedAt || now,
+      },
+    };
+  },
 };

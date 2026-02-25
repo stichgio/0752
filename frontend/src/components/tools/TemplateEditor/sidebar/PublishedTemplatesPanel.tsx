@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Library, Search } from 'lucide-react';
+import { Library, Search, Pencil, Trash2 } from 'lucide-react';
 import { templateEditorApi } from '../api';
 import { Badge, Button, Card, Input } from '../ui/ui';
 
@@ -15,6 +15,8 @@ interface PublishedTemplatesPanelProps {
   refreshKey?: number;
   activeTemplateId?: string | null;
   onUnpublishTemplate?: (templateId: string) => Promise<void> | void;
+  onEditPublishedTemplate?: (templateId: string) => Promise<void> | void;
+  onDeletePublishedTemplate?: (templateId: string) => Promise<void> | void;
 }
 
 function formatDate(value?: string): string {
@@ -32,6 +34,8 @@ export function PublishedTemplatesPanel({
   refreshKey,
   activeTemplateId,
   onUnpublishTemplate,
+  onEditPublishedTemplate,
+  onDeletePublishedTemplate,
 }: PublishedTemplatesPanelProps) {
   const [templates, setTemplates] = useState<PublishedTemplateSummary[]>([]);
   const [search, setSearch] = useState('');
@@ -83,6 +87,38 @@ export function PublishedTemplatesPanel({
     }
   }, [loadTemplates, onUnpublishTemplate]);
 
+  const handleEdit = useCallback(async (item: PublishedTemplateSummary) => {
+    try {
+      setBusyId(item.id);
+      if (onEditPublishedTemplate) {
+        await onEditPublishedTemplate(item.id);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo cargar la plantilla para editar.');
+    } finally {
+      setBusyId(null);
+    }
+  }, [onEditPublishedTemplate]);
+
+  const handleDelete = useCallback(async (item: PublishedTemplateSummary) => {
+    const confirmed = window.confirm(`¿Eliminar la plantilla "${item.name}"? Esta acción no se puede deshacer.`);
+    if (!confirmed) return;
+
+    try {
+      setBusyId(item.id);
+      if (onDeletePublishedTemplate) {
+        await onDeletePublishedTemplate(item.id);
+      } else {
+        await templateEditorApi.delete(item.id);
+      }
+      await loadTemplates();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudo eliminar la plantilla.');
+    } finally {
+      setBusyId(null);
+    }
+  }, [loadTemplates, onDeletePublishedTemplate]);
+
   return (
     <div className="flex h-full flex-col p-3 gap-3">
       <div className="relative">
@@ -128,14 +164,39 @@ export function PublishedTemplatesPanel({
                 <Badge tone="success">Publicada</Badge>
               </div>
 
+              <div className="flex gap-1.5">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="flex-1 gap-1"
+                  onClick={() => void handleEdit(item)}
+                  disabled={isBusy}
+                  title="Editar plantilla"
+                >
+                  <Pencil size={12} />
+                  Editar
+                </Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  className="flex-1 gap-1"
+                  onClick={() => void handleDelete(item)}
+                  disabled={isBusy}
+                  title="Eliminar plantilla"
+                >
+                  <Trash2 size={12} />
+                  Eliminar
+                </Button>
+              </div>
+
               <Button
-                variant="danger"
+                variant="ghost"
                 size="sm"
-                className="w-full"
+                className="w-full text-neutral-500"
                 onClick={() => void handleUnpublish(item)}
                 disabled={isBusy}
               >
-                {isBusy ? 'Despublicando...' : 'Despublicar'}
+                {isBusy ? 'Procesando...' : 'Despublicar'}
               </Button>
             </Card>
           );
