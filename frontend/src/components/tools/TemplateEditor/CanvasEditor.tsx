@@ -128,6 +128,8 @@ interface CanvasEditorProps {
   activePublishedTemplateId?: string | null;
   publishedTemplatesRefreshKey?: number;
   onUnpublishTemplate?: (templateId: string) => Promise<void> | void;
+  onEditPublishedTemplate?: (templateId: string) => Promise<void> | void;
+  onDeletePublishedTemplate?: (templateId: string) => Promise<void> | void;
 }
 
 export default function CanvasEditor({
@@ -145,6 +147,8 @@ export default function CanvasEditor({
   activePublishedTemplateId,
   publishedTemplatesRefreshKey,
   onUnpublishTemplate,
+  onEditPublishedTemplate,
+  onDeletePublishedTemplate,
 }: CanvasEditorProps) {
   const MIN_SIDEBAR_WIDTH = 250;
   const MAX_SIDEBAR_WIDTH = 500;
@@ -839,6 +843,8 @@ export default function CanvasEditor({
               activePublishedTemplateId={activePublishedTemplateId}
               publishedTemplatesRefreshKey={publishedTemplatesRefreshKey}
               onUnpublishTemplate={onUnpublishTemplate}
+              onEditPublishedTemplate={onEditPublishedTemplate}
+              onDeletePublishedTemplate={onDeletePublishedTemplate}
             />
             <div
               role="separator"
