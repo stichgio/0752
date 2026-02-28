@@ -1,25 +1,26 @@
 """
 Endpoints API REST para Fichas Técnicas de Evaluación de Actividades
 """
-from fastapi import APIRouter, UploadFile, File, HTTPException, Form, BackgroundTasks
-from fastapi.responses import Response, FileResponse
+from fastapi import APIRouter, UploadFile, File, HTTPException, Form, BackgroundTasks  # type: ignore
+from fastapi.responses import Response, FileResponse, StreamingResponse  # type: ignore
 from typing import Optional, List, Dict, Any
 import io
 import csv
 import os
 import json
+import unicodedata
 from datetime import datetime
 
 # Para XLSX
 try:
-    import openpyxl
+    import openpyxl  # type: ignore
     XLSX_SUPPORTED = True
 except ImportError:
     XLSX_SUPPORTED = False
     print("[FichasTecnicas] openpyxl not installed - XLSX support disabled")
 
-from .database import db
-from .models import FichaTecnica
+from .database import db  # type: ignore
+from .models import FichaTecnica  # type: ignore
 
 router = APIRouter(prefix="/api/fichas-tecnicas", tags=["fichas-tecnicas"])
 
@@ -71,7 +72,7 @@ def parse_csv_file(content: bytes) -> List[Dict[str, Any]]:
     return cleaned_rows
 
 
-import unicodedata
+
 
 def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
     """Parsea archivo XLSX (Excel)."""
@@ -82,7 +83,7 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
         workbook = openpyxl.load_workbook(io.BytesIO(content), data_only=True)
         sheet = workbook.active
         # Use values_only=False to access number_format
-        all_rows = list(sheet.iter_rows(values_only=False))
+        all_rows = list(sheet.iter_rows(values_only=False)) # type: ignore
 
         if not all_rows:
             return []
@@ -100,7 +101,7 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
 
         # Extraer datos
         parsed_rows = []
-        for row in all_rows[1:]:
+        for row in all_rows[1:]:  # type: ignore
             # Check if row has any values
             if not any(c.value for c in row if c is not None):
                 continue
@@ -110,7 +111,7 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
 
             for col_idx, cell in enumerate(row):
                 if col_idx < len(headers):
-                    key = headers[col_idx]
+                    key = str(headers[col_idx])  # type: ignore
                     cell_value = cell.value if cell else None
 
                     if cell_value is not None:
@@ -161,7 +162,7 @@ async def get_all_fichas(
     if status:
         fichas = [f for f in fichas if f.status == status]
 
-    return {"fichas": [f.dict() for f in fichas], "total": len(fichas)}
+    return {"fichas": [f.model_dump() for f in fichas], "total": len(fichas)}
 
 
 @router.get("/fichas/{ficha_id}")
@@ -170,7 +171,7 @@ async def get_ficha(ficha_id: str):
     ficha = db.get_ficha(ficha_id)
     if not ficha:
         raise HTTPException(status_code=404, detail="Ficha no encontrada")
-    return ficha.dict()
+    return ficha.model_dump()
 
 
 @router.post("/fichas")
@@ -181,7 +182,7 @@ async def create_ficha(ficha: FichaTecnica):
 
     ficha.last_modified = datetime.now().isoformat()
     created = db.create_ficha(ficha)
-    return {"success": True, "ficha": created.dict()}
+    return {"success": True, "ficha": created.model_dump()}
 
 
 @router.put("/fichas/{ficha_id}")
@@ -192,7 +193,7 @@ async def update_ficha(ficha_id: str, ficha: FichaTecnica):
 
     ficha.last_modified = datetime.now().isoformat()
     updated = db.update_ficha(ficha_id, ficha)
-    return {"success": True, "ficha": updated.dict()}
+    return {"success": True, "ficha": updated.model_dump()}
 
 
 @router.delete("/fichas/{ficha_id}")
@@ -216,7 +217,7 @@ async def import_file(file: UploadFile = File(...)):
     Importar archivo CSV o XLSX.
     ELIMINA TODOS los registros existentes y los reemplaza con los del archivo.
     """
-    filename = file.filename.lower()
+    filename = (file.filename or "").lower()
 
     if not filename.endswith(('.csv', '.xlsx')):
         raise HTTPException(
@@ -225,7 +226,7 @@ async def import_file(file: UploadFile = File(...)):
         )
 
     try:
-        content = await file.read()
+        content: bytes = await file.read()
         print(f"[FichasTecnicas Import] File: {file.filename}, Size: {len(content)} bytes")
 
         if filename.endswith('.csv'):
@@ -276,7 +277,7 @@ async def generate_consolidated_pdf(
     """
     import tempfile
     import base64
-    from jinja2 import Environment, FileSystemLoader
+    from jinja2 import Environment, FileSystemLoader  # type: ignore
 
     try:
         all_fichas = db.get_all_fichas()
@@ -288,9 +289,10 @@ async def generate_consolidated_pdf(
         if ficha_ids:
             try:
                 ids_list = json.loads(ficha_ids)
-                all_fichas = [f for f in all_fichas if f.id in ids_list]
+                if isinstance(ids_list, list):
+                    all_fichas = [f for f in all_fichas if f.id in ids_list]
             except (json.JSONDecodeError, TypeError):
-                pass
+                raise HTTPException(status_code=400, detail="Formato de ficha_ids inválido")
 
         print(f"[PDF Consolidado] Generando PDF con {len(all_fichas)} fichas...")
 
@@ -300,7 +302,8 @@ async def generate_consolidated_pdf(
                 return None
             content = await logo_file.read()
             encoded = base64.b64encode(content).decode("utf-8")
-            mime = "image/png" if logo_file.filename.lower().endswith(".png") else "image/jpeg"
+            fname = (logo_file.filename or "").lower()
+            mime = "image/png" if fname.endswith(".png") else "image/jpeg"
             return f"data:{mime};base64,{encoded}"
 
         logo_left_b64 = await process_logo(logoLeft)
@@ -314,8 +317,8 @@ async def generate_consolidated_pdf(
         # =====================================================================
         # STREAMING OPTIMIZADO: Generar PDFs en lotes y merge incremental
         # =====================================================================
-        from weasyprint import HTML
-        from pypdf import PdfWriter
+        from weasyprint import HTML  # type: ignore
+        from pypdf import PdfWriter  # type: ignore
         from concurrent.futures import ThreadPoolExecutor
         import gc
 
@@ -325,6 +328,7 @@ async def generate_consolidated_pdf(
 
         def render_single_pdf(ficha_data):
             """Renderiza un PDF individual a archivo temporal"""
+            temp_pdf = None
             try:
                 html_content = template.render(
                     ficha=ficha_data,
@@ -333,20 +337,26 @@ async def generate_consolidated_pdf(
                 )
 
                 temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
-                HTML(string=html_content, base_url=templates_dir).write_pdf(temp_pdf.name)
+                temp_pdf_name = temp_pdf.name
                 temp_pdf.close()
-                return temp_pdf.name
+                HTML(string=html_content, base_url=templates_dir).write_pdf(temp_pdf_name)
+                return temp_pdf_name
             except Exception as e:
                 print(f"[PDF Consolidado] Error renderizando: {e}")
+                if temp_pdf and os.path.exists(temp_pdf.name):
+                    try:
+                        os.remove(temp_pdf.name)
+                    except OSError:
+                        pass
                 return None
 
         # Generar PDFs en lotes paralelos
         for batch_start in range(0, len(all_fichas), PDF_BATCH_SIZE):
             batch_end = min(batch_start + PDF_BATCH_SIZE, len(all_fichas))
-            batch_fichas = all_fichas[batch_start:batch_end]
+            batch_fichas = all_fichas[batch_start:batch_end]  # type: ignore
 
             with ThreadPoolExecutor(max_workers=PDF_BATCH_SIZE) as executor:
-                batch_dicts = [f.dict() for f in batch_fichas]
+                batch_dicts = [f.model_dump() for f in batch_fichas]
                 results = list(executor.map(render_single_pdf, batch_dicts))
 
                 for pdf_path in results:
@@ -365,29 +375,29 @@ async def generate_consolidated_pdf(
 
         # ✅ STREAMING MERGE: Usar append para menor uso de memoria
         pdf_writer = PdfWriter()
-
-        for pdf_path in temp_pdf_files:
-            try:
-                pdf_writer.append(pdf_path)
-                os.remove(pdf_path)
-            except Exception as e:
-                print(f"[PDF Consolidado] Error en merge: {e}")
+        try:
+            for pdf_path in temp_pdf_files:
                 try:
+                    pdf_writer.append(pdf_path)
                     os.remove(pdf_path)
-                except OSError:
-                    pass
+                except Exception as e:
+                    print(f"[PDF Consolidado] Error en merge: {e}")
+                    try:
+                        os.remove(pdf_path)
+                    except OSError:
+                        pass
 
-        with open(temp_file.name, 'wb') as f:
-            pdf_writer.write(f)
-
-        pdf_writer.close()
-        del pdf_writer
-        gc.collect()
+            with open(temp_file.name, 'wb') as f:
+                pdf_writer.write(f)
+        finally:
+            pdf_writer.close()
+            del pdf_writer
+            gc.collect()
 
         # =====================================================================
         # Compresión Ghostscript (opcional)
         # =====================================================================
-        from report_service import GHOSTSCRIPT_ENABLED, GHOSTSCRIPT_QUALITY, _compress_pdf_with_ghostscript
+        from report_service import GHOSTSCRIPT_ENABLED, GHOSTSCRIPT_QUALITY, _compress_pdf_with_ghostscript  # type: ignore
 
         if GHOSTSCRIPT_ENABLED and len(all_fichas) > 1:
             print(f"[PDF Consolidado] Aplicando compresión Ghostscript...")
@@ -423,6 +433,149 @@ async def generate_consolidated_pdf(
         raise HTTPException(status_code=500, detail=f"Error generando PDF consolidado: {str(e)}")
 
 
+@router.post("/generate-consolidated-pdf-progress")
+async def generate_consolidated_pdf_progress(
+    logoLeft: Optional[UploadFile] = File(None),
+    logoRight: Optional[UploadFile] = File(None),
+    ficha_ids: Optional[str] = Form(None),
+):
+    """SSE version of generate-consolidated-pdf with real-time progress."""
+    import asyncio
+    import uuid
+    import tempfile
+    import base64
+    from progress import format_sse_event  # type: ignore
+
+    # Read logos before streaming starts
+    logo_left_bytes = await logoLeft.read() if logoLeft else None
+    logo_right_bytes = await logoRight.read() if logoRight else None
+    logo_left_fname = (logoLeft.filename or "") if logoLeft else ""
+    logo_right_fname = (logoRight.filename or "") if logoRight else ""
+
+    async def event_generator():
+        progress_queue: asyncio.Queue = asyncio.Queue()
+
+        async def on_progress(phase: str, current: int, total: int, detail: str = ""):
+            await progress_queue.put({"phase": phase, "current": current, "total": total, "detail": detail})
+
+        async def run_generation():
+            try:
+                from jinja2 import Environment, FileSystemLoader  # type: ignore
+                from weasyprint import HTML  # type: ignore
+                from pypdf import PdfWriter  # type: ignore
+                from concurrent.futures import ThreadPoolExecutor
+                from report_service import GHOSTSCRIPT_ENABLED, GHOSTSCRIPT_QUALITY, _compress_pdf_with_ghostscript  # type: ignore
+                import gc
+
+                all_fichas = db.get_all_fichas()
+                if not all_fichas:
+                    raise Exception("No hay fichas para exportar")
+
+                if ficha_ids:
+                    try:
+                        ids_list = json.loads(ficha_ids)
+                        if isinstance(ids_list, list):
+                            all_fichas = [f for f in all_fichas if f.id in ids_list]
+                    except (json.JSONDecodeError, TypeError):
+                        pass
+
+                total = len(all_fichas)
+                await on_progress("preparing", 0, total, "")
+
+                # Process logos
+                def encode_logo(content, fname):
+                    if not content:
+                        return None
+                    encoded = base64.b64encode(content).decode("utf-8")
+                    mime = "image/png" if fname.lower().endswith(".png") else "image/jpeg"
+                    return f"data:{mime};base64,{encoded}"
+
+                logo_left_b64 = encode_logo(logo_left_bytes, logo_left_fname)
+                logo_right_b64 = encode_logo(logo_right_bytes, logo_right_fname)
+
+                templates_dir = os.path.join(os.path.dirname(__file__), "templates")
+                env = Environment(loader=FileSystemLoader(templates_dir))
+                template = env.get_template("ficha_tecnica.html")
+
+                PDF_BATCH_SIZE = 5
+                temp_pdf_files = []
+
+                def render_single_pdf(ficha_data):
+                    try:
+                        html_content = template.render(
+                            ficha=ficha_data,
+                            logo_left=logo_left_b64,
+                            logo_right=logo_right_b64
+                        )
+                        temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+                        HTML(string=html_content, base_url=templates_dir).write_pdf(temp_pdf.name)
+                        temp_pdf.close()
+                        return temp_pdf.name
+                    except Exception as e:
+                        print(f"[PDF Consolidado Fichas] Error renderizando: {e}")
+                        return None
+
+                for batch_start in range(0, total, PDF_BATCH_SIZE):
+                    batch_end = min(batch_start + PDF_BATCH_SIZE, total)
+                    batch_fichas = all_fichas[batch_start:batch_end]
+                    with ThreadPoolExecutor(max_workers=PDF_BATCH_SIZE) as executor:
+                        results = list(executor.map(render_single_pdf, [f.model_dump() for f in batch_fichas]))
+                        temp_pdf_files.extend([p for p in results if p])
+                    await on_progress("rendering", min(batch_end, total), total, "")
+                    gc.collect()
+
+                if not temp_pdf_files:
+                    raise Exception("No se pudo generar ningún PDF")
+
+                await on_progress("merging", 0, len(temp_pdf_files), "")
+
+                filename = f"pdf_{uuid.uuid4().hex[:12]}.pdf"
+                output_path = os.path.join(tempfile.gettempdir(), filename)
+
+                pdf_writer = PdfWriter()
+                for pdf_path in temp_pdf_files:
+                    try:
+                        pdf_writer.append(pdf_path)
+                        os.remove(pdf_path)
+                    except Exception:
+                        try:
+                            os.remove(pdf_path)
+                        except OSError:
+                            pass
+
+                with open(output_path, 'wb') as f:
+                    pdf_writer.write(f)
+                pdf_writer.close()
+                del pdf_writer
+                gc.collect()
+
+                if GHOSTSCRIPT_ENABLED and total > 1:
+                    await on_progress("compressing", 0, 1, "")
+                    _compress_pdf_with_ghostscript(output_path, quality=GHOSTSCRIPT_QUALITY)
+
+                await progress_queue.put({"phase": "done", "download_url": f"/api/download-temp/{filename}"})
+            except Exception as e:
+                await progress_queue.put({"phase": "error", "detail": str(e)})
+            finally:
+                await progress_queue.put(None)
+
+        asyncio.create_task(run_generation())
+
+        while True:
+            msg = await progress_queue.get()
+            if msg is None:
+                break
+            phase = msg.get("phase", "")
+            event = "done" if phase == "done" else "error" if phase == "error" else "progress"
+            yield format_sse_event(msg, event)
+
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+    )
+
+
 @router.get("/autocomplete/cliente")
 async def autocomplete_cliente():
     """Obtener lista única de clientes"""
@@ -449,7 +602,7 @@ async def generate_pdf(
     Genera un PDF para una ficha técnica individual.
     """
     import base64
-    from jinja2 import Environment, FileSystemLoader
+    from jinja2 import Environment, FileSystemLoader  # type: ignore
 
     try:
         ficha = db.get_ficha(fichaId)
@@ -461,7 +614,8 @@ async def generate_pdf(
                 return None
             content = await logo_file.read()
             encoded = base64.b64encode(content).decode("utf-8")
-            mime = "image/png" if logo_file.filename.lower().endswith(".png") else "image/jpeg"
+            fname = (logo_file.filename or "").lower()
+            mime = "image/png" if fname.endswith(".png") else "image/jpeg"
             return f"data:{mime};base64,{encoded}"
 
         logo_left_b64 = await process_logo(logoLeft)
@@ -471,7 +625,7 @@ async def generate_pdf(
         env = Environment(loader=FileSystemLoader(templates_dir))
         template = env.get_template("ficha_tecnica.html")
 
-        ficha_dict = ficha.dict()
+        ficha_dict = ficha.model_dump()
 
         html_content = template.render(
             ficha=ficha_dict,
@@ -479,7 +633,7 @@ async def generate_pdf(
             logo_right=logo_right_b64
         )
 
-        from weasyprint import HTML
+        from weasyprint import HTML  # type: ignore
         pdf_bytes = HTML(
             string=html_content,
             base_url=templates_dir
@@ -499,125 +653,6 @@ async def generate_pdf(
         raise HTTPException(status_code=500, detail=f"Error generando PDF: {str(e)}")
 
 
-@router.post("/generate-docx")
-async def generate_docx(
-    fichaId: str = Form(...),
-    logoLeft: Optional[UploadFile] = File(None),
-    logoRight: Optional[UploadFile] = File(None),
-):
-    """
-    Genera un documento Word (.docx) para una ficha técnica individual.
-    """
-    import base64
-
-    try:
-        ficha = db.get_ficha(fichaId)
-        if not ficha:
-            raise HTTPException(status_code=404, detail="Ficha no encontrada")
-
-        async def process_logo(logo_file):
-            if not logo_file:
-                return None
-            content = await logo_file.read()
-            encoded = base64.b64encode(content).decode("utf-8")
-            mime = "image/png" if logo_file.filename.lower().endswith(".png") else "image/jpeg"
-            return f"data:{mime};base64,{encoded}"
-
-        logo_left_b64 = await process_logo(logoLeft)
-        logo_right_b64 = await process_logo(logoRight)
-
-        from .word_service import generate_ficha_docx
-        docx_bytes = generate_ficha_docx(ficha.dict(), logo_left_b64, logo_right_b64)
-
-        return Response(
-            content=docx_bytes,
-            media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            headers={"Content-Disposition": f"attachment; filename=ficha_tecnica_{fichaId}.docx"}
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Error generando DOCX: {str(e)}")
-
-
-@router.post("/generate-consolidated-docx")
-async def generate_consolidated_docx(
-    background_tasks: BackgroundTasks,
-    logoLeft: Optional[UploadFile] = File(None),
-    logoRight: Optional[UploadFile] = File(None),
-    ficha_ids: Optional[str] = Form(None),
-):
-    """
-    Genera un archivo ZIP con todas las fichas técnicas en formato Word (.docx).
-    Cada ficha es un archivo .docx individual dentro del ZIP.
-    """
-    import base64
-    import tempfile
-    import zipfile
-
-    try:
-        all_fichas = db.get_all_fichas()
-
-        if not all_fichas:
-            raise HTTPException(status_code=400, detail="No hay fichas para exportar")
-
-        # Filtrar por IDs si se especificaron
-        if ficha_ids:
-            try:
-                ids_list = json.loads(ficha_ids)
-                all_fichas = [f for f in all_fichas if f.id in ids_list]
-            except (json.JSONDecodeError, TypeError):
-                pass
-
-        print(f"[DOCX Consolidado] Generando {len(all_fichas)} documentos Word...")
-
-        # Procesar logos
-        async def process_logo(logo_file):
-            if not logo_file:
-                return None
-            content = await logo_file.read()
-            encoded = base64.b64encode(content).decode("utf-8")
-            mime = "image/png" if logo_file.filename.lower().endswith(".png") else "image/jpeg"
-            return f"data:{mime};base64,{encoded}"
-
-        logo_left_b64 = await process_logo(logoLeft)
-        logo_right_b64 = await process_logo(logoRight)
-
-        from .word_service import generate_ficha_docx
-
-        # Crear ZIP con todos los DOCX
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, mode='w', compression=zipfile.ZIP_DEFLATED) as zip_file:
-            for i, ficha in enumerate(all_fichas):
-                try:
-                    docx_bytes = generate_ficha_docx(ficha.dict(), logo_left_b64, logo_right_b64)
-                    filename = f"ficha_tecnica_{ficha.id}.docx"
-                    zip_file.writestr(filename, docx_bytes)
-                    print(f"[DOCX Consolidado] {i + 1}/{len(all_fichas)} - {ficha.id}")
-                except Exception as e:
-                    print(f"[DOCX Consolidado] Error con {ficha.id}: {e}")
-
-        zip_buffer.seek(0)
-
-        print(f"[DOCX Consolidado] ✅ Completado! {len(all_fichas)} fichas generadas")
-
-        return Response(
-            content=zip_buffer.getvalue(),
-            media_type="application/zip",
-            headers={"Content-Disposition": f"attachment; filename=fichas_tecnicas_{len(all_fichas)}_docx.zip"}
-        )
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        raise HTTPException(status_code=500, detail=f"Error generando DOCX consolidado: {str(e)}")
-
-
 @router.get("/templates")
 async def list_templates():
     """Listar templates disponibles"""
@@ -633,7 +668,7 @@ async def generate_template_pdf(
     Genera un PDF con la plantilla en blanco de ficha técnica.
     """
     import base64
-    from jinja2 import Environment, FileSystemLoader
+    from jinja2 import Environment, FileSystemLoader  # type: ignore
 
     try:
         async def process_logo(logo_file):
@@ -641,7 +676,8 @@ async def generate_template_pdf(
                 return None
             content = await logo_file.read()
             encoded = base64.b64encode(content).decode("utf-8")
-            mime = "image/png" if logo_file.filename.lower().endswith(".png") else "image/jpeg"
+            fname = (logo_file.filename or "").lower()
+            mime = "image/png" if fname.endswith(".png") else "image/jpeg"
             return f"data:{mime};base64,{encoded}"
 
         logo_left_b64 = await process_logo(logoLeft)
@@ -688,7 +724,7 @@ async def generate_template_pdf(
             logo_right=logo_right_b64
         )
 
-        from weasyprint import HTML
+        from weasyprint import HTML  # type: ignore
         pdf_bytes = HTML(
             string=html_content,
             base_url=templates_dir

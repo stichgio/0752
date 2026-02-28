@@ -5,13 +5,14 @@ Este módulo proporciona funcionalidades para dividir un archivo PDF
 en múltiples archivos más pequeños, ya sea por cantidad de páginas
 o por rangos específicos.
 """
+from __future__ import annotations
 
 import logging
 from pathlib import Path
 
-from pypdf import PdfReader, PdfWriter
+from pypdf import PdfReader, PdfWriter  # type: ignore
 
-from .utils import (
+from .utils import (  # type: ignore
     PDFProcessingError,
     PDFValidationError,
     ensure_directory,

@@ -3,9 +3,9 @@ import os
 import re
 from typing import Any, Dict
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, HTTPException, Request  # pyre-ignore[21]
 
-from .schemas import (
+from .schemas import (  # pyre-ignore[21]
     CreateTemplatePayload,
     PreviewTemplatePayload,
     PublishTemplatePayload,
@@ -14,7 +14,7 @@ from .schemas import (
     UpdateTemplateResponse,
     ValidateTemplatePayload,
 )
-from .service import (
+from .service import (  # pyre-ignore[21]
     create_template,
     delete_template,
     get_all_editor_templates,
@@ -28,7 +28,7 @@ from .service import (
     run_validations,
     update_template,
 )
-from .supabase_client import SupabaseNotConfiguredError, SupabaseOperationError
+from .supabase_client import SupabaseNotConfiguredError, SupabaseOperationError  # pyre-ignore[21]
 
 router = APIRouter(prefix="/api/template-editor", tags=["template-editor"])
 
@@ -135,7 +135,7 @@ def _render_compiled_html(
     blocks and ``{{ variable }}`` expressions.  Falls back to regex substitution
     if Jinja2 rendering fails.
     """
-    from jinja2 import Template as J2Template
+    from jinja2 import Template as J2Template  # pyre-ignore[21]
 
     # Build a report context matching the PDF pipeline structure
     report_entry: Dict[str, Any] = {
@@ -195,6 +195,10 @@ async def preview_template_endpoint(template_id: str, payload: PreviewTemplatePa
         preview_html = await asyncio.wait_for(_build_preview(), timeout=8.0)
     except asyncio.TimeoutError:
         raise HTTPException(status_code=504, detail="Preview generation timeout")
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Preview generation failed: {exc}")
     return {"templateId": template_id, "previewHtml": preview_html}
 
 

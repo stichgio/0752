@@ -1,7 +1,7 @@
 """
 Modelos Pydantic para Fichas Técnicas de Evaluación de Actividades
 """
-from pydantic import BaseModel
+from pydantic import BaseModel  # type: ignore
 from typing import List, Literal
 from datetime import datetime
 

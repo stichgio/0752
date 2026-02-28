@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { ChevronLeft, Upload, Download, Trash2, Image as ImageIcon, FileDown, Loader2, CheckCircle, AlertCircle, X, Sliders, RotateCcw, Crop, Maximize2, Move, Check, RotateCw } from 'lucide-react';
+import { ChevronLeft, Upload, Download, Trash2, Image as ImageIcon, FileDown, Loader2, CheckCircle, AlertCircle, X, Sliders, RotateCcw, Crop, Maximize2, Move, Check, RotateCw, Type } from 'lucide-react';
 import imageCompression from 'browser-image-compression';
-import { ImageFile, CompressionOptions, CompressionStats, OutputFormat, AspectRatio, ASPECT_RATIO_OPTIONS, CropOffset } from './types';
+import { ImageFile, CompressionOptions, CompressionStats, OutputFormat, AspectRatio, ASPECT_RATIO_OPTIONS, CropOffset, RenameOptions } from './types';
 import { formatBytes } from '@/utils/formatBytes';
 import { downloadBlob } from '@/utils/downloadBlob';
 
@@ -38,6 +38,19 @@ function getOutputExtension(format: OutputFormat, originalName: string): string 
         case 'webp': return `${baseName}.webp`;
         default: return originalName;
     }
+}
+
+function getRenamedFilename(
+    index: number, total: number, prefix: string, startAt: number,
+    format: OutputFormat, originalName: string
+): string {
+    const num = index + startAt;
+    const digits = Math.max(3, String(total + startAt - 1).length);
+    const padded = String(num).padStart(digits, '0');
+    const ext = format === 'original'
+        ? (originalName.split('.').pop() || 'jpg')
+        : format === 'jpeg' ? 'jpg' : format;
+    return `${prefix}_${padded}.${ext}`;
 }
 
 function getAspectRatioValue(ratio: AspectRatio): number | null {
@@ -486,6 +499,7 @@ export default function ImageOptimizer() {
     const [isProcessing, setIsProcessing] = useState(false);
     const [isDragActive, setIsDragActive] = useState(false);
     const [previewImage, setPreviewImage] = useState<ImageFile | null>(null);
+    const [renameOptions, setRenameOptions] = useState<RenameOptions>({ enabled: false, prefix: 'foto', startAt: 1 });
 
     // Keep ref in sync with state for cleanup on unmount
     useEffect(() => {
@@ -684,9 +698,19 @@ export default function ImageOptimizer() {
     // ========================================================================
     // HANDLERS DE DESCARGA
     // ========================================================================
+    const getFilename = (img: ImageFile, index: number, total: number): string => {
+        if (renameOptions.enabled && renameOptions.prefix.trim()) {
+            return getRenamedFilename(index, total, renameOptions.prefix.trim(), renameOptions.startAt, options.outputFormat, img.originalName);
+        }
+        return getOutputExtension(options.outputFormat, img.originalName);
+    };
+
     const handleDownloadSingle = (img: ImageFile) => {
         if (!img.compressedBlob) return;
-        downloadBlob(img.compressedBlob, getOutputExtension(options.outputFormat, img.originalName));
+        const completedImages = images.filter(i => i.status === 'completed' && i.compressedBlob);
+        const idx = completedImages.findIndex(i => i.id === img.id);
+        const filename = getFilename(img, idx >= 0 ? idx : 0, completedImages.length);
+        downloadBlob(img.compressedBlob, filename);
     };
 
     const handleDownloadAll = async () => {
@@ -700,9 +724,9 @@ export default function ImageOptimizer() {
 
         // Para multiples imagenes, crear ZIP via backend
         const formData = new FormData();
-        completedImages.forEach((img) => {
+        completedImages.forEach((img, idx) => {
             if (img.compressedBlob) {
-                const fileName = getOutputExtension(options.outputFormat, img.originalName);
+                const fileName = getFilename(img, idx, completedImages.length);
                 formData.append('files', img.compressedBlob, fileName);
             }
         });
@@ -717,10 +741,18 @@ export default function ImageOptimizer() {
             if (!response.ok) throw new Error('Error al crear ZIP');
 
             const blob = await response.blob();
-            downloadBlob(blob, `imagenes_${Date.now()}.zip`);
+            const zipName = renameOptions.enabled && renameOptions.prefix.trim()
+                ? `${renameOptions.prefix.trim()}_${completedImages.length}.zip`
+                : `imagenes_${Date.now()}.zip`;
+            downloadBlob(blob, zipName);
         } catch (error) {
             console.error('ZIP download failed, downloading individually:', error);
-            completedImages.forEach(img => handleDownloadSingle(img));
+            completedImages.forEach((img, idx) => {
+                if (img.compressedBlob) {
+                    const filename = getFilename(img, idx, completedImages.length);
+                    downloadBlob(img.compressedBlob, filename);
+                }
+            });
         }
     };
 
@@ -895,6 +927,65 @@ export default function ImageOptimizer() {
                                 className="w-full bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 text-sm text-white font-mono focus:border-[#555] outline-none"
                             />
                         </div>
+                    </div>
+
+                    {/* ================================================== */}
+                    {/* SECCION: RENOMBRADO */}
+                    {/* ================================================== */}
+                    <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-[#888]">
+                                <Type size={14} />
+                                <span className="text-xs font-mono uppercase tracking-wider">Renombrado</span>
+                            </div>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    checked={renameOptions.enabled}
+                                    onChange={(e) => setRenameOptions({ ...renameOptions, enabled: e.target.checked })}
+                                    className="sr-only peer"
+                                />
+                                <div className="w-8 h-4 bg-[#333] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-green-600"></div>
+                            </label>
+                        </div>
+
+                        {renameOptions.enabled && (
+                            <div className="space-y-2">
+                                <div>
+                                    <label className="block text-xs text-[#666] mb-1.5 font-mono">Prefijo</label>
+                                    <input
+                                        type="text"
+                                        value={renameOptions.prefix}
+                                        onChange={(e) => setRenameOptions({ ...renameOptions, prefix: e.target.value })}
+                                        placeholder="foto"
+                                        className="w-full bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 text-sm text-white font-mono focus:border-[#555] outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-[#666] mb-1.5 font-mono">Iniciar en</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        max="9999"
+                                        value={renameOptions.startAt}
+                                        onChange={(e) => setRenameOptions({ ...renameOptions, startAt: Math.max(0, parseInt(e.target.value) || 0) })}
+                                        className="w-full bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 text-sm text-white font-mono focus:border-[#555] outline-none"
+                                    />
+                                </div>
+                                <div className="bg-[#111] border border-[#222] rounded px-3 py-2">
+                                    <p className="text-[10px] text-[#555] font-mono mb-1">Vista previa:</p>
+                                    <p className="text-[11px] text-green-500 font-mono truncate">
+                                        {[0, 1, 2].map(i => getRenamedFilename(
+                                            i, Math.max(images.length, 3),
+                                            renameOptions.prefix.trim() || 'foto',
+                                            renameOptions.startAt,
+                                            options.outputFormat,
+                                            'ejemplo.jpg'
+                                        )).join(', ')}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Boton Reset */}

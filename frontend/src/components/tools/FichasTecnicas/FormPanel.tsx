@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo, useEffect, useRef } from 'react';
 import { Save, Settings } from 'lucide-react';
 import { FichaTecnica, ProductoQuimico, SatisfaccionType } from './types';
 
@@ -23,6 +23,26 @@ export default function FormPanel({
     onLogoLeftChange,
     onLogoRightChange
 }: Props) {
+    // Manage object URLs to prevent memory leaks
+    const logoLeftUrlRef = useRef<string | null>(null);
+    const logoRightUrlRef = useRef<string | null>(null);
+
+    useEffect(() => {
+        if (logoLeftUrlRef.current) URL.revokeObjectURL(logoLeftUrlRef.current);
+        logoLeftUrlRef.current = logoLeft ? URL.createObjectURL(logoLeft) : null;
+        return () => {
+            if (logoLeftUrlRef.current) URL.revokeObjectURL(logoLeftUrlRef.current);
+        };
+    }, [logoLeft]);
+
+    useEffect(() => {
+        if (logoRightUrlRef.current) URL.revokeObjectURL(logoRightUrlRef.current);
+        logoRightUrlRef.current = logoRight ? URL.createObjectURL(logoRight) : null;
+        return () => {
+            if (logoRightUrlRef.current) URL.revokeObjectURL(logoRightUrlRef.current);
+        };
+    }, [logoRight]);
+
     if (!fichaData) {
         return (
             <div className="bg-[#111] border border-[#333] rounded-lg p-6 h-full flex items-center justify-center">
@@ -105,8 +125,8 @@ export default function FormPanel({
                         <div className="flex flex-col items-center gap-1">
                             <span className="text-[10px] text-[#888]">Logo Izq</span>
                             <label className="w-full h-12 border border-dashed border-[#444] rounded flex flex-col items-center justify-center cursor-pointer hover:border-[#666] hover:bg-[#222] transition-colors relative overflow-hidden">
-                                {logoLeft ? (
-                                    <img src={URL.createObjectURL(logoLeft)} className="w-full h-full object-contain p-1" />
+                                {logoLeftUrlRef.current ? (
+                                    <img src={logoLeftUrlRef.current} className="w-full h-full object-contain p-1" />
                                 ) : (
                                     <span className="text-[9px] text-[#666]">Subir</span>
                                 )}
@@ -117,8 +137,8 @@ export default function FormPanel({
                         <div className="flex flex-col items-center gap-1">
                             <span className="text-[10px] text-[#888]">Logo Der</span>
                             <label className="w-full h-12 border border-dashed border-[#444] rounded flex flex-col items-center justify-center cursor-pointer hover:border-[#666] hover:bg-[#222] transition-colors relative overflow-hidden">
-                                {logoRight ? (
-                                    <img src={URL.createObjectURL(logoRight)} className="w-full h-full object-contain p-1" />
+                                {logoRightUrlRef.current ? (
+                                    <img src={logoRightUrlRef.current} className="w-full h-full object-contain p-1" />
                                 ) : (
                                     <span className="text-[9px] text-[#666]">Subir</span>
                                 )}

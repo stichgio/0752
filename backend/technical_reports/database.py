@@ -4,8 +4,8 @@ Gestor de Base de Datos en JSON para Informes Técnicos
 import os
 from typing import List, Dict
 from datetime import datetime
-from .models import TechnicalReport
-from db.base_json_db import BaseJsonDB
+from .models import TechnicalReport  # pyre-ignore[21]
+from db.base_json_db import BaseJsonDB  # pyre-ignore[21]
 
 
 class TechnicalReportsDB(BaseJsonDB[TechnicalReport]):
@@ -15,7 +15,7 @@ class TechnicalReportsDB(BaseJsonDB[TechnicalReport]):
             backend_dir = os.path.dirname(current_dir)
             storage_dir = os.path.join(backend_dir, "data")
         db_file = os.path.join(storage_dir, "technical_reports.json")
-        super().__init__(db_file, TechnicalReport, label="TechReports")
+        super().__init__(db_file, TechnicalReport, label="TechReports")  # pyre-ignore[19, 28]
 
     # --- Backward-compatible API (delegating to BaseJsonDB) ---
 
@@ -54,7 +54,7 @@ class TechnicalReportsDB(BaseJsonDB[TechnicalReport]):
         """
         with self._lock:
             # PASO 1: Find max existing ID before clearing (for auto-increment reference)
-            max_existing_id = 0
+            max_existing_id: int = 0
             if not clear_existing:
                 for report_data in self._items.values():
                     try:
@@ -103,7 +103,7 @@ class TechnicalReportsDB(BaseJsonDB[TechnicalReport]):
                     return default
                 return str(value).strip()
 
-            auto_increment_counter = max_existing_id
+            auto_increment_counter: int = max_existing_id
 
             for idx, row in enumerate(csv_data):
                 try:
@@ -117,7 +117,7 @@ class TechnicalReportsDB(BaseJsonDB[TechnicalReport]):
                             informe_id = raw_informe_id
                             auto_increment_counter = max(auto_increment_counter, informe_id)
                         else:
-                            auto_increment_counter += 1
+                            auto_increment_counter += 1  # pyre-ignore[58]
                             informe_id = auto_increment_counter
 
                         report_id = f"RPT-{str(informe_id).zfill(4)}"
@@ -136,7 +136,7 @@ class TechnicalReportsDB(BaseJsonDB[TechnicalReport]):
                             informe_id = raw_informe_id
                             auto_increment_counter = max(auto_increment_counter, informe_id)
                         else:
-                            auto_increment_counter += 1
+                            auto_increment_counter += 1  # pyre-ignore[58]
                             informe_id = auto_increment_counter
 
                         report_id = f"RPT-{str(informe_id).zfill(4)}"

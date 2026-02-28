@@ -8,9 +8,15 @@
       "port": 7860
     },
     {
+      "name": "npm-install",
+      "runtimeExecutable": "cmd.exe",
+      "runtimeArgs": ["/c", "cd frontend && npm install --prefer-offline 2>&1 && echo INSTALL_DONE"],
+      "port": 0
+    },
+    {
       "name": "frontend",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["node_modules/vite/bin/vite.js", "--host"],
       "port": 5173,
       "cwd": "frontend"
     }

@@ -4,12 +4,13 @@ Utilidades y helpers para manipulación de PDFs.
 Este módulo contiene funciones de validación y utilidades
 compartidas por los módulos de merge y split.
 """
+from __future__ import annotations
 
 import logging
 from pathlib import Path
 
-from pypdf import PdfReader
-from pypdf.errors import PdfReadError
+from pypdf import PdfReader  # pyre-ignore[21]
+from pypdf.errors import PdfReadError  # pyre-ignore[21]
 
 # Configuración de logging
 logger = logging.getLogger(__name__)

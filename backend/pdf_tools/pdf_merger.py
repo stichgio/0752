@@ -9,6 +9,7 @@ Ejemplo:
     3 PDFs de 10 páginas cada uno generarán un PDF de 30 páginas:
     [P1-PDF1, P1-PDF2, P1-PDF3, P2-PDF1, P2-PDF2, P2-PDF3, ...]
 """
+from __future__ import annotations
 
 import logging
 from pathlib import Path
@@ -112,6 +113,8 @@ def merge_pdfs_interleaved(
             page_counts.append(num_pages)
             logger.info(f"  ✓ {Path(path).name}: {num_pages} páginas")
             
+        except (PDFValidationError, PDFProcessingError):
+            raise
         except Exception as e:
             raise PDFProcessingError(f"Error al procesar {path}: {e}")
     
@@ -152,7 +155,7 @@ def merge_pdfs_interleaved(
             for file_idx, reader in enumerate(readers):
                 page = reader.pages[page_idx]
                 writer.add_page(page)
-                total_pages_added += 1
+                total_pages_added += 1  # type: ignore
                 
                 # Log de progreso cada 10 páginas
                 if total_pages_added % 10 == 0:
@@ -169,7 +172,7 @@ def merge_pdfs_interleaved(
             
             extra_pages = 0
             for file_idx, reader in enumerate(readers):
-                remaining = page_counts[file_idx] - min_pages
+                remaining = page_counts[file_idx] - min_pages  # type: ignore
                 
                 if remaining > 0:
                     file_name = Path(input_paths[file_idx]).name
@@ -180,10 +183,10 @@ def merge_pdfs_interleaved(
                         f"{file_name}: {remaining} páginas añadidas al final"
                     )
                     
-                    for page_idx in range(min_pages, page_counts[file_idx]):
+                    for page_idx in range(min_pages, page_counts[file_idx]):  # type: ignore
                         writer.add_page(reader.pages[page_idx])
-                        total_pages_added += 1
-                        extra_pages += 1
+                        total_pages_added += 1  # type: ignore
+                        extra_pages += 1  # type: ignore
             
             logger.info(f"  ✓ Páginas extra añadidas: {extra_pages}")
         

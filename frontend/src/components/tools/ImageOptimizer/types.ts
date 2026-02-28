@@ -55,6 +55,12 @@ export interface CompressionOptions {
     useWebWorker: boolean;
 }
 
+export interface RenameOptions {
+    enabled: boolean;
+    prefix: string;
+    startAt: number;
+}
+
 export interface CompressionStats {
     totalOriginalSize: number;
     totalCompressedSize: number;
