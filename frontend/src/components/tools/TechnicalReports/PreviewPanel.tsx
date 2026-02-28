@@ -251,10 +251,10 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
                         ].map(item => (
                             <tr key={item.key}>
                                 <td colSpan={2} style={{ ...styles.td, ...styles.rowLabel }}>{item.label}</td>
-                                <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion[item.key], 'normal')}</td>
-                                <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion[item.key], 'critico')}</td>
-                                <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion[item.obsKey] || ''}</td>
-                                <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion[item.sugKey] || ''}</td>
+                                <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion?.[item.key], 'normal')}</td>
+                                <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion?.[item.key], 'critico')}</td>
+                                <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion?.[item.obsKey] || ''}</td>
+                                <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion?.[item.sugKey] || ''}</td>
                             </tr>
                         ))}
 
@@ -262,60 +262,60 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
                         <tr>
                             <td rowSpan={2} style={{ ...styles.td, ...styles.rowLabel, width: '11%', textAlign: 'center' }}>ESCALERA</td>
                             <td style={{ ...styles.td, ...styles.subLabel }}>INTERIOR</td>
-                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.escalera_interior, 'normal')}</td>
-                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.escalera_interior, 'critico')}</td>
-                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.observaciones_escalera_int || ''}</td>
-                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.sugerencias_escalera_int || ''}</td>
+                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion?.escalera_interior, 'normal')}</td>
+                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion?.escalera_interior, 'critico')}</td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion?.observaciones_escalera_int || ''}</td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion?.sugerencias_escalera_int || ''}</td>
                         </tr>
                         <tr>
                             <td style={{ ...styles.td, ...styles.subLabel }}>EXTERIOR</td>
-                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.escalera_exterior, 'normal')}</td>
-                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.escalera_exterior, 'critico')}</td>
-                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.observaciones_escalera_ext || ''}</td>
-                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.sugerencias_escalera_ext || ''}</td>
+                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion?.escalera_exterior, 'normal')}</td>
+                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion?.escalera_exterior, 'critico')}</td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion?.observaciones_escalera_ext || ''}</td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion?.sugerencias_escalera_ext || ''}</td>
                         </tr>
 
                         {/* CUBA */}
                         <tr>
                             <td rowSpan={2} style={{ ...styles.td, ...styles.rowLabel, textAlign: 'center' }}>CUBA</td>
                             <td style={{ ...styles.td, ...styles.subLabel }}>INTERIOR</td>
-                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.cuba_interior, 'normal')}</td>
-                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.cuba_interior, 'critico')}</td>
-                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.observaciones_cuba_int || ''}</td>
-                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.sugerencias_cuba_int || ''}</td>
+                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion?.cuba_interior, 'normal')}</td>
+                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion?.cuba_interior, 'critico')}</td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion?.observaciones_cuba_int || ''}</td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion?.sugerencias_cuba_int || ''}</td>
                         </tr>
                         <tr>
                             <td style={{ ...styles.td, ...styles.subLabel }}>EXTERIOR</td>
-                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.cuba_exterior, 'normal')}</td>
-                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.cuba_exterior, 'critico')}</td>
-                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.observaciones_cuba_ext || ''}</td>
-                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.sugerencias_cuba_ext || ''}</td>
+                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion?.cuba_exterior, 'normal')}</td>
+                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion?.cuba_exterior, 'critico')}</td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion?.observaciones_cuba_ext || ''}</td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion?.sugerencias_cuba_ext || ''}</td>
                         </tr>
 
                         {/* Others */}
                         <tr>
                             <td colSpan={2} style={{ ...styles.td, ...styles.rowLabel }}>LOZA DE FONDO</td>
-                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.loza_fondo, 'normal')}</td>
-                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.loza_fondo, 'critico')}</td>
-                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.observaciones_loza_fondo || ''}</td>
-                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.sugerencias_loza_fondo || ''}</td>
+                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion?.loza_fondo, 'normal')}</td>
+                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion?.loza_fondo, 'critico')}</td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion?.observaciones_loza_fondo || ''}</td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion?.sugerencias_loza_fondo || ''}</td>
                         </tr>
 
                         {/* LOZA TECHO */}
                         <tr>
                             <td rowSpan={2} style={{ ...styles.td, ...styles.rowLabel, textAlign: 'center' }}>LOZA DE TECHO</td>
                             <td style={{ ...styles.td, ...styles.subLabel }}>INTERIOR</td>
-                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.loza_techo_interior, 'normal')}</td>
-                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.loza_techo_interior, 'critico')}</td>
-                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.observaciones_loza_techo_int || ''}</td>
-                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.sugerencias_loza_techo_int || ''}</td>
+                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion?.loza_techo_interior, 'normal')}</td>
+                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion?.loza_techo_interior, 'critico')}</td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion?.observaciones_loza_techo_int || ''}</td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion?.sugerencias_loza_techo_int || ''}</td>
                         </tr>
                         <tr>
                             <td style={{ ...styles.td, ...styles.subLabel }}>EXTERIOR</td>
-                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.loza_techo_exterior, 'normal')}</td>
-                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion.loza_techo_exterior, 'critico')}</td>
-                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.observaciones_loza_techo_ext || ''}</td>
-                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion.sugerencias_loza_techo_ext || ''}</td>
+                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion?.loza_techo_exterior, 'normal')}</td>
+                            <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion?.loza_techo_exterior, 'critico')}</td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion?.observaciones_loza_techo_ext || ''}</td>
+                            <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion?.sugerencias_loza_techo_ext || ''}</td>
                         </tr>
 
                         {[
@@ -325,10 +325,10 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
                         ].map(item => (
                             <tr key={item.key}>
                                 <td colSpan={2} style={{ ...styles.td, ...styles.rowLabel }}>{item.label}</td>
-                                <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion[item.key], 'normal')}</td>
-                                <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion[item.key], 'critico')}</td>
-                                <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion[item.obsKey] || ''}</td>
-                                <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion[item.sugKey] || ''}</td>
+                                <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion?.[item.key], 'normal')}</td>
+                                <td style={{ ...styles.td, textAlign: 'center' }}>{renderCheck(reportData.inspeccion?.[item.key], 'critico')}</td>
+                                <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion?.[item.obsKey] || ''}</td>
+                                <td style={{ ...styles.td, fontSize: '7pt' }}>{reportData.inspeccion?.[item.sugKey] || ''}</td>
                             </tr>
                         ))}
                     </tbody>
@@ -363,61 +363,61 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
                         <tr>
                             <td style={{ ...styles.td, ...styles.rowLabel }}>CONDUCCIÓN</td>
                             {['2', '3', '4', '6', '8', '10', '12'].map(d => (
-                                <td key={d} style={{ ...styles.td, textAlign: 'center' }}>{reportData.valvulas.diametros[d] || ''}</td>
+                                <td key={d} style={{ ...styles.td, textAlign: 'center' }}>{reportData.valvulas?.diametros?.[d] || ''}</td>
                             ))}
                             <td style={styles.td}></td><td style={styles.td}></td>
-                            <td style={styles.td}>{reportData.valvulas.observaciones_conduccion || ''}</td>
-                            <td style={styles.td}>{reportData.valvulas.sugerencias_conduccion || ''}</td>
+                            <td style={styles.td}>{reportData.valvulas?.observaciones_conduccion || ''}</td>
+                            <td style={styles.td}>{reportData.valvulas?.sugerencias_conduccion || ''}</td>
                         </tr>
                         <tr>
                             <td style={{ ...styles.td, ...styles.rowLabel }}>IMPULSIÓN</td>
                             {['2', '3', '4', '6', '8', '10', '12'].map(d => (
                                 <td key={d} style={{ ...styles.td, textAlign: 'center' }}>
-                                    {reportData.valvulas.impulsion ? (reportData.valvulas.impulsion[d] || '') : ''}
+                                    {reportData.valvulas?.impulsion?.[d] || ''}
                                 </td>
                             ))}
                             <td style={styles.td}></td><td style={styles.td}></td>
-                            <td style={styles.td}>{reportData.valvulas.observaciones_impulsion || ''}</td>
-                            <td style={styles.td}>{reportData.valvulas.sugerencias_impulsion || ''}</td>
+                            <td style={styles.td}>{reportData.valvulas?.observaciones_impulsion || ''}</td>
+                            <td style={styles.td}>{reportData.valvulas?.sugerencias_impulsion || ''}</td>
                         </tr>
                         <tr>
                             <td style={{ ...styles.td, ...styles.rowLabel }}>ADUCCIÓN</td>
                             {['2', '3', '4', '6', '8', '10', '12'].map(d => (
                                 <td key={d} style={{ ...styles.td, textAlign: 'center' }}>
-                                    {reportData.valvulas.aduccion ? (reportData.valvulas.aduccion[d] || '') : ''}
+                                    {reportData.valvulas?.aduccion?.[d] || ''}
                                 </td>
                             ))}
                             <td style={styles.td}></td><td style={styles.td}></td>
-                            <td style={styles.td}>{reportData.valvulas.observaciones_aduccion || ''}</td>
-                            <td style={styles.td}>{reportData.valvulas.sugerencias_aduccion || ''}</td>
+                            <td style={styles.td}>{reportData.valvulas?.observaciones_aduccion || ''}</td>
+                            <td style={styles.td}>{reportData.valvulas?.sugerencias_aduccion || ''}</td>
                         </tr>
                         <tr>
                             <td style={{ ...styles.td, ...styles.rowLabel }}>BY PASS</td>
                             {['2', '3', '4', '6', '8', '10', '12'].map(d => (
                                 <td key={d} style={{ ...styles.td, textAlign: 'center' }}>
-                                    {reportData.valvulas.bypass ? (reportData.valvulas.bypass[d] || '') : ''}
+                                    {reportData.valvulas?.bypass?.[d] || ''}
                                 </td>
                             ))}
                             <td style={styles.td}></td><td style={styles.td}></td>
-                            <td style={styles.td}>{reportData.valvulas.observaciones_bypass || ''}</td>
-                            <td style={styles.td}>{reportData.valvulas.sugerencias_bypass || ''}</td>
+                            <td style={styles.td}>{reportData.valvulas?.observaciones_bypass || ''}</td>
+                            <td style={styles.td}>{reportData.valvulas?.sugerencias_bypass || ''}</td>
                         </tr>
                         <tr>
                             <td style={{ ...styles.td, ...styles.rowLabel }}>DESAGÜE</td>
                             {['2', '3', '4', '6', '8', '10', '12'].map(d => (
                                 <td key={d} style={{ ...styles.td, textAlign: 'center' }}>
-                                    {reportData.valvulas.desague ? (reportData.valvulas.desague[d] || '') : ''}
+                                    {reportData.valvulas?.desague?.[d] || ''}
                                 </td>
                             ))}
                             <td style={styles.td}></td><td style={styles.td}></td>
-                            <td style={styles.td}>{reportData.valvulas.observaciones_desague || ''}</td>
-                            <td style={styles.td}>{reportData.valvulas.sugerencias_desague || ''}</td>
+                            <td style={styles.td}>{reportData.valvulas?.observaciones_desague || ''}</td>
+                            <td style={styles.td}>{reportData.valvulas?.sugerencias_desague || ''}</td>
                         </tr>
                         <tr style={{ background: '#d4d8dd' }}>
                             <td style={{ ...styles.td, ...styles.rowLabel }}>TOTAL</td>
                             <td colSpan={7} style={styles.td}></td>
-                            <td style={{ ...styles.td, textAlign: 'center', fontWeight: 'bold' }}>{reportData.valvulas.operativas}</td>
-                            <td style={{ ...styles.td, textAlign: 'center', fontWeight: 'bold' }}>{reportData.valvulas.no_operativas}</td>
+                            <td style={{ ...styles.td, textAlign: 'center', fontWeight: 'bold' }}>{reportData.valvulas?.operativas ?? ''}</td>
+                            <td style={{ ...styles.td, textAlign: 'center', fontWeight: 'bold' }}>{reportData.valvulas?.no_operativas ?? ''}</td>
                             <td style={styles.td}></td><td style={styles.td}></td>
                         </tr>
                     </tbody>
@@ -453,55 +453,55 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
                             <td style={{ ...styles.td, ...styles.rowLabel }}>ADUCCION</td>
                             {['2', '3', '4', '6', '8', '10', '14'].map(d => (
                                 <td key={d} style={{ ...styles.td, textAlign: 'center' }}>
-                                    {reportData.canastillas.aduccion ? (reportData.canastillas.aduccion[d] || '') : ''}
+                                    {reportData.canastillas?.aduccion?.[d] || ''}
                                 </td>
                             ))}
                             <td style={styles.td}></td>
                             <td style={styles.td}></td>
                             <td style={{ ...styles.td, textAlign: 'center' }}>
-                                {reportData.canastillas.observaciones_aduccion || ''}
+                                {reportData.canastillas?.observaciones_aduccion || ''}
                             </td>
                             <td style={{ ...styles.td, textAlign: 'center' }}>
-                                {reportData.canastillas.sugerencias_aduccion || ''}
+                                {reportData.canastillas?.sugerencias_aduccion || ''}
                             </td>
                         </tr>
                         <tr>
                             <td style={{ ...styles.td, ...styles.rowLabel }}>SUCCION</td>
                             {['2', '3', '4', '6', '8', '10', '14'].map(d => (
                                 <td key={d} style={{ ...styles.td, textAlign: 'center' }}>
-                                    {reportData.canastillas.succion ? (reportData.canastillas.succion[d] || '') : ''}
+                                    {reportData.canastillas?.succion?.[d] || ''}
                                 </td>
                             ))}
                             <td style={styles.td}></td>
                             <td style={styles.td}></td>
                             <td style={{ ...styles.td, textAlign: 'center' }}>
-                                {reportData.canastillas.observaciones_succion || ''}
+                                {reportData.canastillas?.observaciones_succion || ''}
                             </td>
                             <td style={{ ...styles.td, textAlign: 'center' }}>
-                                {reportData.canastillas.sugerencias_succion || ''}
+                                {reportData.canastillas?.sugerencias_succion || ''}
                             </td>
                         </tr>
                         <tr>
                             <td style={{ ...styles.td, ...styles.rowLabel }}>DESAGUE</td>
                             {['2', '3', '4', '6', '8', '10', '14'].map(d => (
                                 <td key={d} style={{ ...styles.td, textAlign: 'center' }}>
-                                    {reportData.canastillas.desague ? (reportData.canastillas.desague[d] || '') : ''}
+                                    {reportData.canastillas?.desague?.[d] || ''}
                                 </td>
                             ))}
                             <td style={styles.td}></td>
                             <td style={styles.td}></td>
                             <td style={{ ...styles.td, textAlign: 'center' }}>
-                                {reportData.canastillas.observaciones_desague || ''}
+                                {reportData.canastillas?.observaciones_desague || ''}
                             </td>
                             <td style={{ ...styles.td, textAlign: 'center' }}>
-                                {reportData.canastillas.sugerencias_desague || ''}
+                                {reportData.canastillas?.sugerencias_desague || ''}
                             </td>
                         </tr>
                         <tr style={{ background: '#d4d8dd' }}>
                             <td style={{ ...styles.td, ...styles.rowLabel }}>TOTAL</td>
                             <td colSpan={7} style={styles.td}></td>
-                            <td style={{ ...styles.td, textAlign: 'center', fontWeight: 'bold' }}>{reportData.canastillas.operativas}</td>
-                            <td style={{ ...styles.td, textAlign: 'center', fontWeight: 'bold' }}>{reportData.canastillas.no_operativas}</td>
+                            <td style={{ ...styles.td, textAlign: 'center', fontWeight: 'bold' }}>{reportData.canastillas?.operativas ?? ''}</td>
+                            <td style={{ ...styles.td, textAlign: 'center', fontWeight: 'bold' }}>{reportData.canastillas?.no_operativas ?? ''}</td>
                             <td style={styles.td}></td><td style={styles.td}></td>
                         </tr>
                     </tbody>

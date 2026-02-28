@@ -5,9 +5,9 @@ import json
 import os
 import tempfile
 import threading
-from typing import Dict, List, Optional, TypeVar, Generic
+from typing import Any, Dict, List, Optional, TypeVar, Generic
 
-from pydantic import BaseModel
+from pydantic import BaseModel  # type: ignore
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -25,7 +25,7 @@ class BaseJsonDB(Generic[T]):
         self._model_class = model_class
         self._label = label
         self._lock = threading.Lock()
-        self._items: Dict[str, dict] = {}
+        self._items: Dict[str, Any] = {}
 
         os.makedirs(os.path.dirname(db_file), exist_ok=True)
         print(f"[{self._label}] DB file: {self._db_file}")
@@ -82,20 +82,20 @@ class BaseJsonDB(Generic[T]):
 
     def create(self, item) -> T:
         with self._lock:
-            self._items[item.id] = item.dict()
+            self._items[item.id] = item.model_dump()
             self._save()
             return item
 
     def update(self, item_id: str, item) -> T:
         with self._lock:
-            self._items[item_id] = item.dict()
+            self._items[item_id] = item.model_dump()
             self._save()
             return item
 
     def delete(self, item_id: str) -> bool:
         with self._lock:
             if item_id in self._items:
-                del self._items[item_id]
+                self._items.pop(item_id)
                 self._save()
                 return True
             return False

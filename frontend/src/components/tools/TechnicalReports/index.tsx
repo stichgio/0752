@@ -10,6 +10,8 @@ import LoadingModal from '@/components/common/LoadingModal';
 import { useFocusMode } from '@/hooks/useFocusMode';
 import { useLocalDraft } from '@/hooks/useLocalDraft';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
+import { useSSEProgress } from '@/hooks/useSSEProgress';
+import { getApiBase } from '@/utils/apiBase';
 import { downloadBlob } from '@/utils/downloadBlob';
 
 export default function TechnicalReports() {
@@ -20,6 +22,7 @@ export default function TechnicalReports() {
         hasUnsavedChanges, setHasUnsavedChanges,
     } = useLocalDraft<TechnicalReport>('current_report_draft');
     const { isLoading, loadingMessage, run } = useAsyncAction();
+    const sseProgress = useSSEProgress();
 
     const [logoLeft, setLogoLeft] = useState<File | null>(null);
     const [logoRight, setLogoRight] = useState<File | null>(null);
@@ -138,16 +141,38 @@ export default function TechnicalReports() {
         );
         if (!confirmed) return;
 
-        await run(
-            async () => {
-                const blob = await technicalReportsApi.generateConsolidatedPDF(logoLeft, logoRight);
-                downloadBlob(blob, `informes_tecnicos_consolidado_${reports.length}.pdf`);
+        // Use SSE for real-time progress
+        const formData = new FormData();
+        if (logoLeft) formData.append('logoLeft', logoLeft);
+        if (logoRight) formData.append('logoRight', logoRight);
+
+        sseProgress.run('/api/technical-reports/generate-consolidated-pdf-progress', formData, {
+            onComplete: async (downloadUrl: string) => {
+                try {
+                    const base = getApiBase();
+                    const resp = await fetch(`${base}${downloadUrl}`);
+                    if (!resp.ok) throw new Error(`Download failed: ${resp.status}`);
+                    const blob = await resp.blob();
+                    downloadBlob(blob, `informes_tecnicos_consolidado_${reports.length}.pdf`);
+                } catch (err: any) {
+                    alert(`Error descargando PDF: ${err.message}`);
+                }
             },
-            {
-                message: `Generando PDF consolidado (${reports.length} informes)...`,
-                onError: msg => alert(`Error generando PDF consolidado: ${msg}`)
+            onError: async (errMsg: string) => {
+                // Fallback to original non-SSE endpoint
+                console.warn('SSE failed, falling back:', errMsg);
+                await run(
+                    async () => {
+                        const blob = await technicalReportsApi.generateConsolidatedPDF(logoLeft, logoRight);
+                        downloadBlob(blob, `informes_tecnicos_consolidado_${reports.length}.pdf`);
+                    },
+                    {
+                        message: `Generando PDF consolidado (${reports.length} informes)...`,
+                        onError: msg => alert(`Error generando PDF consolidado: ${msg}`)
+                    }
+                );
             }
-        );
+        });
     };
 
     const isFocusMode = useFocusMode();
@@ -251,7 +276,13 @@ export default function TechnicalReports() {
                 </>
             )}
 
-            {isLoading && <LoadingModal message={loadingMessage} accentColor="#D71921" />}
+            {(isLoading || sseProgress.isLoading) && (
+                <LoadingModal
+                    message={sseProgress.isLoading ? `Generando PDF consolidado (${reports.length} informes)...` : loadingMessage}
+                    accentColor="#D71921"
+                    progress={sseProgress.isLoading ? sseProgress.progress : null}
+                />
+            )}
         </div>
     );
 }

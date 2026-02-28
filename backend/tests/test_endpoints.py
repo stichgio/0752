@@ -4,19 +4,19 @@ Integration tests for PDF Tools and DB endpoints using FastAPI TestClient.
 import io
 import os
 import sys
-import pytest
+import pytest  # pyre-ignore[21]
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from fastapi.testclient import TestClient
-from main import app
+from fastapi.testclient import TestClient  # pyre-ignore[21]
+from main import app  # pyre-ignore[21]
 
 client = TestClient(app)
 
 
 def _make_blank_pdf(pages=1) -> bytes:
     """Create a minimal valid PDF with N blank pages."""
-    from pypdf import PdfWriter
+    from pypdf import PdfWriter  # pyre-ignore[21]
     buf = io.BytesIO()
     w = PdfWriter()
     for _ in range(pages):

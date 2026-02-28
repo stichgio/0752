@@ -73,23 +73,5 @@ export const fichasTecnicasApi = {
         const formData = new FormData();
         appendLogos(formData, logoLeft, logoRight);
         return postBlob('/api/fichas-tecnicas/generate-template-pdf', formData);
-    },
-
-    // ── Word (DOCX) Export ──────────────────────────────────
-
-    generateDOCX: async (fichaId: string, logoLeft?: File | null, logoRight?: File | null) => {
-        const formData = new FormData();
-        formData.append('fichaId', fichaId);
-        appendLogos(formData, logoLeft, logoRight);
-        return postBlob('/api/fichas-tecnicas/generate-docx', formData);
-    },
-
-    generateConsolidatedDOCX: async (logoLeft?: File | null, logoRight?: File | null, fichaIds?: string[]) => {
-        const formData = new FormData();
-        appendLogos(formData, logoLeft, logoRight);
-        if (fichaIds && fichaIds.length > 0) {
-            formData.append('ficha_ids', JSON.stringify(fichaIds));
-        }
-        return postBlob('/api/fichas-tecnicas/generate-consolidated-docx', formData, 300000);
     }
 };

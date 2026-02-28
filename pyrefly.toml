@@ -1,0 +1,15 @@
+project-includes = ["backend"]
+project-excludes = [
+  "**/__pycache__",
+  "**/.pytest_cache",
+  "**/node_modules",
+]
+
+# Make local backend modules importable from the workspace root.
+search-path = ["backend"]
+
+# Pin interpreter + installed third-party packages for Pyrefly/Pyre2 in VS Code.
+python-interpreter-path = "C:/Users/INTEL/AppData/Local/Programs/Python/Python311/python.exe"
+site-package-path = [
+  "C:/Users/INTEL/AppData/Local/Programs/Python/Python311/Lib/site-packages",
+]

@@ -9,6 +9,8 @@ import DashboardLayout from './components/DashboardLayout';
 
 import { REPORT_FIELDS, TEMPLATE_KEY_MAP, DATE_FIELDS, TEMPLATE_HEADERS } from './constants';
 import { useFocusMode } from './hooks/useFocusMode';
+import { useSSEProgress } from './hooks/useSSEProgress';
+import { getApiBase } from './utils/apiBase';
 import { excelSerialToDate, formatDateValue, isDateColumn } from './utils';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
@@ -64,6 +66,7 @@ export default function App() {
     // PDF Loading State
     const [isPdfLoading, setIsPdfLoading] = useState(false);
     const [pdfLoadingMessage, setPdfLoadingMessage] = useState('');
+    const sseProgress = useSSEProgress();
 
     // Focus Mode
     const isFocusMode = useFocusMode();
@@ -534,44 +537,76 @@ export default function App() {
             }
         }
 
-        try {
-            setIsPdfLoading(true);
-            setPdfLoadingMessage(exportScope === 'single' ? 'Generando PDF...' : `Generando PDF consolidado (${payload.length} registros)...`);
+        const isBatch = exportScope === 'all' && payload.length > 1;
 
-            console.log(`Sending PDF request: ${payload.length} reports, ${allImages.size} images`);
-            const response = await fetch(`${API_BASE_URL}/generate-pdf`, {
-                method: 'POST',
-                body: formData,
+        if (isBatch) {
+            // Use SSE for batch mode with real-time progress
+            setPdfLoadingMessage(`Generando PDF consolidado (${payload.length} registros)...`);
+            console.log(`Sending SSE PDF request: ${payload.length} reports, ${allImages.size} images`);
+            sseProgress.run('/api/generate-pdf-progress', formData, {
+                onComplete: async (downloadUrl) => {
+                    try {
+                        const base = getApiBase();
+                        const resp = await fetch(`${base}${downloadUrl}`);
+                        if (!resp.ok) throw new Error(`Download failed: ${resp.status}`);
+                        const blob = await resp.blob();
+                        downloadBlob(blob, `Paneles_Consolidado_${new Date().toISOString().split('T')[0]}.pdf`);
+                    } catch (err) {
+                        alert(`Error descargando PDF: ${err.message}`);
+                    }
+                },
+                onError: async (errMsg) => {
+                    // Fallback to original non-SSE endpoint
+                    console.warn('SSE failed, falling back to standard fetch:', errMsg);
+                    try {
+                        setIsPdfLoading(true);
+                        setPdfLoadingMessage(`Generando PDF consolidado (${payload.length} registros)...`);
+                        const response = await fetch(`${API_BASE_URL}/generate-pdf`, { method: 'POST', body: formData });
+                        if (!response.ok) throw new Error(`Server returned ${response.status}`);
+                        const blob = await response.blob();
+                        downloadBlob(blob, `Paneles_Consolidado_${new Date().toISOString().split('T')[0]}.pdf`);
+                    } catch (fallbackErr) {
+                        alert(`Error generando PDF: ${fallbackErr.message}`);
+                    } finally {
+                        setIsPdfLoading(false);
+                    }
+                }
             });
+        } else {
+            // Single mode or simple request - use original fetch
+            try {
+                setIsPdfLoading(true);
+                setPdfLoadingMessage(exportScope === 'single' ? 'Generando PDF...' : `Generando PDF consolidado (${payload.length} registros)...`);
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`Server returned ${response.status}: ${errorText}`);
+                console.log(`Sending PDF request: ${payload.length} reports, ${allImages.size} images`);
+                const response = await fetch(`${API_BASE_URL}/generate-pdf`, {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`Server returned ${response.status}: ${errorText}`);
+                }
+
+                const blob = await response.blob();
+                const filename = `Reporte_${data[selectedIndex][idColumn] || 'Output'}.pdf`;
+                downloadBlob(blob, filename);
+
+            } catch (err) {
+                console.error("PDF Generation Error:", err);
+                let errorMessage = 'Error al generar PDF: ';
+                if (err.message.includes('Failed to fetch')) {
+                    errorMessage += 'No se puede conectar con el servidor. Verifica que el backend esté activo y la URL sea correcta.';
+                } else if (err.message.includes('NetworkError')) {
+                    errorMessage += 'Error de red. Verifica tu conexión a internet.';
+                } else {
+                    errorMessage += err.message;
+                }
+                alert(errorMessage);
+            } finally {
+                setIsPdfLoading(false);
             }
-
-            const blob = await response.blob();
-            const filename = exportScope === 'single'
-                ? `Reporte_${data[selectedIndex][idColumn] || 'Output'}.pdf`
-                : `Paneles_Consolidado_${new Date().toISOString().split('T')[0]}.pdf`;
-            downloadBlob(blob, filename);
-
-        } catch (err) {
-            setIsPdfLoading(false);
-            console.error("PDF Generation Error:", err);
-
-            // Provide more helpful error messages
-            let errorMessage = 'Error al generar PDF: ';
-            if (err.message.includes('Failed to fetch')) {
-                errorMessage += 'No se puede conectar con el servidor. Verifica que el backend esté activo y la URL sea correcta.';
-            } else if (err.message.includes('NetworkError')) {
-                errorMessage += 'Error de red. Verifica tu conexión a internet.';
-            } else {
-                errorMessage += err.message;
-            }
-
-            alert(errorMessage);
-        } finally {
-            setIsPdfLoading(false);
         }
     };
 
@@ -1066,7 +1101,13 @@ export default function App() {
 
 
                 {/* PDF Loading Modal */}
-                {isPdfLoading && <LoadingModal message={pdfLoadingMessage} accentColor="#D71921" />}
+                {(isPdfLoading || sseProgress.isLoading) && (
+                    <LoadingModal
+                        message={pdfLoadingMessage}
+                        accentColor="#D71921"
+                        progress={sseProgress.isLoading ? sseProgress.progress : null}
+                    />
+                )}
 
             </div>
         </DashboardLayout>

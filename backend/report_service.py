@@ -7,22 +7,22 @@ import io
 import gc
 import tempfile
 import hashlib
-from jinja2 import Environment, FileSystemLoader
-import jinja2
+from jinja2 import Environment, FileSystemLoader  # pyre-ignore[21]
+import jinja2  # pyre-ignore[21]
 
 # WeasyPrint imports
 if os.name == 'nt':
     gtk_path = r"C:\Program Files\GTK3-Runtime Win64\bin"
     if os.path.isdir(gtk_path):
         os.environ['PATH'] = gtk_path + os.pathsep + os.environ.get('PATH', '')
-        if hasattr(os, 'add_dll_directory'):
+        if hasattr(os, 'add_dll_directory'):  # pyre-ignore[16]
             try:
-                os.add_dll_directory(gtk_path)
+                os.add_dll_directory(gtk_path)  # type: ignore[attr-defined]  # pyre-ignore[16]
             except Exception:
                 pass
 
 try:
-    from weasyprint import HTML
+    from weasyprint import HTML  # pyre-ignore[21]
     WEASYPRINT_AVAILABLE = True
 except (OSError, ImportError) as e:
     print(f"WARNING: WeasyPrint not available: {e}")
@@ -51,10 +51,10 @@ PDF_ENGINE_AVAILABLE = WEASYPRINT_AVAILABLE or (CHROME_PATH is not None)
 
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
-import piexif
-from PIL import Image
+import piexif  # pyre-ignore[21]
+from PIL import Image  # pyre-ignore[21]
 import asyncio
-import httpx
+import httpx  # pyre-ignore[21]
 
 
 class BoundedCache:
@@ -206,7 +206,7 @@ def _compress_pdf_with_ghostscript(input_path, output_path=None, quality="printe
         stats = {
             "original_size": original_size,
             "compressed_size": compressed_size,
-            "reduction_percent": round(reduction, 1),
+            "reduction_percent": round(reduction, 1),  # pyre-ignore[6]
             "quality": quality
         }
 
@@ -215,7 +215,7 @@ def _compress_pdf_with_ghostscript(input_path, output_path=None, quality="printe
             if replace_original:
                 # Reemplazar original con comprimido
                 os.remove(input_path)
-                shutil.move(output_path, input_path)
+                shutil.move(output_path, input_path)  # pyre-ignore[6]
                 print(f"[GS] ✅ Comprimido: {original_size/1024/1024:.1f}MB → {compressed_size/1024/1024:.1f}MB ({reduction:.1f}% reducción)")
                 return True, input_path, stats
             else:
@@ -238,7 +238,7 @@ def _compress_pdf_with_ghostscript(input_path, output_path=None, quality="printe
         if replace_original and os.path.exists(output_path):
             try:
                 os.remove(output_path)
-            except:
+            except OSError:
                 pass
         return False, input_path, {"error": str(e)}
 
@@ -460,7 +460,7 @@ class ReportService:
                         def read_file():
                             with open(f_path, "rb") as f:
                                 return f.read()
-                        content = await loop.run_in_executor(None, read_file)
+                        content = await loop.run_in_executor(None, read_file)  # pyre-ignore[6]
                     else:
                         return None
 
@@ -548,8 +548,8 @@ class ReportService:
 
         for res in results:
             if res:
-                processed_images.append(res["data"])
-                orientations.append(res["orientation"])
+                processed_images.append(res["data"])  # pyre-ignore[16]
+                orientations.append(res["orientation"])  # pyre-ignore[16]
 
         processed_images.sort(key=lambda x: x["order"])
 
@@ -565,7 +565,7 @@ class ReportService:
 
         return processed_images, layout_mode, img_count
 
-    async def generate_batch_pdf(self, reports_list, output_path=None, logo_left=None, logo_right=None, custom_template_str=None, template_name=None):
+    async def generate_batch_pdf(self, reports_list, output_path=None, logo_left=None, logo_right=None, custom_template_str=None, template_name=None, on_progress=None):
         """
         Pipeline optimizado con BATCHING para generación de PDFs
 
@@ -574,7 +574,7 @@ class ReportService:
         - Genera PDFs en lotes paralelos (PDF_BATCH_SIZE)
         - Merge incremental para liberar memoria
         """
-        from pypdf import PdfWriter
+        from pypdf import PdfWriter  # pyre-ignore[21]
         from concurrent.futures import ThreadPoolExecutor, as_completed
         import time
 
@@ -590,7 +590,7 @@ class ReportService:
 
         # Template Selection con manejo de errores
         if custom_template_str:
-            from jinja2 import Template
+            from jinja2 import Template  # pyre-ignore[21]
             template = Template(custom_template_str)
         elif template_name:
             # Check if it's in the technical reports templates
@@ -601,7 +601,7 @@ class ReportService:
             else:
                  try:
                     template = self.get_template(template_name)
-                 except:
+                 except Exception:
                     print(f"Template {template_name} not found, falling back to default")
                     template = self.template
         else:
@@ -617,7 +617,7 @@ class ReportService:
                 files = report.get("files", [])
 
                 # Procesar imágenes
-                images, layout_mode, img_count = await self._process_files_serial(
+                images, layout_mode, img_count = await self._process_files_serial(  # pyre-ignore[6, 16]
                     files,
                     max_size=MAX_IMAGE_SIZE,
                     quality=JPEG_QUALITY
@@ -667,6 +667,8 @@ class ReportService:
             all_html_items.extend(valid_results)
 
             print(f"[PDF] HTMLs prepared: {len(all_html_items)}/{total_reports}")
+            if on_progress:
+                await on_progress("preparing", len(all_html_items), total_reports, "")
 
             # GC después de cada lote de HTMLs
             if batch_end % GC_INTERVAL == 0:
@@ -689,13 +691,13 @@ class ReportService:
         # Procesar en lotes de PDF_BATCH_SIZE
         for batch_start in range(0, len(all_html_items), PDF_BATCH_SIZE):
             batch_end = min(batch_start + PDF_BATCH_SIZE, len(all_html_items))
-            batch_items = all_html_items[batch_start:batch_end]
+            batch_items = all_html_items[batch_start:batch_end]  # pyre-ignore[16]
 
             # Generar lote de PDFs en paralelo usando ThreadPoolExecutor
             with ThreadPoolExecutor(max_workers=PDF_BATCH_SIZE) as executor:
                 # Enviar todos los trabajos del lote simultáneamente
                 future_to_index = {
-                    executor.submit(_render_pdf_to_file_safe, item['html']): item['index']
+                    executor.submit(_render_pdf_to_file_safe, item['html']): item['index']  # pyre-ignore[6]
                     for item in batch_items
                 }
 
@@ -722,6 +724,8 @@ class ReportService:
             elapsed = time.time() - start_time
             rate = processed_count / elapsed if elapsed > 0 else 0
             print(f"[PDF] Generated: {processed_count}/{len(all_html_items)} PDFs ({rate:.1f} PDFs/sec)")
+            if on_progress:
+                await on_progress("rendering", processed_count, len(all_html_items), "")
 
             # GC después de cada lote
             gc.collect()
@@ -733,6 +737,8 @@ class ReportService:
         # FASE 3: Merge con STREAMING - Escribe directamente a disco
         # =====================================================================
         print(f"[PDF] Streaming merge of {len(all_pdf_paths)} PDFs...")
+        if on_progress:
+            await on_progress("merging", 0, len(all_pdf_paths), "")
         merge_start = time.time()
 
         # Determinar archivo de salida
@@ -752,7 +758,7 @@ class ReportService:
         merge_batch_size = 10  # Procesar en lotes pequeños para liberar memoria
 
         for batch_idx in range(0, len(all_pdf_paths), merge_batch_size):
-            batch_paths = all_pdf_paths[batch_idx:batch_idx + merge_batch_size]
+            batch_paths = all_pdf_paths[batch_idx:batch_idx + merge_batch_size]  # pyre-ignore[16]
 
             for pdf_path in batch_paths:
                 try:
@@ -766,7 +772,7 @@ class ReportService:
                     try:
                         if os.path.exists(pdf_path):
                             os.remove(pdf_path)
-                    except:
+                    except OSError:
                         pass
 
             # GC después de cada lote de merge
@@ -789,6 +795,8 @@ class ReportService:
         compression_stats = None
         if GHOSTSCRIPT_ENABLED and total_reports > 1:  # Solo comprimir si hay múltiples reportes
             print(f"[PDF] Applying Ghostscript compression (quality={GHOSTSCRIPT_QUALITY})...")
+            if on_progress:
+                await on_progress("compressing", 0, 1, "")
             compress_start = time.time()
 
             success, final_output_path, compression_stats = _compress_pdf_with_ghostscript(
@@ -842,7 +850,8 @@ def _render_pdf_to_file_safe(html_string):
             temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
 
             # ✅ CONFIGURACIÓN SEGURA: Sin optimizaciones arriesgadas
-            HTML(string=html_string, base_url=os.getcwd()).write_pdf(
+            assert HTML is not None, "WeasyPrint HTML not available"  # pyre-ignore[6]
+            HTML(string=html_string, base_url=os.getcwd()).write_pdf(  # pyre-ignore[16]
                 temp_pdf.name,
                 optimize_images=False,  # Ya optimizadas
                 uncompressed_pdf=False  # Comprimir
@@ -879,8 +888,7 @@ def _render_pdf_with_chrome(html_string):
         pdf_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
         pdf_file.close()
 
-        result = subprocess.run(
-            [
+        chrome_args: list = [arg for arg in [
                 CHROME_PATH,
                 '--headless',
                 '--disable-gpu',
@@ -893,7 +901,9 @@ def _render_pdf_with_chrome(html_string):
                 '--paper-width=8.27',
                 '--paper-height=11.69',
                 html_file.name,
-            ],
+            ] if arg is not None]
+        result = subprocess.run(
+            chrome_args,
             capture_output=True,
             text=True,
             timeout=60,

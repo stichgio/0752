@@ -3,6 +3,7 @@ PDF Compressor Backend Router
 Provides endpoints for PDF file compression using Ghostscript.
 Falls back to pypdf-based compression when Ghostscript is not available.
 """
+from __future__ import annotations
 
 import io
 import logging
@@ -11,11 +12,11 @@ import shutil
 import subprocess
 import tempfile
 import zipfile
-from typing import Optional
+from typing import Any, Optional
 from urllib.parse import quote
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
-from fastapi.responses import Response
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile  # type: ignore
+from fastapi.responses import Response  # type: ignore
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/compressor", tags=["compressor"])
@@ -90,7 +91,7 @@ def _reduce_image_quality(page, quality: str) -> None:
     the rest of the page can still benefit from stream compression.
     """
     try:
-        from PIL import Image as PILImage
+        from PIL import Image as PILImage  # type: ignore
     except ImportError:
         return  # Pillow not available — skip image reduction
 
@@ -135,7 +136,7 @@ def _reduce_image_quality(page, quality: str) -> None:
                 buf = _io.BytesIO()
                 img.save(buf, format="JPEG", quality=jpeg_quality, optimize=True)
                 obj._data = buf.getvalue()
-                from pypdf.generic import NameObject, NumberObject
+                from pypdf.generic import NameObject, NumberObject  # type: ignore
                 obj[NameObject("/Filter")] = NameObject("/DCTDecode")
                 obj[NameObject("/Length")] = NumberObject(len(obj._data))
             except Exception:
@@ -152,7 +153,7 @@ def compress_pdf_pypdf(input_path: str, output_path: str, quality: str = "ebook"
     Returns True if output file was created successfully.
     """
     try:
-        from pypdf import PdfReader, PdfWriter
+        from pypdf import PdfReader, PdfWriter  # type: ignore
 
         reader = PdfReader(input_path)
         writer = PdfWriter()
@@ -213,7 +214,7 @@ def create_compression_headers(
     }
 
     if original_size > 0:
-        reduction = round((original_size - compressed_size) / original_size * 100, 1)
+        reduction = round(float(original_size - compressed_size) / original_size * 100, 1)  # type: ignore
         headers["X-Reduction-Percent"] = str(reduction)
     else:
         headers["X-Reduction-Percent"] = "0"
@@ -237,8 +238,8 @@ def compress_pdf_ghostscript(input_path: str, output_path: str, quality: str = "
     if not available or not gs_cmd:
         return False
 
-    cmd = [
-        gs_cmd,
+    cmd: list[str] = [
+        str(gs_cmd),
         "-sDEVICE=pdfwrite",
         "-dCompatibilityLevel=1.4",
         f"-dPDFSETTINGS={gs_quality}",
@@ -298,7 +299,7 @@ def _compress_pdf(input_path: str, output_path: str, quality: str = "ebook") -> 
 
 def validate_pdf_file(filename: str) -> bool:
     """Validate if file has PDF extension."""
-    ext = os.path.splitext(filename)[1].lower()
+    ext = os.path.splitext(str(filename))[1].lower()
     return ext == ".pdf"
 
 
@@ -306,14 +307,14 @@ async def _process_single_pdf(
     file: UploadFile,
     temp_dir: str,
     pdf_quality: str,
-) -> tuple[str, bytes, dict]:
+) -> tuple[str, bytes, dict[str, Any]]:
     """
     Process a single PDF file for compression.
     Returns: (filename, content, result_metadata)
     """
-    original_content = await file.read()
-    original_size = len(original_content)
-    filename = file.filename or "documento.pdf"
+    original_content: bytes = await file.read()
+    original_size: int = len(original_content)
+    filename: str = file.filename or "documento.pdf"
 
     # Validate PDF extension
     if not validate_pdf_file(filename):
@@ -372,7 +373,7 @@ async def _process_single_pdf(
         "filename": filename,
         "original_size": original_size,
         "compressed_size": compressed_size,
-        "reduction_percent": round(reduction_percent, 1),
+        "reduction_percent": round(float(reduction_percent), 1),  # type: ignore
         "success": success and compressed_size < original_size,
         "error": error_msg,
     }
@@ -431,9 +432,9 @@ async def compress_single_pdf(
     """
     Compress a single PDF file and return it directly.
     """
-    original_content = await file.read()
-    original_size = len(original_content)
-    filename = file.filename or "documento.pdf"
+    original_content: bytes = await file.read()
+    original_size: int = len(original_content)
+    filename: str = file.filename or "documento.pdf"
 
     # Validate PDF extension
     if not validate_pdf_file(filename):

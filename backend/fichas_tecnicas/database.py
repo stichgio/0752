@@ -4,8 +4,8 @@ Gestor de Base de Datos en JSON para Fichas Técnicas
 import os
 from typing import List, Dict, Optional
 from datetime import datetime
-from .models import FichaTecnica, ProductoQuimico, ServicioEfectuar, TiposTratamiento, ObservacionesRecomendaciones
-from db.base_json_db import BaseJsonDB
+from .models import FichaTecnica, ProductoQuimico, ServicioEfectuar, TiposTratamiento, ObservacionesRecomendaciones  # type: ignore
+from db.base_json_db import BaseJsonDB  # type: ignore
 
 
 class FichasTecnicasDB(BaseJsonDB[FichaTecnica]):
@@ -15,7 +15,7 @@ class FichasTecnicasDB(BaseJsonDB[FichaTecnica]):
             backend_dir = os.path.dirname(current_dir)
             storage_dir = os.path.join(backend_dir, "data")
         db_file = os.path.join(storage_dir, "fichas_tecnicas.json")
-        super().__init__(db_file, FichaTecnica, label="FichasTecnicas")
+        super().__init__(db_file, FichaTecnica, label="FichasTecnicas")  # type: ignore
 
     # --- Backward-compatible API (delegating to BaseJsonDB) ---
 
@@ -186,7 +186,7 @@ class FichasTecnicasDB(BaseJsonDB[FichaTecnica]):
                         last_modified=datetime.now().isoformat()
                     )
 
-                    self._items[ficha.id] = ficha.dict()
+                    self._items[ficha.id] = ficha.model_dump()
                     imported.append(ficha)
 
                 except Exception as e:

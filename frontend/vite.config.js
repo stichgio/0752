@@ -19,7 +19,8 @@ export default defineConfig({
     },
     resolve: {
         alias: {
-            '@': resolve(__dirname, './src')
+            '@': resolve(__dirname, './src'),
+            'framer-motion': resolve(__dirname, 'node_modules/framer-motion/dist/cjs/index.js')
         }
     },
     server: {

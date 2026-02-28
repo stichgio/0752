@@ -1,9 +1,10 @@
-import React, { forwardRef, useState, useEffect } from 'react';
+import React, { forwardRef, useState, useEffect, useRef } from 'react';
 import { formatDateValue } from '../utils';
 
 const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, customTemplate, customColumns = [], isFocusMode = false }, ref) => {
     const [layoutMode, setLayoutMode] = useState('grid');
     const [renderedHtml, setRenderedHtml] = useState('');
+    const templateObjUrlsRef = useRef([]);
 
     const normalizePhotoGridTemplate = (sourceHtml) => {
         if (!sourceHtml || typeof sourceHtml !== 'string') return sourceHtml;
@@ -84,10 +85,21 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
 
     // Render custom template effect
     useEffect(() => {
+        // Revoke old object URLs from previous render
+        templateObjUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
+        templateObjUrlsRef.current = [];
+
         if (!customTemplate) {
             setRenderedHtml('');
             return;
         }
+
+        const newObjUrls = [];
+        const trackObjectURL = (file) => {
+            const url = URL.createObjectURL(file);
+            newObjUrls.push(url);
+            return url;
+        };
 
         const renderTemplate = async () => {
             let html = normalizePhotoGridTemplate(customTemplate.content);
@@ -299,7 +311,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                 const index = parseInt(indexStr);
                 if (images && images[index]) {
                     if (property === 'path') {
-                        return URL.createObjectURL(images[index]);
+                        return trackObjectURL(images[index]);
                     } else if (property === 'name') {
                         return images[index].name;
                     }
@@ -353,7 +365,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
 
                 for (let i = 0; i < imagesToRender.length; i++) {
                     const img = imagesToRender[i];
-                    const imgUrl = URL.createObjectURL(img);
+                    const imgUrl = trackObjectURL(img);
                     let itemHtml = loopContent;
                     // Replace {{ img.path }}
                     itemHtml = itemHtml.replaceAll('{{ img.path }}', imgUrl);
@@ -400,10 +412,17 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
             });
 
 
+            templateObjUrlsRef.current = newObjUrls;
             setRenderedHtml(html);
         };
 
         renderTemplate();
+
+        return () => {
+            // Cleanup on unmount
+            templateObjUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
+            templateObjUrlsRef.current = [];
+        };
     }, [customTemplate, data, images, mappings, logoLeft, logoRight, customColumns]);
 
 
@@ -415,14 +434,19 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
         }
 
         const analyzeImages = async () => {
+            const objectUrls = [];
             const orientations = await Promise.all(
                 images.map(img => new Promise(resolve => {
                     const el = new window.Image();
+                    const objUrl = URL.createObjectURL(img);
+                    objectUrls.push(objUrl);
                     el.onload = () => resolve(el.width >= el.height); // true = landscape
                     el.onerror = () => resolve(true);
-                    el.src = URL.createObjectURL(img);
+                    el.src = objUrl;
                 }))
             );
+            // Revoke all object URLs after analysis
+            objectUrls.forEach(url => URL.revokeObjectURL(url));
 
             const count = images.length;
             const majorityLandscape = orientations.filter(Boolean).length > orientations.length / 2;

@@ -108,18 +108,22 @@
         /* === TOP INFO BAR === */
         .info-bar {
             display: flex;
+            flex-wrap: nowrap;
             justify-content: space-between;
+            align-items: center;
             background: #f5f5f5;
             border: 1px solid #ddd;
             padding: 1.5mm 3mm;
             margin-bottom: 2mm;
             font-size: 7.5pt;
             flex-shrink: 0;
+            white-space: nowrap;
         }
 
         .info-item {
             display: flex;
             gap: 1mm;
+            white-space: nowrap;
         }
 
         .info-label {
@@ -230,34 +234,14 @@
 
         /* === LAYOUT: 3 IMAGES (2 top + 1 centered bottom) === */
         .layout-3 {
-            display: flex;
-            flex-direction: column;
-            gap: 2mm;
-            width: 100%;
-            height: 100%;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: repeat(2, 1fr);
         }
 
-        .layout-3 .top-row {
-            display: flex;
-            flex-direction: row;
-            gap: 2mm;
-            height: calc(50% - 1mm);
-        }
-
-        .layout-3 .top-row .photo-item {
-            flex: 1;
-            height: 100%;
-        }
-
-        .layout-3 .bottom-row {
-            display: flex;
-            justify-content: center;
-            height: calc(50% - 1mm);
-        }
-
-        .layout-3 .bottom-row .photo-item {
+        .layout-3 .photo-item:nth-child(3) {
+            grid-column: 1 / -1;
+            justify-self: center;
             width: calc(50% - 1mm);
-            height: 100%;
         }
 
         /* === LAYOUT: 4 IMAGES (2x2 grid) === */
@@ -358,18 +342,14 @@
             {% if report.images|length == 3 %}
             <!-- Special layout for 3 images -->
             <div class="photo-grid layout-3">
-                <div class="top-row">
-                    <div class="photo-item">
-                        <img src="{{ report.images[0].path }}" alt="{{ report.images[0].name }}">
-                    </div>
-                    <div class="photo-item">
-                        <img src="{{ report.images[1].path }}" alt="{{ report.images[1].name }}">
-                    </div>
+                <div class="photo-item">
+                    <img src="{{ report.images[0].path }}" alt="{{ report.images[0].name }}">
                 </div>
-                <div class="bottom-row">
-                    <div class="photo-item">
-                        <img src="{{ report.images[2].path }}" alt="{{ report.images[2].name }}">
-                    </div>
+                <div class="photo-item">
+                    <img src="{{ report.images[1].path }}" alt="{{ report.images[1].name }}">
+                </div>
+                <div class="photo-item">
+                    <img src="{{ report.images[2].path }}" alt="{{ report.images[2].name }}">
                 </div>
             </div>
             {% else %}

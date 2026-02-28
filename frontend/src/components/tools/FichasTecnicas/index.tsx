@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, FileDown, Files, FileText } from 'lucide-react';
+import { ChevronLeft, ChevronRight, FileDown, Files } from 'lucide-react';
 import DatabasePanel from './DatabasePanel';
 import PreviewPanel from './PreviewPanel';
 import FormPanel from './FormPanel';
@@ -9,6 +9,8 @@ import LoadingModal from '@/components/common/LoadingModal';
 import { useFocusMode } from '@/hooks/useFocusMode';
 import { useLocalDraft } from '@/hooks/useLocalDraft';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
+import { useSSEProgress } from '@/hooks/useSSEProgress';
+import { getApiBase } from '@/utils/apiBase';
 import { downloadBlob } from '@/utils/downloadBlob';
 
 export default function FichasTecnicas() {
@@ -19,6 +21,7 @@ export default function FichasTecnicas() {
         hasUnsavedChanges, setHasUnsavedChanges,
     } = useLocalDraft<FichaTecnica>('current_ficha_draft');
     const { isLoading, loadingMessage, run } = useAsyncAction();
+    const sseProgress = useSSEProgress();
 
     const [logoLeft, setLogoLeft] = useState<File | null>(null);
     const [logoRight, setLogoRight] = useState<File | null>(null);
@@ -105,16 +108,38 @@ export default function FichasTecnicas() {
         );
         if (!confirmed) return;
 
-        await run(
-            async () => {
-                const blob = await fichasTecnicasApi.generateConsolidatedPDF(logoLeft, logoRight);
-                downloadBlob(blob, `fichas_tecnicas_consolidado_${fichas.length}.pdf`);
+        // Use SSE for real-time progress
+        const formData = new FormData();
+        if (logoLeft) formData.append('logoLeft', logoLeft);
+        if (logoRight) formData.append('logoRight', logoRight);
+
+        sseProgress.run('/api/fichas-tecnicas/generate-consolidated-pdf-progress', formData, {
+            onComplete: async (downloadUrl: string) => {
+                try {
+                    const base = getApiBase();
+                    const resp = await fetch(`${base}${downloadUrl}`);
+                    if (!resp.ok) throw new Error(`Download failed: ${resp.status}`);
+                    const blob = await resp.blob();
+                    downloadBlob(blob, `fichas_tecnicas_consolidado_${fichas.length}.pdf`);
+                } catch (err: any) {
+                    alert(`Error descargando PDF: ${err.message}`);
+                }
             },
-            {
-                message: `Generando PDF consolidado (${fichas.length} fichas)...`,
-                onError: msg => alert(`Error generando PDF consolidado: ${msg}`)
+            onError: async (errMsg: string) => {
+                // Fallback to original non-SSE endpoint
+                console.warn('SSE failed, falling back:', errMsg);
+                await run(
+                    async () => {
+                        const blob = await fichasTecnicasApi.generateConsolidatedPDF(logoLeft, logoRight);
+                        downloadBlob(blob, `fichas_tecnicas_consolidado_${fichas.length}.pdf`);
+                    },
+                    {
+                        message: `Generando PDF consolidado (${fichas.length} fichas)...`,
+                        onError: msg => alert(`Error generando PDF consolidado: ${msg}`)
+                    }
+                );
             }
-        );
+        });
     };
 
     const handleDownloadPDF = async () => {
@@ -138,42 +163,6 @@ export default function FichasTecnicas() {
                 downloadBlob(blob, `plantilla_ficha_tecnica.pdf`);
             },
             { message: 'Generando plantilla PDF...', onError: msg => alert(`Error generando plantilla PDF: ${msg}`) }
-        );
-    };
-
-    const handleDownloadDOCX = async () => {
-        if (!selectedFichaId) {
-            alert('Seleccione una ficha para exportar a Word');
-            return;
-        }
-        await run(
-            async () => {
-                const blob = await fichasTecnicasApi.generateDOCX(selectedFichaId, logoLeft, logoRight);
-                downloadBlob(blob, `ficha_tecnica_${selectedFichaId}.docx`);
-            },
-            { message: 'Generando Word...', onError: msg => alert(`Error generando Word: ${msg}`) }
-        );
-    };
-
-    const handleDownloadConsolidatedDOCX = async () => {
-        if (fichas.length === 0) {
-            alert('No hay fichas para exportar');
-            return;
-        }
-        const confirmed = window.confirm(
-            `¿Desea generar documentos Word para las ${fichas.length} fichas?\n\nSe descargará un archivo ZIP con todos los documentos .docx.`
-        );
-        if (!confirmed) return;
-
-        await run(
-            async () => {
-                const blob = await fichasTecnicasApi.generateConsolidatedDOCX(logoLeft, logoRight);
-                downloadBlob(blob, `fichas_tecnicas_${fichas.length}_docx.zip`);
-            },
-            {
-                message: `Generando Word consolidado (${fichas.length} fichas)...`,
-                onError: msg => alert(`Error generando Word consolidado: ${msg}`)
-            }
         );
     };
 
@@ -224,27 +213,6 @@ export default function FichasTecnicas() {
                             PDF Consolidado
                         </button>
 
-                        {/* Separador visual */}
-                        <div className="w-px h-6 bg-[#444]"></div>
-
-                        <button
-                            onClick={handleDownloadDOCX}
-                            disabled={!selectedFichaId || isLoading}
-                            className="btn-secondary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                            title={selectedFichaId ? "Descargar Word de la ficha actual" : "Seleccione una ficha primero"}
-                        >
-                            <FileText size={16} />
-                            Word
-                        </button>
-                        <button
-                            onClick={handleDownloadConsolidatedDOCX}
-                            disabled={fichas.length === 0 || isLoading}
-                            className="btn-secondary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                            title={`Descargar Word consolidado con ${fichas.length} fichas`}
-                        >
-                            <Files size={16} />
-                            Word Consolidado
-                        </button>
                     </div>
                 </div>
             </div>
@@ -304,7 +272,13 @@ export default function FichasTecnicas() {
                     </div>
                 </>
             )}
-            {isLoading && <LoadingModal message={loadingMessage} accentColor="#00a0b0" />}
+            {(isLoading || sseProgress.isLoading) && (
+                <LoadingModal
+                    message={sseProgress.isLoading ? `Generando PDF consolidado (${fichas.length} fichas)...` : loadingMessage}
+                    accentColor="#00a0b0"
+                    progress={sseProgress.isLoading ? sseProgress.progress : null}
+                />
+            )}
         </div>
     );
 }
