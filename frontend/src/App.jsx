@@ -13,7 +13,7 @@ import { useSSEProgress } from './hooks/useSSEProgress';
 import { getApiBase } from './utils/apiBase';
 import { excelSerialToDate, formatDateValue, isDateColumn } from './utils';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const API_BASE_URL = `${getApiBase()}/api`;
 
 export default function App() {
     const panelRef = useRef(null);
