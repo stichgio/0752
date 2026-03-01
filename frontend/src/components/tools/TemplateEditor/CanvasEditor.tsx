@@ -12,6 +12,7 @@ import {
   PageSettings,
   normalizeVariableRegistry,
   deriveVariableDefinitionsFromElements,
+  ensureDocumentPages,
 } from './canvasTypes';
 import { PRESET_BLOCKS } from './utils/presetBlocks';
 import { SidebarRoot } from './sidebar/SidebarRoot';
@@ -154,6 +155,8 @@ export default function CanvasEditor({
   const MAX_SIDEBAR_WIDTH = 500;
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const pages = useMemo(() => ensureDocumentPages(doc), [doc]);
+  const [activePageId, setActivePageId] = useState<string>(pages[0]?.id || 'page-1');
   const [zoom, setZoom] = useState(75);
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
@@ -162,6 +165,12 @@ export default function CanvasEditor({
   const hasMigrated = useRef(false);
   const bodyRef = useRef<HTMLDivElement>(null);
   const variableRegistry = useMemo(() => normalizeVariableRegistry(doc.variables), [doc.variables]);
+
+  useEffect(() => {
+    if (!pages.find((page) => page.id === activePageId)) {
+      setActivePageId(pages[0]?.id || 'page-1');
+    }
+  }, [activePageId, pages]);
 
   useEffect(() => {
     try {
@@ -791,6 +800,30 @@ export default function CanvasEditor({
     selectedElements.length >= 2 && selectedElements.every((element) => element.type !== 'group');
   const canUngroup = selectedElement?.type === 'group';
 
+  const updatePages = useCallback((nextPages: ReturnType<typeof ensureDocumentPages>) => {
+    onChange({ ...doc, pages: nextPages });
+  }, [doc, onChange]);
+
+  const createPage = useCallback(() => {
+    const nextPage = { id: `page-${Date.now()}`, name: `Página ${pages.length + 1}`, elementIds: [] as string[] };
+    const nextPages = [...pages, nextPage];
+    updatePages(nextPages);
+    setActivePageId(nextPage.id);
+  }, [pages, updatePages]);
+
+  const duplicatePage = useCallback((pageId: string) => {
+    const source = pages.find((page) => page.id === pageId);
+    if (!source) return;
+    const cloned = { ...source, id: `page-${Date.now()}`, name: `${source.name} copia` };
+    updatePages([...pages, cloned]);
+  }, [pages, updatePages]);
+
+  const removePage = useCallback((pageId: string) => {
+    if (pages.length <= 1) return;
+    const nextPages = pages.filter((page) => page.id !== pageId);
+    updatePages(nextPages);
+  }, [pages, updatePages]);
+
   const selectedElementMetrics = selectedElement
     ? {
       x: selectedElement.position.x,
@@ -863,6 +896,21 @@ export default function CanvasEditor({
 
         {/* Canvas Area */}
         <div className="flex-1 relative flex flex-col min-w-0 overflow-hidden">
+          <div className="border-b border-neutral-200 bg-white px-3 py-1.5 flex items-center gap-2 overflow-x-auto">
+            {pages.map((page, index) => (
+              <button
+                key={page.id}
+                onClick={() => setActivePageId(page.id)}
+                className={`px-2 py-1 text-xs rounded border ${activePageId === page.id ? 'border-violet-400 bg-violet-50 text-violet-700' : 'border-neutral-200 text-neutral-600'}`}
+                title={page.name}
+              >
+                {index + 1}. {page.name}
+              </button>
+            ))}
+            <button onClick={createPage} className="px-2 py-1 text-xs rounded border border-neutral-300">+ Página</button>
+            <button onClick={() => duplicatePage(activePageId)} className="px-2 py-1 text-xs rounded border border-neutral-300">Duplicar</button>
+            <button onClick={() => removePage(activePageId)} className="px-2 py-1 text-xs rounded border border-neutral-300">Eliminar</button>
+          </div>
           <CanvasArea
             document={doc}
             pageSettings={pageSettings}
