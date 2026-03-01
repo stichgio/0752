@@ -188,6 +188,19 @@
             display: block;
         }
 
+        /* === LAYOUT: 1 IMAGE (single centered) === */
+        .layout-1 {
+            grid-template-columns: 1fr;
+            grid-template-rows: 1fr;
+            justify-items: center;
+            align-items: center;
+        }
+
+        .layout-1 .photo-item {
+            height: 100%;
+            max-width: 70%;
+        }
+
         /* === LAYOUT: 2 IMAGES (side by side, centered) === */
         .layout-2 {
             grid-template-columns: 1fr 1fr;
@@ -242,6 +255,49 @@
         }
 
         .layout-4 .photo-item {
+            height: 100%;
+        }
+
+        /* === LAYOUT: 5 IMAGES (2+2+1 centered) === */
+        .layout-5 {
+            display: flex;
+            flex-direction: column;
+            gap: 2mm;
+            width: 100%;
+            height: 100%;
+        }
+
+        .layout-5 .photo-row {
+            display: flex;
+            flex-direction: row;
+            gap: 2mm;
+            height: calc(33.333% - 1.33mm);
+        }
+
+        .layout-5 .photo-row .photo-item {
+            flex: 1;
+            height: 100%;
+        }
+
+        .layout-5 .photo-row-center {
+            display: flex;
+            justify-content: center;
+            height: calc(33.333% - 1.33mm);
+        }
+
+        .layout-5 .photo-row-center .photo-item {
+            width: calc(50% - 1mm);
+            height: 100%;
+        }
+
+        /* === LAYOUT: 6 IMAGES (3 rows x 2 cols) === */
+        .layout-6 {
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr;
+            align-items: stretch;
+        }
+
+        .layout-6 .photo-item {
             height: 100%;
         }
 
@@ -343,8 +399,16 @@
             {% if report.images %}
             {% set img_count = report.images|length %}
 
-            {% if img_count == 3 %}
-            <!-- Special layout for 3 images -->
+            {% if img_count == 1 %}
+            <!-- Single image centered -->
+            <div class="photo-grid layout-1">
+                <div class="photo-item">
+                    <img src="{{ report.images[0].path }}" alt="{{ report.images[0].name }}">
+                </div>
+            </div>
+
+            {% elif img_count == 3 %}
+            <!-- 2 top + 1 centered bottom -->
             <div class="photo-grid layout-3">
                 <div class="top-row">
                     <div class="photo-item">
@@ -360,9 +424,36 @@
                     </div>
                 </div>
             </div>
+
+            {% elif img_count == 5 %}
+            <!-- 2+2+1 centered bottom -->
+            <div class="photo-grid layout-5">
+                <div class="photo-row">
+                    <div class="photo-item">
+                        <img src="{{ report.images[0].path }}" alt="{{ report.images[0].name }}">
+                    </div>
+                    <div class="photo-item">
+                        <img src="{{ report.images[1].path }}" alt="{{ report.images[1].name }}">
+                    </div>
+                </div>
+                <div class="photo-row">
+                    <div class="photo-item">
+                        <img src="{{ report.images[2].path }}" alt="{{ report.images[2].name }}">
+                    </div>
+                    <div class="photo-item">
+                        <img src="{{ report.images[3].path }}" alt="{{ report.images[3].name }}">
+                    </div>
+                </div>
+                <div class="photo-row-center">
+                    <div class="photo-item">
+                        <img src="{{ report.images[4].path }}" alt="{{ report.images[4].name }}">
+                    </div>
+                </div>
+            </div>
+
             {% else %}
-            <!-- Standard grid layout for 2 or 4 images -->
-            <div class="photo-grid layout-{{ img_count if img_count in [2, 4] else 'grid' }}">
+            <!-- Standard grid layout for 2, 4, 6, or more images -->
+            <div class="photo-grid layout-{{ img_count if img_count in [2, 4, 6] else 'grid' }}">
                 {% for img in report.images %}
                 <div class="photo-item">
                     <img src="{{ img.path }}" alt="{{ img.name }}">
