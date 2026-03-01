@@ -1,5 +1,3 @@
-# backend/report_service.py - VERSIÓN ESTABLE
-
 import os
 import base64
 import re
@@ -10,16 +8,25 @@ import hashlib
 from jinja2 import Environment, FileSystemLoader  # pyre-ignore[21]
 import jinja2  # pyre-ignore[21]
 
-# WeasyPrint imports
-if os.name == 'nt':
-    gtk_path = r"C:\Program Files\GTK3-Runtime Win64\bin"
-    if os.path.isdir(gtk_path):
-        os.environ['PATH'] = gtk_path + os.pathsep + os.environ.get('PATH', '')
-        if hasattr(os, 'add_dll_directory'):  # pyre-ignore[16]
-            try:
-                os.add_dll_directory(gtk_path)  # type: ignore[attr-defined]  # pyre-ignore[16]
-            except Exception:
-                pass
+def _configure_windows_gtk_runtime() -> None:
+    """Optionally add GTK runtime directory on Windows for WeasyPrint dependencies."""
+    if os.name != "nt":
+        return
+
+    gtk_path = (os.getenv("GTK_RUNTIME_BIN") or "").strip()
+    if not gtk_path or not os.path.isdir(gtk_path):
+        return
+
+    os.environ["PATH"] = gtk_path + os.pathsep + os.environ.get("PATH", "")
+    add_dll_directory = getattr(os, "add_dll_directory", None)
+    if callable(add_dll_directory):
+        try:
+            add_dll_directory(gtk_path)
+        except Exception:
+            pass
+
+
+_configure_windows_gtk_runtime()
 
 try:
     from weasyprint import HTML  # pyre-ignore[21]
@@ -29,18 +36,16 @@ except (OSError, ImportError) as e:
     HTML = None
     WEASYPRINT_AVAILABLE = False
 
-# Chrome/Edge headless fallback for environments without GTK3 (e.g. Windows local dev)
 CHROME_PATH = None
 if not WEASYPRINT_AVAILABLE:
-    _browser_candidates = [
+    _windows_browser_candidates = [
         "C:/Program Files/Google/Chrome/Application/chrome.exe",
         "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
         "C:/Program Files/Microsoft/Edge/Application/msedge.exe",
         "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
-        "/usr/bin/google-chrome",
-        "/usr/bin/chromium-browser",
-        "/usr/bin/chromium",
     ]
+    _linux_browser_candidates = ["/usr/bin/google-chrome", "/usr/bin/chromium-browser", "/usr/bin/chromium"]
+    _browser_candidates = _windows_browser_candidates if os.name == "nt" else _linux_browser_candidates
     for _p in _browser_candidates:
         if os.path.isfile(_p):
             CHROME_PATH = _p
