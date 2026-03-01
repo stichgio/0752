@@ -44,6 +44,8 @@ class TemplateJson(BaseModel):
     metadata: Dict[str, Any] = Field(default_factory=dict)
     variableBindings: Dict[str, Any] = Field(default_factory=dict)
     protectionRules: ProtectionRules = Field(default_factory=ProtectionRules)
+    dataSourceDefinition: Dict[str, Any] = Field(default_factory=dict)
+    assetLibrary: List[Dict[str, Any]] = Field(default_factory=list)
 
 
 class TemplateVersion(BaseModel):
