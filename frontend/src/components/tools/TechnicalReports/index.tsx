@@ -151,7 +151,7 @@ export default function TechnicalReports() {
                 try {
                     const base = getApiBase();
                     const resp = await fetch(`${base}${downloadUrl}`);
-                    if (!resp.ok) throw new Error(`Download failed: ${resp.status}`);
+                    if (!resp.ok) throw new Error(`Error en descarga: ${resp.status}`);
                     const blob = await resp.blob();
                     downloadBlob(blob, `informes_tecnicos_consolidado_${reports.length}.pdf`);
                 } catch (err: any) {

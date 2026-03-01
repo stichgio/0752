@@ -325,7 +325,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                 }
                 if (payload?.templateJson) templateJson = payload.templateJson;
             } catch (err) {
-                lastError = err instanceof Error ? err : new Error('Failed to load published template');
+                lastError = err instanceof Error ? err : new Error('Error al cargar la plantilla publicada');
             }
 
             if (!content) {
@@ -337,7 +337,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                     if (fallback.content) content = fallback.content;
                     if (!templateJson && fallback.templateJson) templateJson = fallback.templateJson;
                 } catch (err) {
-                    lastError = err instanceof Error ? err : new Error('Failed to load template metadata');
+                    lastError = err instanceof Error ? err : new Error('Error al cargar los metadatos de la plantilla');
                 }
             }
 
@@ -976,7 +976,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
 
             if (!response.ok) {
                 const errorText = await response.text();
-                throw new Error(`Server returned ${response.status}: ${errorText}`);
+                throw new Error(`El servidor devolvió ${response.status}: ${errorText}`);
             }
 
             const blob = await response.blob();
