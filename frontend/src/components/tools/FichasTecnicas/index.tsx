@@ -118,7 +118,7 @@ export default function FichasTecnicas() {
                 try {
                     const base = getApiBase();
                     const resp = await fetch(`${base}${downloadUrl}`);
-                    if (!resp.ok) throw new Error(`Download failed: ${resp.status}`);
+                    if (!resp.ok) throw new Error(`Error en descarga: ${resp.status}`);
                     const blob = await resp.blob();
                     downloadBlob(blob, `fichas_tecnicas_consolidado_${fichas.length}.pdf`);
                 } catch (err: any) {
