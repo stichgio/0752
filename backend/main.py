@@ -134,6 +134,28 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
+def _is_development_environment() -> bool:
+    env_name = os.getenv("ENVIRONMENT") or os.getenv("APP_ENV") or "development"
+    return env_name.strip().lower() in {"dev", "development", "local"}
+
+
+def _get_cors_allowed_origins() -> List[str]:
+    raw_origins = os.getenv("CORS_ALLOWED_ORIGINS", "").strip()
+    if raw_origins:
+        if raw_origins == "*":
+            if _is_development_environment():
+                return ["*"]
+            print("[CORS] Ignoring wildcard origin outside development environment")
+            return []
+        return [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
+
+    if _is_development_environment():
+        return ["*"]
+
+    print("[CORS] CORS_ALLOWED_ORIGINS is not configured; no cross-origin requests will be allowed")
+    return []
+
+
 def _error_code_from_status(status_code: int) -> str:
     if status_code == 400:
         return "BAD_REQUEST"
@@ -197,11 +219,12 @@ async def request_validation_exception_handler(_: Request, exc: RequestValidatio
         },
     )
 
-# Enable CORS for frontend (separate deployment on Vercel)
+# Enable CORS with environment-based allowed origins.
+cors_allowed_origins = _get_cors_allowed_origins()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allow all origins for Vercel/HuggingFace deployment
-    allow_credentials=False,  # Must be False when using wildcard origins
+    allow_origins=cors_allowed_origins,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=[
