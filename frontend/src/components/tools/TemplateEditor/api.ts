@@ -1,4 +1,4 @@
-import type { CanvasDocument, TemplateElement, PageSettings } from './canvasTypes';
+import type { CanvasDocument, TemplateElement, PageSettings, CanvasPage } from './canvasTypes';
 import { createDefaultPageSettings } from './canvasTypes';
 
 type TemplateStatus = 'draft' | 'published' | 'archived';
@@ -36,6 +36,8 @@ interface TemplateJsonPayload {
     required_block_ids: string[];
     editable_placeholder_by_block: Record<string, string[]>;
   };
+  dataSourceDefinition?: Record<string, unknown>;
+  assetLibrary?: Array<Record<string, unknown>>;
 }
 
 interface UpsertDraftInput {
@@ -200,18 +202,23 @@ export function canvasDocumentToTemplateJson(
         type: 'body',
         title: 'Canvas',
         blocks: doc.elements.map(elementToBlock),
-        metadata: {},
+        metadata: { pages: doc.pages || [] },
       },
     ],
     metadata: {
       source: 'canvas-editor-v3',
       version: doc.version,
       pageSettings: doc.pageSettings,
+      pages: doc.pages || [],
+      theme: doc.theme || {},
+      assetLibrary: doc.assetLibrary || [],
       canvasDocumentId: doc.id,
       canvasStatus: doc.status,
       updatedAt: doc.updatedAt,
     },
     variableBindings,
+    dataSourceDefinition: doc.dataSourceDefinition || {},
+    assetLibrary: (doc.assetLibrary || []) as Array<Record<string, unknown>>,
     protectionRules: {
       required_block_ids: [],
       editable_placeholder_by_block: {},
@@ -405,6 +412,14 @@ export const templateEditorApi = {
     publishedAt?: string;
   }> => requestJson('/templates/' + encodeURIComponent(id) + '/render'),
 
+
+  validateTemplate: async (templateId: string, templateJson: TemplateJsonPayload, role: 'admin' | 'editor' = 'editor') =>
+    requestJson<{ valid: boolean; issues: Array<{ level: 'error' | 'warning'; code: string; message: string; path?: string }> }>(`/template-editor/templates/${encodeURIComponent(templateId)}/validate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role, templateJson }),
+    }),
+
   loadPublishedForEditing: async (id: string): Promise<{ doc: CanvasDocument; name: string }> => {
     const raw = await requestJson<{
       id: string;
@@ -418,6 +433,8 @@ export const templateEditorApi = {
           sections?: Array<{ blocks?: EditorBlockPayload[] }>;
           metadata?: Record<string, unknown>;
           variableBindings?: Record<string, unknown>;
+          dataSourceDefinition?: Record<string, unknown>;
+          assetLibrary?: Array<Record<string, unknown>>;
         };
       }>;
     }>('/template-editor/templates/' + encodeURIComponent(id));
@@ -433,6 +450,8 @@ export const templateEditorApi = {
     const blocks = templateJson.sections?.[0]?.blocks || [];
     const elements = blocks.map(blockToElement);
     const pageSettings: PageSettings = (metadata.pageSettings as PageSettings) || createDefaultPageSettings();
+    const pagesRaw = (metadata.pages as CanvasPage[] | undefined) || [];
+    const pages = Array.isArray(pagesRaw) && pagesRaw.length > 0 ? pagesRaw : [{ id: 'page-1', name: 'Página 1', elementIds: elements.map((el) => el.id) }];
 
     const now = new Date().toISOString();
     return {
@@ -441,7 +460,12 @@ export const templateEditorApi = {
         id: raw.id,
         name: raw.name,
         elements,
+        pages,
         variables: [],
+        theme: (metadata.theme as CanvasDocument['theme']) || { textStyles: [], colorTokens: [] },
+        assetLibrary: (templateJson.assetLibrary as CanvasDocument['assetLibrary']) || (metadata.assetLibrary as CanvasDocument['assetLibrary']) || [],
+        reportType: raw.reportType || 'technical-report',
+        dataSourceDefinition: (templateJson.dataSourceDefinition as CanvasDocument['dataSourceDefinition']) || { schemaVersion: '1.0', fields: [] },
         pageSettings,
         version: Number(metadata.version) || 1,
         status: (raw.status as CanvasDocument['status']) || 'draft',

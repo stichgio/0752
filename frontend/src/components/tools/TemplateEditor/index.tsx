@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState, memo } from 'react';
 import {
   FileCode2, FileJson, Plus, Printer,
-  Redo2, Save, Send, Undo2, X, Eye, Download, Upload,
+  Redo2, Save, Send, Undo2, X, Eye, Download, Upload, History, ShieldAlert,
 } from 'lucide-react';
 import type { CanvasDocument, PageSettings } from './canvasTypes';
 import {
@@ -14,7 +14,7 @@ import CanvasEditor from './CanvasEditor';
 import { exportToJinja2, exportToJSON, importFromJSON, generatePreviewHtml } from './exportUtils';
 import { useUndoableState } from './hooks/useUndoableState';
 import type { CanvasChangeOptions } from './historyTypes';
-import { templateEditorApi } from './api';
+import { templateEditorApi, canvasDocumentToTemplateJson } from './api';
 import { downloadBlob } from '@/utils/downloadBlob';
 import ReportGenerator from './ReportGenerator';
 
@@ -164,8 +164,18 @@ function isSamePageSettings(a: PageSettings, b: PageSettings): boolean {
 }
 
 function normalizeDocument(doc: CanvasDocument): CanvasDocument {
+  const elements = Array.isArray(doc.elements) ? doc.elements : [];
+  const pages = Array.isArray(doc.pages) && doc.pages.length > 0
+    ? doc.pages
+    : [{ id: 'page-1', name: 'Página 1', elementIds: elements.map((element) => element.id) }];
+
   return {
     ...doc,
+    reportType: doc.reportType || 'technical-report',
+    pages,
+    theme: doc.theme || { textStyles: [], colorTokens: [] },
+    assetLibrary: doc.assetLibrary || [],
+    dataSourceDefinition: doc.dataSourceDefinition || { schemaVersion: '1.0', fields: [] },
     pageSettings: normalizePageSettings(doc.pageSettings),
     variables: normalizeVariableRegistry(doc.variables),
   };
@@ -259,6 +269,11 @@ export default function TemplateEditor() {
   const [previewHtml, setPreviewHtml] = useState('');
   const [showGenerator, setShowGenerator] = useState(false);
   const [dataPreview, setDataPreview] = useState<Record<string, unknown> | undefined>(undefined);
+  const [reportType, setReportType] = useState<string>('technical-report');
+  const [availableReports, setAvailableReports] = useState<unknown[]>([]);
+  const [activeScenario, setActiveScenario] = useState<'first' | 'recent' | 'custom'>('first');
+  const [validationIssues, setValidationIssues] = useState<Array<{ level: 'error' | 'warning'; code: string; message: string; path?: string }>>([]);
+  const [versionHistory, setVersionHistory] = useState<Array<{ version: number; status: string; author: string; createdAt: string }>>([]);
   const [leftWidth, setLeftWidth] = useState(320);
   const [rightWidth, setRightWidth] = useState(320);
   const [publishedTemplatesRefreshKey, setPublishedTemplatesRefreshKey] = useState(0);
@@ -286,6 +301,7 @@ export default function TemplateEditor() {
             ? s.serverTemplateId
             : (typeof s.templateId === 'string' ? s.templateId : '');
           setServerTemplateId(storedTemplateId || null);
+          setReportType((s?.doc?.reportType as string) || 'technical-report');
         }
       }
     } catch {
@@ -311,9 +327,11 @@ export default function TemplateEditor() {
         if (!response.ok) return;
 
         const payload = (await response.json()) as { reports?: unknown[] };
-        const firstReport = Array.isArray(payload.reports) ? payload.reports[0] : null;
+        const reports = Array.isArray(payload.reports) ? payload.reports : [];
         if (!isActive) return;
 
+        setAvailableReports(reports.slice(0, 10));
+        const firstReport = reports[0] || null;
         if (!firstReport) {
           setDataPreview(undefined);
           return;
@@ -325,6 +343,7 @@ export default function TemplateEditor() {
         if ((error as { name?: string })?.name === 'AbortError') return;
         if (isActive) {
           setDataPreview(undefined);
+          setAvailableReports([]);
         }
       }
     };
@@ -336,14 +355,22 @@ export default function TemplateEditor() {
     };
   }, []);
 
+  useEffect(() => {
+    if (activeScenario === 'first' || availableReports.length === 0) return;
+    const report = activeScenario === 'recent' ? availableReports[1] || availableReports[0] : null;
+    if (!report) return;
+    const preview = buildDataPreviewFromReport(report);
+    setDataPreview(Object.keys(preview).length ? preview : undefined);
+  }, [activeScenario, availableReports]);
+
   // ── Auto-save ─────────────────────────────────────────────────────────────
 
   useEffect(() => {
     const t = setTimeout(() => {
-      localStorage.setItem(SESSION_KEY, JSON.stringify({ doc, status, serverTemplateId }));
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ doc: { ...doc, reportType }, status, serverTemplateId }));
     }, 1000);
     return () => clearTimeout(t);
-  }, [doc, status, serverTemplateId]);
+  }, [doc, reportType, status, serverTemplateId]);
 
   // ── Warn on close ─────────────────────────────────────────────────────────
 
@@ -504,7 +531,7 @@ export default function TemplateEditor() {
         doc,
         author: 'editor',
         role: 'editor',
-        reportType: 'technical-report',
+        reportType,
         featureFlag: true,
       });
 
@@ -525,7 +552,7 @@ export default function TemplateEditor() {
       const msg = error instanceof Error ? error.message : 'Error al guardar en la nube';
       toast(msg, 'err');
     }
-  }, [doc, serverTemplateId, status, setDocHistory, toast]);
+  }, [doc, reportType, serverTemplateId, status, setDocHistory, toast]);
 
   const publish = useCallback(async () => {
     if (!doc.elements.length) {
@@ -540,9 +567,21 @@ export default function TemplateEditor() {
         doc,
         author: 'editor',
         role: 'editor',
-        reportType: 'technical-report',
+        reportType,
         featureFlag: true,
       });
+
+      const validationTemplateJson = canvasDocumentToTemplateJson(doc, reportType);
+      if (validationTemplateJson) {
+        const validation = await templateEditorApi.validateTemplate(resolvedTemplateId, validationTemplateJson, 'editor');
+        const issues = Array.isArray(validation.issues) ? validation.issues : [];
+        setValidationIssues(issues);
+        const hasErrors = issues.some((issue) => issue.level === 'error');
+        if (hasErrors) {
+          toast('No se pudo publicar: hay errores críticos de validación', 'err');
+          return;
+        }
+      }
 
       await templateEditorApi.updateStatus(resolvedTemplateId, 'published', 'editor');
 
@@ -567,7 +606,7 @@ export default function TemplateEditor() {
       const msg = error instanceof Error ? error.message : 'No se pudo publicar la plantilla';
       toast(msg, 'err');
     }
-  }, [doc, serverTemplateId, setDocHistory, toast]);
+  }, [doc, reportType, serverTemplateId, setDocHistory, toast]);
 
   const handleUnpublishTemplate = useCallback(async (templateId: string) => {
     await templateEditorApi.updateStatus(templateId, 'draft', 'editor');
@@ -599,6 +638,27 @@ export default function TemplateEditor() {
       toast(msg, 'err');
     }
   }, [dirty, resetDocHistory, toast]);
+
+  const loadVersionHistory = useCallback(async () => {
+    if (!serverTemplateId) return;
+    try {
+      const raw = await templateEditorApi.getTemplateRaw(serverTemplateId) as { versions?: Array<{ version: number; status: string; author: string; createdAt: string }> };
+      setVersionHistory((raw.versions || []).map((v) => ({ version: v.version, status: v.status, author: v.author, createdAt: v.createdAt })));
+    } catch {
+      setVersionHistory([]);
+    }
+  }, [serverTemplateId]);
+
+  const runValidation = useCallback(async () => {
+    if (!serverTemplateId) return [];
+    const templateJson = canvasDocumentToTemplateJson(doc, reportType);
+    const payload = templateJson || undefined;
+    if (!payload) return [];
+    const result = await templateEditorApi.validateTemplate(serverTemplateId, payload, 'editor');
+    const issues = Array.isArray(result.issues) ? result.issues : [];
+    setValidationIssues(issues);
+    return issues;
+  }, [doc, reportType, serverTemplateId]);
 
   const handleDeletePublishedTemplate = useCallback(async (templateId: string) => {
     try {
@@ -645,6 +705,25 @@ export default function TemplateEditor() {
             onChange={(e) => handleDocChange({ ...doc, name: e.target.value })}
             placeholder="Nombre de plantilla"
           />
+          <select
+            className="h-8 rounded-lg border border-neutral-200 px-2 text-xs"
+            value={reportType}
+            onChange={(e) => setReportType(e.target.value)}
+            title="Tipo de reporte"
+          >
+            <option value="technical-report">technical-report</option>
+            <option value="generic">generic</option>
+          </select>
+          <select
+            className="h-8 rounded-lg border border-neutral-200 px-2 text-xs"
+            value={activeScenario}
+            onChange={(e) => setActiveScenario(e.target.value as 'first' | 'recent' | 'custom')}
+            title="Escenario de datos"
+          >
+            <option value="first">Escenario: 1er reporte</option>
+            <option value="recent">Escenario: reciente</option>
+            <option value="custom">Escenario: JSON custom</option>
+          </select>
 
           <StatusPill status={status} />
           {dirty && (
@@ -703,6 +782,15 @@ export default function TemplateEditor() {
 
           <div className="h-6 w-px bg-neutral-200 mx-1" />
 
+          <ToolbarBtn onClick={loadVersionHistory} title="Cargar historial">
+            <History size={16} />
+            Historial
+          </ToolbarBtn>
+          <ToolbarBtn onClick={() => { void runValidation(); }} title="Validar plantilla">
+            <ShieldAlert size={16} />
+            Validar
+          </ToolbarBtn>
+
           {/* Save (cloud) */}
           <ToolbarBtn onClick={saveTemplate} disabled={!dirty} title="Guardar en la nube">
             <Save size={16} />
@@ -743,6 +831,29 @@ export default function TemplateEditor() {
           onDeletePublishedTemplate={handleDeletePublishedTemplate}
         />
       </div>
+
+      {(validationIssues.length > 0 || versionHistory.length > 0) && (
+        <section className="border-t border-neutral-200 bg-white px-4 py-2 text-xs grid grid-cols-2 gap-4">
+          <div>
+            <h4 className="font-semibold text-neutral-700">Validación</h4>
+            <ul className="max-h-24 overflow-auto mt-1">
+              {validationIssues.map((issue, idx) => (
+                <li key={`${issue.code}-${idx}`} className={issue.level === 'error' ? 'text-red-600' : 'text-amber-600'}>
+                  [{issue.level}] {issue.message} {issue.path ? `(${issue.path})` : ''}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div>
+            <h4 className="font-semibold text-neutral-700">Historial</h4>
+            <ul className="max-h-24 overflow-auto mt-1">
+              {versionHistory.map((v) => (
+                <li key={v.version} className="text-neutral-600">v{v.version} · {v.status} · {v.author}</li>
+              ))}
+            </ul>
+          </div>
+        </section>
+      )}
 
       {/* Preview Modal */}
       {showPreview && (
