@@ -5,8 +5,10 @@ import io
 import gc
 import tempfile
 import hashlib
+import logging
 from jinja2 import Environment, FileSystemLoader  # pyre-ignore[21]
 import jinja2  # pyre-ignore[21]
+from fastapi import HTTPException  # type: ignore
 
 def _configure_windows_gtk_runtime() -> None:
     """Optionally add GTK runtime directory on Windows for WeasyPrint dependencies."""
@@ -291,13 +293,25 @@ class ReportService:
         """Clean up resources. Called during app shutdown."""
         await self._http_client.aclose()
 
-    def get_template(self, template_name):
+    def get_template(self, template_name, strict=False):
         """Cargar template con cache"""
+        if strict:
+            try:
+                loaded_template = self.env.get_template(template_name)
+                self._template_cache[template_name] = loaded_template
+                return loaded_template
+            except Exception as e:
+                print(f"Error loading template {template_name}: {e}")
+                logging.warning("# FIX: BUG-006 template '%s' not found in strict mode", template_name)
+                # FIX: BUG-006 allow strict mode to fail fast when template does not exist
+                raise HTTPException(status_code=404, detail=f"Template '{template_name}' not found")
+
         if template_name not in self._template_cache:
             try:
                 self._template_cache[template_name] = self.env.get_template(template_name)
             except Exception as e:
                 print(f"Error loading template {template_name}: {e}")
+                logging.warning("# FIX: BUG-006 template '%s' not found, using default fallback", template_name)
                 # Fallback a template por defecto
                 self._template_cache[template_name] = self.template
 
@@ -397,7 +411,8 @@ class ReportService:
         if logo_data is None:
             return None
 
-        cache_key = f"logo_{side}"
+        logo_hash = hashlib.sha256(str(logo_data).encode("utf-8") if not isinstance(logo_data, bytes) else logo_data).hexdigest()
+        cache_key = f"logo_{side}_{logo_hash}"  # FIX: BUG-001 avoid cross-request/logo-content cache collisions
         if cache_key in self._logo_cache:
             return self._logo_cache[cache_key]
 
@@ -746,105 +761,120 @@ class ReportService:
         if not all_pdf_paths:
             raise RuntimeError("No se generó ningún PDF exitosamente")
 
-        # =====================================================================
-        # FASE 3: Merge con STREAMING - Escribe directamente a disco
-        # =====================================================================
-        print(f"[PDF] Streaming merge of {len(all_pdf_paths)} PDFs...")
-        if on_progress:
-            await on_progress("merging", 0, len(all_pdf_paths), "")
-        merge_start = time.time()
-
-        # Determinar archivo de salida
-        if output_path:
-            final_output_path = output_path
-        else:
-            # Crear archivo temporal para el resultado
-            tmp_final = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
-            final_output_path = tmp_final.name
-            tmp_final.close()
-
-        # ✅ STREAMING MERGE: Usar PdfWriter con escritura incremental
-        # Esto reduce significativamente el uso de memoria para PDFs grandes
-        final_writer = PdfWriter()
-
-        # Configurar para menor uso de memoria
-        merge_batch_size = 10  # Procesar en lotes pequeños para liberar memoria
-
-        for batch_idx in range(0, len(all_pdf_paths), merge_batch_size):
-            batch_paths = all_pdf_paths[batch_idx:batch_idx + merge_batch_size]  # pyre-ignore[16]
-
-            for pdf_path in batch_paths:
-                try:
-                    # Usar append que es más eficiente en memoria que add_page
-                    final_writer.append(pdf_path)
-                    # Eliminar archivo temporal inmediatamente
-                    os.remove(pdf_path)
-                except Exception as e:
-                    print(f"[PDF] Error merging {pdf_path}: {e}")
-                    # Intentar limpiar el archivo si falló
-                    try:
-                        if os.path.exists(pdf_path):
-                            os.remove(pdf_path)
-                    except OSError:
-                        pass
-
-            # GC después de cada lote de merge
-            if batch_idx > 0 and batch_idx % (merge_batch_size * 2) == 0:
-                gc.collect()
-
-        # Escribir resultado final a disco
-        with open(final_output_path, "wb") as f:
-            final_writer.write(f)
-
-        final_writer.close()
-        del final_writer
-        gc.collect()
-
-        merge_time = time.time() - merge_start
-
-        # =====================================================================
-        # FASE 4: Compresión Ghostscript (opcional)
-        # =====================================================================
-        compression_stats = None
-        if GHOSTSCRIPT_ENABLED and total_reports > 1:  # Solo comprimir si hay múltiples reportes
-            print(f"[PDF] Applying Ghostscript compression (quality={GHOSTSCRIPT_QUALITY})...")
+        final_writer = None
+        try:
+            # =====================================================================
+            # FASE 3: Merge con STREAMING - Escribe directamente a disco
+            # =====================================================================
+            print(f"[PDF] Streaming merge of {len(all_pdf_paths)} PDFs...")
             if on_progress:
-                await on_progress("compressing", 0, 1, "")
-            compress_start = time.time()
+                await on_progress("merging", 0, len(all_pdf_paths), "")
+            merge_start = time.time()
 
-            success, final_output_path, compression_stats = _compress_pdf_with_ghostscript(
-                final_output_path,
-                quality=GHOSTSCRIPT_QUALITY
-            )
+            # Determinar archivo de salida
+            if output_path:
+                final_output_path = output_path
+            else:
+                # Crear archivo temporal para el resultado
+                tmp_final = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+                final_output_path = tmp_final.name
+                tmp_final.close()
 
-            compress_time = time.time() - compress_start
-            print(f"[PDF]    - Compression time: {compress_time:.1f}s")
+            # ✅ STREAMING MERGE: Usar PdfWriter con escritura incremental
+            # Esto reduce significativamente el uso de memoria para PDFs grandes
+            final_writer = PdfWriter()
 
-        # Preparar resultado
-        if output_path:
-            result = output_path
-        else:
-            # Si no se especificó output_path, leer el archivo y retornar bytes
-            # (para compatibilidad con código existente)
-            with open(final_output_path, 'rb') as f:
-                result = f.read()
-            os.remove(final_output_path)
+            # Configurar para menor uso de memoria
+            merge_batch_size = 10  # Procesar en lotes pequeños para liberar memoria
 
-        # Cleanup caches
-        self._logo_cache.clear()
-        self._image_cache.clear()
-        gc.collect()
+            for batch_idx in range(0, len(all_pdf_paths), merge_batch_size):
+                batch_paths = all_pdf_paths[batch_idx:batch_idx + merge_batch_size]  # pyre-ignore[16]
 
-        # Estadísticas finales
-        total_time = time.time() - start_time
-        gen_time = total_time - merge_time
-        print(f"[PDF] ✅ Complete! {total_reports} reports in {total_time:.1f}s ({total_reports/total_time:.1f} reports/sec)")
-        print(f"[PDF]    - Generation + HTML: {gen_time:.1f}s")
-        print(f"[PDF]    - Streaming merge: {merge_time:.1f}s")
-        if compression_stats and "reduction_percent" in compression_stats:
-            print(f"[PDF]    - Compression: {compression_stats['reduction_percent']}% size reduction")
+                for pdf_path in batch_paths:
+                    try:
+                        # Usar append que es más eficiente en memoria que add_page
+                        final_writer.append(pdf_path)
+                        # Eliminar archivo temporal inmediatamente
+                        os.remove(pdf_path)
+                    except Exception as e:
+                        print(f"[PDF] Error merging {pdf_path}: {e}")
+                        # Intentar limpiar el archivo si falló
+                        try:
+                            if os.path.exists(pdf_path):
+                                os.remove(pdf_path)
+                        except OSError:
+                            pass
 
-        return result
+                # GC después de cada lote de merge
+                if batch_idx > 0 and batch_idx % (merge_batch_size * 2) == 0:
+                    gc.collect()
+
+            # Escribir resultado final a disco
+            with open(final_output_path, "wb") as f:
+                final_writer.write(f)
+
+            final_writer.close()
+            del final_writer
+            gc.collect()
+
+            merge_time = time.time() - merge_start
+
+            # =====================================================================
+            # FASE 4: Compresión Ghostscript (opcional)
+            # =====================================================================
+            compression_stats = None
+            if GHOSTSCRIPT_ENABLED and total_reports > 1:  # Solo comprimir si hay múltiples reportes
+                print(f"[PDF] Applying Ghostscript compression (quality={GHOSTSCRIPT_QUALITY})...")
+                if on_progress:
+                    await on_progress("compressing", 0, 1, "")
+                compress_start = time.time()
+
+                success, final_output_path, compression_stats = _compress_pdf_with_ghostscript(
+                    final_output_path,
+                    quality=GHOSTSCRIPT_QUALITY
+                )
+
+                compress_time = time.time() - compress_start
+                print(f"[PDF]    - Compression time: {compress_time:.1f}s")
+
+            # Preparar resultado
+            if output_path:
+                result = output_path
+            else:
+                # Si no se especificó output_path, leer el archivo y retornar bytes
+                # (para compatibilidad con código existente)
+                with open(final_output_path, 'rb') as f:
+                    result = f.read()
+                os.remove(final_output_path)
+
+            # Estadísticas finales
+            total_time = time.time() - start_time
+            gen_time = total_time - merge_time
+            print(f"[PDF] ✅ Complete! {total_reports} reports in {total_time:.1f}s ({total_reports/total_time:.1f} reports/sec)")
+            print(f"[PDF]    - Generation + HTML: {gen_time:.1f}s")
+            print(f"[PDF]    - Streaming merge: {merge_time:.1f}s")
+            if compression_stats and "reduction_percent" in compression_stats:
+                print(f"[PDF]    - Compression: {compression_stats['reduction_percent']}% size reduction")
+
+            return result
+        finally:
+            # FIX: BUG-002 ensure temporary PDFs are cleaned even when merge/compression fails
+            for pdf_path in all_pdf_paths:
+                try:
+                    if os.path.exists(pdf_path):
+                        os.remove(pdf_path)
+                except OSError:
+                    pass
+            if final_writer is not None:
+                try:
+                    final_writer.close()
+                except Exception:
+                    pass
+            # FIX: BUG-010 always clear logo cache, even on exceptions
+            self._logo_cache.clear()
+            self._image_cache.clear()
+            gc.collect()
+
 
 
 # ============================================================================
@@ -863,7 +893,9 @@ def _render_pdf_to_file_safe(html_string):
             temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
 
             # ✅ CONFIGURACIÓN SEGURA: Sin optimizaciones arriesgadas
-            assert HTML is not None, "WeasyPrint HTML not available"  # pyre-ignore[6]
+            if HTML is None:
+                # FIX: BUG-004 avoid assert removed by -O in production
+                raise RuntimeError("WeasyPrint HTML class not available")
             HTML(string=html_string, base_url=os.getcwd()).write_pdf(  # pyre-ignore[16]
                 temp_pdf.name,
                 optimize_images=False,  # Ya optimizadas
@@ -891,15 +923,19 @@ def _render_pdf_with_chrome(html_string):
     import tempfile
     import subprocess
 
+    html_path = None
+    pdf_path = None
     try:
         html_file = tempfile.NamedTemporaryFile(
             delete=False, suffix='.html', mode='w', encoding='utf-8'
         )
         html_file.write(html_string)
         html_file.close()
+        html_path = html_file.name
 
         pdf_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
         pdf_file.close()
+        pdf_path = pdf_file.name
 
         chrome_args: list = [arg for arg in [
                 CHROME_PATH,
@@ -913,7 +949,7 @@ def _render_pdf_with_chrome(html_string):
                 '--no-margins',
                 '--paper-width=8.27',
                 '--paper-height=11.69',
-                html_file.name,
+                html_path,
             ] if arg is not None]
         result = subprocess.run(
             chrome_args,
@@ -922,17 +958,30 @@ def _render_pdf_with_chrome(html_string):
             timeout=60,
         )
 
-        os.unlink(html_file.name)
+        os.unlink(html_path)
 
-        if os.path.getsize(pdf_file.name) > 0:
-            return pdf_file.name
+        if os.path.getsize(pdf_path) > 0:
+            return pdf_path
 
         print(f"[ERROR] Chrome PDF generation produced empty file. stderr: {result.stderr}")
-        os.unlink(pdf_file.name)
+        # FIX: BUG-003 cleanup orphaned PDF temp file when Chrome output is empty/invalid
+        if pdf_path and os.path.exists(pdf_path):
+            os.unlink(pdf_path)
         return None
 
     except Exception as e:
         print(f"[ERROR] Chrome PDF rendering failed: {e}")
         import traceback
         traceback.print_exc()
+        # FIX: BUG-003 cleanup temp artifacts on fallback exceptions
+        if html_path and os.path.exists(html_path):
+            try:
+                os.unlink(html_path)
+            except OSError:
+                pass
+        if pdf_path and os.path.exists(pdf_path):
+            try:
+                os.unlink(pdf_path)
+            except OSError:
+                pass
         return None
