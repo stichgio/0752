@@ -8,72 +8,80 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
 
     const normalizePhotoGridTemplate = (sourceHtml) => {
         if (!sourceHtml || typeof sourceHtml !== 'string') return sourceHtml;
+        if (!sourceHtml.includes('photo-cell-wrap')) return sourceHtml;
 
-        let normalized = sourceHtml;
-
-        // Legacy templates may place <img> directly in .photo-cell-wrap with flex-grow,
-        // which can stretch/crop images inconsistently. Wrap media content explicitly.
-        normalized = normalized.replace(
-            /<div class="photo-cell-wrap">\s*(\{%\s*if\s+report\.images\|length\s*>\s*\d+\s*%\}[\s\S]*?\{%\s*endif\s*%\})\s*(<div class="photo-label">)/g,
-            '<div class="photo-cell-wrap"><div class="photo-media">$1</div>$2'
-        );
-
+        // CSS-only approach: style rules that handle both legacy (img directly
+        // in .photo-cell-wrap) and modern (.photo-media wrapper) structures.
+        // No regex HTML restructuring — resilient to any markup variation.
         const compatCss = `
 <style id="photo-grid-compat-fix">
   .photo-grid {
-    display: grid !important;
-    width: 100% !important;
-    height: 100% !important;
-    box-sizing: border-box !important;
+    display: grid;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
   }
   .photo-cell {
-    overflow: hidden !important;
-    min-height: 0 !important;
-    min-width: 0 !important;
-    box-sizing: border-box !important;
+    overflow: hidden;
+    min-height: 0;
+    min-width: 0;
+    box-sizing: border-box;
   }
   .photo-cell-wrap {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    width: 100% !important;
-    height: 100% !important;
-    padding: 1mm !important;
-    box-sizing: border-box !important;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    padding: 1mm;
+    box-sizing: border-box;
+    overflow: hidden;
   }
   .photo-media {
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    min-width: 0 !important;
-    width: 100% !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    overflow: hidden !important;
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
   }
-  .photo-media > img,
-  .photo-cell > img,
-  .photo-cell-wrap > img,
-  .photo-cell-wrap img {
-    flex: 0 0 auto !important;
+  /* Legacy: img directly in .photo-cell-wrap */
+  .photo-cell-wrap > img {
+    flex: 1 1 auto;
+    min-height: 0;
     width: 100% !important;
-    height: 100% !important;
-    max-width: 100% !important;
-    max-height: 100% !important;
+    height: auto !important;
+    max-height: 100%;
     object-fit: contain !important;
     object-position: center !important;
-    display: block !important;
+    display: block;
+  }
+  /* Modern: img inside .photo-media */
+  .photo-media > img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    object-position: center !important;
+    display: block;
+  }
+  /* Catch-all for img nested deeper */
+  .photo-cell-wrap img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    object-position: center;
+    display: block;
   }
 </style>`;
 
-        if (/<\/head>/i.test(normalized)) {
-            normalized = normalized.replace(/<\/head>/i, `${compatCss}</head>`);
-        } else {
-            normalized = `${compatCss}${normalized}`;
+        if (/<\/head>/i.test(sourceHtml)) {
+            return sourceHtml.replace(/<\/head>/i, `${compatCss}</head>`);
         }
-
-        return normalized;
+        return `${compatCss}${sourceHtml}`;
     };
 
     // Helper to get mapped value with optional date formatting

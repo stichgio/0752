@@ -49,55 +49,82 @@ def _cleanup_file(path: str):
 
 
 def _normalize_photo_grid_template_compat(template_html: Optional[str]) -> Optional[str]:
-    """Backwards-compatible photo-grid fix for legacy template-editor exports."""
+    """Backwards-compatible photo-grid fix for legacy template-editor exports.
+
+    Injects CSS that normalises photo layout for both legacy templates (images
+    directly inside ``.photo-cell-wrap``) and modern ones (images inside a
+    ``.photo-media`` wrapper).  No HTML restructuring is performed so the fix
+    is resilient to any variation in the template markup.
+    """
     if not template_html or not isinstance(template_html, str):
         return template_html
 
-    normalized = template_html
-    if "photo-cell-wrap" not in normalized:
-        return normalized
+    if "photo-cell-wrap" not in template_html:
+        return template_html
 
-    normalized = re.sub(
-        r'<div class="photo-cell-wrap">\s*(\{%\s*if\s+report\.images\|length\s*>\s*\d+\s*%\}[\s\S]*?\{%\s*endif\s*%\})\s*(<div class="photo-label">)',
-        r'<div class="photo-cell-wrap"><div class="photo-media">\1</div>\2',
-        normalized,
-    )
-
+    # CSS-only approach: style rules that handle both legacy (img directly in
+    # .photo-cell-wrap) and modern (.photo-media wrapper) structures.
+    # `!important` is used only where inline styles on legacy exports must be
+    # overridden.
     compat_css = """
 <style id="photo-grid-compat-fix">
-  .photo-cell-wrap { align-items: stretch !important; justify-content: flex-start !important; }
-  .photo-media {
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    width: 100% !important;
-    display: block !important;
-    overflow: hidden !important;
-    position: relative !important;
+  .photo-cell-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    padding: 1mm;
+    box-sizing: border-box;
+    overflow: hidden;
   }
-  .photo-media > img,
-  .photo-cell > img,
-  .photo-cell-wrap > img,
-  .photo-cell-wrap img {
-    position: static !important;
-    display: block !important;
+  .photo-media {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  /* Legacy templates: img is a direct child of .photo-cell-wrap */
+  .photo-cell-wrap > img {
+    flex: 1 1 auto;
+    min-height: 0;
     width: 100% !important;
     height: auto !important;
-    max-width: 100% !important;
-    max-height: 100% !important;
+    max-height: 100%;
     object-fit: contain !important;
     object-position: center !important;
-    image-orientation: from-image !important;
-    margin: 0 auto !important;
+    display: block;
+    image-orientation: from-image;
+  }
+  /* Modern templates: img inside .photo-media wrapper */
+  .photo-media > img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    object-position: center !important;
+    display: block;
+    image-orientation: from-image;
+  }
+  /* Catch-all for img nested deeper (e.g. inside Jinja blocks) */
+  .photo-cell-wrap img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    object-position: center;
+    display: block;
   }
 </style>
 """
 
-    if "</head>" in normalized:
-        normalized = normalized.replace("</head>", f"{compat_css}</head>", 1)
-    else:
-        normalized = f"{compat_css}{normalized}"
-
-    return normalized
+    if "</head>" in template_html:
+        return template_html.replace("</head>", f"{compat_css}</head>", 1)
+    return f"{compat_css}{template_html}"
 
 
 def _validate_pdf_file(file: UploadFile) -> bool:
