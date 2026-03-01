@@ -27,6 +27,13 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
     min-width: 0;
     box-sizing: border-box;
   }
+        if (sourceHtml.includes('photo-grid-compat-fix')) return sourceHtml;
+
+        // CSS-only compat fix that handles both modern (.photo-media wrapper)
+        // and legacy (img directly in .photo-cell-wrap) templates without
+        // fragile regex-based HTML restructuring.
+        const compatCss = `
+<style id="photo-grid-compat-fix">
   .photo-cell-wrap {
     display: flex;
     flex-direction: column;
@@ -70,11 +77,44 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
   }
   /* Catch-all for img nested deeper */
   .photo-cell-wrap img {
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .photo-media > img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    display: block;
+  }
+  .photo-cell-wrap > img {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    object-fit: contain;
+    object-position: center;
+    display: block;
+  }
+  .photo-cell img {
     max-width: 100%;
     max-height: 100%;
     object-fit: contain;
     object-position: center;
     display: block;
+  }
+  .photo-label {
+    flex-shrink: 0;
+    font-weight: 700;
+    font-size: 7.5pt;
+    text-transform: uppercase;
+    margin-top: 1mm;
+    text-align: center;
   }
 </style>`;
 
