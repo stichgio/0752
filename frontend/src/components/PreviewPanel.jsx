@@ -10,23 +10,6 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
         if (!sourceHtml || typeof sourceHtml !== 'string') return sourceHtml;
         if (!sourceHtml.includes('photo-cell-wrap')) return sourceHtml;
 
-        // CSS-only approach: style rules that handle both legacy (img directly
-        // in .photo-cell-wrap) and modern (.photo-media wrapper) structures.
-        // No regex HTML restructuring — resilient to any markup variation.
-        const compatCss = `
-<style id="photo-grid-compat-fix">
-  .photo-grid {
-    display: grid;
-    width: 100%;
-    height: 100%;
-    box-sizing: border-box;
-  }
-  .photo-cell {
-    overflow: hidden;
-    min-height: 0;
-    min-width: 0;
-    box-sizing: border-box;
-  }
         if (sourceHtml.includes('photo-grid-compat-fix')) return sourceHtml;
 
         // CSS-only compat fix that handles both modern (.photo-media wrapper)
