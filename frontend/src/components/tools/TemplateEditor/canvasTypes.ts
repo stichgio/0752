@@ -123,6 +123,8 @@ export interface TemplateElement {
   content?: string;
   locked?: boolean;
   visible?: boolean;
+  layerId?: string;
+  groupId?: string;
 
   rotation?: number;
 
@@ -180,16 +182,69 @@ export interface TemplateElement {
   groupChildren?: TemplateElement[];
 }
 
+export interface CanvasPage {
+  id: string;
+  name: string;
+  elementIds: string[];
+  thumbnail?: string;
+}
+
+export interface TextStyleToken {
+  id: string;
+  label: string;
+  style: Pick<ElementStyle, 'fontSize' | 'fontFamily' | 'fontWeight' | 'lineHeight' | 'letterSpacing' | 'color'>;
+}
+
+export interface ColorToken {
+  id: string;
+  label: string;
+  value: string;
+}
+
+export interface DocumentTheme {
+  textStyles?: TextStyleToken[];
+  colorTokens?: ColorToken[];
+}
+
+export interface AssetLibraryItem {
+  id: string;
+  name: string;
+  type: 'image' | 'logo';
+  url: string;
+  tags?: string[];
+}
+
 export interface CanvasDocument {
   id: string;
   name: string;
   elements: TemplateElement[];
+  pages?: CanvasPage[];
   variables?: VariableDefinition[];
+  theme?: DocumentTheme;
+  assetLibrary?: AssetLibraryItem[];
+  reportType?: string;
+  dataSourceDefinition?: {
+    schemaVersion?: string;
+    fields?: Array<{ key: string; label?: string; type?: string; required?: boolean }>;
+    notes?: string;
+  };
   pageSettings: PageSettings;
   version: number;
   status: 'draft' | 'published' | 'archived';
   createdAt: string;
   updatedAt: string;
+}
+
+export function ensureDocumentPages(doc: CanvasDocument): CanvasPage[] {
+  if (Array.isArray(doc.pages) && doc.pages.length > 0) {
+    return doc.pages;
+  }
+
+  return [{
+    id: 'page-1',
+    name: 'Página 1',
+    elementIds: doc.elements.map((element) => element.id),
+  }];
 }
 
 export interface ToolItem {
@@ -380,7 +435,12 @@ export function createEmptyDocument(): CanvasDocument {
     id: `doc_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     name: 'Nueva Plantilla',
     elements: [],
+    pages: [{ id: 'page-1', name: 'Página 1', elementIds: [] }],
     variables: [],
+    theme: { textStyles: [], colorTokens: [] },
+    assetLibrary: [],
+    reportType: 'technical-report',
+    dataSourceDefinition: { schemaVersion: '1.0', fields: [] },
     pageSettings: createDefaultPageSettings(),
     version: 1,
     status: 'draft',
@@ -608,6 +668,7 @@ export function createElement(
     style: { ...tool.defaultStyle, zIndex: 1 },
     visible: true,
     locked: false,
+    layerId: 'default',
     content: type === 'text' || type === 'heading' ? tool.label : '',
     ...(type === 'table' ? {
       tableData: {
