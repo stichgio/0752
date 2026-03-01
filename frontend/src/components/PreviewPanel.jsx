@@ -8,72 +8,75 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
 
     const normalizePhotoGridTemplate = (sourceHtml) => {
         if (!sourceHtml || typeof sourceHtml !== 'string') return sourceHtml;
+        if (!sourceHtml.includes('photo-cell-wrap')) return sourceHtml;
+        if (sourceHtml.includes('photo-grid-compat-fix')) return sourceHtml;
 
-        let normalized = sourceHtml;
-
-        // Legacy templates may place <img> directly in .photo-cell-wrap with flex-grow,
-        // which can stretch/crop images inconsistently. Wrap media content explicitly.
-        normalized = normalized.replace(
-            /<div class="photo-cell-wrap">\s*(\{%\s*if\s+report\.images\|length\s*>\s*\d+\s*%\}[\s\S]*?\{%\s*endif\s*%\})\s*(<div class="photo-label">)/g,
-            '<div class="photo-cell-wrap"><div class="photo-media">$1</div>$2'
-        );
-
+        // CSS-only compat fix that handles both modern (.photo-media wrapper)
+        // and legacy (img directly in .photo-cell-wrap) templates without
+        // fragile regex-based HTML restructuring.
         const compatCss = `
 <style id="photo-grid-compat-fix">
-  .photo-grid {
-    display: grid !important;
-    width: 100% !important;
-    height: 100% !important;
-    box-sizing: border-box !important;
-  }
-  .photo-cell {
-    overflow: hidden !important;
-    min-height: 0 !important;
-    min-width: 0 !important;
-    box-sizing: border-box !important;
-  }
   .photo-cell-wrap {
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    justify-content: flex-start !important;
-    width: 100% !important;
-    height: 100% !important;
-    padding: 1mm !important;
-    box-sizing: border-box !important;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    padding: 1mm;
+    box-sizing: border-box;
+    overflow: hidden;
   }
   .photo-media {
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    min-width: 0 !important;
-    width: 100% !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    overflow: hidden !important;
+    flex: 1 1 auto;
+    min-height: 0;
+    min-width: 0;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
-  .photo-media > img,
-  .photo-cell > img,
-  .photo-cell-wrap > img,
-  .photo-cell-wrap img {
-    flex: 0 0 auto !important;
-    width: 100% !important;
-    height: 100% !important;
-    max-width: 100% !important;
-    max-height: 100% !important;
-    object-fit: contain !important;
-    object-position: center !important;
-    display: block !important;
+  .photo-media > img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center;
+    display: block;
+  }
+  .photo-cell-wrap > img {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100%;
+    object-fit: contain;
+    object-position: center;
+    display: block;
+  }
+  .photo-cell img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    object-position: center;
+  }
+  .photo-label {
+    flex-shrink: 0;
+    font-weight: 700;
+    font-size: 7.5pt;
+    text-transform: uppercase;
+    margin-top: 1mm;
+    text-align: center;
   }
 </style>`;
 
-        if (/<\/head>/i.test(normalized)) {
-            normalized = normalized.replace(/<\/head>/i, `${compatCss}</head>`);
-        } else {
-            normalized = `${compatCss}${normalized}`;
+        if (/<\/head>/i.test(sourceHtml)) {
+            return sourceHtml.replace(/<\/head>/i, `${compatCss}</head>`);
         }
-
-        return normalized;
+        return `${compatCss}${sourceHtml}`;
     };
 
     // Helper to get mapped value with optional date formatting
