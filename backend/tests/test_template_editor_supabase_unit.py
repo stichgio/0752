@@ -121,7 +121,7 @@ class FakeSupabaseTemplateClient:
 
     def update_template(self, template_id, payload):
         if template_id not in self.templates:
-            raise ValueError("not found")
+            raise ValueError("Plantilla no encontrada")
         self.templates[template_id] = {**self.templates[template_id], **payload}
         return self._copy(self.templates[template_id])
 
@@ -139,7 +139,7 @@ class FakeSupabaseTemplateClient:
     def insert_template_version(self, payload):
         existing = self.get_template_version(payload["template_id"], payload["version_number"])
         if existing:
-            raise RuntimeError("duplicate key value violates unique constraint")
+            raise RuntimeError("La clave duplicada viola la restricción de unicidad")
         self.template_versions.append(self._copy(payload))
         return self._copy(payload)
 
@@ -153,7 +153,7 @@ class FakeSupabaseTemplateClient:
     def copy_object(self, source_path, target_path, content_type):
         _ = content_type
         if source_path not in self.storage:
-            raise RuntimeError("source object missing")
+            raise RuntimeError("Objeto fuente no encontrado")
         self.storage[target_path] = self.storage[source_path]
 
     def list_templates_by_name(self, name, status=None):

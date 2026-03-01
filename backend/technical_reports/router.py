@@ -606,7 +606,7 @@ def parse_csv_file(content: bytes) -> List[Dict[str, Any]]:
             rows = temp_rows
             print(f"[CSV Parser] Parsed with semicolon delimiter: {len(rows)} rows, {len(rows[0].keys())} columns")
         else:
-            raise ValueError("Too few columns with semicolon")
+            raise ValueError("Muy pocas columnas con punto y coma")
     except Exception:
         # Fallback a coma (,)
         reader = csv.DictReader(io.StringIO(decoded), delimiter=',')

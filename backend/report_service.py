@@ -592,7 +592,7 @@ class ReportService:
         import time
 
         if not PDF_ENGINE_AVAILABLE:
-            raise RuntimeError("No PDF engine available. Install WeasyPrint or xhtml2pdf.")
+            raise RuntimeError("No hay motor PDF disponible. Instale WeasyPrint o xhtml2pdf.")
 
         total_reports = len(reports_list)
         start_time = time.time()
@@ -688,7 +688,7 @@ class ReportService:
                 gc.collect()
 
         if not all_html_items:
-            raise RuntimeError("No HTMLs were prepared successfully")
+            raise RuntimeError("No se preparó ningún HTML exitosamente")
 
         # Ordenar por índice original
         all_html_items.sort(key=lambda x: x['index'])
@@ -744,7 +744,7 @@ class ReportService:
             gc.collect()
 
         if not all_pdf_paths:
-            raise RuntimeError("No PDFs were generated successfully")
+            raise RuntimeError("No se generó ningún PDF exitosamente")
 
         # =====================================================================
         # FASE 3: Merge con STREAMING - Escribe directamente a disco
