@@ -19,7 +19,7 @@ try:
     XLSX_SUPPORTED = True
 except ImportError:
     XLSX_SUPPORTED = False
-    print("[TechReports] openpyxl not installed - XLSX support disabled")
+    print("[TechReports] openpyxl no instalado - soporte XLSX deshabilitado")
 
 from .database import db  # pyre-ignore[21]
 from .models import TechnicalReport  # pyre-ignore[21]
@@ -604,14 +604,14 @@ def parse_csv_file(content: bytes) -> List[Dict[str, Any]]:
         # Verificar si el parsing fue exitoso (más de 1 columna indica que ; es el delimitador correcto)
         if temp_rows and len(temp_rows[0].keys()) > 1:
             rows = temp_rows
-            print(f"[CSV Parser] Parsed with semicolon delimiter: {len(rows)} rows, {len(rows[0].keys())} columns")
+            print(f"[CSV Parser] Parseado con delimitador punto y coma: {len(rows)} filas, {len(rows[0].keys())} columnas")
         else:
-            raise ValueError("Too few columns with semicolon")
+            raise ValueError("Muy pocas columnas con punto y coma")
     except Exception:
         # Fallback a coma (,)
         reader = csv.DictReader(io.StringIO(decoded), delimiter=',')
         rows = list(reader)
-        print(f"[CSV Parser] Parsed with comma delimiter: {len(rows)} rows")
+        print(f"[CSV Parser] Parseado con delimitador coma: {len(rows)} filas")
     
     # Limpiar claves y validar filas
     cleaned_rows = []
@@ -762,7 +762,7 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
                                 else:
                                     row_dict[key] = cell_value.strftime('%d/%m/%y')
                             except Exception as e:
-                                print(f"[DATE ERROR] Could not format date {cell_value}: {e}")
+                                print(f"[XLSX] Error formateando fecha {cell_value}: {e}")
                                 row_dict[key] = str(cell_value)
                         else:
                             row_dict[key] = cell_value
@@ -1110,7 +1110,7 @@ async def import_file(file: UploadFile = File(...)):
     try:
         # Leer contenido del archivo
         content = await file.read()
-        print(f"[Import] File: {file.filename}, Size: {len(content)} bytes")
+        print(f"[TechReports] Importando archivo: {file.filename}, Tamaño: {len(content)} bytes")
         
         # Parsear según el tipo de archivo
         if filename.endswith('.csv'):
@@ -1138,7 +1138,7 @@ async def import_file(file: UploadFile = File(...)):
                 nested_row = transform_flat_to_nested(row)
                 transformed_rows.append(nested_row)
             except Exception as e:
-                print(f"[WARN] Error transformando fila: {e}. Usando datos planos.")
+                print(f"[TechReports] Advertencia: Error transformando fila: {e}. Usando datos planos.")
                 transformed_rows.append(row)  # Fallback a datos originales
         
         print(f"[DEBUG] Filas transformadas: {len(transformed_rows)}")
@@ -1329,7 +1329,7 @@ async def generate_consolidated_pdf(
                 if os.path.exists(path):
                     os.remove(path)
             except Exception as e:
-                print(f"Error removing temp file: {e}")
+                print(f"[TechReports] Error eliminando archivo temporal: {e}")
 
         background_tasks.add_task(cleanup_file, temp_file.name)
 

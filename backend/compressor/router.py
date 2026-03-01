@@ -65,14 +65,14 @@ def is_ghostscript_available() -> tuple[bool, Optional[str]]:
             )
             if result.returncode == 0:
                 version = result.stdout.decode().strip()
-                logger.info(f"Ghostscript found: {cmd} (version {version})")
+                logger.info(f"Ghostscript encontrado: {cmd} (versión {version})")
                 _gs_cache.update(checked=True, available=True, cmd=cmd)
                 return True, cmd
         except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired, PermissionError):
             continue
 
     # Log diagnostic info when GS is not found
-    logger.warning("Ghostscript not found in any candidate path. Falling back to pypdf.")
+    logger.warning("Ghostscript no encontrado en ninguna ruta candidata. Usando pypdf como fallback.")
     logger.warning(f"  PATH = {os.environ.get('PATH', '(not set)')}")
     gs_exists = shutil.which("gs")
     logger.warning(f"  shutil.which('gs') = {gs_exists}")
@@ -184,7 +184,7 @@ def compress_pdf_pypdf(input_path: str, output_path: str, quality: str = "ebook"
         return True
 
     except Exception as e:
-        logger.error(f"pypdf compression error: {e}")
+        logger.error(f"Error de compresión pypdf: {e}")
         return False
 
 
@@ -276,7 +276,7 @@ def compress_pdf_ghostscript(input_path: str, output_path: str, quality: str = "
         subprocess.run(cmd, check=True, capture_output=True, timeout=120)
         return True
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:
-        logger.error(f"Ghostscript error: {e}")
+        logger.error(f"Error de Ghostscript: {e}")
         return False
 
 
@@ -290,7 +290,7 @@ def _compress_pdf(input_path: str, output_path: str, quality: str = "ebook") -> 
         return True, "ghostscript"
 
     # 2. Fallback: pypdf-based compression
-    logger.info("Using pypdf fallback for compression")
+    logger.info("Usando pypdf como fallback para compresión")
     if compress_pdf_pypdf(input_path, output_path, quality):
         return True, "pypdf"
 
@@ -352,7 +352,7 @@ async def _process_single_pdf(
     except Exception as e:
         compressed_content = original_content
         error_msg = str(e)
-        logger.error(f"Error compressing {filename}: {e}")
+        logger.error(f"Error comprimiendo {filename}: {e}")
 
     compressed_size = len(compressed_content) if compressed_content else original_size
 
@@ -420,7 +420,7 @@ async def compress_pdfs(
             )
 
     except Exception as e:
-        logger.exception("Error in compression")
+        logger.exception("Error en compresión")
         raise HTTPException(status_code=500, detail=f"Error al comprimir: {str(e)}")
 
 
@@ -484,7 +484,7 @@ async def compress_single_pdf(
     except HTTPException:
         raise
     except Exception as e:
-        logger.exception("Error compressing PDF")
+        logger.exception("Error comprimiendo PDF")
         raise HTTPException(status_code=500, detail=f"Error al comprimir: {str(e)}")
 
 

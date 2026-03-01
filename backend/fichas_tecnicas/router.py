@@ -17,7 +17,7 @@ try:
     XLSX_SUPPORTED = True
 except ImportError:
     XLSX_SUPPORTED = False
-    print("[FichasTecnicas] openpyxl not installed - XLSX support disabled")
+    print("[FichasTecnicas] openpyxl no instalado - soporte XLSX deshabilitado")
 
 from .database import db  # type: ignore
 from .models import FichaTecnica  # type: ignore
@@ -48,7 +48,7 @@ def parse_csv_file(content: bytes) -> List[Dict[str, Any]]:
         if temp_rows and len(temp_rows[0].keys()) > 3:
             rows = temp_rows
         else:
-            raise ValueError("Too few columns with semicolon")
+            raise ValueError("Muy pocas columnas con punto y coma")
     except Exception:
         reader = csv.DictReader(io.StringIO(decoded), delimiter=',')
         rows = list(reader)
@@ -227,7 +227,7 @@ async def import_file(file: UploadFile = File(...)):
 
     try:
         content: bytes = await file.read()
-        print(f"[FichasTecnicas Import] File: {file.filename}, Size: {len(content)} bytes")
+        print(f"[FichasTecnicas] Importando archivo: {file.filename}, Tamaño: {len(content)} bytes")
 
         if filename.endswith('.csv'):
             rows = parse_csv_file(content)
@@ -415,7 +415,7 @@ async def generate_consolidated_pdf(
                 if os.path.exists(path):
                     os.remove(path)
             except Exception as e:
-                print(f"Error removing temp file: {e}")
+                print(f"[FichasTecnicas] Error eliminando archivo temporal: {e}")
 
         background_tasks.add_task(cleanup_file, temp_file.name)
 

@@ -35,13 +35,13 @@ class SupabaseTemplateClient:
     def __init__(self, settings: Optional[SupabaseSettings] = None):
         self._settings = settings or load_supabase_settings()
         if self._settings is None:
-            raise SupabaseNotConfiguredError("SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required")
+            raise SupabaseNotConfiguredError("Se requieren SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY")
 
         try:
             from supabase import create_client  # type: ignore
         except Exception as exc:  # pragma: no cover - depends on runtime env
             raise SupabaseOperationError(
-                "supabase package is not installed. Add it to requirements before enabling Supabase persistence."
+                "El paquete supabase no está instalado. Agréguelo a requirements antes de habilitar persistencia con Supabase."
             ) from exc
 
         self._client = create_client(self._settings.url, self._settings.service_role_key)
@@ -108,7 +108,7 @@ class SupabaseTemplateClient:
         response = self._client.table("templates").insert(payload).execute()
         row = self._first(response)
         if not row:
-            raise SupabaseOperationError("Supabase insert on templates returned empty response")
+            raise SupabaseOperationError("Supabase insert en templates devolvió respuesta vacía")
         return row
 
     def update_template(self, template_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -117,7 +117,7 @@ class SupabaseTemplateClient:
         if not row:
             row = self.get_template(template_id)
         if not row:
-            raise SupabaseOperationError("Supabase update on templates did not return the updated row")
+            raise SupabaseOperationError("Supabase update en templates no devolvió la fila actualizada")
         return row
 
     def list_published_templates(self) -> List[Dict[str, Any]]:
@@ -155,7 +155,7 @@ class SupabaseTemplateClient:
         response = self._client.table("template_versions").insert(payload).execute()
         row = self._first(response)
         if not row:
-            raise SupabaseOperationError("Supabase insert on template_versions returned empty response")
+            raise SupabaseOperationError("Supabase insert en template_versions devolvió respuesta vacía")
         return row
 
     def _storage(self):
@@ -173,7 +173,7 @@ class SupabaseTemplateClient:
         except TypeError:
             bucket.upload(path, content)
         except Exception as exc:
-            raise SupabaseOperationError(f"Failed to upload storage object '{path}': {exc}") from exc
+            raise SupabaseOperationError(f"Error subiendo objeto de almacenamiento '{path}': {exc}") from exc
 
     def upload_text(self, path: str, content: str, content_type: str) -> None:
         self.upload_bytes(path, content.encode("utf-8"), content_type)
@@ -209,5 +209,5 @@ class SupabaseTemplateClient:
         except Exception:
             content = self.download_bytes(source_path)
             if content is None:
-                raise SupabaseOperationError(f"Unable to copy '{source_path}' because source object does not exist")
+                raise SupabaseOperationError(f"No se puede copiar '{source_path}' porque el objeto origen no existe")
             self.upload_bytes(target_path, content, content_type)

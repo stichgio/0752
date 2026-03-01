@@ -28,7 +28,7 @@ class BaseJsonDB(Generic[T]):
         self._items: Dict[str, Any] = {}
 
         os.makedirs(os.path.dirname(db_file), exist_ok=True)
-        print(f"[{self._label}] DB file: {self._db_file}")
+        print(f"[{self._label}] Archivo DB: {self._db_file}")
         self._load()
 
     def _load(self) -> None:
@@ -44,9 +44,9 @@ class BaseJsonDB(Generic[T]):
                     self._items = raw
                 else:
                     self._items = {}
-                print(f"[{self._label}] Loaded {len(self._items)} items")
+                print(f"[{self._label}] Cargados {len(self._items)} registros")
             except Exception as e:
-                print(f"[{self._label}] Error loading: {e}")
+                print(f"[{self._label}] Error cargando: {e}")
                 self._items = {}
         else:
             self._items = {}
@@ -67,9 +67,9 @@ class BaseJsonDB(Generic[T]):
                 except OSError:
                     pass
                 raise
-            print(f"[{self._label}] Saved {len(self._items)} items successfully")
+            print(f"[{self._label}] Guardados {len(self._items)} registros correctamente")
         except Exception as e:
-            print(f"[{self._label}] Error saving: {e}")
+            print(f"[{self._label}] Error guardando: {e}")
 
     def get_all(self) -> List[T]:
         with self._lock:
@@ -105,5 +105,5 @@ class BaseJsonDB(Generic[T]):
             count = len(self._items)
             self._items = {}
             self._save()
-            print(f"[{self._label}] Cleared {count} items")
+            print(f"[{self._label}] Eliminados {count} registros")
             return count

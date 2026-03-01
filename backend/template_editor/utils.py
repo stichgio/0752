@@ -49,5 +49,5 @@ def url_to_base64(url: str) -> str:
         data = base64.b64encode(resp.content).decode("ascii")
         return f"data:{mime};base64,{data}"
     except Exception as exc:
-        logger.warning("Failed to fetch image %s: %s", url, exc)
+        logger.warning("Error descargando imagen %s: %s", url, exc)
         return PLACEHOLDER_BASE64

@@ -53,7 +53,7 @@ async def list_published_templates():
     try:
         templates = get_all_published_templates()
     except (SupabaseNotConfiguredError, SupabaseOperationError) as exc:
-        print(f"[TemplateEditor] Supabase error listing published templates: {exc}")
+        print(f"[TemplateEditor] Error de Supabase listando plantillas publicadas: {exc}")
         templates = []
     return {"templates": templates}
 
@@ -63,7 +63,7 @@ async def list_templates_endpoint():
     try:
         templates = get_all_editor_templates()
     except (SupabaseNotConfiguredError, SupabaseOperationError) as exc:
-        print(f"[TemplateEditor] Supabase error listing templates: {exc}")
+        print(f"[TemplateEditor] Error de Supabase listando plantillas: {exc}")
         templates = []
     return {"templates": templates}
 
@@ -76,11 +76,11 @@ async def create_template_endpoint(payload: CreateTemplatePayload):
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except (SupabaseNotConfiguredError, SupabaseOperationError) as exc:
-        print(f"[TemplateEditor] Supabase error creating template: {exc}")
-        raise HTTPException(status_code=502, detail=f"Storage backend error: {exc}")
+        print(f"[TemplateEditor] Error de Supabase creando plantilla: {exc}")
+        raise HTTPException(status_code=502, detail=f"Error en backend de almacenamiento: {exc}")
     except Exception as exc:
-        print(f"[TemplateEditor] Unexpected error creating template: {exc}")
-        raise HTTPException(status_code=500, detail=f"Internal error: {type(exc).__name__}: {exc}")
+        print(f"[TemplateEditor] Error inesperado creando plantilla: {exc}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {type(exc).__name__}: {exc}")
     return _model_dump(created)
 
 
@@ -88,7 +88,7 @@ async def create_template_endpoint(payload: CreateTemplatePayload):
 async def get_template_endpoint(template_id: str):
     record = get_template(template_id)
     if not record:
-        raise HTTPException(status_code=404, detail="Template not found")
+        raise HTTPException(status_code=404, detail="Plantilla no encontrada")
     return _model_dump(record)
 
 
@@ -99,11 +99,11 @@ async def update_template_endpoint(template_id: str, payload: UpdateTemplatePayl
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
     except (SupabaseNotConfiguredError, SupabaseOperationError) as exc:
-        print(f"[TemplateEditor] Supabase error updating template: {exc}")
-        raise HTTPException(status_code=502, detail=f"Storage backend error: {exc}")
+        print(f"[TemplateEditor] Error de Supabase actualizando plantilla: {exc}")
+        raise HTTPException(status_code=502, detail=f"Error en backend de almacenamiento: {exc}")
     except Exception as exc:
-        print(f"[TemplateEditor] Unexpected error updating template: {exc}")
-        raise HTTPException(status_code=500, detail=f"Internal error: {type(exc).__name__}: {exc}")
+        print(f"[TemplateEditor] Error inesperado actualizando plantilla: {exc}")
+        raise HTTPException(status_code=500, detail=f"Error interno: {type(exc).__name__}: {exc}")
     return UpdateTemplateResponse(template=updated, validation=validation)
 
 
@@ -178,12 +178,12 @@ def _render_compiled_html(
 @router.post("/templates/{template_id}/preview")
 async def preview_template_endpoint(template_id: str, payload: PreviewTemplatePayload, request: Request):
     if not rate_limiter.check(f"preview:{request.client.host if request.client else 'local'}"):
-        raise HTTPException(status_code=429, detail="Preview rate limit exceeded")
+        raise HTTPException(status_code=429, detail="Límite de solicitudes de vista previa excedido")
 
     async def _build_preview() -> str:
         compiled_html = get_preview_html(template_id)
         if not compiled_html:
-            raise HTTPException(status_code=404, detail="Template or draft not found")
+            raise HTTPException(status_code=404, detail="Plantilla o borrador no encontrado")
         return _render_compiled_html(
             compiled_html,
             payload.sampleData,
@@ -194,11 +194,11 @@ async def preview_template_endpoint(template_id: str, payload: PreviewTemplatePa
     try:
         preview_html = await asyncio.wait_for(_build_preview(), timeout=8.0)
     except asyncio.TimeoutError:
-        raise HTTPException(status_code=504, detail="Preview generation timeout")
+        raise HTTPException(status_code=504, detail="Tiempo de espera agotado generando vista previa")
     except HTTPException:
         raise
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Preview generation failed: {exc}")
+        raise HTTPException(status_code=500, detail=f"Error generando vista previa: {exc}")
     return {"templateId": template_id, "previewHtml": preview_html}
 
 
@@ -214,15 +214,15 @@ async def render_template_endpoint(template_id: str, payload: PreviewTemplatePay
     resolve logo elements whose ``variableName`` references these variables.
     """
     if not rate_limiter.check(f"render:{request.client.host if request.client else 'local'}"):
-        raise HTTPException(status_code=429, detail="Render rate limit exceeded")
+        raise HTTPException(status_code=429, detail="Límite de solicitudes de renderizado excedido")
 
     record = get_template(template_id)
     if not record:
-        raise HTTPException(status_code=404, detail="Template not found")
+        raise HTTPException(status_code=404, detail="Plantilla no encontrada")
 
     compiled_html = get_preview_html(template_id)
     if not compiled_html:
-        raise HTTPException(status_code=404, detail="Template content not found")
+        raise HTTPException(status_code=404, detail="Contenido de plantilla no encontrado")
 
     compiled_html = _render_compiled_html(
         compiled_html,
@@ -237,14 +237,14 @@ async def render_template_endpoint(template_id: str, payload: PreviewTemplatePay
 @router.post("/templates/{template_id}/publish")
 async def publish_template_endpoint(template_id: str, payload: PublishTemplatePayload):
     if not _feature_enabled():
-        raise HTTPException(status_code=403, detail="Template editor feature flag disabled")
+        raise HTTPException(status_code=403, detail="Editor de plantillas deshabilitado por feature flag")
     try:
         published = publish_template(template_id, payload.author)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except (SupabaseNotConfiguredError, SupabaseOperationError) as exc:
-        print(f"[TemplateEditor] Supabase error publishing template: {exc}")
-        raise HTTPException(status_code=502, detail=f"Storage backend error: {exc}")
+        print(f"[TemplateEditor] Error de Supabase publicando plantilla: {exc}")
+        raise HTTPException(status_code=502, detail=f"Error en backend de almacenamiento: {exc}")
     return _model_dump(published)
 
 
@@ -255,8 +255,8 @@ async def rollback_template_endpoint(template_id: str, payload: RollbackTemplate
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except (SupabaseNotConfiguredError, SupabaseOperationError) as exc:
-        print(f"[TemplateEditor] Supabase error rolling back template: {exc}")
-        raise HTTPException(status_code=502, detail=f"Storage backend error: {exc}")
+        print(f"[TemplateEditor] Error de Supabase revirtiendo plantilla: {exc}")
+        raise HTTPException(status_code=502, detail=f"Error en backend de almacenamiento: {exc}")
     return _model_dump(restored)
 
 
@@ -267,6 +267,6 @@ async def delete_template_endpoint(template_id: str, author: str = "system"):
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
     except (SupabaseNotConfiguredError, SupabaseOperationError) as exc:
-        print(f"[TemplateEditor] Supabase error deleting template: {exc}")
-        raise HTTPException(status_code=502, detail=f"Storage backend error: {exc}")
+        print(f"[TemplateEditor] Error de Supabase eliminando plantilla: {exc}")
+        raise HTTPException(status_code=502, detail=f"Error en backend de almacenamiento: {exc}")
     return _model_dump(deleted)

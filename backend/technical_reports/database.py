@@ -69,16 +69,16 @@ class TechnicalReportsDB(BaseJsonDB[TechnicalReport]):
             if clear_existing:
                 deleted_count = len(self._items)
                 self._items = {}
-                print(f"[TechReports] Cleared {deleted_count} existing reports")
+                print(f"[TechReports] Eliminados {deleted_count} informes existentes")
 
             imported = []
 
-            print(f"[TechReports] Starting import of {len(csv_data)} rows")
-            print(f"[TechReports] Max existing ID before import: {max_existing_id}")
+            print(f"[TechReports] Iniciando importación de {len(csv_data)} filas")
+            print(f"[TechReports] ID máximo existente antes de importar: {max_existing_id}")
             if len(csv_data) > 0:
-                print(f"[TechReports] CSV Sample Keys: {list(csv_data[0].keys())}")
+                print(f"[TechReports] Claves de ejemplo del CSV: {list(csv_data[0].keys())}")
                 first_row = csv_data[0]
-                print(f"[TechReports] First row sample values:")
+                print(f"[TechReports] Valores de ejemplo de primera fila:")
                 print(f"  - informe_id: '{first_row.get('informe_id')}'")
                 print(f"  - cs: '{first_row.get('cs')}'")
                 print(f"  - contratista: '{first_row.get('contratista')}'")
@@ -348,13 +348,13 @@ class TechnicalReportsDB(BaseJsonDB[TechnicalReport]):
                     imported.append(report)
 
                 except Exception as e:
-                    print(f"Error importing row {idx + 1}: {e}")
+                    print(f"[TechReports] Error importando fila {idx + 1}: {e}")
                     import traceback
                     traceback.print_exc()
                     continue
 
             self._save()
-            print(f"[TechReports] Imported {len(imported)} reports (deleted {deleted_count} old records)")
+            print(f"[TechReports] Importados {len(imported)} informes (eliminados {deleted_count} registros previos)")
             return imported
 
     @staticmethod

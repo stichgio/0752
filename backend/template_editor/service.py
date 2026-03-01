@@ -402,7 +402,7 @@ class SupabaseTemplateStore:
             editor_payload = self.client.download_text(draft_editor)
             compiled_payload = self.client.download_text(draft_compiled)
             if editor_payload is None or compiled_payload is None:
-                raise ValueError("Template draft content not found")
+                raise ValueError("Contenido del borrador de plantilla no encontrado")
             self.client.upload_text(version_editor, editor_payload, "application/json; charset=utf-8")
             self.client.upload_text(version_compiled, compiled_payload, "text/html; charset=utf-8")
 
@@ -471,7 +471,7 @@ class SupabaseTemplateStore:
     ) -> Tuple[TemplateEditorRecord, ValidationResult]:
         row = self.client.get_template(template_id)
         if not row:
-            raise ValueError("Template not found")
+            raise ValueError("Plantilla no encontrada")
 
         validation = run_validations(template_json, role)
         sanitized, compiled = _sanitize_and_compile(template_json)
@@ -507,7 +507,7 @@ class SupabaseTemplateStore:
     def publish_template(self, template_id: str, author: str) -> TemplateEditorRecord:
         row = self.client.get_template(template_id)
         if not row:
-            raise ValueError("Template not found")
+            raise ValueError("Plantilla no encontrada")
         current_version = int(row.get("current_version") or 0)
         current_status = str(row.get("status") or "draft")
         if current_status == "published":
@@ -531,7 +531,7 @@ class SupabaseTemplateStore:
     def delete_template(self, template_id: str, author: str) -> TemplateEditorRecord:
         row = self.client.get_template(template_id)
         if not row:
-            raise ValueError("Template not found")
+            raise ValueError("Plantilla no encontrada")
         updated_row = self.client.update_template(
             template_id,
             {
@@ -602,12 +602,12 @@ class SupabaseTemplateStore:
     def rollback_template(self, template_id: str, target_version: Optional[int], author: str) -> TemplateEditorRecord:
         row = self.client.get_template(template_id)
         if not row:
-            raise ValueError("Template not found")
+            raise ValueError("Plantilla no encontrada")
 
         version_rows = self.client.list_template_versions(template_id)
         available_versions = sorted({int(v.get("version_number") or 0) for v in version_rows})
         if not available_versions:
-            raise ValueError("Template has no stored versions")
+            raise ValueError("La plantilla no tiene versiones almacenadas")
 
         if target_version is None:
             version_to_restore = int(row.get("current_version") or available_versions[-1])
@@ -616,7 +616,7 @@ class SupabaseTemplateStore:
         else:
             version_to_restore = int(target_version)
             if version_to_restore not in available_versions:
-                raise ValueError("Target version not found")
+                raise ValueError("Versión objetivo no encontrada")
 
         updated_row = self.client.update_template(
             template_id,
@@ -676,12 +676,12 @@ class SupabaseTemplateStore:
     def set_template_status(self, template_id: str, status: str, author: str) -> TemplateEditorRecord:
         normalized_status = str(status or "").lower()
         if normalized_status not in ALLOWED_TEMPLATE_STATUS:
-            raise ValueError("Invalid status")
+            raise ValueError("Estado inválido")
         if normalized_status == "published":
             return self.publish_template(template_id, author)
         row = self.client.get_template(template_id)
         if not row:
-            raise ValueError("Template not found")
+            raise ValueError("Plantilla no encontrada")
         updated_row = self.client.update_template(
             template_id,
             {
@@ -704,7 +704,7 @@ def _get_store(required: bool = False) -> Optional[SupabaseTemplateStore]:
             if _STORE is None and is_supabase_enabled():
                 _STORE = SupabaseTemplateStore()
     if required and _STORE is None:
-        raise ValueError("Supabase not configured")
+        raise ValueError("Supabase no está configurado")
     return _STORE
 
 
