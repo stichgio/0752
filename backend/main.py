@@ -38,6 +38,8 @@ from template_editor.service import (  # type: ignore
 )
 from utils.file_utils import save_upload  # type: ignore
 
+PHOTO_GRID_HEAD_CLOSE_RE = re.compile(r"</head>", re.IGNORECASE)
+
 
 # --- Cleanup helper (used by multiple endpoints) ---
 def _cleanup_file(path: str):
@@ -122,8 +124,9 @@ def _normalize_photo_grid_template_compat(template_html: Optional[str]) -> Optio
 </style>
 """
 
-    if "</head>" in template_html:
-        return template_html.replace("</head>", f"{compat_css}</head>", 1)
+    if "</head>" in template_html.lower():
+        # FIX: BUG-008 reuse compiled regex for repeated template normalizations in batch flows
+        return PHOTO_GRID_HEAD_CLOSE_RE.sub(f"{compat_css}</head>", template_html, count=1)
     return f"{compat_css}{template_html}"
 
 
@@ -443,7 +446,11 @@ async def generate_single_pdf(
                     # Find matching file objects
                     r_files = []
                     for name in img_names:
-                            r_files.append(file_map[str(name)])  # type: ignore
+                            mapped_file = file_map.get(str(name))
+                            if mapped_file is None:
+                                # FIX: BUG-005 avoid silent KeyError with explicit client-facing 400
+                                raise HTTPException(status_code=400, detail=f"Image filename '{name}' not found in uploaded files")
+                            r_files.append(mapped_file)  # type: ignore
 
                     reports_payload.append({"data": r_data, "files": r_files})
             else:
@@ -562,6 +569,14 @@ async def generate_pdf_with_progress(
         content = await file.read()
         file_contents.append({"filename": file.filename, "content": content})
 
+    if isinstance(row_data, list):
+        uploaded_filenames = {item["filename"] for item in file_contents}
+        for item in row_data:
+            for name in item.get("image_filenames", []):
+                if str(name) not in uploaded_filenames:
+                    # FIX: BUG-005 avoid silent image mapping failures with descriptive 400
+                    raise HTTPException(status_code=400, detail=f"Image filename '{name}' not found in uploaded files")
+
     service = request.app.state.report_service
 
     async def event_generator():
@@ -621,9 +636,13 @@ async def generate_pdf_with_progress(
                 except Exception:
                     pass
 
-        asyncio.create_task(run_generation())
+        generation_task = asyncio.create_task(run_generation())
 
         while True:
+            if await request.is_disconnected():
+                # FIX: BUG-007 cancel background generation when SSE client disconnects
+                generation_task.cancel()
+                break
             msg = await progress_queue.get()
             if msg is None:
                 break
@@ -750,7 +769,7 @@ async def tool_split_pdf(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     mode: str = Form("pages"),  # 'pages' or 'custom'
-    pages_per_file: int = Form(1),
+    pages_per_file: int = Form(1, ge=1, le=500),  # FIX: BUG-009 prevent zero/negative pages per split file
     ranges: Optional[str] = Form(None)  # JSON string e.g. "[[1,2], [3,5]]"
 ):
     print(f"Tool Split Request: {file.filename}, mode={mode}, pages={pages_per_file}, ranges={ranges}")
