@@ -377,7 +377,7 @@ export const templateEditorApi = {
         return id;
       } catch (err) {
         const msg = toErrorMessage(err, '');
-        if (msg.includes('404') || msg.toLowerCase().includes('not found')) return null;
+        if (msg.includes('404') || msg.toLowerCase().includes('not found') || msg.toLowerCase().includes('no encontrad')) return null;
         throw err;
       }
     };

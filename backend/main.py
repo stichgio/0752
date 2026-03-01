@@ -192,7 +192,7 @@ async def request_validation_exception_handler(_: Request, exc: RequestValidatio
             "detail": exc.errors(),
             "error": {
                 "code": "VALIDATION_ERROR",
-                "message": "Request validation failed",
+                "message": "Error de validación de solicitud",
             },
         },
     )
@@ -272,11 +272,11 @@ async def update_template_status_put_endpoint(template_id: str, payload: Templat
 async def render_template_by_id(template_id: str):
     record = get_template(template_id)
     if not record:
-        raise HTTPException(status_code=404, detail="Template not found")
+        raise HTTPException(status_code=404, detail="Plantilla no encontrada")
 
     compiled_html = get_preview_html(template_id)
     if not compiled_html:
-        raise HTTPException(status_code=404, detail="Template content not found")
+        raise HTTPException(status_code=404, detail="Contenido de plantilla no encontrado")
 
     latest_version = record.versions[-1] if record.versions else None
     template_json: Optional[Dict[str, Any]] = None
@@ -307,7 +307,7 @@ async def get_template_content(filename: str):
     file_path = os.path.join(templates_dir, safe_filename)
 
     if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="Template not found")
+        raise HTTPException(status_code=404, detail="Plantilla no encontrada")
 
     try:
         with open(file_path, "r", encoding="utf-8") as f:
@@ -432,7 +432,7 @@ async def generate_single_pdf(
             )
 
     except json.JSONDecodeError as e:
-        raise HTTPException(status_code=400, detail=f"Invalid JSON format in 'data' field: {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Formato JSON inválido en el campo 'data': {str(e)}")
     except Exception as e:
         error_trace = traceback.format_exc()
         print(f"PDF Generation Error:\n{error_trace}")
@@ -440,15 +440,15 @@ async def generate_single_pdf(
         # Try to provide a user-friendly message for common errors
         error_msg = str(e)
         if "weasyprint" in error_trace.lower():
-            error_msg = f"PDF Generation Engine Error (WeasyPrint): {str(e)}"
+            error_msg = f"Error del motor de generación PDF (WeasyPrint): {str(e)}"
         elif "No such file" in error_msg:
-             error_msg = f"Missing file resource: {str(e)}"
+             error_msg = f"Recurso de archivo no encontrado: {str(e)}"
 
         # Return 500 with clear details
         raise HTTPException(
             status_code=500,
             detail={
-                "message": "Failed to generate PDF",
+                "message": "Error al generar PDF",
                 "reason": error_msg,
                 "type": type(e).__name__
             }
@@ -594,10 +594,10 @@ async def generate_pdf_with_progress(
 async def download_temp_file(filename: str, background_tasks: BackgroundTasks):
     """Download a temporary PDF file and schedule cleanup."""
     if not re.match(r'^pdf_[a-f0-9]{12}\.pdf$', filename):
-        raise HTTPException(status_code=400, detail="Invalid filename")
+        raise HTTPException(status_code=400, detail="Nombre de archivo inválido")
     path = os.path.join(tempfile.gettempdir(), filename)
     if not os.path.exists(path):
-        raise HTTPException(status_code=404, detail="File not found or expired")
+        raise HTTPException(status_code=404, detail="Archivo no encontrado o expirado")
     background_tasks.add_task(_cleanup_file, path)
     return FileResponse(path, media_type="application/pdf", filename="report_consolidado.pdf")
 
@@ -720,7 +720,7 @@ async def tool_split_pdf(
                     # Convert to list of tuples
                     range_tuples = [(r[0], r[1]) for r in range_list]
                 except Exception as e:
-                    raise HTTPException(status_code=400, detail=f"Invalid ranges format: {e}")
+                    raise HTTPException(status_code=400, detail=f"Formato de rangos inválido: {e}")
 
                 output_files = split_pdf_by_ranges(
                     input_path=input_path,
@@ -784,14 +784,14 @@ async def tool_organize_pdf(
     try:
         ops = json.loads(operations)
     except Exception:
-        raise HTTPException(status_code=400, detail="Invalid 'operations' JSON")
+        raise HTTPException(status_code=400, detail="JSON de 'operations' inválido")
 
     page_order = ops.get("pageOrder", [])
     rotations = ops.get("rotations", [])
     cuts = ops.get("cuts", [])
 
     if not page_order:
-        raise HTTPException(status_code=400, detail="pageOrder is empty")
+        raise HTTPException(status_code=400, detail="pageOrder está vacío")
 
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -860,7 +860,7 @@ if os.path.exists("static"):
     async def serve_spa(full_path: str):
         # Allow API calls to pass through (just in case)
         if full_path.startswith("api/"):
-             raise HTTPException(status_code=404, detail="Not Found")
+             raise HTTPException(status_code=404, detail="No encontrado")
 
         # Check if file exists in static (e.g. favicon.ico, public assets)
         path = os.path.join("static", full_path)
