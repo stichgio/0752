@@ -73,6 +73,8 @@ export function useSSEProgress() {
             const decoder = new TextDecoder();
             let buffer = '';
 
+            let completed = false;
+
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
@@ -91,6 +93,7 @@ export function useSSEProgress() {
                             const data = JSON.parse(raw);
 
                             if (currentEvent === 'done' || data.phase === 'done') {
+                                completed = true;
                                 setProgress(p => p ? { ...p, percent: 100, phaseLabel: 'Completado!' } : p);
                                 setIsLoading(false);
                                 opts.onComplete(data.download_url);
@@ -119,6 +122,11 @@ export function useSSEProgress() {
                         currentEvent = '';
                     }
                 }
+            }
+
+            // Stream closed without a 'done' event — treat as error to release spinner
+            if (!completed) {
+                throw new Error('La conexión SSE se cerró sin completar la operación');
             }
         } catch (err: any) {
             if (err.name === 'AbortError') return;
