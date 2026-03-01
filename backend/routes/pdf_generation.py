@@ -32,55 +32,96 @@ def _cleanup_file(path: str):
 
 
 def _normalize_photo_grid_template_compat(template_html: Optional[str]) -> Optional[str]:
-    """Backwards-compatible photo-grid fix for legacy template-editor exports."""
+    """Backwards-compatible photo-grid fix for legacy template-editor exports.
+
+    Legacy canvas-editor templates may lack a ``.photo-media`` wrapper inside
+    ``.photo-cell-wrap``, causing images to stretch or crop inconsistently.
+    Instead of restructuring the HTML with fragile regex (which breaks on any
+    markup variation), we inject CSS rules that handle **both** layouts:
+
+    * Modern templates  – ``.photo-cell-wrap > .photo-media > img``
+    * Legacy templates  – ``.photo-cell-wrap > img`` (no wrapper)
+
+    The injected ``<style>`` block is idempotent (skipped if already present).
+    """
     if not template_html or not isinstance(template_html, str):
         return template_html
 
-    normalized = template_html
-    if "photo-cell-wrap" not in normalized:
-        return normalized
+    if "photo-cell-wrap" not in template_html:
+        return template_html
 
-    normalized = re.sub(
-        r'<div class="photo-cell-wrap">\s*(\{%\s*if\s+report\.images\|length\s*>\s*\d+\s*%\}[\s\S]*?\{%\s*endif\s*%\})\s*(<div class="photo-label">)',
-        r'<div class="photo-cell-wrap"><div class="photo-media">\1</div>\2',
-        normalized,
+    # Already patched — avoid double-injection.
+    if "photo-grid-compat-fix" in template_html:
+        return template_html
+
+    compat_css = (
+        '<style id="photo-grid-compat-fix">\n'
+        # ── cell wrapper: flex column that stretches to fill the table cell ──
+        '  .photo-cell-wrap {\n'
+        '    display: flex;\n'
+        '    flex-direction: column;\n'
+        '    align-items: stretch;\n'
+        '    justify-content: flex-start;\n'
+        '    width: 100%;\n'
+        '    height: 100%;\n'
+        '    min-height: 0;\n'
+        '    padding: 1mm;\n'
+        '    box-sizing: border-box;\n'
+        '    overflow: hidden;\n'
+        '  }\n'
+        # ── modern wrapper (already present in new templates) ──
+        '  .photo-media {\n'
+        '    flex: 1 1 auto;\n'
+        '    min-height: 0;\n'
+        '    width: 100%;\n'
+        '    position: relative;\n'
+        '    overflow: hidden;\n'
+        '    display: flex;\n'
+        '    align-items: center;\n'
+        '    justify-content: center;\n'
+        '  }\n'
+        '  .photo-media > img {\n'
+        '    position: absolute;\n'
+        '    top: 0;\n'
+        '    left: 0;\n'
+        '    width: 100%;\n'
+        '    height: 100%;\n'
+        '    object-fit: contain;\n'
+        '    object-position: center;\n'
+        '    display: block;\n'
+        '  }\n'
+        # ── legacy fallback: img is a direct child of .photo-cell-wrap ──
+        '  .photo-cell-wrap > img {\n'
+        '    flex: 1 1 auto;\n'
+        '    min-height: 0;\n'
+        '    width: 100%;\n'
+        '    object-fit: contain;\n'
+        '    object-position: center;\n'
+        '    display: block;\n'
+        '  }\n'
+        # ── catch-all for deeply-nested or unexpected structures ──
+        '  .photo-cell img {\n'
+        '    max-width: 100%;\n'
+        '    max-height: 100%;\n'
+        '    object-fit: contain;\n'
+        '    object-position: center;\n'
+        '  }\n'
+        # ── label always at the bottom ──
+        '  .photo-label {\n'
+        '    flex-shrink: 0;\n'
+        '    font-weight: 700;\n'
+        '    font-size: 7.5pt;\n'
+        '    text-transform: uppercase;\n'
+        '    margin-top: 1mm;\n'
+        '    text-align: center;\n'
+        '  }\n'
+        '</style>\n'
     )
 
-    compat_css = """
-<style id="photo-grid-compat-fix">
-  .photo-cell-wrap { align-items: stretch !important; justify-content: flex-start !important; }
-  .photo-media {
-    flex: 1 1 auto !important;
-    min-height: 0 !important;
-    width: 100% !important;
-    display: block !important;
-    overflow: hidden !important;
-    position: relative !important;
-  }
-  .photo-media > img,
-  .photo-cell > img,
-  .photo-cell-wrap > img,
-  .photo-cell-wrap img {
-    position: static !important;
-    display: block !important;
-    width: 100% !important;
-    height: auto !important;
-    max-width: 100% !important;
-    max-height: 100% !important;
-    object-fit: contain !important;
-    object-position: center !important;
-    image-orientation: from-image !important;
-    margin: 0 auto !important;
-  }
-</style>
-"""
+    if "</head>" in template_html:
+        return template_html.replace("</head>", f"{compat_css}</head>", 1)
 
-    if "</head>" in normalized:
-        normalized = normalized.replace("</head>", f"{compat_css}</head>", 1)
-    else:
-        normalized = f"{compat_css}{normalized}"
-
-    return normalized
+    return f"{compat_css}{template_html}"
 
 
 def _resolve_template(custom_template: Optional[str], template_name: Optional[str]):
