@@ -39,33 +39,13 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
     justify-content: center;
     overflow: hidden;
   }
-  /* Legacy: img directly in .photo-cell-wrap */
-  .photo-cell-wrap > img {
-    flex: 1 1 auto;
-    min-height: 0;
-    width: 100% !important;
-    height: auto !important;
-    max-height: 100%;
-    object-fit: contain !important;
-    object-position: center !important;
-    display: block;
-  }
-  /* Modern: img inside .photo-media */
-  .photo-media > img {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: contain !important;
-    object-position: center !important;
-    display: block;
-  }
-  /* Catch-all for img nested deeper */
-  .photo-cell-wrap img {
+  .photo-cell-wrap,
+  .photo-media {
     position: relative;
     overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
   }
+
+  /* Modern: img inside .photo-media */
   .photo-media > img {
     position: absolute;
     top: 0;
@@ -79,9 +59,11 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
   .photo-cell-wrap > img {
     flex: 1 1 auto;
     min-height: 0;
-    width: 100%;
-    object-fit: contain;
-    object-position: center;
+    width: 100% !important;
+    height: auto !important;
+    max-height: 100%;
+    object-fit: contain !important;
+    object-position: center !important;
     display: block;
   }
   .photo-cell img {
