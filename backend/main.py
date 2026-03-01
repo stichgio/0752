@@ -487,11 +487,22 @@ async def generate_pdf_with_progress(
                 )
                 await progress_queue.put({"phase": "done", "download_url": f"/api/download-temp/{filename}"})
             except Exception as e:
-                await progress_queue.put({"phase": "error", "detail": str(e)})
+                try:
+                    await progress_queue.put({"phase": "error", "detail": str(e)})
+                except Exception:
+                    progress_queue.put_nowait({"phase": "error", "detail": str(e)})
+            except BaseException as e:
+                # CancelledError / KeyboardInterrupt: signal the frontend before re-raising
+                progress_queue.put_nowait({"phase": "error", "detail": "La generación fue interrumpida"})
+                raise
             finally:
                 import shutil
                 shutil.rmtree(temp_dir, ignore_errors=True)
-                await progress_queue.put(None)
+                # put_nowait avoids a new await that could itself be cancelled
+                try:
+                    progress_queue.put_nowait(None)
+                except Exception:
+                    pass
 
         asyncio.create_task(run_generation())
 
