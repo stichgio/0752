@@ -555,9 +555,18 @@ async def generate_consolidated_pdf_progress(
 
                 await progress_queue.put({"phase": "done", "download_url": f"/api/download-temp/{filename}"})
             except Exception as e:
-                await progress_queue.put({"phase": "error", "detail": str(e)})
+                try:
+                    await progress_queue.put({"phase": "error", "detail": str(e)})
+                except Exception:
+                    progress_queue.put_nowait({"phase": "error", "detail": str(e)})
+            except BaseException as e:
+                progress_queue.put_nowait({"phase": "error", "detail": "La generación fue interrumpida"})
+                raise
             finally:
-                await progress_queue.put(None)
+                try:
+                    progress_queue.put_nowait(None)
+                except Exception:
+                    pass
 
         asyncio.create_task(run_generation())
 
