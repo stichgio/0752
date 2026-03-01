@@ -13,7 +13,7 @@ import { useSSEProgress } from './hooks/useSSEProgress';
 import { getApiBase } from './utils/apiBase';
 import { excelSerialToDate, formatDateValue, isDateColumn } from './utils';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const API_BASE_URL = `${getApiBase()}/api`;
 
 export default function App() {
     const panelRef = useRef(null);
@@ -89,7 +89,7 @@ export default function App() {
         const loadTemplates = async () => {
             try {
                 const res = await fetch(`${API_BASE_URL}/templates`);
-                if (!res.ok) throw new Error('Failed to fetch templates');
+                if (!res.ok) throw new Error('Error al obtener plantillas');
                 const data = await res.json();
 
                 if (cancelled) return;
@@ -207,7 +207,7 @@ export default function App() {
 
         try {
             const res = await fetch(`${API_BASE_URL}/templates/${filename}`);
-            if (!res.ok) throw new Error("Failed to load template");
+            if (!res.ok) throw new Error("Error al cargar la plantilla");
             const data = await res.json();
 
             const validation = validateTemplateStructure(data.content);
@@ -548,7 +548,7 @@ export default function App() {
                     try {
                         const base = getApiBase();
                         const resp = await fetch(`${base}${downloadUrl}`);
-                        if (!resp.ok) throw new Error(`Download failed: ${resp.status}`);
+                        if (!resp.ok) throw new Error(`Error en descarga: ${resp.status}`);
                         const blob = await resp.blob();
                         downloadBlob(blob, `Paneles_Consolidado_${new Date().toISOString().split('T')[0]}.pdf`);
                     } catch (err) {
@@ -562,7 +562,7 @@ export default function App() {
                         setIsPdfLoading(true);
                         setPdfLoadingMessage(`Generando PDF consolidado (${payload.length} registros)...`);
                         const response = await fetch(`${API_BASE_URL}/generate-pdf`, { method: 'POST', body: formData });
-                        if (!response.ok) throw new Error(`Server returned ${response.status}`);
+                        if (!response.ok) throw new Error(`El servidor devolvió ${response.status}`);
                         const blob = await response.blob();
                         downloadBlob(blob, `Paneles_Consolidado_${new Date().toISOString().split('T')[0]}.pdf`);
                     } catch (fallbackErr) {
@@ -586,7 +586,7 @@ export default function App() {
 
                 if (!response.ok) {
                     const errorText = await response.text();
-                    throw new Error(`Server returned ${response.status}: ${errorText}`);
+                    throw new Error(`El servidor devolvió ${response.status}: ${errorText}`);
                 }
 
                 const blob = await response.blob();

@@ -561,10 +561,18 @@ class ReportService:
         img_count = len(processed_images)
         majority_landscape = sum(orientations) > len(orientations) / 2 if orientations else True
 
-        if img_count == 2:
-            layout_mode = "2h" if not majority_landscape else "2v"
+        if img_count == 1:
+            layout_mode = "1"
+        elif img_count == 2:
+            layout_mode = "2"
+        elif img_count == 3:
+            layout_mode = "3"
         elif img_count == 4:
-            layout_mode = "4v" if not majority_landscape else "4h"
+            layout_mode = "4"
+        elif img_count == 5:
+            layout_mode = "5"
+        elif img_count == 6:
+            layout_mode = "6"
         else:
             layout_mode = "grid"
 
@@ -584,7 +592,7 @@ class ReportService:
         import time
 
         if not PDF_ENGINE_AVAILABLE:
-            raise RuntimeError("No PDF engine available. Install WeasyPrint or xhtml2pdf.")
+            raise RuntimeError("No hay motor PDF disponible. Instale WeasyPrint o xhtml2pdf.")
 
         total_reports = len(reports_list)
         start_time = time.time()
@@ -680,7 +688,7 @@ class ReportService:
                 gc.collect()
 
         if not all_html_items:
-            raise RuntimeError("No HTMLs were prepared successfully")
+            raise RuntimeError("No se preparó ningún HTML exitosamente")
 
         # Ordenar por índice original
         all_html_items.sort(key=lambda x: x['index'])
@@ -736,7 +744,7 @@ class ReportService:
             gc.collect()
 
         if not all_pdf_paths:
-            raise RuntimeError("No PDFs were generated successfully")
+            raise RuntimeError("No se generó ningún PDF exitosamente")
 
         # =====================================================================
         # FASE 3: Merge con STREAMING - Escribe directamente a disco

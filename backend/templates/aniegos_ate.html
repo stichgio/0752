@@ -225,6 +225,18 @@
             display: block;
         }
 
+        /* === LAYOUT: 1 IMAGE (single centered) === */
+        .layout-1 {
+            grid-template-columns: 1fr;
+            grid-template-rows: 1fr;
+            justify-items: center;
+            align-items: center;
+        }
+
+        .layout-1 .photo-item {
+            max-width: 70%;
+        }
+
         /* === LAYOUT: 2 IMAGES (side by side, centered) === */
         .layout-2 {
             grid-template-columns: 1fr 1fr;
@@ -251,10 +263,29 @@
             align-items: stretch;
         }
 
+        /* === LAYOUT: 5 IMAGES (2+2+1 centered) === */
+        .layout-5 {
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: repeat(3, 1fr);
+        }
+
+        .layout-5 .photo-item:nth-child(5) {
+            grid-column: 1 / -1;
+            justify-self: center;
+            width: calc(50% - 1mm);
+        }
+
+        /* === LAYOUT: 6 IMAGES (3 rows x 2 cols) === */
+        .layout-6 {
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: repeat(3, 1fr);
+            align-items: stretch;
+        }
+
         /* === DEFAULT GRID (fallback) === */
         .layout-grid {
             grid-template-columns: 1fr 1fr;
-            grid-template-rows: repeat(2, 1fr);
+            grid-auto-rows: 1fr;
         }
 
         .no-photos {
@@ -339,22 +370,12 @@
         <!-- 3.0 PANEL FOTOGRAFICO -->
         <div class="section-title">3.0 PANEL FOTOGRÁFICO</div>
         <div class="photo-section">
-            {% if report.images|length == 3 %}
-            <!-- Special layout for 3 images -->
-            <div class="photo-grid layout-3">
-                <div class="photo-item">
-                    <img src="{{ report.images[0].path }}" alt="{{ report.images[0].name }}">
-                </div>
-                <div class="photo-item">
-                    <img src="{{ report.images[1].path }}" alt="{{ report.images[1].name }}">
-                </div>
-                <div class="photo-item">
-                    <img src="{{ report.images[2].path }}" alt="{{ report.images[2].name }}">
-                </div>
-            </div>
+            {% set img_count = report.images|length %}
+            {% if img_count == 0 %}
+            <div class="no-photos">No se encontraron imágenes asociadas a esta orden.</div>
             {% else %}
-            <!-- Standard grid layout -->
-            <div class="photo-grid layout-grid">
+            <!-- Layout based on image count -->
+            <div class="photo-grid layout-{{ img_count if img_count in [1, 2, 3, 4, 5, 6] else 'grid' }}">
                 {% for img in report.images %}
                 <div class="photo-item">
                     <img src="{{ img.path }}" alt="{{ img.name }}">

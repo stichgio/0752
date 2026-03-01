@@ -48,7 +48,7 @@ def parse_csv_file(content: bytes) -> List[Dict[str, Any]]:
         if temp_rows and len(temp_rows[0].keys()) > 3:
             rows = temp_rows
         else:
-            raise ValueError("Too few columns with semicolon")
+            raise ValueError("Muy pocas columnas con punto y coma")
     except Exception:
         reader = csv.DictReader(io.StringIO(decoded), delimiter=',')
         rows = list(reader)

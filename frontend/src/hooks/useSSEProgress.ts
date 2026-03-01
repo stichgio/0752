@@ -64,11 +64,11 @@ export function useSSEProgress() {
             });
 
             if (!response.ok) {
-                throw new Error(`Server error: ${response.status}`);
+                throw new Error(`Error del servidor: ${response.status}`);
             }
 
             const reader = response.body?.getReader();
-            if (!reader) throw new Error('No readable stream');
+            if (!reader) throw new Error('No se pudo obtener el flujo de lectura');
 
             const decoder = new TextDecoder();
             let buffer = '';
