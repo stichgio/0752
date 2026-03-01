@@ -9,6 +9,24 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
     const normalizePhotoGridTemplate = (sourceHtml) => {
         if (!sourceHtml || typeof sourceHtml !== 'string') return sourceHtml;
         if (!sourceHtml.includes('photo-cell-wrap')) return sourceHtml;
+
+        // CSS-only approach: style rules that handle both legacy (img directly
+        // in .photo-cell-wrap) and modern (.photo-media wrapper) structures.
+        // No regex HTML restructuring — resilient to any markup variation.
+        const compatCss = `
+<style id="photo-grid-compat-fix">
+  .photo-grid {
+    display: grid;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+  }
+  .photo-cell {
+    overflow: hidden;
+    min-height: 0;
+    min-width: 0;
+    box-sizing: border-box;
+  }
         if (sourceHtml.includes('photo-grid-compat-fix')) return sourceHtml;
 
         // CSS-only compat fix that handles both modern (.photo-media wrapper)
@@ -33,6 +51,32 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
     min-height: 0;
     min-width: 0;
     width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  /* Legacy: img directly in .photo-cell-wrap */
+  .photo-cell-wrap > img {
+    flex: 1 1 auto;
+    min-height: 0;
+    width: 100% !important;
+    height: auto !important;
+    max-height: 100%;
+    object-fit: contain !important;
+    object-position: center !important;
+    display: block;
+  }
+  /* Modern: img inside .photo-media */
+  .photo-media > img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    object-position: center !important;
+    display: block;
+  }
+  /* Catch-all for img nested deeper */
+  .photo-cell-wrap img {
     position: relative;
     overflow: hidden;
     display: flex;
@@ -62,6 +106,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
     max-height: 100%;
     object-fit: contain;
     object-position: center;
+    display: block;
   }
   .photo-label {
     flex-shrink: 0;
