@@ -4,6 +4,7 @@ import threading
 from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
+from uuid import uuid4
 
 from pydantic import ValidationError
 
@@ -697,12 +698,91 @@ _STORE_LOCK = threading.Lock()
 _STORE: Optional[SupabaseTemplateStore] = None
 
 
+class InMemoryTemplateClient:
+    """Minimal persistence backend used when Supabase is not configured."""
+
+    def __init__(self):
+        self.templates: Dict[str, Dict[str, Any]] = {}
+        self.template_versions: List[Dict[str, Any]] = []
+        self.storage: Dict[str, str] = {}
+
+    def _copy(self, payload: Any) -> Any:
+        return json.loads(json.dumps(payload))
+
+    def create_template(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        row = {"id": str(uuid4()), **payload}
+        self.templates[row["id"]] = row
+        return self._copy(row)
+
+    def get_template(self, template_id: str) -> Optional[Dict[str, Any]]:
+        row = self.templates.get(template_id)
+        return self._copy(row) if row else None
+
+    def update_template(self, template_id: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        if template_id not in self.templates:
+            raise ValueError("Template not found")
+        self.templates[template_id] = {**self.templates[template_id], **payload}
+        return self._copy(self.templates[template_id])
+
+    def list_templates(self) -> List[Dict[str, Any]]:
+        rows = [self._copy(row) for row in self.templates.values()]
+        rows.sort(key=lambda item: str(item.get("updated_at") or ""), reverse=True)
+        return rows
+
+    def list_templates_by_name(self, name: str, status: Optional[str] = None) -> List[Dict[str, Any]]:
+        rows: List[Dict[str, Any]] = []
+        for row in self.templates.values():
+            if row.get("name") != name:
+                continue
+            if status is not None and row.get("status") != status:
+                continue
+            rows.append(self._copy(row))
+        rows.sort(key=lambda item: str(item.get("updated_at") or ""), reverse=True)
+        return rows
+
+    def list_published_templates(self) -> List[Dict[str, Any]]:
+        rows = [self._copy(row) for row in self.templates.values() if row.get("status") == "published"]
+        rows.sort(key=lambda item: str(item.get("updated_at") or ""), reverse=True)
+        return rows
+
+    def list_template_versions(self, template_id: str) -> List[Dict[str, Any]]:
+        rows = [row for row in self.template_versions if row.get("template_id") == template_id]
+        rows.sort(key=lambda item: int(item.get("version_number") or 0))
+        return self._copy(rows)
+
+    def get_template_version(self, template_id: str, version_number: int) -> Optional[Dict[str, Any]]:
+        for row in self.template_versions:
+            if row.get("template_id") == template_id and int(row.get("version_number") or 0) == int(version_number):
+                return self._copy(row)
+        return None
+
+    def insert_template_version(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        existing = self.get_template_version(str(payload.get("template_id")), int(payload.get("version_number") or 0))
+        if existing:
+            raise RuntimeError("duplicate key value violates unique constraint")
+        self.template_versions.append(self._copy(payload))
+        return self._copy(payload)
+
+    def upload_text(self, path: str, content: str, content_type: str) -> None:
+        _ = content_type
+        self.storage[path] = content
+
+    def download_text(self, path: str) -> Optional[str]:
+        return self.storage.get(path)
+
+    def copy_object(self, source_path: str, target_path: str, content_type: str) -> None:
+        _ = content_type
+        if source_path not in self.storage:
+            raise RuntimeError("source object missing")
+        self.storage[target_path] = self.storage[source_path]
+
+
 def _get_store(required: bool = False) -> Optional[SupabaseTemplateStore]:
     global _STORE
     if _STORE is None:
         with _STORE_LOCK:
-            if _STORE is None and is_supabase_enabled():
-                _STORE = SupabaseTemplateStore()
+            if _STORE is None:
+                _STORE = SupabaseTemplateStore() if is_supabase_enabled() else SupabaseTemplateStore(InMemoryTemplateClient())
     if required and _STORE is None:
         raise ValueError("Supabase not configured")
     return _STORE

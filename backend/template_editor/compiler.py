@@ -1383,6 +1383,8 @@ def _build_canvas_photo_grid(
     img_h = max(cell_h - label_h, 1.0)
 
     html = (
+        '<table class="photo-grid-table">'
+        '<tbody><tr><td style="padding: 0; border: 0;">'
         f'<div style="position: relative; width: {width_mm:.2f}mm; '
         f'height: {height_mm:.2f}mm; overflow: hidden;">'
     )
@@ -1450,7 +1452,7 @@ def _build_canvas_photo_grid(
 
         html += '</div>'  # close cell
 
-    html += '</div>'  # close container
+    html += '</div></td></tr></tbody></table>'
     return html
 
 
@@ -2244,5 +2246,4 @@ def _compile_legacy(template_json: TemplateJson) -> str:
         f"{html_body}"
         "</body></html>"
     )
-
 
