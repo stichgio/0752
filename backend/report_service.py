@@ -561,10 +561,18 @@ class ReportService:
         img_count = len(processed_images)
         majority_landscape = sum(orientations) > len(orientations) / 2 if orientations else True
 
-        if img_count == 2:
-            layout_mode = "2h" if not majority_landscape else "2v"
+        if img_count == 1:
+            layout_mode = "1"
+        elif img_count == 2:
+            layout_mode = "2"
+        elif img_count == 3:
+            layout_mode = "3"
         elif img_count == 4:
-            layout_mode = "4v" if not majority_landscape else "4h"
+            layout_mode = "4"
+        elif img_count == 5:
+            layout_mode = "5"
+        elif img_count == 6:
+            layout_mode = "6"
         else:
             layout_mode = "grid"
 
