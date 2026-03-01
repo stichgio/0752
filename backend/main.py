@@ -7,10 +7,11 @@ except (UnicodeDecodeError, ValueError):
 
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, UploadFile, File, Form, BackgroundTasks, HTTPException, APIRouter, Request  # type: ignore
+from fastapi.exceptions import RequestValidationError  # type: ignore
 from fastapi.staticfiles import StaticFiles  # type: ignore
 import base64
 from fastapi.middleware.cors import CORSMiddleware  # type: ignore
-from fastapi.responses import FileResponse  # type: ignore
+from fastapi.responses import FileResponse, JSONResponse  # type: ignore
 from pydantic import BaseModel, Field  # type: ignore
 import os
 import json
@@ -131,6 +132,70 @@ async def lifespan(app: FastAPI):
     print("[App] ReportService closed")
 
 app = FastAPI(lifespan=lifespan)
+
+
+def _error_code_from_status(status_code: int) -> str:
+    if status_code == 400:
+        return "BAD_REQUEST"
+    if status_code == 401:
+        return "UNAUTHORIZED"
+    if status_code == 403:
+        return "FORBIDDEN"
+    if status_code == 404:
+        return "NOT_FOUND"
+    if status_code == 405:
+        return "METHOD_NOT_ALLOWED"
+    if status_code == 409:
+        return "CONFLICT"
+    if status_code == 422:
+        return "VALIDATION_ERROR"
+    if status_code == 429:
+        return "RATE_LIMITED"
+    if 500 <= status_code < 600:
+        return "INTERNAL_ERROR"
+    return "REQUEST_ERROR"
+
+
+def _extract_error_message(detail: Any) -> str:
+    if isinstance(detail, str):
+        return detail
+    if isinstance(detail, dict):
+        if isinstance(detail.get("message"), str):
+            return detail["message"]
+        return json.dumps(detail, ensure_ascii=False)
+    if isinstance(detail, list):
+        return json.dumps(detail, ensure_ascii=False)
+    return str(detail)
+
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(_: Request, exc: HTTPException):
+    message = _extract_error_message(exc.detail)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "detail": message,
+            "error": {
+                "code": _error_code_from_status(exc.status_code),
+                "message": message,
+            },
+        },
+        headers=exc.headers,
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def request_validation_exception_handler(_: Request, exc: RequestValidationError):
+    return JSONResponse(
+        status_code=422,
+        content={
+            "detail": exc.errors(),
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "Request validation failed",
+            },
+        },
+    )
 
 # Enable CORS for frontend (separate deployment on Vercel)
 app.add_middleware(
