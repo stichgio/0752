@@ -135,19 +135,21 @@ app = FastAPI(lifespan=lifespan)
 
 
 def _is_development_environment() -> bool:
-    env_name = os.getenv("ENVIRONMENT") or os.getenv("APP_ENV") or "development"
+    env_name = os.getenv("ENVIRONMENT") or os.getenv("APP_ENV") or "production"
     return env_name.strip().lower() in {"dev", "development", "local"}
 
 
 def _get_cors_allowed_origins() -> List[str]:
     raw_origins = os.getenv("CORS_ALLOWED_ORIGINS", "").strip()
     if raw_origins:
-        if raw_origins == "*":
+        origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
+        if "*" in origins:
             if _is_development_environment():
                 return ["*"]
+            filtered_origins = [origin for origin in origins if origin != "*"]
             print("[CORS] Ignoring wildcard origin outside development environment")
-            return []
-        return [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
+            return filtered_origins
+        return origins
 
     if _is_development_environment():
         return ["*"]
