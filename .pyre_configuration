@@ -1,9 +1,10 @@
 {
   "source_directories": [
-    "backend"
+    "./backend"
   ],
   "search_path": [
-    "C:\\Users\\INTEL\\AppData\\Local\\Programs\\Python\\Python311\\Lib\\site-packages",
-    "backend"
+    "./typings",
+    "./.venv/Lib/site-packages",
+    "./backend"
   ]
 }

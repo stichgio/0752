@@ -44,3 +44,5 @@ coverage/
 uploads/
 output/
 tmp/
+.vscode/
+*.code-workspace

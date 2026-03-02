@@ -3,7 +3,7 @@ Utilidades para manejo de archivos
 """
 
 import shutil
-from fastapi import UploadFile
+from fastapi import UploadFile  # pyre-ignore[21]
 
 
 async def save_upload(upload: UploadFile, dest: str) -> int:

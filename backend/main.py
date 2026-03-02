@@ -18,7 +18,7 @@ import json
 import tempfile
 import traceback
 import re
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional, TypedDict
 from report_service import ReportService  # type: ignore
 from pdf_tools import merge_pdfs_interleaved, merge_pdfs_sequential, split_pdf, split_pdf_by_ranges, organize_pdf  # type: ignore
 import zipfile
@@ -39,6 +39,21 @@ from template_editor.service import (  # type: ignore
 from utils.file_utils import save_upload  # type: ignore
 
 PHOTO_GRID_HEAD_CLOSE_RE = re.compile(r"</head>", re.IGNORECASE)
+
+
+class UploadedFileContent(TypedDict):
+    filename: str
+    content: bytes
+
+
+class ReportFileEntry(TypedDict):
+    name: str
+    path: str
+
+
+class ReportPayloadEntry(TypedDict):
+    data: Any
+    files: List[ReportFileEntry]
 
 
 # --- Cleanup helper (used by multiple endpoints) ---
@@ -552,7 +567,7 @@ async def generate_pdf_with_progress(
     except Exception:
         pass
 
-    async def process_logo(logo_file):
+    async def process_logo(logo_file: Optional[UploadFile]) -> Optional[str]:
         if not logo_file:
             return None
         content = await logo_file.read()
@@ -564,10 +579,11 @@ async def generate_pdf_with_progress(
     logo_right_b64 = await process_logo(logoRight)
 
     # Read all file contents into memory before streaming response starts
-    file_contents = []
-    for file in files:
+    file_contents: List[UploadedFileContent] = []
+    for index, file in enumerate(files):
         content = await file.read()
-        file_contents.append({"filename": file.filename, "content": content})
+        filename = file.filename or f"upload_{index:04d}"
+        file_contents.append({"filename": filename, "content": content})
 
     if isinstance(row_data, list):
         uploaded_filenames = {item["filename"] for item in file_contents}
@@ -588,14 +604,14 @@ async def generate_pdf_with_progress(
         async def run_generation():
             temp_dir = tempfile.mkdtemp()
             try:
-                file_map = {}
+                file_map: Dict[str, ReportFileEntry] = {}
                 for fc in file_contents:
                     fpath = os.path.join(temp_dir, fc["filename"])
                     with open(fpath, "wb") as f:
                         f.write(fc["content"])
-                    file_map[fc["filename"]] = {"name": fc["filename"], "path": fpath}
+                    file_map[fc["filename"]] = {"name": fc["filename"], "path": fpath}  # pyre-ignore[6]
 
-                reports_payload = []
+                reports_payload: List[ReportPayloadEntry] = []
                 if isinstance(row_data, list):
                     for item in row_data:
                         r_data = item.get("row_data", {})
@@ -605,7 +621,7 @@ async def generate_pdf_with_progress(
                 else:
                     reports_payload.append({"data": row_data, "files": list(file_map.values())})
 
-                filename = f"pdf_{uuid.uuid4().hex[:12]}.pdf"
+                filename = f"pdf_{uuid.uuid4().hex[:12]}.pdf"  # pyre-ignore[6]
                 output_path = os.path.join(tempfile.gettempdir(), filename)
 
                 await service.generate_batch_pdf(

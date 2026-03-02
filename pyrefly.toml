@@ -6,10 +6,10 @@ project-excludes = [
 ]
 
 # Make local backend modules importable from the workspace root.
-search-path = ["backend"]
+search-path = ["backend", "typings"]
 
-# Pin interpreter + installed third-party packages for Pyrefly/Pyre2 in VS Code.
-python-interpreter-path = "C:/Users/INTEL/AppData/Local/Programs/Python/Python311/python.exe"
+# Use the repo-local virtualenv for Pyrefly/Pyre2 when it is available.
+python-interpreter-path = ".venv/Scripts/python.exe"
 site-package-path = [
-  "C:/Users/INTEL/AppData/Local/Programs/Python/Python311/Lib/site-packages",
+  ".venv/Lib/site-packages",
 ]

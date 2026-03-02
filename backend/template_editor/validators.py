@@ -2,11 +2,11 @@ import re
 from typing import Dict, List, Set
 
 try:
-    import bleach
+    import bleach  # pyre-ignore[21]
 except Exception:  # pragma: no cover
     bleach = None
 
-from .models import TemplateJson, UserRole, ValidationIssue, ValidationResult
+from .models import TemplateJson, UserRole, ValidationIssue, ValidationResult  # pyre-ignore[21]
 
 VARIABLE_RE = re.compile(r"{{\s*([a-zA-Z_][a-zA-Z0-9_]*)(\|[a-zA-Z_][a-zA-Z0-9_]*)?\s*}}")
 RAW_JINJA_RE = re.compile(r"{{\s*([^{}]+?)\s*}}")
@@ -103,7 +103,7 @@ def validateVariables(template_json: TemplateJson, allowed_variables: Dict[str, 
                 if var_filter and var_filter not in whitelist_filters:
                     issues.append(ValidationIssue(level="error", code="FILTER_NOT_ALLOWED", message=f"Filter '{var_filter}' is not allowed", path=path))
 
-                if allowed_variables[var_name].get("optional"):
+                if allowed_variables[var_name].get("optional"):  # pyre-ignore[6]
                     bindings = template_json.variableBindings or {}
                     if var_name not in bindings:
                         issues.append(ValidationIssue(level="warning", code="VAR_OPTIONAL_UNMAPPED", message=f"Optional variable '{var_name}' not mapped", path=path))

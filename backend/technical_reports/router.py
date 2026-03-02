@@ -1425,7 +1425,7 @@ async def generate_consolidated_pdf_progress(
 
                 for batch_start in range(0, total, PDF_BATCH_SIZE):
                     batch_end = min(batch_start + PDF_BATCH_SIZE, total)
-                    batch_reports = all_reports[batch_start:batch_end]
+                    batch_reports = all_reports[batch_start:batch_end]  # pyre-ignore[6]
                     with ThreadPoolExecutor(max_workers=PDF_BATCH_SIZE) as executor:
                         results = list(executor.map(render_single_pdf, [r.model_dump() for r in batch_reports]))
                         temp_pdf_files.extend([p for p in results if p])
@@ -1437,7 +1437,7 @@ async def generate_consolidated_pdf_progress(
 
                 await on_progress("merging", 0, len(temp_pdf_files), "")
 
-                filename = f"pdf_{uuid.uuid4().hex[:12]}.pdf"
+                filename = f"pdf_{uuid.uuid4().hex[:12]}.pdf"  # pyre-ignore[6]
                 output_path = os.path.join(tempfile.gettempdir(), filename)
 
                 pdf_writer = PdfWriter()

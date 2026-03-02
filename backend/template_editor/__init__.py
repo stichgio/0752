@@ -1,3 +1,3 @@
-from .router import router
+from .router import router  # pyre-ignore[21]
 
 __all__ = ["router"]

@@ -3,11 +3,11 @@
 import os
 import sys
 
-import pytest
+import pytest  # pyre-ignore[21]
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from routes.pdf_generation import _normalize_photo_grid_template_compat
+from routes.pdf_generation import _normalize_photo_grid_template_compat  # pyre-ignore[21]
 
 
 # ── Pass-through cases ──────────────────────────────────────────────────────

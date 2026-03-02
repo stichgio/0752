@@ -1,9 +1,10 @@
 {
   "source_directories": [
-    "c:/Users/INTEL/Desktop/GIO/backend"
+    "."
   ],
   "search_path": [
-    "C:/Users/INTEL/AppData/Local/Programs/Python/Python311/Lib/site-packages",
-    "c:/Users/INTEL/Desktop/GIO/backend"
+    "../typings",
+    "../.venv/Lib/site-packages",
+    "."
   ]
 }

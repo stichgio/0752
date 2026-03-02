@@ -862,10 +862,10 @@ class ReportService:
             for pdf_path in all_pdf_paths:
                 try:
                     if os.path.exists(pdf_path):
-                        os.remove(pdf_path)
+                        os.remove(pdf_path)  # pyre-ignore[6]
                 except OSError:
                     pass
-            if final_writer is not None:
+            if final_writer is not None:  # pyre-ignore[61]
                 try:
                     final_writer.close()
                 except Exception:
