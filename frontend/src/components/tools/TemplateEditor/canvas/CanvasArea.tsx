@@ -3,6 +3,7 @@ import {
     CanvasDocument,
     TemplateElement,
     pxToMm,
+    mmToPx,
     ElementType,
     ElementPreset,
     BlockPreset,
@@ -10,6 +11,16 @@ import {
 } from '../canvasTypes';
 import { CanvasElement } from './CanvasElement';
 import { useSnapGrid } from '../hooks/useSnapGrid';
+import {
+    buildDocumentSnapLines,
+    collectSnapLines,
+    computeSnapPosition,
+    DEFAULT_SMART_SNAP_THRESHOLD_MM,
+    findNearestSnapValue,
+    type CollectedSnapLines,
+    type DocumentSnapLines,
+    type SnapGuide,
+} from '../utils/snapUtils';
 import { Lock } from 'lucide-react';
 
 interface CanvasAreaProps {
@@ -41,6 +52,7 @@ interface InteractionState {
     initialPos: { x: number; y: number };
     dragIds: string[];
     dragInitialPositions: Record<string, { x: number; y: number }>;
+    dragBounds: { x: number; y: number; width: number; height: number };
     direction: string;
     initialX: number;
     initialY: number;
@@ -62,6 +74,7 @@ const defaultInteraction: InteractionState = {
     initialPos: { x: 0, y: 0 },
     dragIds: [],
     dragInitialPositions: {},
+    dragBounds: { x: 0, y: 0, width: 0, height: 0 },
     direction: '',
     initialX: 0,
     initialY: 0,
@@ -87,110 +100,24 @@ interface PaletteDragPayload {
     overrides?: Partial<TemplateElement>;
 }
 
-interface AlignmentGuide {
-    axis: 'x' | 'y';
-    position: number;
-}
-
 interface DragResolution {
     anchorX: number;
     anchorY: number;
     deltaX: number;
     deltaY: number;
-    guides: AlignmentGuide[];
+    guides: SnapGuide[];
+}
+
+interface PendingDragPoint {
+    clientX: number;
+    clientY: number;
+    bypassSnap: boolean;
 }
 
 const MIN_SIZE_MM = 2;
 
-function getElementAxes(position: { x: number; y: number }, size: { width: number; height: number }) {
-    const left = position.x;
-    const top = position.y;
-    const right = position.x + size.width;
-    const bottom = position.y + size.height;
-
-    return {
-        left,
-        right,
-        centerX: left + size.width / 2,
-        top,
-        bottom,
-        centerY: top + size.height / 2,
-    };
-}
-
-function resolveAlignmentGuideSnap(
-    elements: TemplateElement[],
-    draggingId: string,
-    dragIds: string[],
-    candidatePosition: { x: number; y: number },
-    draggingSize: { width: number; height: number },
-    page: PageSettings,
-    thresholdMm: number,
-): { x?: number; y?: number; guides: AlignmentGuide[] } {
-    const excludedIds = new Set(dragIds);
-    const movingAxes = getElementAxes(candidatePosition, draggingSize);
-    const xReferences: number[] = [0, page.width / 2, page.width];
-    const yReferences: number[] = [0, page.height / 2, page.height];
-
-    elements.forEach((element) => {
-        if (element.visible === false) return;
-        if (element.id === draggingId || excludedIds.has(element.id)) return;
-        const axes = getElementAxes(element.position, element.size);
-        xReferences.push(axes.left, axes.right, axes.centerX);
-        yReferences.push(axes.top, axes.bottom, axes.centerY);
-    });
-
-    let bestXDistance = Number.POSITIVE_INFINITY;
-    let snappedX: number | undefined;
-    let xGuide: number | undefined;
-
-    xReferences.forEach((referenceX) => {
-        const candidates = [
-            { distance: Math.abs(movingAxes.left - referenceX), snapped: referenceX },
-            { distance: Math.abs(movingAxes.right - referenceX), snapped: referenceX - draggingSize.width },
-            {
-                distance: Math.abs(movingAxes.centerX - referenceX),
-                snapped: referenceX - draggingSize.width / 2,
-            },
-        ];
-
-        candidates.forEach((candidate) => {
-            if (candidate.distance > thresholdMm) return;
-            if (candidate.distance >= bestXDistance) return;
-            bestXDistance = candidate.distance;
-            snappedX = candidate.snapped;
-            xGuide = referenceX;
-        });
-    });
-
-    let bestYDistance = Number.POSITIVE_INFINITY;
-    let snappedY: number | undefined;
-    let yGuide: number | undefined;
-
-    yReferences.forEach((referenceY) => {
-        const candidates = [
-            { distance: Math.abs(movingAxes.top - referenceY), snapped: referenceY },
-            { distance: Math.abs(movingAxes.bottom - referenceY), snapped: referenceY - draggingSize.height },
-            {
-                distance: Math.abs(movingAxes.centerY - referenceY),
-                snapped: referenceY - draggingSize.height / 2,
-            },
-        ];
-
-        candidates.forEach((candidate) => {
-            if (candidate.distance > thresholdMm) return;
-            if (candidate.distance >= bestYDistance) return;
-            bestYDistance = candidate.distance;
-            snappedY = candidate.snapped;
-            yGuide = referenceY;
-        });
-    });
-
-    const guides: AlignmentGuide[] = [];
-    if (xGuide !== undefined) guides.push({ axis: 'x', position: xGuide });
-    if (yGuide !== undefined) guides.push({ axis: 'y', position: yGuide });
-
-    return { x: snappedX, y: snappedY, guides };
+function isSnapTemporarilyDisabled(event: { altKey?: boolean; metaKey?: boolean }) {
+    return !!event.altKey || !!event.metaKey;
 }
 
 export function CanvasArea({
@@ -224,8 +151,12 @@ export function CanvasArea({
     const scaleRef = useRef(zoom / 100);
     const pageSettingsRef = useRef(pageSettings);
     const selectedIdsRef = useRef(selectedIds);
+    // Keep the full document cache updated outside pointer-move handlers.
+    const documentSnapLinesRef = useRef<DocumentSnapLines>(buildDocumentSnapLines(doc.elements, pageSettings));
+    // Each drag/resize interaction gets a filtered copy so move handlers only read arrays.
+    const activeSnapLinesRef = useRef<CollectedSnapLines | null>(null);
     const dragRafRef = useRef<number | null>(null);
-    const pendingDragPointRef = useRef<{ clientX: number; clientY: number } | null>(null);
+    const pendingDragPointRef = useRef<PendingDragPoint | null>(null);
     const dragOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
     const dragPointerOffsetRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
     const lastResolvedDragRef = useRef<DragResolution | null>(null);
@@ -243,8 +174,7 @@ export function CanvasArea({
     snapEnabledRef.current = snapEnabled;
 
     const scale = zoom / 100;
-    const MM_TO_PX = 96 / 25.4;
-    const mmToCanvasPx = (mm: number) => mm * MM_TO_PX;
+    const mmToCanvasPx = (mm: number) => mmToPx(mm);
     const normalizedGridSize = Math.max(1, gridSize);
     const { snapToGrid } = useSnapGrid(normalizedGridSize, snapEnabled);
 
@@ -302,7 +232,7 @@ export function CanvasArea({
     }, []);
 
     const applyAlignmentGuideVisual = useCallback(
-        (guides: AlignmentGuide[]) => {
+        (guides: SnapGuide[]) => {
             const xGuide = guides.find((guide) => guide.axis === 'x');
             const yGuide = guides.find((guide) => guide.axis === 'y');
 
@@ -326,6 +256,15 @@ export function CanvasArea({
         },
         [mmToCanvasPx],
     );
+
+    const refreshDocumentSnapLines = useCallback(() => {
+        documentSnapLinesRef.current = buildDocumentSnapLines(docRef.current.elements, pageSettingsRef.current);
+    }, []);
+
+    const getSmartSnapThresholdMm = useCallback(() => {
+        const scaleValue = Math.max(scaleRef.current, 0.001);
+        return Math.max(DEFAULT_SMART_SNAP_THRESHOLD_MM, pxToMm(6 / scaleValue));
+    }, []);
 
     const getCanvasPointFromClient = useCallback((clientX: number, clientY: number) => {
         if (!pageRef.current) return null;
@@ -390,66 +329,60 @@ export function CanvasArea({
     );
 
     const resolveDragAt = useCallback(
-        (clientX: number, clientY: number): DragResolution | null => {
+        (point: PendingDragPoint): DragResolution | null => {
             const state = interactionRef.current;
             if (state.mode !== 'drag' || !state.elementId) return null;
 
-            const pointer = getCanvasPointFromClient(clientX, clientY);
+            const pointer = getCanvasPointFromClient(point.clientX, point.clientY);
             if (!pointer) return null;
 
             const draggedIds = state.dragIds.length > 0 ? state.dragIds : [state.elementId];
             const elementMap = new Map(docRef.current.elements.map((element) => [element.id, element]));
             const anchorInitial = state.dragInitialPositions[state.elementId] ?? state.initialPos;
-            const primaryElement = elementMap.get(state.elementId);
-            if (!primaryElement) return null;
 
-            let anchorX = pointer.x - dragPointerOffsetRef.current.x;
-            let anchorY = pointer.y - dragPointerOffsetRef.current.y;
+            let deltaX = pointer.x - dragPointerOffsetRef.current.x - anchorInitial.x;
+            let deltaY = pointer.y - dragPointerOffsetRef.current.y - anchorInitial.y;
 
-            const initialClamp = clampDragDelta(
-                anchorX - anchorInitial.x,
-                anchorY - anchorInitial.y,
-                draggedIds,
-                state.dragInitialPositions,
-                elementMap,
-            );
+            const initialClamp = clampDragDelta(deltaX, deltaY, draggedIds, state.dragInitialPositions, elementMap);
+            deltaX = initialClamp.x;
+            deltaY = initialClamp.y;
 
-            anchorX = anchorInitial.x + initialClamp.x;
-            anchorY = anchorInitial.y + initialClamp.y;
+            let guides: SnapGuide[] = [];
+            const shouldSnap = snapEnabledRef.current && !point.bypassSnap;
 
-            let guides: AlignmentGuide[] = [];
-
-            if (snapEnabledRef.current) {
-                const thresholdPx = 4;
-                const thresholdMm = pxToMm(thresholdPx / Math.max(scaleRef.current, 0.001));
-                const guideSnap = resolveAlignmentGuideSnap(
-                    docRef.current.elements,
-                    state.elementId,
-                    draggedIds,
-                    { x: anchorX, y: anchorY },
-                    primaryElement.size,
-                    pageSettingsRef.current,
-                    thresholdMm,
+            if (shouldSnap) {
+                // Smart snap wins when a page/element line is within threshold; grid is the fallback.
+                const snapLines = activeSnapLinesRef.current ?? collectSnapLines(documentSnapLinesRef.current, draggedIds);
+                const snappedBounds = computeSnapPosition(
+                    {
+                        x: state.dragBounds.x + deltaX,
+                        y: state.dragBounds.y + deltaY,
+                        width: state.dragBounds.width,
+                        height: state.dragBounds.height,
+                    },
+                    snapLines,
+                    {
+                        threshold: getSmartSnapThresholdMm(),
+                        gridSize: normalizedGridSize,
+                        enableGrid: true,
+                        enableSmartSnap: true,
+                    },
                 );
 
-                anchorX = guideSnap.x ?? snapToGrid(anchorX);
-                anchorY = guideSnap.y ?? snapToGrid(anchorY);
-                guides = guideSnap.guides;
-
                 const snappedClamp = clampDragDelta(
-                    anchorX - anchorInitial.x,
-                    anchorY - anchorInitial.y,
+                    snappedBounds.x - state.dragBounds.x,
+                    snappedBounds.y - state.dragBounds.y,
                     draggedIds,
                     state.dragInitialPositions,
                     elementMap,
                 );
 
-                const wasXClamped = Math.abs(snappedClamp.x - (anchorX - anchorInitial.x)) > 0.001;
-                const wasYClamped = Math.abs(snappedClamp.y - (anchorY - anchorInitial.y)) > 0.001;
+                const wasXClamped = Math.abs(snappedClamp.x - (snappedBounds.x - state.dragBounds.x)) > 0.001;
+                const wasYClamped = Math.abs(snappedClamp.y - (snappedBounds.y - state.dragBounds.y)) > 0.001;
 
-                anchorX = anchorInitial.x + snappedClamp.x;
-                anchorY = anchorInitial.y + snappedClamp.y;
-
+                deltaX = snappedClamp.x;
+                deltaY = snappedClamp.y;
+                guides = snappedBounds.guides;
                 if (wasXClamped || wasYClamped) {
                     guides = guides.filter((guide) => {
                         if (guide.axis === 'x' && wasXClamped) return false;
@@ -459,8 +392,8 @@ export function CanvasArea({
                 }
             }
 
-            const deltaX = anchorX - anchorInitial.x;
-            const deltaY = anchorY - anchorInitial.y;
+            const anchorX = anchorInitial.x + deltaX;
+            const anchorY = anchorInitial.y + deltaY;
 
             return {
                 anchorX,
@@ -470,15 +403,15 @@ export function CanvasArea({
                 guides,
             };
         },
-        [clampDragDelta, getCanvasPointFromClient, snapToGrid],
+        [clampDragDelta, getCanvasPointFromClient, getSmartSnapThresholdMm, normalizedGridSize],
     );
 
     const applyDragVisualAt = useCallback(
-        (clientX: number, clientY: number) => {
+        (point: PendingDragPoint) => {
             const state = interactionRef.current;
             if (state.mode !== 'drag' || !state.elementId) return;
 
-            const resolved = resolveDragAt(clientX, clientY);
+            const resolved = resolveDragAt(point);
             if (!resolved) return;
 
             lastResolvedDragRef.current = resolved;
@@ -503,7 +436,7 @@ export function CanvasArea({
         dragRafRef.current = null;
         const point = pendingDragPointRef.current;
         if (!point) return;
-        applyDragVisualAt(point.clientX, point.clientY);
+        applyDragVisualAt(point);
     }, [applyDragVisualAt]);
 
     const scheduleDragFrame = useCallback(() => {
@@ -557,7 +490,7 @@ export function CanvasArea({
     );
 
     const finishDrag = useCallback(
-        (clientX: number, clientY: number) => {
+        (fallbackPoint?: PendingDragPoint) => {
             const state = interactionRef.current;
             if (state.mode !== 'drag' || !state.elementId) return;
 
@@ -566,8 +499,12 @@ export function CanvasArea({
                 dragRafRef.current = null;
             }
 
-            const finalPoint = pendingDragPointRef.current ?? { clientX, clientY };
-            applyDragVisualAt(finalPoint.clientX, finalPoint.clientY);
+            const finalPoint = pendingDragPointRef.current ?? fallbackPoint ?? {
+                clientX: state.startClientX,
+                clientY: state.startClientY,
+                bypassSnap: false,
+            };
+            applyDragVisualAt(finalPoint);
             commitDrag();
 
             const draggedIds = state.dragIds.length > 0 ? state.dragIds : [state.elementId];
@@ -589,10 +526,12 @@ export function CanvasArea({
             activeDragPointerTargetRef.current = null;
             pendingDragPointRef.current = null;
             lastResolvedDragRef.current = null;
+            activeSnapLinesRef.current = null;
             setDragSession({ active: false, primaryId: null, dragIds: [] });
             interactionRef.current = { ...defaultInteraction };
+            refreshDocumentSnapLines();
         },
-        [applyDragVisualAt, clearAlignmentGuideVisual, clearDragVisual, commitDrag],
+        [applyDragVisualAt, clearAlignmentGuideVisual, clearDragVisual, commitDrag, refreshDocumentSnapLines],
     );
 
     const handleGlobalMouseMove = useCallback(
@@ -640,37 +579,93 @@ export function CanvasArea({
                     setAspectLockIndicator(null);
                 }
 
-                if (snapEnabledRef.current) {
-                    let left = x;
-                    let top = y;
-                    let right = x + w;
-                    let bottom = y + h;
+                let left = x;
+                let top = y;
+                let right = x + w;
+                let bottom = y + h;
+                const shouldSnap = snapEnabledRef.current && !isSnapTemporarilyDisabled(e);
+                let guides: SnapGuide[] = [];
 
-                    if (dir.includes('w')) left = snapToGrid(left);
-                    if (dir.includes('e')) right = snapToGrid(right);
-                    if (dir.includes('n')) top = snapToGrid(top);
-                    if (dir.includes('s')) bottom = snapToGrid(bottom);
+                if (shouldSnap) {
+                    const thresholdMm = getSmartSnapThresholdMm();
+                    const snapLines = activeSnapLinesRef.current ?? collectSnapLines(documentSnapLinesRef.current, state.elementId);
 
-                    w = right - left;
-                    h = bottom - top;
-
-                    if (w < MIN_SIZE_MM) {
-                        if (dir.includes('w')) left = right - MIN_SIZE_MM;
-                        else right = left + MIN_SIZE_MM;
-                        w = MIN_SIZE_MM;
-                    }
-                    if (h < MIN_SIZE_MM) {
-                        if (dir.includes('n')) top = bottom - MIN_SIZE_MM;
-                        else bottom = top + MIN_SIZE_MM;
-                        h = MIN_SIZE_MM;
+                    if (dir.includes('w')) {
+                        const match = findNearestSnapValue(left, snapLines.x, thresholdMm);
+                        if (match) {
+                            left = match.value;
+                            guides.push({ axis: 'x', position: match.value });
+                        } else {
+                            left = snapToGrid(left);
+                        }
                     }
 
-                    x = left;
-                    y = top;
-                } else {
-                    if (w < MIN_SIZE_MM) w = MIN_SIZE_MM;
-                    if (h < MIN_SIZE_MM) h = MIN_SIZE_MM;
+                    if (dir.includes('e')) {
+                        const match = findNearestSnapValue(right, snapLines.x, thresholdMm);
+                        if (match) {
+                            right = match.value;
+                            guides.push({ axis: 'x', position: match.value });
+                        } else {
+                            right = snapToGrid(right);
+                        }
+                    }
+
+                    if (dir.includes('n')) {
+                        const match = findNearestSnapValue(top, snapLines.y, thresholdMm);
+                        if (match) {
+                            top = match.value;
+                            guides.push({ axis: 'y', position: match.value });
+                        } else {
+                            top = snapToGrid(top);
+                        }
+                    }
+
+                    if (dir.includes('s')) {
+                        const match = findNearestSnapValue(bottom, snapLines.y, thresholdMm);
+                        if (match) {
+                            bottom = match.value;
+                            guides.push({ axis: 'y', position: match.value });
+                        } else {
+                            bottom = snapToGrid(bottom);
+                        }
+                    }
                 }
+
+                w = right - left;
+                h = bottom - top;
+
+                let xGuideInvalid = false;
+                let yGuideInvalid = false;
+
+                if (w < MIN_SIZE_MM) {
+                    if (dir.includes('w')) left = right - MIN_SIZE_MM;
+                    else right = left + MIN_SIZE_MM;
+                    w = MIN_SIZE_MM;
+                    xGuideInvalid = true;
+                }
+                if (h < MIN_SIZE_MM) {
+                    if (dir.includes('n')) top = bottom - MIN_SIZE_MM;
+                    else bottom = top + MIN_SIZE_MM;
+                    h = MIN_SIZE_MM;
+                    yGuideInvalid = true;
+                }
+
+                if (xGuideInvalid || yGuideInvalid) {
+                    guides = guides.filter((guide) => {
+                        if (guide.axis === 'x' && xGuideInvalid) return false;
+                        if (guide.axis === 'y' && yGuideInvalid) return false;
+                        return true;
+                    });
+                }
+
+                if (shouldSnap) {
+                    applyAlignmentGuideVisual(guides);
+                } else {
+                    clearAlignmentGuideVisual();
+                }
+
+                x = left;
+                y = top;
 
                 const activeElement = docRef.current.elements.find((element) => element.id === state.elementId);
 
@@ -752,7 +747,14 @@ export function CanvasArea({
                 onSelect(selected);
             }
         },
-        [onSelect, snapToGrid, updateElement],
+        [
+            applyAlignmentGuideVisual,
+            clearAlignmentGuideVisual,
+            getSmartSnapThresholdMm,
+            onSelect,
+            snapToGrid,
+            updateElement,
+        ],
     );
 
     const handleGlobalMouseUp = useCallback(() => {
@@ -762,8 +764,9 @@ export function CanvasArea({
             const point = pendingDragPointRef.current ?? {
                 clientX: state.startClientX,
                 clientY: state.startClientY,
+                bypassSnap: false,
             };
-            finishDrag(point.clientX, point.clientY);
+            finishDrag(point);
             return;
         }
 
@@ -771,9 +774,15 @@ export function CanvasArea({
             setMarquee(null);
         }
 
+        if (state.mode === 'resize') {
+            refreshDocumentSnapLines();
+        }
+
+        activeSnapLinesRef.current = null;
+        clearAlignmentGuideVisual();
         setAspectLockIndicator(null);
         interactionRef.current = { ...defaultInteraction };
-    }, [finishDrag]);
+    }, [clearAlignmentGuideVisual, finishDrag, refreshDocumentSnapLines]);
 
     useEffect(() => {
         window.addEventListener('mousemove', handleGlobalMouseMove);
@@ -789,8 +798,8 @@ export function CanvasArea({
             if (state.mode === 'drag' && state.elementId) {
                 const draggedIds = state.dragIds.length > 0 ? state.dragIds : [state.elementId];
                 clearDragVisual(draggedIds);
-                clearAlignmentGuideVisual();
             }
+            clearAlignmentGuideVisual();
         };
     }, [clearAlignmentGuideVisual, clearDragVisual, handleGlobalMouseMove, handleGlobalMouseUp]);
 
@@ -805,6 +814,7 @@ export function CanvasArea({
             pendingDragPointRef.current = {
                 clientX: e.clientX,
                 clientY: e.clientY,
+                bypassSnap: isSnapTemporarilyDisabled(e),
             };
             scheduleDragFrame();
         };
@@ -819,8 +829,13 @@ export function CanvasArea({
             pendingDragPointRef.current = {
                 clientX: e.clientX,
                 clientY: e.clientY,
+                bypassSnap: isSnapTemporarilyDisabled(e),
             };
-            finishDrag(e.clientX, e.clientY);
+            finishDrag({
+                clientX: e.clientX,
+                clientY: e.clientY,
+                bypassSnap: isSnapTemporarilyDisabled(e),
+            });
         };
 
         const handleWindowPointerCancel = (e: PointerEvent) => {
@@ -830,7 +845,11 @@ export function CanvasArea({
             const activePointerId = activeDragPointerIdRef.current;
             if (activePointerId === null || e.pointerId !== activePointerId) return;
 
-            finishDrag(e.clientX, e.clientY);
+            finishDrag({
+                clientX: e.clientX,
+                clientY: e.clientY,
+                bypassSnap: isSnapTemporarilyDisabled(e),
+            });
         };
 
         const handleWindowBlur = () => {
@@ -839,8 +858,9 @@ export function CanvasArea({
             const point = pendingDragPointRef.current ?? {
                 clientX: state.startClientX,
                 clientY: state.startClientY,
+                bypassSnap: false,
             };
-            finishDrag(point.clientX, point.clientY);
+            finishDrag(point);
         };
 
         window.addEventListener('pointermove', handleWindowPointerMove);
@@ -869,6 +889,18 @@ export function CanvasArea({
         };
     }, [dragSession.active]);
 
+    useEffect(() => {
+        const mode = interactionRef.current.mode;
+        if (mode === 'drag' || mode === 'resize') return;
+        refreshDocumentSnapLines();
+    }, [doc.elements, pageSettings, refreshDocumentSnapLines]);
+
+    useEffect(() => {
+        if (!snapEnabled) {
+            clearAlignmentGuideVisual();
+        }
+    }, [clearAlignmentGuideVisual, snapEnabled]);
+
     const handleDragStart = useCallback(
         (e: React.PointerEvent, id: string) => {
             if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -893,22 +925,42 @@ export function CanvasArea({
             if (dragIds.length === 0) return;
 
             const dragInitialPositions: Record<string, { x: number; y: number }> = {};
+            let minX = Number.POSITIVE_INFINITY;
+            let minY = Number.POSITIVE_INFINITY;
+            let maxX = Number.NEGATIVE_INFINITY;
+            let maxY = Number.NEGATIVE_INFINITY;
+
             dragIds.forEach((targetId) => {
                 const target = docRef.current.elements.find((item) => item.id === targetId);
                 if (!target) return;
                 dragInitialPositions[targetId] = { ...target.position };
+                minX = Math.min(minX, target.position.x);
+                minY = Math.min(minY, target.position.y);
+                maxX = Math.max(maxX, target.position.x + target.size.width);
+                maxY = Math.max(maxY, target.position.y + target.size.height);
             });
 
             const pointerInCanvas = getCanvasPointFromClient(e.clientX, e.clientY);
             if (!pointerInCanvas) return;
+            if (!Number.isFinite(minX) || !Number.isFinite(minY) || !Number.isFinite(maxX) || !Number.isFinite(maxY)) {
+                return;
+            }
 
             const primaryInitialPos = dragInitialPositions[id] ?? element.position;
+            const dragBounds = {
+                x: minX,
+                y: minY,
+                width: maxX - minX,
+                height: maxY - minY,
+            };
 
             e.preventDefault();
             const pointerTarget = e.currentTarget as HTMLElement;
             pointerTarget.setPointerCapture(e.pointerId);
             activeDragPointerIdRef.current = e.pointerId;
             activeDragPointerTargetRef.current = pointerTarget;
+            refreshDocumentSnapLines();
+            activeSnapLinesRef.current = collectSnapLines(documentSnapLinesRef.current, dragIds);
 
             if (dragRafRef.current !== null) {
                 window.cancelAnimationFrame(dragRafRef.current);
@@ -922,7 +974,11 @@ export function CanvasArea({
                 x: pointerInCanvas.x - primaryInitialPos.x,
                 y: pointerInCanvas.y - primaryInitialPos.y,
             };
-            pendingDragPointRef.current = { clientX: e.clientX, clientY: e.clientY };
+            pendingDragPointRef.current = {
+                clientX: e.clientX,
+                clientY: e.clientY,
+                bypassSnap: isSnapTemporarilyDisabled(e),
+            };
             lastResolvedDragRef.current = {
                 anchorX: primaryInitialPos.x,
                 anchorY: primaryInitialPos.y,
@@ -940,6 +996,7 @@ export function CanvasArea({
                 initialPos: { ...element.position },
                 dragIds,
                 dragInitialPositions,
+                dragBounds,
             };
 
             setDragSession({
@@ -948,7 +1005,7 @@ export function CanvasArea({
                 dragIds,
             });
         },
-        [clearAlignmentGuideVisual, clearDragVisual, getCanvasPointFromClient],
+        [clearAlignmentGuideVisual, clearDragVisual, getCanvasPointFromClient, refreshDocumentSnapLines],
     );
 
     const handleResizeStart = useCallback((e: React.PointerEvent, element: TemplateElement, direction: string) => {
@@ -956,6 +1013,10 @@ export function CanvasArea({
             element.type === 'group'
                 ? (element.groupChildren || []).map((child) => JSON.parse(JSON.stringify(child)) as TemplateElement)
                 : [];
+
+        clearAlignmentGuideVisual();
+        refreshDocumentSnapLines();
+        activeSnapLinesRef.current = collectSnapLines(documentSnapLinesRef.current, element.id);
 
         interactionRef.current = {
             ...defaultInteraction,
@@ -970,7 +1031,7 @@ export function CanvasArea({
             initialH: element.size.height,
             resizeGroupChildren,
         };
-    }, []);
+    }, [clearAlignmentGuideVisual, refreshDocumentSnapLines]);
 
     const handleRotateStart = useCallback((e: React.PointerEvent, element: TemplateElement) => {
         if (element.type === 'group') return;

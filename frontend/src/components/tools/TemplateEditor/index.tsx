@@ -10,6 +10,7 @@ import {
   normalizePageSettings,
   normalizeVariableRegistry,
 } from './canvasTypes';
+import { buildDataPreviewFromReport } from './dataPreview';
 import CanvasEditor from './CanvasEditor';
 import { exportToJinja2, exportToJSON, importFromJSON, generatePreviewHtml } from './exportUtils';
 import { useUndoableState } from './hooks/useUndoableState';
@@ -19,135 +20,6 @@ import { downloadBlob } from '@/utils/downloadBlob';
 import ReportGenerator from './ReportGenerator';
 
 const SESSION_KEY = 'canvas-editor-session-v1';
-
-const NESTED_REPORT_KEYS = new Set([
-  'metadata',
-  'header',
-  'inspeccion',
-  'medidas',
-  'valvulas',
-  'canastillas',
-]);
-
-function asRecord(value: unknown): Record<string, unknown> | null {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
-  return value as Record<string, unknown>;
-}
-
-function assignPrimitive(target: Record<string, unknown>, key: string, value: unknown) {
-  if (value === null || value === undefined) return;
-  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
-    target[key] = value;
-  }
-}
-
-function buildDataPreviewFromReport(report: unknown): Record<string, unknown> {
-  const preview: Record<string, unknown> = {};
-  const reportObject = asRecord(report);
-  if (!reportObject) return preview;
-
-  const metadata = asRecord(reportObject.metadata);
-  if (metadata) {
-    ['informe_id', 'dia', 'mes', 'anio', 'pagina'].forEach((key) => {
-      assignPrimitive(preview, key, metadata[key]);
-    });
-  }
-
-  const header = asRecord(reportObject.header);
-  if (header) {
-    ['cs', 'contratista', 'codigo_infraestructura', 'ubicacion', 'suministro', 'tipo', 'volumen'].forEach((key) => {
-      assignPrimitive(preview, key, header[key]);
-    });
-  }
-
-  const inspeccion = asRecord(reportObject.inspeccion);
-  if (inspeccion) {
-    Object.entries(inspeccion).forEach(([key, value]) => {
-      assignPrimitive(preview, key, value);
-      if (key.startsWith('observaciones_')) {
-        assignPrimitive(preview, `obs_${key.slice('observaciones_'.length)}`, value);
-      } else if (key.startsWith('sugerencias_')) {
-        assignPrimitive(preview, `sug_${key.slice('sugerencias_'.length)}`, value);
-      }
-    });
-  }
-
-  const medidas = asRecord(reportObject.medidas);
-  if (medidas) {
-    Object.entries(medidas).forEach(([key, value]) => {
-      assignPrimitive(preview, `medidas_${key}`, value);
-    });
-  }
-
-  const valvulas = asRecord(reportObject.valvulas);
-  if (valvulas) {
-    const valvulaSections: Array<[string, string]> = [
-      ['diametros', 'conduccion'],
-      ['impulsion', 'impulsion'],
-      ['aduccion', 'aduccion'],
-      ['bypass', 'bypass'],
-      ['desague', 'desague'],
-    ];
-
-    valvulaSections.forEach(([sectionKey, variableSection]) => {
-      const sectionData = asRecord(valvulas[sectionKey]);
-      if (!sectionData) return;
-      Object.entries(sectionData).forEach(([diameter, value]) => {
-        assignPrimitive(preview, `valvulas_${variableSection}_${diameter}`, value);
-      });
-    });
-
-    assignPrimitive(preview, 'valvulas_operativas', valvulas.operativas);
-    assignPrimitive(preview, 'valvulas_no_operativas', valvulas.no_operativas);
-
-    Object.entries(valvulas).forEach(([key, value]) => {
-      if (key.startsWith('observaciones_')) {
-        assignPrimitive(preview, `obs_valvulas_${key.slice('observaciones_'.length)}`, value);
-      } else if (key.startsWith('sugerencias_')) {
-        assignPrimitive(preview, `sug_valvulas_${key.slice('sugerencias_'.length)}`, value);
-      }
-    });
-  }
-
-  const canastillas = asRecord(reportObject.canastillas);
-  if (canastillas) {
-    const canastillaSections: Array<[string, string]> = [
-      ['diametros', 'aduccion'],
-      ['aduccion', 'aduccion'],
-      ['succion', 'succion'],
-      ['desague', 'desague'],
-    ];
-
-    canastillaSections.forEach(([sectionKey, variableSection]) => {
-      const sectionData = asRecord(canastillas[sectionKey]);
-      if (!sectionData) return;
-      Object.entries(sectionData).forEach(([diameter, value]) => {
-        assignPrimitive(preview, `canastillas_${variableSection}_${diameter}`, value);
-      });
-    });
-
-    assignPrimitive(preview, 'canastillas_operativas', canastillas.operativas);
-    assignPrimitive(preview, 'canastillas_no_operativas', canastillas.no_operativas);
-
-    Object.entries(canastillas).forEach(([key, value]) => {
-      if (key.startsWith('observaciones_')) {
-        assignPrimitive(preview, `obs_canastillas_${key.slice('observaciones_'.length)}`, value);
-      } else if (key.startsWith('sugerencias_')) {
-        assignPrimitive(preview, `sug_canastillas_${key.slice('sugerencias_'.length)}`, value);
-      }
-    });
-  }
-
-  assignPrimitive(preview, 'observaciones', reportObject.observaciones);
-  assignPrimitive(preview, 'sugerencias', reportObject.sugerencias);
-
-  Object.entries(reportObject).forEach(([key, value]) => {
-    if (NESTED_REPORT_KEYS.has(key)) return;
-    assignPrimitive(preview, key, value);
-  });
-
-  return preview;
-}
 
 function isSamePageSettings(a: PageSettings, b: PageSettings): boolean {
   return (
@@ -336,9 +208,6 @@ export default function TemplateEditor() {
           setDataPreview(undefined);
           return;
         }
-
-        const preview = buildDataPreviewFromReport(firstReport);
-        setDataPreview(Object.keys(preview).length ? preview : undefined);
       } catch (error) {
         if ((error as { name?: string })?.name === 'AbortError') return;
         if (isActive) {
@@ -356,12 +225,16 @@ export default function TemplateEditor() {
   }, []);
 
   useEffect(() => {
-    if (activeScenario === 'first' || availableReports.length === 0) return;
-    const report = activeScenario === 'recent' ? availableReports[1] || availableReports[0] : null;
+    if (activeScenario === 'custom') return;
+    if (availableReports.length === 0) {
+      setDataPreview(undefined);
+      return;
+    }
+    const report = activeScenario === 'recent' ? availableReports[1] || availableReports[0] : availableReports[0];
     if (!report) return;
-    const preview = buildDataPreviewFromReport(report);
+    const preview = buildDataPreviewFromReport(report, reportType);
     setDataPreview(Object.keys(preview).length ? preview : undefined);
-  }, [activeScenario, availableReports]);
+  }, [activeScenario, availableReports, reportType]);
 
   // ── Auto-save ─────────────────────────────────────────────────────────────
 

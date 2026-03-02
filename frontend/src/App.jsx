@@ -2,18 +2,23 @@ import { useState, useRef, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import html2canvas from 'html2canvas';
 import { downloadBlob } from './utils/downloadBlob';
-import { FileSpreadsheet, Image as ImageIcon, Printer, Settings, FileCode, CheckCircle, AlertCircle, RotateCcw, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { FileSpreadsheet, Image as ImageIcon, Printer, Settings, FileCode, CheckCircle, AlertCircle, RotateCcw, ChevronLeft, ChevronRight, Search, Table2 } from 'lucide-react';
 import PreviewPanel from './components/PreviewPanel';
 import { Step, LoadingModal } from './components/common';
 import DashboardLayout from './components/DashboardLayout';
+import DataPreviewTable from './components/DataPreviewTable';
+import { toast } from 'sonner';
 
 import { REPORT_FIELDS, TEMPLATE_KEY_MAP, DATE_FIELDS, TEMPLATE_HEADERS } from './constants';
 import { useFocusMode } from './hooks/useFocusMode';
 import { useSSEProgress } from './hooks/useSSEProgress';
 import { getApiBase } from './utils/apiBase';
 import { excelSerialToDate, formatDateValue, isDateColumn } from './utils';
+import { clearPersistedLogo, loadPersistedLogo, savePersistedLogo } from './utils/persistedLogos';
 
 const API_BASE_URL = `${getApiBase()}/api`;
+const LOGO_LEFT_STORAGE_KEY = 'mainGeneratorLogoLeft';
+const LOGO_RIGHT_STORAGE_KEY = 'mainGeneratorLogoRight';
 
 export default function App() {
     const panelRef = useRef(null);
@@ -37,6 +42,7 @@ export default function App() {
     const [logoRight, setLogoRight] = useState(null);
     const [logoLeftFile, setLogoLeftFile] = useState(null);
     const [logoRightFile, setLogoRightFile] = useState(null);
+    const [logosHydrated, setLogosHydrated] = useState(false);
 
     // Export Mode State
     const [exportScope, setExportScope] = useState('single'); // 'single' | 'all'
@@ -63,6 +69,9 @@ export default function App() {
     // Images Required State - for templates that don't need images
     const [requiresImages, setRequiresImages] = useState(true);
 
+    // Data Preview Table visibility
+    const [showDataPreview, setShowDataPreview] = useState(false);
+
     // PDF Loading State
     const [isPdfLoading, setIsPdfLoading] = useState(false);
     const [pdfLoadingMessage, setPdfLoadingMessage] = useState('');
@@ -75,6 +84,44 @@ export default function App() {
     useEffect(() => {
         localStorage.setItem('customColumns', JSON.stringify(customColumns));
     }, [customColumns]);
+
+    useEffect(() => {
+        const persistedLeft = loadPersistedLogo(LOGO_LEFT_STORAGE_KEY);
+        if (persistedLeft) {
+            setLogoLeft(persistedLeft.dataUrl);
+            setLogoLeftFile(persistedLeft.file);
+        }
+
+        const persistedRight = loadPersistedLogo(LOGO_RIGHT_STORAGE_KEY);
+        if (persistedRight) {
+            setLogoRight(persistedRight.dataUrl);
+            setLogoRightFile(persistedRight.file);
+        }
+
+        setLogosHydrated(true);
+    }, []);
+
+    useEffect(() => {
+        if (!logosHydrated) return;
+
+        if (logoLeft && logoLeftFile) {
+            savePersistedLogo(LOGO_LEFT_STORAGE_KEY, logoLeftFile, logoLeft);
+            return;
+        }
+
+        clearPersistedLogo(LOGO_LEFT_STORAGE_KEY);
+    }, [logoLeft, logoLeftFile, logosHydrated]);
+
+    useEffect(() => {
+        if (!logosHydrated) return;
+
+        if (logoRight && logoRightFile) {
+            savePersistedLogo(LOGO_RIGHT_STORAGE_KEY, logoRightFile, logoRight);
+            return;
+        }
+
+        clearPersistedLogo(LOGO_RIGHT_STORAGE_KEY);
+    }, [logoRight, logoRightFile, logosHydrated]);
 
 
 
@@ -513,7 +560,7 @@ export default function App() {
             });
 
             if (exportFormat === 'individual') {
-                alert("Modo 'Individuales' en bloque: Funcionalidad de descarga ZIP pendiente. Por favor use 'Consolidado' por ahora.");
+                toast.info("Modo 'Individuales' en bloque: Funcionalidad de descarga ZIP pendiente. Por favor use 'Consolidado' por ahora.");
                 return;
             }
         }
@@ -552,7 +599,7 @@ export default function App() {
                         const blob = await resp.blob();
                         downloadBlob(blob, `Paneles_Consolidado_${new Date().toISOString().split('T')[0]}.pdf`);
                     } catch (err) {
-                        alert(`Error descargando PDF: ${err.message}`);
+                        toast.error(`Error descargando PDF: ${err.message}`);
                     }
                 },
                 onError: async (errMsg) => {
@@ -566,7 +613,7 @@ export default function App() {
                         const blob = await response.blob();
                         downloadBlob(blob, `Paneles_Consolidado_${new Date().toISOString().split('T')[0]}.pdf`);
                     } catch (fallbackErr) {
-                        alert(`Error generando PDF: ${fallbackErr.message}`);
+                        toast.error(`Error generando PDF: ${fallbackErr.message}`);
                     } finally {
                         setIsPdfLoading(false);
                     }
@@ -603,7 +650,7 @@ export default function App() {
                 } else {
                     errorMessage += err.message;
                 }
-                alert(errorMessage);
+                toast.error(errorMessage);
             } finally {
                 setIsPdfLoading(false);
             }
@@ -767,6 +814,15 @@ export default function App() {
                                 </div>
                                 <input type="file" hidden accept=".csv,.xlsx,.xls" onChange={handleFileUpload} />
                             </label>
+                            {data.length > 0 && (
+                                <button
+                                    onClick={() => setShowDataPreview(true)}
+                                    className="w-full mt-2 flex items-center justify-center gap-2 border border-neutral-700 hover:border-neutral-500 rounded-lg p-2 text-center hover:bg-neutral-800 transition-all text-xs text-neutral-400 hover:text-white"
+                                >
+                                    <Table2 size={14} />
+                                    Ver Datos Cargados
+                                </button>
+                            )}
                         </Step>
 
                         {/* Step 3: Mapping */}
@@ -993,6 +1049,24 @@ export default function App() {
                         customColumns={customColumns}
                         isFocusMode={isFocusMode}
                     />
+
+                    {/* Floating Data Preview Table */}
+                    {showDataPreview && data.length > 0 && (
+                        <DataPreviewTable
+                            headers={headers}
+                            data={data}
+                            images={images}
+                            idColumn={idColumn}
+                            matchesRecordId={matchesRecordId}
+                            selectedIndex={selectedIndex}
+                            onSelectRow={(idx) => {
+                                setSelectedIndex(String(idx));
+                                setExportScope('single');
+                                setShowDataPreview(false);
+                            }}
+                            onClose={() => setShowDataPreview(false)}
+                        />
+                    )}
 
                     {/* Focus Mode Navigation Arrows */}
                     {isFocusMode && (

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { downloadBlob } from '@/utils/downloadBlob';
+import { clearPersistedLogo, loadPersistedLogo, savePersistedLogo } from '@/utils/persistedLogos';
 import {
     normalizeEditorTemplate,
     normalizeTemplateStatus,
@@ -26,6 +27,8 @@ import { excelSerialToDate, formatDateValue, isDateColumn } from '@/utils';
 import { templateEditorApi } from './api';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const LOGO_LEFT_STORAGE_KEY = 'templateEditorGeneratorLogoLeft';
+const LOGO_RIGHT_STORAGE_KEY = 'templateEditorGeneratorLogoRight';
 
 /* ── Report fields & mappings (mirrored from App.jsx constants) ─── */
 const REPORT_FIELDS = [
@@ -198,6 +201,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     const [logoRight, setLogoRight] = useState<string | null>(null);
     const [logoLeftFile, setLogoLeftFile] = useState<File | null>(null);
     const [logoRightFile, setLogoRightFile] = useState<File | null>(null);
+    const [logosHydrated, setLogosHydrated] = useState(false);
 
     // Export Mode State
     const [exportScope, setExportScope] = useState<'single' | 'all'>('single');
@@ -240,6 +244,44 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     useEffect(() => {
         localStorage.setItem('generatorCustomColumns', JSON.stringify(customColumns));
     }, [customColumns]);
+
+    useEffect(() => {
+        const persistedLeft = loadPersistedLogo(LOGO_LEFT_STORAGE_KEY);
+        if (persistedLeft) {
+            setLogoLeft(persistedLeft.dataUrl);
+            setLogoLeftFile(persistedLeft.file);
+        }
+
+        const persistedRight = loadPersistedLogo(LOGO_RIGHT_STORAGE_KEY);
+        if (persistedRight) {
+            setLogoRight(persistedRight.dataUrl);
+            setLogoRightFile(persistedRight.file);
+        }
+
+        setLogosHydrated(true);
+    }, []);
+
+    useEffect(() => {
+        if (!logosHydrated) return;
+
+        if (logoLeft && logoLeftFile) {
+            savePersistedLogo(LOGO_LEFT_STORAGE_KEY, logoLeftFile, logoLeft);
+            return;
+        }
+
+        clearPersistedLogo(LOGO_LEFT_STORAGE_KEY);
+    }, [logoLeft, logoLeftFile, logosHydrated]);
+
+    useEffect(() => {
+        if (!logosHydrated) return;
+
+        if (logoRight && logoRightFile) {
+            savePersistedLogo(LOGO_RIGHT_STORAGE_KEY, logoRightFile, logoRight);
+            return;
+        }
+
+        clearPersistedLogo(LOGO_RIGHT_STORAGE_KEY);
+    }, [logoRight, logoRightFile, logosHydrated]);
 
     // Cleanup blob URLs on unmount
     useEffect(() => {
