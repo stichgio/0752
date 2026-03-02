@@ -1225,6 +1225,25 @@
         // Init Icons
         lucide.createIcons();
 
+        // --- API Base URL Detection ---
+        // Replica la lógica de apiBase.ts en vanilla JS para esta página estática.
+        // En desarrollo (localhost), las rutas relativas /api/... funcionan via proxy de Vite.
+        // En producción (Vercel), necesitamos la URL directa del backend (HF Spaces).
+        const API_BASE_URL = (() => {
+            const hostname = window.location.hostname;
+            // Desarrollo local: Vite proxy se encarga
+            if (hostname === 'localhost' || hostname === '127.0.0.1') {
+                return '';
+            }
+            // Producción: intentar leer de meta tag inyectado por el build o config
+            const metaApiUrl = document.querySelector('meta[name="api-base-url"]');
+            if (metaApiUrl && metaApiUrl.getAttribute('content')) {
+                return metaApiUrl.getAttribute('content').replace(/\/api\/?$/, '');
+            }
+            // Fallback: URL relativa (funciona si vercel.json tiene rewrite para /api/*)
+            return '';
+        })();
+
         // Application State
         const state = {
             mergeFiles: [], // Array of File objects (intercalado)
@@ -1742,21 +1761,20 @@
         function changeZoom(delta) {
             if (!currentPdf) return;
             const newZoom = Math.max(0.2, Math.min(0.6, currentZoom + delta));
-            if (newZoom !== currentZoom) {
-                renderCustomPreview(state.splitFile, newZoom);
+            if (newZoom !== c        om)                   renderCustomPreview(state.splitFile, newZoom);
             }
         }
 
         function updateCutsCounter() {
-            const count = state.cutPoints.length;
-            const counter = document.getElementById('cuts-counter');
+               st count = state.cutPoints.length;
+            const co         ocument.getElementById('cuts-counter');
             if (counter) {
-                counter.textContent = count + (count === 1 ? ' corte marcado' : ' cortes marcados');
-                counter.style.color = count > 0 ? '#4CAF50' : 'var(--accent)';
+                        textContent = count + (count === 1 ? ' corte marcado' : ' cor         dos');
+                counter.style.color = count > 0 ? '#4CAF50' : 'v         nt)';
             }
         }
 
-        function toggleCut(pageIndex, el) {
+        function toggleCut(pag         l) {
             el.classList.toggle('cut');
             const btn = el.querySelector('.btn-scissor');
             btn.classList.toggle('active');
@@ -1776,6 +1794,7 @@
 
         /**
          * Helper centralizado para llamadas a la API de PDF Tools.
+         * Usa API_BASE_URL para construir la URL completa (soporta dev y producción).
          * Distingue entre errores de red (backend no accesible) y
          * errores HTTP devueltos por el backend (400/422/500).
          * @param {string} path - Ruta relativa del endpoint (ej: '/api/tools/merge-pdfs')
@@ -1784,23 +1803,41 @@
          * @throws {Error} - Error con mensaje descriptivo en español
          */
         async function callPdfToolsApi(path, formData) {
+            const fullUrl = API_BASE_URL + path;
             let res;
             try {
-                res = await fetch(path, {
+                res = await fetch(fullUrl, {
                     method: 'POST',
                     body: formData
                 });
             } catch (networkError) {
                 // TypeError: Failed to fetch — el backend no está accesible
-                throw new Error(
-                    'No se pudo conectar con el servidor. ' +
-                    'Verifica que el backend está corriendo en http://localhost:7860 ' +
-                    'y que el proxy de Vite está activo.'
-                );
+                const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+                if (isLocal) {
+                    throw new Error(
+                        'No se pudo conectar con el servidor. ' +
+                        'Verifica que el backend está corriendo en http://localhost:7860 ' +
+                        'y que el proxy de Vite está activo.'
+                    );
+                } else {
+                    throw new Error(
+                        'No se pudo conectar con el backend. ' +
+                        'Verifica la configuración de la URL del API. ' +
+                        '(URL intentada: ' + fullUrl + ')'
+                    );
+                }
             }
 
             // El fetch llegó al servidor pero devolvió un error HTTP
             if (!res.ok) {
+                // 405 en producción indica que la petición llegó a Vercel, no al backend
+                if (res.status === 405 && !API_BASE_URL) {
+                    throw new Error(
+                        'Error 405: La petición no llegó al backend. ' +
+                        'Agrega un <meta name="api-base-url" content="https://TU-ESPACIO.hf.space"> ' +
+                        'en esta página, o configura el rewrite en vercel.json.'
+                    );
+                }
                 let detailMsg = `Error del servidor (${res.status})`;
                 try {
                     const contentType = res.headers.get('content-type') || '';
@@ -1916,15 +1953,15 @@
                 // We can't strictly know "End" without reading PDF.
                 // Actually the backend endpoint needs explicit ranges.
                 // Let's grab total from current view (count of thumbs)
-                const totalPages = document.querySelectorAll('.page-thumb').length;
+                const totcument.querySelectorAll('.page-thumb').length;
 
                 state.cutPoints.forEach(cut => {
                     ranges.push([start, cut]);
                     start = cut + 1;
                 });
-                // Last range
+             ange
                 if (start <= totalPages) {
-                    ranges.push([start, totalPages]);
+        ranges.push([start, totalPages]);
                 }
 
                 formData.append('ranges', JSON.stringify(ranges));
@@ -1932,7 +1969,7 @@
 
             try {
                 const res = await callPdfToolsApi('/api/tools/split-pdf', formData);
-                const blob = await res.blob();
+    const blob = await res.blob();
                 downloadBlob(blob, 'split_result.zip');
             } catch (err) {
                 alert('Error al dividir PDF: ' + err.message);
@@ -2014,9 +2051,8 @@
         }
 
         // Redo
-        function redoOrganize() {
-            if (organizeState.historyIndex < organizeState.history.length - 1) {
-                organizeState.historyIndex++;
+        function redoOrgan        if (organizeState.historyIndex < organizeState.history.length - 1) {
+                organizeState.++;
                 const state = organizeState.history[organizeState.historyIndex];
                 organizeState.pages = JSON.parse(JSON.stringify(state.pages));
                 organizeState.cutPoints = [...state.cutPoints];
@@ -2048,17 +2084,15 @@
         }
 
         // Select all pages
-        function selectAllOrganizePages() {
+        function selectAllOrga{
             const activePages = organizeState.pages.filter(p => !p.deleted);
             if (organizeState.selectedPages.size === activePages.length) {
                 organizeState.selectedPages.clear();
             } else {
                 for (let i = 0; i < activePages.length; i++) {
                     organizeState.selectedPages.add(i);
-                }
-            }
-            renderOrganizeThumbnails();
-            updateOrganizeStats();
+                  }
+            renderOrganizeThu           updateOrganizeStats();
         }
 
         // Delete selected pages
@@ -2067,14 +2101,14 @@
 
             if (!confirm(`¿Eliminar ${organizeState.selectedPages.size} páginas seleccionadas?`)) return;
 
-            saveOrganizeHistory();
+            sastory();
             const previousCuts = [...organizeState.cutPoints];
             const activePagesBefore = organizeState.pages.filter(p => !p.deleted);
             const indices = Array.from(organizeState.selectedPages).sort((a, b) => b - a);
             const toDelete = new Set(indices);
             indices.forEach(index => {
                 if (index < activePagesBefore.length) {
-                    const pageToDelete = activePagesBefore[index];
+                    const pageToDelete = activePagex];
                     pageToDelete.deleted = true;
                 }
             });
@@ -2090,21 +2124,21 @@
             }
             organizeState.cutPoints = previousCuts
                 .filter(cp => oldToNew.has(cp) && oldToNew.has(cp + 1))
-                .map(cp => oldToNew.get(cp))
+                .map(cp => oldToNe w.get(cp))
                 .sort((a, b) => a - b);
 
             const remainingActive = organizeState.pages.filter(p => !p.deleted);
             document.getElementById('organize-total-pages').textContent = remainingActive.length;
 
-            organizeState.selectedPages.clear();
+           te.selectedPages.clear();
             renderOrganizeThumbnails();
             updateOrganizeCutsCounter();
             updateUndoRedoButtons();
-            updateOrganizeStats();
+    teOrganizeStats();
         }
 
         // Rotate selected pages
-        function rotateSelectedOrganizePages() {
+         function rotateSelectedOrganizePages() {
             if (organizeState.selectedPages.size === 0) return;
 
             saveOrganizeHistory();
@@ -2117,7 +2151,7 @@
             });
 
             organizeState.selectedPages.clear();
-            renderOrganizeThumbnails();
+            renderOrgani zeThumbnails();
             updateUndoRedoButtons();
         }
 
@@ -2137,13 +2171,13 @@
         }
 
         // Keyboard shortcuts
-        document.addEventListener('keydown', function (e) {
+        document.addEvekeydown', function (e) {
             // Only handle shortcuts when organize tab is active
             const organizeSection = document.getElementById('section-organize');
             if (!organizeSection || !organizeSection.classList.contains('active')) return;
 
             // Don't handle if user is typing in an input
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            if (e.te === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
             if (e.ctrlKey || e.metaKey) {
                 switch (e.key.toLowerCase()) {
@@ -2154,9 +2188,9 @@
                         } else {
                             undoOrganize();
                         }
-                        break;
+            break;
                     case 'a':
-                        e.preventDefault();
+            e.preventDefault();
                         selectAllOrganizePages();
                         break;
                 }
@@ -2168,13 +2202,12 @@
                         if (organizeState.selectedPages.size > 0) {
                             deleteSelectedOrganizePages();
                         }
-                        break;
-                    case 'r':
+                        bre            case 'r':
                     case 'R':
                         e.preventDefault();
                         if (organizeState.selectedPages.size > 0) {
                             rotateSelectedOrganizePages();
-                        }
+        }
                         break;
                     case 'Escape':
                         organizeState.selectedPages.clear();
@@ -2183,15 +2216,12 @@
                         break;
                 }
             }
-        });
-
-        async function handleOrganizeFile(file) {
+     async function handleOrganizeFile(file) {
             if (!file) return;
 
             organizeState.file = file;
             organizeState.pages = [];
-            organizeState.cutPoints = [];
-            organizeState.zoom = 0.25;
+            organizeState.cut         organizeState.zoom = 0.25;
             organizeState.wasDragging = false;
             organizeState.history = [];
             organizeState.historyIndex = -1;
@@ -2200,8 +2230,8 @@
             document.getElementById('organize-filename').textContent = file.name;
             document.getElementById('organize-filename').style.display = 'block';
             document.getElementById('organize-upload-section').style.display = 'none';
-            document.getElementById('organize-thumbnails-section').style.display = 'block';
-            document.getElementById('btn-organize-download').disabled = false;
+            document.getElementById('organize-thumbnails-sectdisplay = 'block';
+            document.getElementById('btn-organize-download' false;
 
             await loadOrganizePDF(file);
 
@@ -2212,7 +2242,7 @@
 
         async function loadOrganizePDF(file) {
             const container = document.getElementById('organize-pages-grid');
-            container.innerHTML = '<div style="padding: 40px; text-align: center; grid-column: 1/-1;"><div class="spinner" style="margin: 0 auto 16px;"></div><div style="color: var(--text-dim);">Cargando PDF...</div></div>';
+            container.innerHTML = '<div style="padding: 40px; text-align: center; grid-column: 1/-1;"><div class="spinner" style="margin: 0 auto 16px;"></div><div style="color: var(--text-dim);">Cargando PDdiv>';
 
             try {
                 const arrayBuffer = await file.arrayBuffer();
@@ -2220,7 +2250,7 @@
                 const numPages = organizeState.pdf.numPages;
 
                 // Initialize pages array
-                organizeState.pages = Array.from({ length: numPages }, (_, i) => ({
+                organizeState.pm({ length: numPages }, (_, i) => ({
                     pageNum: i + 1,
                     originalPageNum: i + 1,
                     rotation: 0,
@@ -2228,7 +2258,7 @@
                 }));
 
                 document.getElementById('organize-total-pages').textContent = numPages;
-                await renderOrganizeThumbnails();
+                awaiThumbnails();
                 updateOrganizeCutsCounter();
 
             } catch (err) {
@@ -2236,19 +2266,16 @@
                 container.innerHTML = '<div style="color: #ff4444; padding: 40px; text-align: center; grid-column: 1/-1;"><i data-lucide="alert-circle" width="32" style="margin-bottom: 12px;"></i><div>Error cargando PDF</div></div>';
                 lucide.createIcons();
             }
-        }
-
-        async function renderOrganizeThumbnails() {
+      nc function renderOrganizeThumbnails() {
             const container = document.getElementById('organize-pages-grid');
-            container.innerHTML = '';
+             container.innerHTML = '';
 
             const activePages = organizeState.pages.filter(p => !p.deleted);
 
             // Update bulk actions visibility
-            const bulkActions = document.getElementById('organize-bulk-actions');
-            if (bulkActions) {
+            const bulkActions = document.getElementById('organize-bulk        if (bulkActions) {
                 bulkActions.style.display = organizeState.selectedPages.size > 0 ? 'block' : 'none';
-                const selectedCountEl = document.getElementById('organize-selected-count');
+               ountEl = document.getElementById('organize-selected-count');
                 if (selectedCountEl) {
                     selectedCountEl.textContent = organizeState.selectedPages.size;
                 }
@@ -2259,22 +2286,21 @@
                 const page = await organizeState.pdf.getPage(pageData.originalPageNum);
                 const viewport = page.getViewport({ scale: organizeState.zoom, rotation: pageData.rotation });
 
-                const wrapper = document.createElement('div');
+    t wrapper = document.createElement('div');
                 const isSelected = organizeState.selectedPages.has(i);
                 wrapper.className = 'organize-page-wrapper' + (isSelected ? ' selected' : '');
-                wrapper.draggable = true;
+          aggable = true;
                 wrapper.dataset.index = i;
 
                 // Drag events
-                wrapper.addEventListener('dragstart', handleOrganizeDragStart);
-                wrapper.addEventListener('dragover', handleOrganizeDragOver);
+                wrapper.addEventListener('dragstart', agStart);
+                wrapper.addEventLi', handleOrganizeDragOver);
                 wrapper.addEventListener('drop', handleOrganizeDrop);
                 wrapper.addEventListener('dragend', handleOrganizeDragEnd);
                 wrapper.addEventListener('dragleave', handleOrganizeDragLeave);
 
                 // Click to select (but not if clicking buttons)
-                wrapper.addEventListener('click', function (e) {
-                    if (e.target.closest('button') || e.target.closest('.organize-checkbox')) return;
+                wrapper.addEventListener('click', function (         if (e.target.closest('button') || e..organize-checkbox')) return;
                     if (organizeState.wasDragging) return;
                     toggleSelectPage(i);
                 });
@@ -2289,7 +2315,7 @@
                 checkboxOverlay.innerHTML = `
                     <div class="organize-checkbox ${isSelected ? 'checked' : ''}" onclick="event.stopPropagation(); toggleSelectPage(${i})">
                         <i data-lucide="check" width="14"></i>
-                    </div>
+      div>
                 `;
                 thumb.appendChild(checkboxOverlay);
 
@@ -2306,9 +2332,8 @@
                 // Page number with rotation indicator
                 const numLabel = document.createElement('div');
                 numLabel.className = 'organize-page-number';
-                const rotationIcon = pageData.rotation > 0 ? ` ↻${pageData.rotation}°` : '';
-                numLabel.innerText = (i + 1) + rotationIcon;
-                thumb.appendChild(numLabel);
+                const rotationIcon = pageData.rotation > 0 ? ` ↻${n}°` : '';
+                numLabel.innerText = (i + 1) + rotat             thumb.appendChild(numLabel);
 
                 wrapper.appendChild(thumb);
 
@@ -2326,19 +2351,18 @@
                 wrapper.appendChild(controls);
 
                 // Scissor (if not last page)
-                if (i < activePages.length - 1) {
-                    const scissorWrapper = document.createElement('div');
-                    scissorWrapper.className = 'organize-scissor-wrapper';
+               ivePages.length - 1) {
+                    const sr = document.createElement('div');
+        scissorWrapper.className = 'organize-scissor-wrapper';
                     scissorWrapper.innerHTML = `
                         <div class="organize-cut-indicator"></div>
-                        <button class="btn-scissor ${organizeState.cutPoints.includes(i) ? 'active' : ''}" onclick="event.stopPropagation(); toggleOrganizeCut(${i})">
-                            <i data-lucide="scissors" width="16"></i>
-                        </button>
+                        <button class="btn-scissor ${organizeState.cutPoints.includes(i) ? 'active' : '"event.stopPropagation(); toggleOrganizeCut(${i})">
+                            <i data-lucide="scissors" widt                        </button>
                     `;
                     wrapper.appendChild(scissorWrapper);
                 }
 
-                container.appendChild(wrapper);
+              appendChild(wrapper);
             }
 
             lucide.createIcons();
@@ -2346,7 +2370,7 @@
 
         // Drag & Drop handlers
         function handleOrganizeDragStart(e) {
-            organizeState.draggedIndex = parseInt(e.currentTarget.dataset.index);
+            organizeSIndex = parseInt(e.currentTarget.dataset.index);
             organizeState.wasDragging = true;
             e.currentTarget.classList.add('dragging');
             e.dataTransfer.effectAllowed = 'move';
@@ -2372,7 +2396,7 @@
             saveOrganizeHistory();
 
             // Apply flash effect to target
-            const targetWrapper = document.querySelectorAll('.organize-page-wrapper')[dropIndex];
+            const targetWrapper = document.querySelectorAll('.organizer')[dropIndex];
             const targetThumb = targetWrapper.querySelector('.organize-thumb');
             targetThumb.classList.add('flashing-rotate');
 
@@ -2393,8 +2417,8 @@
                 if (selectedIndex === dragIndex) {
                     newSelection.add(dropIndex);
                 } else if (dragIndex < dropIndex) {
-                    if (selectedIndex > dragIndex && selectedIndex <= dropIndex) {
-                        newSelection.add(selectedIndex - 1);
+                    ifdex > dragIndex && selectedIndex <= dropIndex) {
+                        newSelection.andex - 1);
                     } else {
                         newSelection.add(selectedIndex);
                     }
@@ -2406,7 +2430,7 @@
                     }
                 }
             });
-            organizeState.selectedPages = newSelection;
+          ate.selectedPages = newSelection;
 
             setTimeout(() => {
                 renderOrganizeThumbnails();
@@ -2416,20 +2440,20 @@
         }
 
         function handleOrganizeDragEnd(e) {
-            e.currentTarget.classList.remove('dragging');
-            document.querySelectorAll('.organize-page-wrapper').forEach(el => {
+           rget.classList.remove('dragging');
+            document.querySelectorAll('.organize-pagforEach(el => {
                 el.classList.remove('drag-over');
             });
             organizeState.draggedIndex = null;
-            setTimeout(() => {
+     t(() => {
                 organizeState.wasDragging = false;
             }, 100);
         }
 
         function rotateOrganizePage(index) {
-            saveOrganizeHistory();
+    nizeHistory();
             const activePages = organizeState.pages.filter(p => !p.deleted);
-            const pageWrapper = document.querySelectorAll('.organize-page-wrapper')[index];
+            const pageWrapper = document.querySelectopage-wrapper')[index];
             const thumb = pageWrapper.querySelector('.organize-thumb');
 
             // Apply flash effect
@@ -2445,11 +2469,11 @@
         }
 
         function deleteOrganizePage(index) {
-            if (!confirm('¿Eliminar esta página?')) return;
+  onfirm('¿Eliminar esta página?')) return;
 
             saveOrganizeHistory();
             const activePages = organizeState.pages.filter(p => !p.deleted);
-            const pageWrapper = document.querySelectorAll('.organize-page-wrapper')[index];
+            const pageWrapper = dectorAll('.organize-page-wrapper')[index];
             const thumb = pageWrapper.querySelector('.organize-thumb');
 
             // Apply flash effect
@@ -2463,10 +2487,8 @@
                 organizeState.cutPoints = organizeState.cutPoints.filter(cp => cp !== index);
 
                 // Adjust remaining cuts
-                organizeState.cutPoints = organizeState.cutPoints.map(cp => cp > index ? cp - 1 : cp);
-
-                // Remove from selection and adjust indices
-                organizeState.selectedPages.delete(index);
+      ganizeState.cutPoints = organizeState.cutPoints.map(cp => cp > index ? cp - 1 : cp        // Remove from selection and adjust indices
+                organizeState.sele(index);
                 const newSelection = new Set();
                 organizeState.selectedPages.forEach(selectedIndex => {
                     if (selectedIndex < index) {
@@ -2478,7 +2500,7 @@
                 organizeState.selectedPages = newSelection;
 
                 const remainingActive = organizeState.pages.filter(p => !p.deleted);
-                document.getElementById('organize-total-pages').textContent = remainingActive.length;
+        .getElementById('organize-total-pages').textContent = remainingActive.length;
 
                 renderOrganizeThumbnails();
                 updateOrganizeCutsCounter();
@@ -2540,40 +2562,37 @@
                 zoom: 0.25,
                 pdf: null,
                 draggedIndex: null,
-                wasDragging: false,
+                waslse,
                 history: [],
                 historyIndex: -1,
                 maxHistory: 20,
                 selectedPages: new Set()
             };
 
-            document.getElementById('organize-upload-section').style.display = 'block';
-            document.getElementById('organize-thumbnails-section').style.display = 'none';
-            document.getElementById('organize-filename').style.display = 'none';
-            document.getElementById('btn-organize-download').disabled = true;
+            document.getElementById('organize-upload-section')ay = 'block';
+            documntById('organize-thumbnails-section').style.display = 'none';
+            document.getElementById('organize-filename').style.disp          document.getElementById('btn-organize-download').disabled = true;
             document.getElementById('organize-pages-grid').innerHTML = '';
             document.getElementById('file-input-organize').value = '';
 
             // Hide bulk actions and reset stats
-            const bulkActions = document.getElementById('organize-bulk-actions');
-            if (bulkActions) bulkActions.style.display = 'none';
+        tions = document.getElementById('organize-bulk-actions');
+            if (buctions.style.display = 'none';
 
             const statsEl = document.getElementById('organize-stats');
-            if (statsEl) statsEl.innerHTML = 'Total: <strong>0</strong> | Activas: <strong>0</strong> | Eliminadas: <strong>0</strong> | Rotadas: <strong>0</strong>';
+            if (statsEl) statsEl.innerHTML = 'Total: <strong>0</strong> | Activas: <strong>0</strong> | Eliminadas: <strong>0</strong> |/strong>';
 
             updateUndoRedoButtons();
         }
 
         async function executeOrganize() {
             if (!organizeState.file) {
-                alert('Selecciona un archivo PDF primero.');
-                return;
+                alert('Selecciona un archivo PDF primero.')turn;
             }
 
             const activePages = organizeState.pages.filter(p => !p.deleted);
             if (activePages.length === 0) {
-                alert('No quedan páginas para procesar.');
-                return;
+                alert('No quedan página                return;
             }
 
             setLoading(true);
@@ -2583,18 +2602,16 @@
                 formData.append('file', organizeState.file);
 
                 // Build operations
-                const operations = {
+const operations = {
                     pageOrder: activePages.map(p => p.originalPageNum),
                     rotations: activePages.map(p => p.rotation),
                     cuts: organizeState.cutPoints
                 };
 
-                formData.append('operations', JSON.stringify(operations));
-
-                // Check if we need to split (has cuts)
+                formData.append('operations', JSON.stringify(oper           // Check if we need to split (has cuts)
                 if (organizeState.cutPoints.length > 0) {
                     // Calculate ranges from cuts
-                    const ranges = [];
+                   st = [];
                     let start = 0;
 
                     organizeState.cutPoints.forEach(cutIndex => {

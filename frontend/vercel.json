@@ -3,6 +3,10 @@
     "outputDirectory": "dist",
     "rewrites": [
         {
+            "source": "/api/:path*",
+            "destination": "https://shengio-stich-0752.hf.space/api/:path*"
+        },
+        {
             "source": "/technical-reports",
             "destination": "/technical-reports.html"
         },
