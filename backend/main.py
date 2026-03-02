@@ -688,8 +688,11 @@ async def tool_merge_pdfs(
         with tempfile.TemporaryDirectory() as temp_dir:
             input_paths = []
             # Save uploaded files (streaming)
-            for file in files:
-                file_path = os.path.join(temp_dir, file.filename)
+            for idx, file in enumerate(files):
+                # Avoid collisions when users upload files with the same name
+                # (common when coming from different folders/devices).
+                safe_filename = f"{idx:04d}_{file.filename}"
+                file_path = os.path.join(temp_dir, safe_filename)
                 await save_upload(file, file_path)
                 input_paths.append(file_path)
 
