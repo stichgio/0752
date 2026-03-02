@@ -52,6 +52,26 @@ class TestMergePDFs:
         assert "application/pdf" in response.headers.get("content-type", "")
         assert len(response.content) > 0
 
+
+    def test_merge_interleaved_allows_duplicate_filenames(self):
+        pdf_short = _make_blank_pdf(pages=1)
+        pdf_long = _make_blank_pdf(pages=2)
+
+        response = client.post(
+            "/api/tools/merge-pdfs",
+            files=[
+                ("files", ("same.pdf", pdf_short, "application/pdf")),
+                ("files", ("same.pdf", pdf_long, "application/pdf")),
+            ],
+            data={"strict": "false"}
+        )
+
+        assert response.status_code == 200
+
+        from pypdf import PdfReader  # pyre-ignore[21]
+        merged = PdfReader(io.BytesIO(response.content))
+        assert len(merged.pages) == 3
+
     def test_merge_interleaved_rejects_non_pdf_payload(self):
         valid_pdf = _make_blank_pdf()
         response = client.post(
