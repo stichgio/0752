@@ -35,6 +35,7 @@ import {
     AlertCircle,
     Layers,
     Eye,
+    Grid2X2,
 } from 'lucide-react';
 import DashboardLayout from '../../DashboardLayout';
 import { Step, LoadingModal } from '../../common';
@@ -63,6 +64,10 @@ const matchesRecordId = (imageName, recordId) => {
     );
     return regex.test(name);
 };
+
+// Grid layout helper — maps N images to optimal columns (mirrors backend _grid_cols)
+const GRID_COLS_MAP = { 1: 1, 2: 2, 3: 2, 4: 2, 5: 3, 6: 3, 7: 3, 8: 4, 9: 3 };
+const getGridCols = (n) => GRID_COLS_MAP[n] || 3;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Subcomponentes de preview
@@ -134,9 +139,79 @@ function AltHeaderPreview({ altHeaderConfig, rowData, heightClass }) {
     );
 }
 
+/** 
+ * Grid de imágenes para el preview 
+ * Muestra las miniaturas reales si están cargadas.
+ */
+function ImageGridPreview({ images, imagesPerPage }) {
+    if (!images || images.length === 0) {
+        return (
+            <div className="mt-2 border border-dashed border-neutral-200 rounded p-4 text-center">
+                <ImageIcon size={16} className="text-neutral-300 mx-auto mb-1" />
+                <p className="text-[10px] text-neutral-400">Sin imágenes encontradas</p>
+                <p className="text-[9px] text-neutral-300">Asegúrate de que el ID coincida con el nombre de los archivos</p>
+            </div>
+        );
+    }
+
+    const cols = getGridCols(imagesPerPage);
+    const displayImages = images.slice(0, imagesPerPage);
+
+    return (
+        <div
+            className="mt-2 grid gap-1 p-1 bg-neutral-50 rounded border border-neutral-200"
+            style={{
+                gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`
+            }}
+        >
+            {displayImages.map((img, i) => (
+                <div key={i} className="relative aspect-[4/3] bg-white rounded overflow-hidden border border-neutral-200 shadow-sm">
+                    <img
+                        src={img.url}
+                        alt={img.name}
+                        className="w-full h-full object-cover"
+                    />
+                    <div className="absolute bottom-0 right-0 bg-black/50 text-[6px] text-white px-0.5 rounded-tl font-mono">
+                        {i + 1}
+                    </div>
+                </div>
+            ))}
+            {/* Espacios vacíos si faltan fotos para completar la grilla visual */}
+            {Array.from({ length: Math.max(0, imagesPerPage - displayImages.length) }).map((_, i) => (
+                <div key={`empty-${i}`} className="aspect-[4/3] bg-neutral-100 rounded border border-dashed border-neutral-200 flex items-center justify-center">
+                    <ImageIcon size={8} className="text-neutral-300" />
+                </div>
+            ))}
+        </div>
+    );
+}
+
 /** Tarjeta de preview de una hoja individual */
-function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, logoLeft, logoRight, altHeaderConfig, rowData }) {
+function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, logoLeft, logoRight, altHeaderConfig, rowData, allImages }) {
     const hasTemplate = Boolean(sheet.templateName);
+
+    // Obtener imágenes para esta fila si hay datos
+    const getImagesForRow = () => {
+        if (!rowData || !allImages || allImages.length === 0) return [];
+        const recordId = rowData.ID_UNICO || rowData.id || rowData.ID;
+        if (!recordId) return [];
+
+        const filtered = allImages.filter(img => matchesRecordId(img.name, recordId));
+
+        // Aplicar paginación si viene de la vista dividida
+        if (sheet.pageNum && sheet.totalPages) {
+            const p = sheet.pageNum - 1;
+            const size = sheet.imagesPerPage || 4;
+            return filtered.slice(p * size, (p + 1) * size);
+        }
+        return filtered;
+    };
+
+    const rowImages = getImagesForRow();
+    const isGridTemplate = sheet.templateName === 'Grilla de Imágenes';
+    const pageIndicator = sheet.totalPages && sheet.totalPages > 1
+        ? ` (Pág ${sheet.pageNum}/${sheet.totalPages})`
+        : '';
 
     return (
         <div className="bg-white rounded-lg shadow-md overflow-hidden border border-neutral-200">
@@ -144,9 +219,11 @@ function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, lo
             <div className="flex items-center justify-between bg-neutral-800 px-3 py-1.5">
                 <div className="flex items-center gap-2">
                     <span className="bg-white text-black text-[10px] font-bold px-2 py-0.5 rounded-full font-mono">
-                        {index + 1}/{total}
+                        {index + 1}
                     </span>
-                    <span className="text-white text-xs font-medium truncate max-w-[200px]">{sheet.title || 'Sin título'}</span>
+                    <span className="text-white text-xs font-medium truncate max-w-[200px]">
+                        {sheet.title || 'Sin título'}{pageIndicator}
+                    </span>
                 </div>
                 <div className="flex items-center gap-1.5">
                     {sheet.useAltHeader
@@ -170,12 +247,27 @@ function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, lo
 
                 {/* Área de plantilla */}
                 {hasTemplate ? (
-                    <div className="mt-2 border border-emerald-200 rounded bg-emerald-50 px-3 py-2 flex items-center gap-2">
-                        <FileText size={14} className="text-emerald-600 shrink-0" />
-                        <div className="min-w-0">
-                            <div className="text-[10px] font-mono text-emerald-700 font-semibold truncate">{sheet.templateName}</div>
-                            <div className="text-[9px] text-emerald-600 mt-0.5">Plantilla asignada</div>
+                    <div className="mt-2 space-y-2">
+                        <div className="border border-emerald-200 rounded bg-emerald-50 px-3 py-2 flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <FileText size={14} className="text-emerald-600 shrink-0" />
+                                <div className="min-w-0">
+                                    <div className="text-[10px] font-mono text-emerald-700 font-semibold truncate">{sheet.templateName}</div>
+                                    <div className="text-[9px] text-emerald-600 mt-0.5">Plantilla asignada</div>
+                                </div>
+                            </div>
+                            {isGridTemplate && (
+                                <div className="bg-white/50 px-1.5 py-0.5 rounded border border-emerald-100 flex items-center gap-1">
+                                    <Grid2X2 size={10} className="text-emerald-600" />
+                                    <span className="text-[9px] font-bold text-emerald-700 underline underline-offset-2">{sheet.imagesPerPage || 4} fotos</span>
+                                </div>
+                            )}
                         </div>
+
+                        {/* Preview específico de Grilla */}
+                        {isGridTemplate && (
+                            <ImageGridPreview images={rowImages} imagesPerPage={sheet.imagesPerPage || 4} />
+                        )}
                     </div>
                 ) : (
                     <div className="mt-2 border border-dashed border-neutral-200 rounded px-3 py-4 text-center">
@@ -369,6 +461,7 @@ export default function MultiSheetReportApp() {
             title: `Hoja ${prev.length + 1}`,
             templateName: defaultTemplate,
             useAltHeader: false,
+            imagesPerPage: 4,
         }]);
     }, [availableTemplates]);
 
@@ -422,12 +515,14 @@ export default function MultiSheetReportApp() {
      *
      * FormData fields:
      *   sheets_config   (str/JSON)  → SheetEntry[]
-     *     SheetEntry: { order, title, templateName, useAltHeader, rowData, imageFilenames }
+     *     SheetEntry: { order, title, templateName, useAltHeader, rowData, imageFilenames, imagesPerPage }
      *     - rowData: objeto plano con los datos del Excel/CSV para este registro.
      *     - imageFilenames: nombres de archivos de imágenes incluidas en 'files'.
      *
      *   header_config   (str/JSON)  → { title, subtitle, logoLeft?, logoRight? }
      *     - logoLeft / logoRight: data URI base64 o null.
+     *     - Si el logo se adjunta como archivo, se envía null aquí para no
+     *       inflar el tamaño del campo multipart.
      *
      *   alt_header_config (str/JSON) → { idField, dateField, extraText, height }
      *     - height: "very-compact" | "compact" | "normal"
@@ -462,14 +557,39 @@ export default function MultiSheetReportApp() {
             const imageFilenames = rowImages.map(img => img.name);
 
             activeSheets.forEach(s => {
-                sheetsConfig.push({
-                    order: globalOrder++,
-                    title: s.title,
-                    templateName: s.templateName,
-                    useAltHeader: s.useAltHeader,
-                    rowData,
-                    imageFilenames,
-                });
+                const photosPerPage = s.imagesPerPage || 4;
+
+                // Si es plantilla de grilla, dividimos por páginas si hay muchas fotos
+                if (s.templateName === 'Grilla de Imágenes' && rowImages.length > photosPerPage) {
+                    const totalPages = Math.ceil(rowImages.length / photosPerPage);
+                    for (let p = 0; p < totalPages; p++) {
+                        const chunk = rowImages.slice(p * photosPerPage, (p + 1) * photosPerPage);
+                        sheetsConfig.push({
+                            order: globalOrder++,
+                            title: s.title,
+                            templateName: s.templateName,
+                            useAltHeader: s.useAltHeader,
+                            imagesPerPage: photosPerPage,
+                            rowData,
+                            imageFilenames: chunk.map(img => img.name),
+                            pageNum: p + 1,
+                            totalPages: totalPages
+                        });
+                    }
+                } else {
+                    // Una sola página para plantillas que no son grilla o si el total cabe en una
+                    sheetsConfig.push({
+                        order: globalOrder++,
+                        title: s.title,
+                        templateName: s.templateName,
+                        useAltHeader: s.useAltHeader,
+                        imagesPerPage: photosPerPage,
+                        rowData,
+                        imageFilenames: rowImages.map(img => img.name),
+                        pageNum: 1,
+                        totalPages: 1
+                    });
+                }
             });
         });
 
@@ -477,8 +597,8 @@ export default function MultiSheetReportApp() {
         formData.append('header_config', JSON.stringify({
             title: headerTitle,
             subtitle: headerSubtitle,
-            logoLeft: logoLeft || null,
-            logoRight: logoRight || null,
+            logoLeft: logoLeftFile ? null : (logoLeft || null),
+            logoRight: logoRightFile ? null : (logoRight || null),
         }));
         formData.append('alt_header_config', JSON.stringify(altHeaderConfig));
 
@@ -725,6 +845,27 @@ export default function MultiSheetReportApp() {
                                             ))}
                                         </select>
 
+                                        {/* Selector de tamaño de grilla (solo si es "Grilla de Imágenes") */}
+                                        {sheet.templateName === 'Grilla de Imágenes' && (
+                                            <div className="mt-1.5 flex flex-wrap gap-1 p-1.5 bg-neutral-900/50 rounded border border-neutral-700">
+                                                <div className="w-full text-[9px] text-neutral-500 font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
+                                                    <Grid2X2 size={10} /> Fotos por página
+                                                </div>
+                                                {[2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+                                                    <button
+                                                        key={num}
+                                                        onClick={() => updateSheet(sheet.id, { imagesPerPage: num })}
+                                                        className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold transition-all
+                                                            ${(sheet.imagesPerPage || 4) === num
+                                                                ? 'bg-white text-black scale-110 shadow-lg'
+                                                                : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'}`}
+                                                    >
+                                                        {num}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+
                                         {/* Badge de estado */}
                                         <div className="flex items-center gap-2">
                                             {sheet.templateName
@@ -887,6 +1028,7 @@ export default function MultiSheetReportApp() {
                                     <AltHeaderPreview
                                         altHeaderConfig={altHeaderConfig}
                                         rowData={selectedRow}
+                                        allImages={images}
                                     />
                                 </div>
                             </div>
@@ -1011,28 +1153,70 @@ export default function MultiSheetReportApp() {
                             </div>
 
                             {/* Tarjetas de hojas */}
-                            {sheets.map((sheet, index) => (
-                                <div key={sheet.id}>
-                                    <SheetPreviewCard
-                                        sheet={sheet}
-                                        index={index}
-                                        total={sheets.length}
-                                        headerTitle={headerTitle}
-                                        headerSubtitle={headerSubtitle}
-                                        logoLeft={logoLeft}
-                                        logoRight={logoRight}
-                                        altHeaderConfig={altHeaderConfig}
-                                        rowData={selectedRow}
-                                    />
-                                    {index < sheets.length - 1 && (
-                                        <div className="flex items-center gap-2 my-2">
-                                            <div className="flex-1 border-b border-neutral-600 border-dashed" />
-                                            <span className="text-neutral-600 text-[9px] font-mono">SALTO DE SECCIÓN</span>
-                                            <div className="flex-1 border-b border-neutral-600 border-dashed" />
-                                        </div>
-                                    )}
-                                </div>
-                            ))}
+                            {(() => {
+                                const previewCards = [];
+                                let globalIdx = 0;
+
+                                sheets.forEach((sheet) => {
+                                    const recordId = selectedRow?.ID_UNICO || selectedRow?.id || selectedRow?.ID;
+                                    const rowImages = (recordId && images)
+                                        ? images.filter(img => matchesRecordId(img.name, recordId))
+                                        : [];
+
+                                    const photosPerPage = sheet.imagesPerPage || 4;
+                                    const isGrid = sheet.templateName === 'Grilla de Imágenes';
+
+                                    if (isGrid && rowImages.length > photosPerPage) {
+                                        const totalPages = Math.ceil(rowImages.length / photosPerPage);
+                                        for (let p = 0; p < totalPages; p++) {
+                                            previewCards.push(
+                                                <div key={`${sheet.id}-p${p}`}>
+                                                    <SheetPreviewCard
+                                                        sheet={{ ...sheet, pageNum: p + 1, totalPages }}
+                                                        index={globalIdx++}
+                                                        total={999} // se recalcula después o se omite
+                                                        headerTitle={headerTitle}
+                                                        headerSubtitle={headerSubtitle}
+                                                        logoLeft={logoLeft}
+                                                        logoRight={logoRight}
+                                                        altHeaderConfig={altHeaderConfig}
+                                                        rowData={selectedRow}
+                                                        allImages={images}
+                                                    />
+                                                    <div className="flex items-center gap-2 my-2">
+                                                        <div className="flex-1 border-b border-neutral-600 border-dashed" />
+                                                        <span className="text-neutral-600 text-[9px] font-mono whitespace-nowrap">SALTO DE PÁGINA</span>
+                                                        <div className="flex-1 border-b border-neutral-600 border-dashed" />
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+                                    } else {
+                                        previewCards.push(
+                                            <div key={sheet.id}>
+                                                <SheetPreviewCard
+                                                    sheet={sheet}
+                                                    index={globalIdx++}
+                                                    total={999}
+                                                    headerTitle={headerTitle}
+                                                    headerSubtitle={headerSubtitle}
+                                                    logoLeft={logoLeft}
+                                                    logoRight={logoRight}
+                                                    altHeaderConfig={altHeaderConfig}
+                                                    rowData={selectedRow}
+                                                    allImages={images}
+                                                />
+                                                <div className="flex items-center gap-2 my-2">
+                                                    <div className="flex-1 border-b border-neutral-600 border-dashed" />
+                                                    <span className="text-neutral-600 text-[9px] font-mono whitespace-nowrap">SALTO DE SECCIÓN</span>
+                                                    <div className="flex-1 border-b border-neutral-600 border-dashed" />
+                                                </div>
+                                            </div>
+                                        );
+                                    }
+                                });
+                                return previewCards;
+                            })()}
 
                             {/* Info de exportación */}
                             <div className="mt-4 bg-neutral-900/60 border border-neutral-700 rounded-lg p-3 text-[10px] font-mono text-neutral-500">

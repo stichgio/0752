@@ -237,6 +237,21 @@ def _image_to_b64(img_path: str) -> Optional[str]:
         return None
 
 
+async def _upload_to_b64(upload_file: UploadFile) -> Optional[str]:
+    mime = upload_file.content_type
+    if not mime or mime == "application/octet-stream":
+        ext = os.path.splitext(upload_file.filename or "")[1].lower().lstrip(".")
+        mime = _MIME_MAP.get(ext, "image/jpeg")
+    try:
+        raw = await upload_file.read()
+        if not raw:
+            return None
+        b64 = base64.b64encode(raw).decode()
+        return f"data:{mime};base64,{b64}"
+    except Exception:
+        return None
+
+
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 # Built-in layouts supported by this router's HTML generator.
@@ -257,6 +272,8 @@ async def generate_multi_sheet_pdf(
     header_config: str = Form(...),
     alt_header_config: str = Form(...),
     files: list[UploadFile] = File(default=[]),
+    logoLeftFile: Optional[UploadFile] = File(default=None),
+    logoRightFile: Optional[UploadFile] = File(default=None),
 ):
     """
     Genera un PDF multi-sección con grillas de imágenes.
@@ -288,6 +305,16 @@ async def generate_multi_sheet_pdf(
 
     if not sheets:
         raise HTTPException(status_code=400, detail="No hay páginas configuradas")
+
+    if logoLeftFile is not None:
+        logo_left_data = await _upload_to_b64(logoLeftFile)
+        if logo_left_data:
+            header["logoLeft"] = logo_left_data
+
+    if logoRightFile is not None:
+        logo_right_data = await _upload_to_b64(logoRightFile)
+        if logo_right_data:
+            header["logoRight"] = logo_right_data
 
     tmp_dir = tempfile.mkdtemp(prefix="multi_sheet_")
     output_path: Optional[str] = None

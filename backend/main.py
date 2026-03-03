@@ -27,6 +27,7 @@ from technical_reports.models import TechnicalReport  # type: ignore
 from fichas_tecnicas.router import router as fichas_tecnicas_router  # type: ignore
 from image_optimizer.router import router as image_optimizer_router  # type: ignore
 from compressor.router import router as compressor_router  # type: ignore
+from ocr_tools.router import router as ocr_tools_router  # type: ignore
 from template_editor.router import router as template_editor_router  # type: ignore
 from routers.multi_sheet_report import router as multi_sheet_router  # type: ignore
 from config import settings  # type: ignore
@@ -53,11 +54,13 @@ try:
         self,
         headers,  # type: ignore
         stream,  # type: ignore
-        *,
-        max_fields: int = 1000,
-        max_part_size: int = 50 * 1024 * 1024,  # 50 MB (was 1 MB)
+        *args,  # type: ignore
+        **kwargs,  # type: ignore
     ) -> None:
-        _orig_mp_init(self, headers, stream, max_fields=max_fields, max_part_size=max_part_size)
+        # Preserve Starlette's evolving parser kwargs (for example `max_files`)
+        # while still raising the default text-part limit globally.
+        kwargs.setdefault("max_part_size", 50 * 1024 * 1024)  # 50 MB (was 1 MB)
+        _orig_mp_init(self, headers, stream, *args, **kwargs)
 
     _MultiPartParser.__init__ = _patched_mp_init  # type: ignore
 except Exception:
@@ -299,6 +302,7 @@ app.include_router(technical_reports_router)
 app.include_router(fichas_tecnicas_router)
 app.include_router(image_optimizer_router)
 app.include_router(compressor_router)
+app.include_router(ocr_tools_router)
 app.include_router(template_editor_router)
 app.include_router(multi_sheet_router, prefix="/api/multi-sheet", tags=["multi-sheet-report"])
 
