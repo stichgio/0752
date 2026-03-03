@@ -41,6 +41,28 @@ class Settings(BaseSettings):
     ghostscript_enabled: bool = Field(default=True)
     ghostscript_quality: str = Field(default="printer")
 
+    # ── OCR (Mistral OCR) ─────────────────────────────────────────────────────
+    mistral_api_key: str = Field(
+        default="",
+        validation_alias=AliasChoices("MISTRAL_API_KEY", "OCR_API_KEY"),
+    )
+    mistral_api_base: str = Field(
+        default="https://api.mistral.ai",
+        validation_alias=AliasChoices("MISTRAL_API_BASE", "OCR_API_BASE"),
+    )
+    mistral_ocr_model: str = Field(
+        default="mistral-ocr-latest",
+        validation_alias=AliasChoices("MISTRAL_OCR_MODEL", "OCR_MODEL"),
+    )
+    ocr_request_timeout_seconds: int = Field(
+        default=180,
+        validation_alias=AliasChoices("OCR_REQUEST_TIMEOUT_SECONDS", "OCR_TIMEOUT_SECONDS"),
+    )
+    ocr_max_upload_mb: int = Field(
+        default=25,
+        validation_alias=AliasChoices("OCR_MAX_UPLOAD_MB", "OCR_MAX_MB"),
+    )
+
     model_config = {
         "env_file": ".env",
         "env_file_encoding": "utf-8",
