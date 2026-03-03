@@ -14,7 +14,10 @@ import {
     RotateCcw,
     FileText,
     Archive,
-    Info
+    Info,
+    Lock,
+    RefreshCw,
+    StopCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -34,7 +37,11 @@ const STORAGE_KEY = 'pdf-compressor-options-v1';
 const DEBUG_STORAGE_KEY = 'compressor-debug';
 const MAX_WARN_FILE_SIZE_BYTES = 50 * 1024 * 1024;
 const LOW_REDUCTION_THRESHOLD = 5;
-const ALLOWED_PDF_QUALITIES: readonly PDFQuality[] = ['aggressive', 'screen', 'ebook', 'printer', 'prepress'];
+const MAX_FILES = 20;
+const ALLOWED_PDF_QUALITIES: readonly PDFQuality[] = ['ultra', 'aggressive', 'screen', 'ebook', 'printer', 'prepress'];
+
+// Order from least to most aggressive (for retry logic)
+const QUALITY_ORDER: PDFQuality[] = ['prepress', 'printer', 'ebook', 'screen', 'aggressive', 'ultra'];
 
 function isDebugEnabled(): boolean {
     if (typeof window === 'undefined') return false;
@@ -125,7 +132,7 @@ function ToastContainer({ toasts, removeToast }: { toasts: Toast[]; removeToast:
 // ============================================================================
 function ProgressBar({ current, total }: { current: number; total: number }) {
     const percentage = total > 0 ? (current / total) * 100 : 0;
-    
+
     return (
         <div className="w-full bg-[#1a1a1a] rounded-full h-3 overflow-hidden">
             <motion.div
@@ -135,6 +142,26 @@ function ProgressBar({ current, total }: { current: number; total: number }) {
                 transition={{ duration: 0.3, ease: "easeOut" }}
             />
         </div>
+    );
+}
+
+// ============================================================================
+// COMPONENTE: METHOD BADGE
+// ============================================================================
+function MethodBadge({ method }: { method: 'ghostscript' | 'pypdf' | 'none' }) {
+    if (method === 'none') return null;
+    const isGs = method === 'ghostscript';
+    return (
+        <span
+            title={isGs ? 'Comprimido con Ghostscript' : 'Comprimido con pypdf (fallback)'}
+            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-bold cursor-default ${
+                isGs
+                    ? 'bg-green-500/15 text-green-400 border border-green-500/30'
+                    : 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30'
+            }`}
+        >
+            {isGs ? 'GS' : 'pypdf'}
+        </span>
     );
 }
 
@@ -161,7 +188,11 @@ export default function Compressor() {
     const [toasts, setToasts] = useState<Toast[]>([]);
     const [processingProgress, setProcessingProgress] = useState({ current: 0, total: 0 });
     const [processingMessage, setProcessingMessage] = useState('');
+    const [zipMode, setZipMode] = useState(false);
+    const [downloadPopover, setDownloadPopover] = useState<{ fileId: string; name: string } | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const abortControllerRef = useRef<AbortController | null>(null);
+    const downloadPopoverRef = useRef<HTMLDivElement>(null);
 
     const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
@@ -169,13 +200,26 @@ export default function Compressor() {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(options));
     }, [options]);
 
+    // Close download popover on outside click
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (downloadPopoverRef.current && !downloadPopoverRef.current.contains(e.target as Node)) {
+                setDownloadPopover(null);
+            }
+        };
+        if (downloadPopover) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [downloadPopover]);
+
     // ============================================================================
     // TOAST HELPERS
     // ============================================================================
     const addToast = useCallback((message: string, type: Toast['type'] = 'info', duration = 4000) => {
         const id = generateId();
         setToasts(prev => [...prev, { id, message, type }]);
-        
+
         if (duration > 0) {
             setTimeout(() => {
                 setToasts(prev => prev.filter(t => t.id !== id));
@@ -224,6 +268,14 @@ export default function Compressor() {
         if (!inputFiles || inputFiles.length === 0) return;
 
         const fileArray = Array.from(inputFiles);
+        const currentCount = files.length;
+        const availableSlots = MAX_FILES - currentCount;
+
+        if (availableSlots <= 0) {
+            addToast(`Límite de ${MAX_FILES} archivos alcanzado. Elimina algunos antes de agregar más.`, 'error', 5000);
+            return;
+        }
+
         const validFiles: File[] = [];
         const invalidFiles: string[] = [];
         const largeFiles: string[] = [];
@@ -250,6 +302,17 @@ export default function Compressor() {
 
         if (validFiles.length === 0) return;
 
+        // Enforce MAX_FILES limit
+        const filesToAdd = validFiles.slice(0, availableSlots);
+        const discarded = validFiles.length - filesToAdd.length;
+        if (discarded > 0) {
+            addToast(
+                `Máximo ${MAX_FILES} archivos. Se descartaron ${discarded} archivo(s).`,
+                'error',
+                5000
+            );
+        }
+
         if (largeFiles.length > 0) {
             addToast(
                 `Advertencia: ${largeFiles.length} PDF(s) superan 50MB. La compresión puede tardar más o fallar por límite del servidor.`,
@@ -258,7 +321,7 @@ export default function Compressor() {
             );
         }
 
-        const newFiles: CompressedFile[] = validFiles.map(file => ({
+        const newFiles: CompressedFile[] = filesToAdd.map(file => ({
             id: generateId(),
             file,
             originalSize: file.size,
@@ -267,8 +330,8 @@ export default function Compressor() {
         }));
 
         setFiles(prev => [...prev, ...newFiles]);
-        addToast(`${validFiles.length} PDF(s) agregado(s)`, 'success', 2000);
-    }, [addToast]);
+        addToast(`${filesToAdd.length} PDF(s) agregado(s)`, 'success', 2000);
+    }, [addToast, files.length]);
 
     const handleDrop = useCallback((e: React.DragEvent) => {
         e.preventDefault();
@@ -293,19 +356,19 @@ export default function Compressor() {
             const items = e.clipboardData?.items;
             if (!items) return;
 
-            const files: File[] = [];
+            const pastedFiles: File[] = [];
             for (let i = 0; i < items.length; i++) {
                 const item = items[i];
                 if (item.kind === 'file') {
                     const file = item.getAsFile();
                     if (file && file.name.toLowerCase().endsWith('.pdf')) {
-                        files.push(file);
+                        pastedFiles.push(file);
                     }
                 }
             }
 
-            if (files.length > 0) {
-                processFiles(files);
+            if (pastedFiles.length > 0) {
+                processFiles(pastedFiles);
             }
         };
 
@@ -314,7 +377,41 @@ export default function Compressor() {
     }, [processFiles]);
 
     // ============================================================================
-    // PROCESO DE COMPRESION
+    // CANCELACION
+    // ============================================================================
+    const handleCancelCompression = useCallback(() => {
+        abortControllerRef.current?.abort();
+    }, []);
+
+    // ============================================================================
+    // REINTENTO CON CALIDAD INFERIOR
+    // ============================================================================
+    const retryWithLowerQuality = useCallback((fileId: string, currentQuality: PDFQuality) => {
+        const currentIndex = QUALITY_ORDER.indexOf(currentQuality);
+        if (currentIndex === -1 || currentIndex >= QUALITY_ORDER.length - 1) {
+            addToast('Ya está en el nivel máximo de compresión (ultra).', 'info', 3000);
+            return;
+        }
+        const nextQuality = QUALITY_ORDER[currentIndex + 1];
+        setFiles(prev => prev.map(f =>
+            f.id === fileId
+                ? {
+                    ...f,
+                    status: 'pending',
+                    appliedQuality: nextQuality,
+                    error: undefined,
+                    compressedBlob: undefined,
+                    compressedSize: undefined,
+                    compressionMethod: undefined,
+                    processingTime: undefined,
+                }
+                : f
+        ));
+        addToast(`Reintentando con calidad "${nextQuality}"...`, 'info', 2000);
+    }, [addToast]);
+
+    // ============================================================================
+    // PROCESO DE COMPRESION (modo secuencial / por archivo)
     // ============================================================================
     const handleCompress = async () => {
         const pendingFiles = files.filter(f => f.status === 'pending');
@@ -341,27 +438,45 @@ export default function Compressor() {
             addToast('Calidad inválida detectada en configuración guardada. Se usará "aggressive".', 'info', 5000);
         }
 
+        const abortController = new AbortController();
+        abortControllerRef.current = abortController;
+        const { signal } = abortController;
+
         for (let i = 0; i < pendingFiles.length; i++) {
+            if (signal.aborted) {
+                // Reset remaining unprocessed files to pending
+                const remainingIds = new Set(pendingFiles.slice(i).map(f => f.id));
+                setFiles(prev => prev.map(f =>
+                    remainingIds.has(f.id) ? { ...f, status: 'pending' } : f
+                ));
+                break;
+            }
+
             const fileItem = pendingFiles[i];
+            // Use per-file quality override if set (from retry), otherwise global setting
+            const fileQuality: PDFQuality = fileItem.appliedQuality || validatedQuality;
+
             setProcessingProgress({ current: i + 1, total: pendingFiles.length });
             setProcessingMessage(`Procesando ${fileItem.originalName}...`);
+
+            const fetchStart = Date.now();
 
             try {
                 const formData = new FormData();
                 formData.append('file', fileItem.file);
-                formData.append('pdf_quality', validatedQuality);
+                formData.append('pdf_quality', fileQuality);
 
-                // TODO(manual-test): Activar localStorage.setItem('compressor-debug','true') para depuración detallada
                 debugLog('Enviando solicitud de compresión', {
                     file: fileItem.originalName,
                     size: fileItem.originalSize,
-                    pdf_quality: validatedQuality,
+                    pdf_quality: fileQuality,
                     endpoint: `${API_BASE}/compressor/compress-single`,
                 });
 
                 const response = await fetch(`${API_BASE}/compressor/compress-single`, {
                     method: 'POST',
                     body: formData,
+                    signal,
                 });
 
                 if (!response.ok) {
@@ -392,6 +507,7 @@ export default function Compressor() {
                     throw new Error('La respuesta del servidor no contiene un archivo PDF válido.');
                 }
 
+                // Read response headers
                 const headerOriginal = response.headers.get('X-Original-Size');
                 const headerCompressed = response.headers.get('X-Compressed-Size');
                 const originalSize = parseInt(headerOriginal || '0', 10) || fileItem.originalSize;
@@ -400,13 +516,27 @@ export default function Compressor() {
                 const errorHeader = rawErrorHeader ? decodeURIComponent(rawErrorHeader) : null;
                 const missingHeaders = !headerOriginal || !headerCompressed;
 
+                // X-Compression-Method header (2.1)
+                const compressionMethodRaw = response.headers.get('X-Compression-Method') || 'none';
+                const compressionMethod = (['ghostscript', 'pypdf', 'none'].includes(compressionMethodRaw)
+                    ? compressionMethodRaw
+                    : 'none') as 'ghostscript' | 'pypdf' | 'none';
+
+                // X-Processing-Time header (2.2) — fall back to client-side measurement
+                const serverTime = response.headers.get('X-Processing-Time');
+                const processingTime = serverTime
+                    ? parseFloat(serverTime)
+                    : parseFloat(((Date.now() - fetchStart) / 1000).toFixed(1));
+
+                // Detect encrypted PDF from error header
+                const isEncrypted = errorHeader?.toLowerCase().includes('protegido') ||
+                    errorHeader?.toLowerCase().includes('encrypted') || false;
+
                 if (missingHeaders) {
                     debugLog('Headers esperados faltantes, usando fallback', {
                         file: fileItem.originalName,
                         headerOriginal,
                         headerCompressed,
-                        fallbackOriginal: fileItem.originalSize,
-                        fallbackCompressed: compressedBlob.size,
                     });
                 }
 
@@ -417,7 +547,9 @@ export default function Compressor() {
                 const lowReduction = isActuallyCompressed && reductionPercent > 0 && reductionPercent < LOW_REDUCTION_THRESHOLD;
 
                 let fileWarning: string | undefined;
-                if (errorHeader) {
+                if (isEncrypted) {
+                    fileWarning = errorHeader || 'PDF protegido: no se puede comprimir';
+                } else if (errorHeader) {
                     fileWarning = errorHeader;
                 } else if (!isActuallyCompressed) {
                     fileWarning = 'Sin reducción (archivo ya optimizado o compresión no efectiva).';
@@ -433,7 +565,8 @@ export default function Compressor() {
                     compressedSize,
                     reductionPercent: Number(reductionPercent.toFixed(1)),
                     isActuallyCompressed,
-                    responseType,
+                    compressionMethod,
+                    processingTime,
                     errorHeader,
                 });
 
@@ -449,6 +582,10 @@ export default function Compressor() {
                             compressedBlob,
                             compressedSize,
                             error: fileWarning,
+                            compressionMethod,
+                            processingTime,
+                            isEncrypted,
+                            appliedQuality: fileQuality,
                         }
                         : f
                 ));
@@ -458,6 +595,16 @@ export default function Compressor() {
                 }
 
             } catch (error) {
+                if (error instanceof DOMException && error.name === 'AbortError') {
+                    // Abort caught inside the loop — reset remaining files
+                    const remainingIds = new Set(pendingFiles.slice(i).map(f => f.id));
+                    setFiles(prev => prev.map(f =>
+                        remainingIds.has(f.id) ? { ...f, status: 'pending' } : f
+                    ));
+                    addToast('Compresión cancelada.', 'info', 3000);
+                    break;
+                }
+
                 const userErrorMessage = buildCompressionErrorMessage(error);
                 debugLog('Error durante compresión', {
                     file: fileItem.originalName,
@@ -480,6 +627,7 @@ export default function Compressor() {
         }
 
         setIsProcessing(false);
+        abortControllerRef.current = null;
         setProcessingProgress({ current: 0, total: 0 });
         setProcessingMessage('');
 
@@ -507,13 +655,99 @@ export default function Compressor() {
     };
 
     // ============================================================================
+    // PROCESO DE COMPRESION (modo ZIP)
+    // ============================================================================
+    const handleZipDownload = async () => {
+        const pendingFiles = files.filter(f => f.status === 'pending');
+        if (pendingFiles.length === 0 || isProcessing) return;
+
+        setIsProcessing(true);
+        setProcessingMessage('Comprimiendo y creando ZIP...');
+
+        setFiles(prev => prev.map(f =>
+            f.status === 'pending' ? { ...f, status: 'processing' } : f
+        ));
+
+        const abortController = new AbortController();
+        abortControllerRef.current = abortController;
+
+        try {
+            const formData = new FormData();
+            pendingFiles.forEach(f => formData.append('files', f.file));
+            formData.append('pdf_quality', options.pdfQuality);
+
+            const response = await fetch(`${API_BASE}/compressor/compress`, {
+                method: 'POST',
+                body: formData,
+                signal: abortController.signal,
+            });
+
+            if (!response.ok) {
+                const errorJson = await response.json().catch(() => null);
+                throw new Error(errorJson?.detail || `Error ${response.status}`);
+            }
+
+            const blob = await response.blob();
+            downloadBlob(blob, 'pdfs_comprimidos.zip');
+
+            // Mark all as completed (without individual stats — ZIP mode)
+            setFiles(prev => prev.map(f =>
+                pendingFiles.find(p => p.id === f.id)
+                    ? { ...f, status: 'completed', compressionMethod: undefined }
+                    : f
+            ));
+
+            addToast(`ZIP descargado: ${pendingFiles.length} PDFs comprimidos`, 'success');
+        } catch (error) {
+            if (error instanceof DOMException && error.name === 'AbortError') {
+                setFiles(prev => prev.map(f =>
+                    pendingFiles.find(p => p.id === f.id) ? { ...f, status: 'pending' } : f
+                ));
+                addToast('Descarga ZIP cancelada.', 'info', 3000);
+            } else {
+                setFiles(prev => prev.map(f =>
+                    pendingFiles.find(p => p.id === f.id)
+                        ? { ...f, status: 'error', error: 'Error al comprimir' }
+                        : f
+                ));
+                addToast('Error al crear el ZIP. Intenta el modo individual.', 'error', 5000);
+            }
+        } finally {
+            setIsProcessing(false);
+            abortControllerRef.current = null;
+            setProcessingMessage('');
+        }
+    };
+
+    // ============================================================================
     // HANDLERS DE DESCARGA
     // ============================================================================
-    const handleDownloadSingle = useCallback((f: CompressedFile) => {
+    const handleDownloadSingle = useCallback((f: CompressedFile, customName?: string) => {
         if (!f.compressedBlob) return;
-        downloadBlob(f.compressedBlob, f.originalName);
-        addToast(`Descargado: ${f.originalName}`, 'success', 2000);
+        const name = customName?.trim() || f.originalName;
+        downloadBlob(f.compressedBlob, name);
+        addToast(`Descargado: ${name}`, 'success', 2000);
     }, [addToast]);
+
+    const handleDownloadClick = useCallback((f: CompressedFile) => {
+        // If there's only one completed file, download immediately
+        const completedCount = files.filter(cf => cf.status === 'completed' && cf.compressedBlob).length;
+        if (completedCount <= 1) {
+            handleDownloadSingle(f);
+            return;
+        }
+        // Otherwise open the rename popover
+        setDownloadPopover({ fileId: f.id, name: f.originalName });
+    }, [files, handleDownloadSingle]);
+
+    const handlePopoverDownload = useCallback(() => {
+        if (!downloadPopover) return;
+        const f = files.find(cf => cf.id === downloadPopover.fileId);
+        if (f) {
+            handleDownloadSingle(f, downloadPopover.name);
+        }
+        setDownloadPopover(null);
+    }, [downloadPopover, files, handleDownloadSingle]);
 
     const handleDownloadAll = useCallback(async () => {
         const completedFiles = files.filter(f => f.status === 'completed' && f.compressedBlob);
@@ -527,7 +761,7 @@ export default function Compressor() {
         completedFiles.forEach((f, index) => {
             setTimeout(() => handleDownloadSingle(f), index * 200);
         });
-        
+
         addToast(`Descargando ${completedFiles.length} PDFs...`, 'info', 2000);
     }, [files, handleDownloadSingle, addToast]);
 
@@ -570,8 +804,8 @@ export default function Compressor() {
                 {/* Header */}
                 <div className="p-6 border-b border-[#333]">
                     <div className="flex items-center gap-4">
-                        <a 
-                            href="/" 
+                        <a
+                            href="/"
                             className="text-[#666] hover:text-[#eee] transition-colors"
                             aria-label="Volver al inicio"
                         >
@@ -617,6 +851,34 @@ export default function Compressor() {
                             </select>
                         </div>
 
+                        {/* Modo ZIP toggle (visible solo con 3+ archivos pendientes) */}
+                        <AnimatePresence>
+                            {pendingCount >= 3 && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="flex items-center justify-between px-4 py-3 bg-[#111] border border-[#222] rounded-lg"
+                                >
+                                    <div>
+                                        <p className="text-sm font-mono text-[#ccc]">Modo ZIP</p>
+                                        <p className="text-xs font-mono text-[#555] mt-0.5">
+                                            Descarga todos en un .zip
+                                        </p>
+                                    </div>
+                                    <button
+                                        onClick={() => setZipMode(z => !z)}
+                                        className={`relative w-12 h-6 rounded-full transition-colors ${zipMode ? 'bg-blue-600' : 'bg-[#333]'}`}
+                                        aria-label={zipMode ? 'Desactivar modo ZIP' : 'Activar modo ZIP'}
+                                    >
+                                        <span
+                                            className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${zipMode ? 'left-7' : 'left-1'}`}
+                                        />
+                                    </button>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
                     </motion.div>
 
                     {/* Boton Reset */}
@@ -634,7 +896,7 @@ export default function Compressor() {
                     {/* ================================================== */}
                     <AnimatePresence>
                         {files.length > 0 && (
-                            <motion.div 
+                            <motion.div
                                 className="space-y-4 pt-4 border-t border-[#222]"
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -648,7 +910,12 @@ export default function Compressor() {
                                 <div className="bg-[#111] border border-[#222] rounded-lg p-5 space-y-3">
                                     <div className="flex justify-between text-base font-mono">
                                         <span className="text-[#666]">Archivos PDF</span>
-                                        <span className="text-white font-semibold">{files.length}</span>
+                                        <span className="text-white font-semibold">
+                                            {files.length}
+                                            {files.length >= MAX_FILES && (
+                                                <span className="text-yellow-500 ml-1 text-xs">(máx)</span>
+                                            )}
+                                        </span>
                                     </div>
                                     <div className="flex justify-between text-base font-mono">
                                         <span className="text-[#666]">Procesados</span>
@@ -685,23 +952,36 @@ export default function Compressor() {
                 {/* ================================================== */}
                 <div className="p-6 border-t border-[#333] space-y-3">
                     {/* Progress Bar durante procesamiento */}
-                    {isProcessing && processingProgress.total > 0 && (
+                    {isProcessing && (
                         <div className="mb-4">
-                            <div className="flex justify-between text-sm text-[#888] font-mono mb-2">
-                                <span>Progreso</span>
-                                <span>{processingProgress.current} / {processingProgress.total}</span>
-                            </div>
-                            <ProgressBar current={processingProgress.current} total={processingProgress.total} />
+                            {processingProgress.total > 0 && (
+                                <>
+                                    <div className="flex justify-between text-sm text-[#888] font-mono mb-2">
+                                        <span>Progreso</span>
+                                        <span>{processingProgress.current} / {processingProgress.total}</span>
+                                    </div>
+                                    <ProgressBar current={processingProgress.current} total={processingProgress.total} />
+                                </>
+                            )}
                             {processingMessage && (
                                 <p className="text-xs text-[#777] font-mono mt-2 truncate" title={processingMessage}>
                                     {processingMessage}
                                 </p>
                             )}
+                            {/* Cancel button */}
+                            <button
+                                onClick={handleCancelCompression}
+                                className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 border border-red-500/40 text-red-400 hover:text-red-300 hover:border-red-400/60 rounded-lg font-mono text-sm transition-colors"
+                                aria-label="Cancelar compresión"
+                            >
+                                <StopCircle size={16} />
+                                Cancelar
+                            </button>
                         </div>
                     )}
 
                     <motion.button
-                        onClick={handleCompress}
+                        onClick={zipMode ? handleZipDownload : handleCompress}
                         disabled={isProcessing || pendingCount === 0}
                         whileHover={!isProcessing && pendingCount > 0 ? { scale: 1.02 } : {}}
                         whileTap={!isProcessing && pendingCount > 0 ? { scale: 0.98 } : {}}
@@ -711,18 +991,18 @@ export default function Compressor() {
                         {isProcessing ? (
                             <>
                                 <Loader2 size={22} className="animate-spin" />
-                                Comprimiendo...
+                                {zipMode ? 'Creando ZIP...' : 'Comprimiendo...'}
                             </>
                         ) : (
                             <>
-                                <Archive size={22} />
-                                Comprimir ({pendingCount})
+                                {zipMode ? <Archive size={22} /> : <Archive size={22} />}
+                                {zipMode ? `ZIP (${pendingCount})` : `Comprimir (${pendingCount})`}
                             </>
                         )}
                     </motion.button>
 
                     <AnimatePresence>
-                        {completedCount > 0 && (
+                        {completedCount > 0 && !zipMode && (
                             <motion.button
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: 'auto' }}
@@ -795,7 +1075,7 @@ export default function Compressor() {
                             aria-label="Seleccionar archivos PDF"
                         />
                         <div className="flex flex-col items-center gap-5">
-                            <motion.div 
+                            <motion.div
                                 className={`p-5 rounded-full ${isDragActive ? 'bg-blue-500/20' : 'bg-[#1a1a1a]'}`}
                                 animate={isDragActive ? { scale: [1, 1.1, 1] } : {}}
                                 transition={{ duration: 0.3 }}
@@ -807,7 +1087,7 @@ export default function Compressor() {
                                     Arrastra archivos PDF o haz clic para seleccionar
                                 </p>
                                 <p className="text-base text-[#666] font-mono">
-                                    Solo archivos PDF son soportados
+                                    Solo archivos PDF — máximo {MAX_FILES} archivos
                                 </p>
                                 <p className="text-sm text-[#555] font-mono mt-3">
                                     También puedes pegar archivos con Ctrl+V
@@ -827,6 +1107,13 @@ export default function Compressor() {
                                         ? ((f.originalSize - f.compressedSize) / f.originalSize * 100)
                                         : 0;
 
+                                    const canRetry = f.status === 'completed' &&
+                                        !f.isEncrypted &&
+                                        (reduction === 0 || (f.error && f.error.includes('optimizado')));
+
+                                    const currentQualityForRetry: PDFQuality = f.appliedQuality || options.pdfQuality;
+                                    const isPopoverOpen = downloadPopover?.fileId === f.id;
+
                                     return (
                                         <motion.div
                                             key={f.id}
@@ -839,7 +1126,10 @@ export default function Compressor() {
                                         >
                                             {/* Icon */}
                                             <div className="w-14 h-14 bg-[#1a1a1a] rounded-lg flex items-center justify-center overflow-hidden shrink-0">
-                                                <FileText size={32} className="text-red-500" />
+                                                {f.isEncrypted
+                                                    ? <Lock size={28} className="text-red-400" />
+                                                    : <FileText size={32} className="text-red-500" />
+                                                }
                                             </div>
 
                                             {/* Info */}
@@ -847,7 +1137,7 @@ export default function Compressor() {
                                                 <p className="text-lg font-mono text-white truncate" title={f.originalName}>
                                                     {f.originalName}
                                                 </p>
-                                                <div className="flex items-center gap-4 mt-2 flex-wrap">
+                                                <div className="flex items-center gap-3 mt-2 flex-wrap">
                                                     <span className="text-base font-mono text-[#666]">
                                                         {formatBytes(f.originalSize)}
                                                     </span>
@@ -858,7 +1148,7 @@ export default function Compressor() {
                                                                 {formatBytes(f.compressedSize)}
                                                             </span>
                                                             {reduction > 0 && (
-                                                                <motion.span 
+                                                                <motion.span
                                                                     initial={{ opacity: 0, scale: 0.8 }}
                                                                     animate={{ opacity: 1, scale: 1 }}
                                                                     className="text-base font-mono text-green-400"
@@ -866,9 +1156,28 @@ export default function Compressor() {
                                                                     (-{reduction.toFixed(1)}%)
                                                                 </motion.span>
                                                             )}
+                                                            {/* Processing time (2.2) */}
+                                                            {f.processingTime !== undefined && (
+                                                                <span className="text-xs font-mono text-[#555]">
+                                                                    {f.processingTime}s
+                                                                </span>
+                                                            )}
+                                                            {/* Method badge (2.1) */}
+                                                            {f.compressionMethod && f.compressionMethod !== 'none' && (
+                                                                <MethodBadge method={f.compressionMethod} />
+                                                            )}
                                                         </>
                                                     )}
-                                                    {f.status === 'completed' && f.error && (
+                                                </div>
+                                                {/* Status messages */}
+                                                <div className="mt-1 flex items-center gap-2 flex-wrap">
+                                                    {f.isEncrypted && (
+                                                        <span className="text-sm font-mono text-red-400 flex items-center gap-1">
+                                                            <Lock size={12} />
+                                                            PDF protegido con contraseña. No se puede comprimir.
+                                                        </span>
+                                                    )}
+                                                    {!f.isEncrypted && f.status === 'completed' && f.error && (
                                                         <span className="text-sm font-mono text-yellow-500">
                                                             {f.error}
                                                         </span>
@@ -877,6 +1186,17 @@ export default function Compressor() {
                                                         <span className="text-base font-mono text-red-400 truncate" title={f.error}>
                                                             {f.error}
                                                         </span>
+                                                    )}
+                                                    {/* Retry button (2.4) */}
+                                                    {canRetry && (
+                                                        <button
+                                                            onClick={() => retryWithLowerQuality(f.id, currentQualityForRetry)}
+                                                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono text-blue-400 border border-blue-500/30 hover:border-blue-400/60 hover:bg-blue-500/10 rounded-lg transition-colors"
+                                                            title="Reintentar con nivel de compresión inferior"
+                                                        >
+                                                            <RefreshCw size={11} />
+                                                            Reintentar con nivel inferior
+                                                        </button>
                                                     )}
                                                 </div>
                                             </div>
@@ -891,8 +1211,11 @@ export default function Compressor() {
                                                 {f.status === 'processing' && (
                                                     <Loader2 size={24} className="text-blue-500 animate-spin" />
                                                 )}
-                                                {f.status === 'completed' && (
+                                                {f.status === 'completed' && !f.isEncrypted && (
                                                     <CheckCircle size={24} className="text-green-500" />
+                                                )}
+                                                {f.status === 'completed' && f.isEncrypted && (
+                                                    <Lock size={24} className="text-red-400" />
                                                 )}
                                                 {f.status === 'error' && (
                                                     <AlertCircle size={24} className="text-red-500" />
@@ -901,15 +1224,62 @@ export default function Compressor() {
 
                                             {/* Actions */}
                                             <div className="shrink-0 flex items-center gap-2">
-                                                {f.status === 'completed' && (
-                                                    <button
-                                                        onClick={() => handleDownloadSingle(f)}
-                                                        className="p-3 hover:bg-[#222] rounded-lg transition-colors"
-                                                        title="Descargar"
-                                                        aria-label={`Descargar ${f.originalName}`}
-                                                    >
-                                                        <Download size={22} className="text-[#888] hover:text-white" />
-                                                    </button>
+                                                {f.status === 'completed' && f.compressedBlob && !f.isEncrypted && (
+                                                    <div className="relative">
+                                                        <button
+                                                            onClick={() => handleDownloadClick(f)}
+                                                            className="p-3 hover:bg-[#222] rounded-lg transition-colors"
+                                                            title="Descargar"
+                                                            aria-label={`Descargar ${f.originalName}`}
+                                                        >
+                                                            <Download size={22} className="text-[#888] hover:text-white" />
+                                                        </button>
+
+                                                        {/* Download rename popover (2.3) */}
+                                                        <AnimatePresence>
+                                                            {isPopoverOpen && (
+                                                                <motion.div
+                                                                    ref={downloadPopoverRef}
+                                                                    initial={{ opacity: 0, scale: 0.9, y: -4 }}
+                                                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                                    exit={{ opacity: 0, scale: 0.9, y: -4 }}
+                                                                    className="absolute right-0 top-full mt-2 z-30 bg-[#1a1a1a] border border-[#333] rounded-xl p-4 shadow-2xl w-72"
+                                                                    onClick={e => e.stopPropagation()}
+                                                                >
+                                                                    <p className="text-xs text-[#666] font-mono mb-2">
+                                                                        Nombre del archivo
+                                                                    </p>
+                                                                    <input
+                                                                        autoFocus
+                                                                        type="text"
+                                                                        value={downloadPopover.name}
+                                                                        onChange={e => setDownloadPopover(p => p ? { ...p, name: e.target.value } : null)}
+                                                                        onKeyDown={e => {
+                                                                            if (e.key === 'Enter') handlePopoverDownload();
+                                                                            if (e.key === 'Escape') setDownloadPopover(null);
+                                                                        }}
+                                                                        className="w-full bg-[#111] border border-[#333] rounded-lg px-3 py-2 text-sm text-white font-mono focus:border-blue-500 outline-none mb-3"
+                                                                        placeholder={f.originalName}
+                                                                    />
+                                                                    <div className="flex gap-2">
+                                                                        <button
+                                                                            onClick={handlePopoverDownload}
+                                                                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-mono transition-colors"
+                                                                        >
+                                                                            <Download size={14} />
+                                                                            Descargar
+                                                                        </button>
+                                                                        <button
+                                                                            onClick={() => setDownloadPopover(null)}
+                                                                            className="px-3 py-2 bg-[#222] hover:bg-[#2a2a2a] text-[#888] rounded-lg text-sm font-mono transition-colors"
+                                                                        >
+                                                                            Cancelar
+                                                                        </button>
+                                                                    </div>
+                                                                </motion.div>
+                                                            )}
+                                                        </AnimatePresence>
+                                                    </div>
                                                 )}
                                                 <button
                                                     onClick={() => handleRemoveFile(f.id)}
@@ -925,7 +1295,7 @@ export default function Compressor() {
                                 })}
                             </div>
                         ) : (
-                            <motion.div 
+                            <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 className="flex flex-col items-center justify-center h-full text-center"

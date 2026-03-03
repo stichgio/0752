@@ -40,6 +40,30 @@ from template_editor.service import (  # type: ignore
 )
 from utils.file_utils import save_upload  # type: ignore
 
+# ── Increase multipart form-field size limit ──────────────────────────────────
+# Starlette/python-multipart defaults to 1 MB per text part, which is too small
+# for large customTemplate HTML payloads and batch `data` JSON fields.
+# Patch the default so all Form() endpoints accept up to 50 MB per field.
+try:
+    from starlette.formparsers import MultiPartParser as _MultiPartParser  # type: ignore
+
+    _orig_mp_init = _MultiPartParser.__init__
+
+    def _patched_mp_init(  # type: ignore
+        self,
+        headers,  # type: ignore
+        stream,  # type: ignore
+        *,
+        max_fields: int = 1000,
+        max_part_size: int = 50 * 1024 * 1024,  # 50 MB (was 1 MB)
+    ) -> None:
+        _orig_mp_init(self, headers, stream, max_fields=max_fields, max_part_size=max_part_size)
+
+    _MultiPartParser.__init__ = _patched_mp_init  # type: ignore
+except Exception:
+    pass  # Skip silently if starlette internals change in a future version
+# ─────────────────────────────────────────────────────────────────────────────
+
 PHOTO_GRID_HEAD_CLOSE_RE = re.compile(r"</head>", re.IGNORECASE)
 
 

@@ -4,7 +4,7 @@
 
 export type FileStatus = 'pending' | 'processing' | 'completed' | 'error';
 
-export type PDFQuality = 'aggressive' | 'screen' | 'ebook' | 'printer' | 'prepress';
+export type PDFQuality = 'ultra' | 'aggressive' | 'screen' | 'ebook' | 'printer' | 'prepress';
 
 export interface CompressedFile {
     id: string;
@@ -15,6 +15,10 @@ export interface CompressedFile {
     status: FileStatus;
     originalName: string;
     error?: string;
+    compressionMethod?: 'ghostscript' | 'pypdf' | 'none';
+    processingTime?: number; // seconds
+    appliedQuality?: PDFQuality; // quality override for retry
+    isEncrypted?: boolean;
 }
 
 export interface CompressionOptions {
@@ -31,6 +35,7 @@ export interface CompressionStats {
 }
 
 export const PDF_QUALITY_OPTIONS: { value: PDFQuality; label: string; description: string }[] = [
+    { value: 'ultra', label: 'Ultra', description: '~72 DPI - Solo texto/blanco y negro' },
     { value: 'aggressive', label: 'Agresivo', description: '~100 DPI - Maximo ahorro' },
     { value: 'screen', label: 'Pantalla', description: '~72 DPI - Menor tamaño' },
     { value: 'ebook', label: 'Equilibrado', description: '~150 DPI - Recomendado' },

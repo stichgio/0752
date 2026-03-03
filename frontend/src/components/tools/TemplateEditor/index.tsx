@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState, memo } from 'react';
 import {
   FileCode2, FileJson, Plus, Printer,
   Redo2, Save, Send, Undo2, X, Eye, Download, Upload, History, ShieldAlert,
+  MoreHorizontal,
 } from 'lucide-react';
 import type { CanvasDocument, PageSettings } from './canvasTypes';
 import {
@@ -86,15 +87,28 @@ const STATUS_LABEL: Record<PublishStatus, string> = {
   archived: 'Archivada',
 };
 
+const REPORT_TYPE_OPTIONS = [
+  { value: 'technical-report', label: 'Reporte tecnico' },
+  { value: 'generic', label: 'Generico' },
+] as const;
+
+const SCENARIO_OPTIONS = [
+  { value: 'first', label: '1er reporte' },
+  { value: 'recent', label: 'Reciente' },
+  { value: 'custom', label: 'JSON custom' },
+] as const;
+
+const OVERFLOW_MENU_ITEM_CLASS = 'flex w-full items-start gap-3 rounded-2xl px-3 py-2.5 text-left text-sm text-neutral-700 transition-colors hover:bg-neutral-100';
+
 const StatusPill = memo(function StatusPill({ status }: { status: PublishStatus }) {
   const cls: Record<PublishStatus, string> = {
-    draft: 'bg-amber-100 text-amber-700',
-    published: 'bg-emerald-100 text-emerald-700',
-    archived: 'bg-neutral-100 text-neutral-500',
+    draft: 'bg-amber-50 text-amber-700 ring-1 ring-amber-100',
+    published: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100',
+    archived: 'bg-white text-neutral-500 ring-1 ring-neutral-200',
   };
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${cls[status]}`}>
-      <span className="w-1.5 h-1.5 rounded-full bg-current mr-1.5" />
+    <span className={`inline-flex h-7 items-center rounded-full px-2.5 text-[11px] font-semibold ${cls[status]}`}>
+      <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-current" />
       {STATUS_LABEL[status]}
     </span>
   );
@@ -103,16 +117,21 @@ const StatusPill = memo(function StatusPill({ status }: { status: PublishStatus 
 // ─── Toolbar button ───────────────────────────────────────────────────────────
 
 const ToolbarBtn = memo(function ToolbarBtn({
-  children, onClick, disabled, title,
+  children, onClick, disabled, title, iconOnly = false, className = '',
 }: {
-  children: React.ReactNode; onClick?: () => void; disabled?: boolean; title?: string;
+  children: React.ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+  title?: string;
+  iconOnly?: boolean;
+  className?: string;
 }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-sm font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 disabled:opacity-40 disabled:pointer-events-none transition-colors"
+      className={`inline-flex items-center rounded-xl text-sm font-medium text-neutral-500 outline-none transition-colors hover:bg-neutral-100 hover:text-neutral-900 disabled:opacity-40 disabled:pointer-events-none ${iconOnly ? 'h-8 w-8 justify-center px-0' : 'h-8 gap-1.5 px-3'} ${className}`.trim()}
     >
       {children}
     </button>
@@ -149,13 +168,32 @@ export default function TemplateEditor() {
   const [leftWidth, setLeftWidth] = useState(320);
   const [rightWidth, setRightWidth] = useState(320);
   const [publishedTemplatesRefreshKey, setPublishedTemplatesRefreshKey] = useState(0);
+  const [showUtilitiesMenu, setShowUtilitiesMenu] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
+  const utilitiesMenuRef = useRef<HTMLDivElement>(null);
 
   const toast = useCallback((msg: string, type: Toast['type'] = 'info') => {
     const id = Date.now();
     setToasts(t => [...t, { id, msg, type }]);
     setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 3000);
   }, []);
+
+  const closeUtilitiesMenu = useCallback(() => {
+    setShowUtilitiesMenu(false);
+  }, []);
+
+  useEffect(() => {
+    if (!showUtilitiesMenu) return undefined;
+
+    const handlePointerDown = (event: MouseEvent) => {
+      if (utilitiesMenuRef.current && !utilitiesMenuRef.current.contains(event.target as Node)) {
+        setShowUtilitiesMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    return () => document.removeEventListener('mousedown', handlePointerDown);
+  }, [showUtilitiesMenu]);
 
   // ── Load session ──────────────────────────────────────────────────────────
 
@@ -551,135 +589,217 @@ export default function TemplateEditor() {
   return (
     <div className="template-editor-root h-full w-full flex flex-col bg-neutral-50">
       {/* Header */}
-      <header className="h-14 bg-white border-b border-neutral-200 px-4 flex items-center justify-between shadow-sm z-50 flex-shrink-0">
-        <div className="flex items-center gap-2 min-w-0">
+      <header className="border-b border-neutral-200 bg-white px-4 py-2 z-50 flex-shrink-0">
+        <div className="flex flex-wrap items-center gap-3">
           {/* Logo */}
           <img
             src="https://res.cloudinary.com/dzhp64paw/image/upload/v1771449784/logo_xipfod.png"
             alt="Logo"
-            className="h-10 w-auto object-contain flex-shrink-0"
+            className="h-7 w-auto object-contain flex-shrink-0 opacity-95"
           />
 
+          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-2 py-1.5">
+              <button
+                onClick={newTemplate}
+                title="Nueva plantilla en blanco"
+                className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-white px-3 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100"
+              >
+                <Plus size={15} />
+                Nuevo
+              </button>
 
-          <div className="h-6 w-px bg-neutral-200 mx-1 flex-shrink-0" />
+              <div className="min-w-[180px] flex-1">
+                <input
+                  className="h-8 w-full min-w-0 rounded-xl border-0 bg-transparent px-2 text-sm font-medium text-neutral-700 outline-none transition focus:bg-white focus:ring-2 focus:ring-violet-200"
+                  value={doc.name}
+                  onChange={(e) => handleDocChange({ ...doc, name: e.target.value })}
+                  placeholder="Nombre de plantilla"
+                  title="Nombre de plantilla"
+                />
+              </div>
 
-          <button
-            onClick={newTemplate}
-            title="Nueva plantilla en blanco"
-            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-sm font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors flex-shrink-0"
-          >
-            <Plus size={16} />
-            Nuevo
-          </button>
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="min-w-[132px]">
+                  <select
+                    className="h-8 w-full rounded-xl border-0 bg-white px-3 text-sm font-medium text-neutral-700 outline-none transition focus:ring-2 focus:ring-violet-200"
+                    value={reportType}
+                    onChange={(e) => setReportType(e.target.value)}
+                    title="Tipo de reporte"
+                  >
+                    {REPORT_TYPE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-          <input
-            className="h-8 w-44 px-3 text-sm border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-violet-300 min-w-0"
-            value={doc.name}
-            onChange={(e) => handleDocChange({ ...doc, name: e.target.value })}
-            placeholder="Nombre de plantilla"
-          />
-          <select
-            className="h-8 rounded-lg border border-neutral-200 px-2 text-xs"
-            value={reportType}
-            onChange={(e) => setReportType(e.target.value)}
-            title="Tipo de reporte"
-          >
-            <option value="technical-report">technical-report</option>
-            <option value="generic">generic</option>
-          </select>
-          <select
-            className="h-8 rounded-lg border border-neutral-200 px-2 text-xs"
-            value={activeScenario}
-            onChange={(e) => setActiveScenario(e.target.value as 'first' | 'recent' | 'custom')}
-            title="Escenario de datos"
-          >
-            <option value="first">Escenario: 1er reporte</option>
-            <option value="recent">Escenario: reciente</option>
-            <option value="custom">Escenario: JSON custom</option>
-          </select>
+                <label className="min-w-[132px]">
+                  <select
+                    className="h-8 w-full rounded-xl border-0 bg-white px-3 text-sm font-medium text-neutral-700 outline-none transition focus:ring-2 focus:ring-violet-200"
+                    value={activeScenario}
+                    onChange={(e) => setActiveScenario(e.target.value as 'first' | 'recent' | 'custom')}
+                    title="Escenario de datos"
+                  >
+                    {SCENARIO_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              </div>
+            </div>
 
-          <StatusPill status={status} />
-          {dirty && (
-            <span className="w-2 h-2 rounded-full bg-amber-400 flex-shrink-0" title="Cambios sin guardar" />
-          )}
-        </div>
+            <div className="inline-flex h-8 items-center gap-2 rounded-full border border-neutral-200 bg-white px-2.5">
+              <StatusPill status={status} />
+              {dirty && (
+                <span className="h-2 w-2 rounded-full bg-amber-400 flex-shrink-0" title="Cambios sin guardar" />
+              )}
+            </div>
 
-        <div className="flex items-center gap-1 flex-shrink-0">
-          {/* Undo / Redo */}
-          <div className="flex items-center bg-neutral-100 rounded-lg p-0.5">
-            <ToolbarBtn onClick={undo} disabled={!canUndo} title="Deshacer (Ctrl+Z)">
-              <Undo2 size={16} />
-            </ToolbarBtn>
-            <ToolbarBtn onClick={redo} disabled={!canRedo} title="Rehacer (Ctrl+Y)">
-              <Redo2 size={16} />
-            </ToolbarBtn>
+            <div className="flex flex-wrap items-center gap-1 rounded-2xl border border-neutral-200 bg-white p-1">
+              <ToolbarBtn onClick={undo} disabled={!canUndo} title="Deshacer (Ctrl+Z)" iconOnly>
+                <Undo2 size={15} />
+              </ToolbarBtn>
+              <ToolbarBtn onClick={redo} disabled={!canRedo} title="Rehacer (Ctrl+Y)" iconOnly>
+                <Redo2 size={15} />
+              </ToolbarBtn>
+
+              <div className="mx-1 h-4 w-px bg-neutral-200" />
+
+              <ToolbarBtn onClick={preview} title="Vista previa" className="text-neutral-700">
+                <Eye size={15} />
+                Vista previa
+              </ToolbarBtn>
+              <ToolbarBtn onClick={saveTemplate} disabled={!dirty} title="Guardar en la nube" className="text-neutral-700">
+                <Save size={15} />
+                Guardar
+              </ToolbarBtn>
+
+              <div ref={utilitiesMenuRef} className="relative">
+                <ToolbarBtn
+                  onClick={() => setShowUtilitiesMenu((prev) => !prev)}
+                  title="Mas acciones"
+                  iconOnly
+                >
+                  <MoreHorizontal size={15} />
+                </ToolbarBtn>
+
+                {showUtilitiesMenu && (
+                  <div className="absolute right-0 top-full mt-2 w-72 rounded-2xl border border-neutral-200 bg-white p-2 shadow-[0_16px_36px_rgba(15,23,42,0.14)]">
+                    <div className="px-3 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-neutral-400">
+                      Herramientas
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        closeUtilitiesMenu();
+                        exportHtml();
+                      }}
+                      className={OVERFLOW_MENU_ITEM_CLASS}
+                    >
+                      <FileCode2 size={16} className="mt-0.5 flex-shrink-0 text-neutral-500" />
+                      <span className="flex flex-col items-start leading-tight">
+                        <span className="font-medium text-neutral-800">Exportar HTML</span>
+                        <span className="text-xs text-neutral-500">Genera la plantilla lista para backend</span>
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        closeUtilitiesMenu();
+                        exportJson();
+                      }}
+                      className={OVERFLOW_MENU_ITEM_CLASS}
+                    >
+                      <FileJson size={16} className="mt-0.5 flex-shrink-0 text-neutral-500" />
+                      <span className="flex flex-col items-start leading-tight">
+                        <span className="font-medium text-neutral-800">Exportar JSON</span>
+                        <span className="text-xs text-neutral-500">Descarga una copia editable</span>
+                      </span>
+                    </button>
+
+                    <label
+                      className={`${OVERFLOW_MENU_ITEM_CLASS} cursor-pointer`}
+                      title="Importar plantilla JSON"
+                      onClick={() => {
+                        window.setTimeout(closeUtilitiesMenu, 0);
+                      }}
+                    >
+                      <Upload size={16} className="mt-0.5 flex-shrink-0 text-neutral-500" />
+                      <span className="flex flex-col items-start leading-tight">
+                        <span className="font-medium text-neutral-800">Importar JSON</span>
+                        <span className="text-xs text-neutral-500">Carga una plantilla guardada</span>
+                      </span>
+                      <input
+                        ref={importRef}
+                        type="file"
+                        accept=".json"
+                        className="hidden"
+                        onChange={handleImportJson}
+                      />
+                    </label>
+
+                    <div className="my-1 h-px bg-neutral-100" />
+
+                    <button
+                      onClick={() => {
+                        closeUtilitiesMenu();
+                        loadVersionHistory();
+                      }}
+                      className={OVERFLOW_MENU_ITEM_CLASS}
+                    >
+                      <History size={16} className="mt-0.5 flex-shrink-0 text-neutral-500" />
+                      <span className="flex flex-col items-start leading-tight">
+                        <span className="font-medium text-neutral-800">Historial</span>
+                        <span className="text-xs text-neutral-500">Revisa versiones guardadas</span>
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        closeUtilitiesMenu();
+                        void runValidation();
+                      }}
+                      className={OVERFLOW_MENU_ITEM_CLASS}
+                    >
+                      <ShieldAlert size={16} className="mt-0.5 flex-shrink-0 text-neutral-500" />
+                      <span className="flex flex-col items-start leading-tight">
+                        <span className="font-medium text-neutral-800">Validar</span>
+                        <span className="text-xs text-neutral-500">Ejecuta chequeos de consistencia</span>
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        closeUtilitiesMenu();
+                        setShowGenerator(true);
+                      }}
+                      className={OVERFLOW_MENU_ITEM_CLASS}
+                    >
+                      <Printer size={16} className="mt-0.5 flex-shrink-0 text-neutral-500" />
+                      <span className="flex flex-col items-start leading-tight">
+                        <span className="font-medium text-neutral-800">Generar reporte</span>
+                        <span className="text-xs text-neutral-500">Usa una plantilla publicada</span>
+                      </span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={publish}
+                disabled={status === 'published' && !dirty}
+                title={status === 'published' && !dirty ? 'Ya publicada' : 'Publicar plantilla'}
+                className="ml-1 inline-flex h-8 items-center gap-1.5 rounded-xl bg-violet-600 px-3.5 text-sm font-semibold text-white transition-colors hover:bg-violet-700 disabled:pointer-events-none disabled:opacity-40"
+              >
+                <Send size={14} />
+                {status === 'published' && !dirty ? 'Publicada' : 'Publicar'}
+              </button>
+            </div>
           </div>
-
-          <div className="h-6 w-px bg-neutral-200 mx-1" />
-
-          {/* View / Export */}
-          <ToolbarBtn onClick={preview} title="Vista previa">
-            <Eye size={16} />
-            Preview
-          </ToolbarBtn>
-          <ToolbarBtn onClick={exportHtml} title="Exportar como HTML / Jinja2">
-            <FileCode2 size={16} />
-            HTML
-          </ToolbarBtn>
-          <ToolbarBtn onClick={exportJson} title="Exportar como JSON">
-            <FileJson size={16} />
-            JSON
-          </ToolbarBtn>
-
-          {/* Import JSON */}
-          {/* Report Generator */}
-          <ToolbarBtn onClick={() => setShowGenerator(true)} title="Generar reportes con plantillas publicadas">
-            <Printer size={16} />
-            Generar
-          </ToolbarBtn>
-
-          <label
-            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg text-sm font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 transition-colors cursor-pointer"
-            title="Importar plantilla JSON"
-          >
-            <Upload size={16} />
-            Importar
-            <input
-              ref={importRef}
-              type="file"
-              accept=".json"
-              className="hidden"
-              onChange={handleImportJson}
-            />
-          </label>
-
-          <div className="h-6 w-px bg-neutral-200 mx-1" />
-
-          <ToolbarBtn onClick={loadVersionHistory} title="Cargar historial">
-            <History size={16} />
-            Historial
-          </ToolbarBtn>
-          <ToolbarBtn onClick={() => { void runValidation(); }} title="Validar plantilla">
-            <ShieldAlert size={16} />
-            Validar
-          </ToolbarBtn>
-
-          {/* Save (cloud) */}
-          <ToolbarBtn onClick={saveTemplate} disabled={!dirty} title="Guardar en la nube">
-            <Save size={16} />
-            Guardar
-          </ToolbarBtn>
-
-          {/* Publish */}
-          <button
-            onClick={publish}
-            disabled={status === 'published' && !dirty}
-            title={status === 'published' && !dirty ? 'Ya publicada' : 'Publicar plantilla'}
-            className="ml-1 h-8 px-4 bg-violet-600 text-white rounded-lg text-sm font-medium hover:bg-violet-700 disabled:opacity-40 disabled:pointer-events-none transition-colors inline-flex items-center gap-1.5"
-          >
-            <Send size={14} />
-            {status === 'published' && !dirty ? 'Publicada' : 'Publicar'}
-          </button>
         </div>
       </header>
 

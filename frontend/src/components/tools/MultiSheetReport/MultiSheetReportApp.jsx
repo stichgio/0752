@@ -361,13 +361,16 @@ export default function MultiSheetReportApp() {
     // Handlers: gestión de hojas
     // ─────────────────────────────────────────────────────────────────────────
     const addSheet = useCallback(() => {
+        // Auto-assign the first available layout so the sheet is immediately
+        // active and Step 4 is unlocked without an extra manual selection.
+        const defaultTemplate = availableTemplates[0] ?? null;
         setSheets(prev => [...prev, {
             id: String(Date.now()),
             title: `Hoja ${prev.length + 1}`,
-            templateName: null,
+            templateName: defaultTemplate,
             useAltHeader: false,
         }]);
-    }, []);
+    }, [availableTemplates]);
 
     const removeSheet = useCallback((id) => {
         setSheets(prev => {

@@ -1,29 +1,24 @@
 """
 Router independiente para la herramienta "Informe Multi-Hoja".
 
-Genera un PDF multi-sección combinando N hojas/plantillas Jinja2 bajo un
-encabezado principal común y, opcionalmente, un mini-encabezado compacto en
-hojas intermedias.
+Genera un PDF multi-sección con grillas de imágenes en formato A4.
+NO depende de backend/templates/ — genera su propio HTML internamente.
 
 Endpoints expuestos (montados en /api/multi-sheet/):
-  GET  /templates        → lista plantillas disponibles
+  GET  /templates        → lista los layouts de hoja disponibles (built-in)
   POST /generate-pdf     → genera el PDF final
-
-Cómo añadir soporte a un nuevo motor PDF:
-  Reemplazar la función _render_html_to_pdf() por la implementación deseada.
-  La interfaz esperada es (html_string: str, base_url: str, output_path: str) → None.
 """
 
 from __future__ import annotations
 
 import base64
 import json
+import math
 import os
-import re
 import shutil
 import tempfile
 import traceback
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile  # pyre-ignore
 from fastapi.responses import StreamingResponse  # pyre-ignore
@@ -31,13 +26,8 @@ from fastapi.responses import StreamingResponse  # pyre-ignore
 # ── Router ────────────────────────────────────────────────────────────────────
 router = APIRouter(tags=["multi-sheet-report"])
 
-# ── Rutas de templates ────────────────────────────────────────────────────────
-# Los templates están en backend/templates/ (padre de backend/routers/)
-_ROUTER_DIR = os.path.dirname(os.path.abspath(__file__))
-TEMPLATES_DIR = os.path.join(os.path.dirname(_ROUTER_DIR), "templates")
-
 # Tipos MIME para imágenes
-_MIME_MAP: Dict[str, str] = {
+_MIME_MAP: dict[str, str] = {
     "jpg": "image/jpeg",
     "jpeg": "image/jpeg",
     "png": "image/png",
@@ -45,17 +35,18 @@ _MIME_MAP: Dict[str, str] = {
     "webp": "image/webp",
 }
 
+
+# ── Grid helpers ──────────────────────────────────────────────────────────────
+
+def _grid_cols(images_per_page: int) -> int:
+    """Columnas óptimas para N imágenes en A4 portrait."""
+    mapping = {1: 1, 2: 2, 3: 2, 4: 2, 5: 3, 6: 3, 7: 3, 8: 4, 9: 3}
+    return mapping.get(images_per_page, 3)
+
+
 # ── Constructores de bloques HTML de encabezado ───────────────────────────────
 
-
-def _build_main_header_html(header_config: Dict[str, Any]) -> str:
-    """
-    Construye el bloque HTML del encabezado principal (logos + título + subtítulo).
-
-    Cómo extender el encabezado principal:
-      Añadir campos al dict header_config (ej. "projectCode", "inspector") y
-      referenciarlos aquí para incluirlos en el HTML generado.
-    """
+def _build_main_header_html(header_config: dict[str, Any]) -> str:
     title: str = header_config.get("title") or "INFORME TÉCNICO"
     subtitle: str = header_config.get("subtitle") or ""
     logo_left: str = header_config.get("logoLeft") or ""
@@ -81,7 +72,7 @@ def _build_main_header_html(header_config: Dict[str, Any]) -> str:
 
     return (
         '<div style="display:table;width:100%;border-bottom:2px solid #222;'
-        'padding-bottom:8px;margin-bottom:10px;font-family:Arial,sans-serif;">'
+        'padding-bottom:8px;margin-bottom:6px;font-family:Arial,sans-serif;">'
         f'<div style="display:table-cell;vertical-align:middle;width:120px;'
         f'text-align:left;">{logo_left_html}</div>'
         '<div style="display:table-cell;vertical-align:middle;text-align:center;">'
@@ -96,15 +87,8 @@ def _build_main_header_html(header_config: Dict[str, Any]) -> str:
 
 
 def _build_alt_header_html(
-    alt_header_config: Dict[str, Any], row_data: Dict[str, Any]
+    alt_header_config: dict[str, Any], row_data: dict[str, Any]
 ) -> str:
-    """
-    Construye el mini-encabezado compacto para hojas intermedias.
-
-    Cómo extender el mini-encabezado:
-      Añadir campos al dict alt_header_config (ej. "supervisorField") y
-      construir el fragmento HTML correspondiente en la lista `parts`.
-    """
     id_field: str = alt_header_config.get("idField") or ""
     date_field: str = alt_header_config.get("dateField") or ""
     extra_text: str = alt_header_config.get("extraText") or ""
@@ -118,7 +102,7 @@ def _build_alt_header_html(
     padding = padding_map.get(height, "5px 12px")
     font_size = font_map.get(height, "8.5pt")
 
-    parts: List[str] = []
+    parts: list[str] = []
     if id_value:
         parts.append(f"<b>ID:</b>&nbsp;{id_value}")
     if date_value:
@@ -136,36 +120,102 @@ def _build_alt_header_html(
     )
 
 
-def _inject_header_into_html(template_html: str, header_html: str) -> str:
-    """Inyecta el bloque de encabezado justo después de <body ...>."""
-    body_tag_re = re.compile(r"(<body[^>]*>)", re.IGNORECASE)
-    if body_tag_re.search(template_html):
-        return body_tag_re.sub(r"\1" + header_html, template_html, count=1)
-    return header_html + template_html
+# ── Generador de página HTML con grilla de imágenes ──────────────────────────
+
+def _build_image_grid_html(image_data_uris: list[str], images_per_page: int) -> str:
+    """Grilla de imágenes usando tabla HTML (máxima compatibilidad WeasyPrint)."""
+    n = len(image_data_uris)
+    if n == 0:
+        return (
+            '<div style="text-align:center;color:#999;padding:60px 20px;'
+            'font-family:Arial;font-size:11pt;">Sin imágenes para esta página</div>'
+        )
+
+    cols = _grid_cols(images_per_page)
+    rows = math.ceil(n / cols)
+    cell_width_pct = 100.0 / cols
+    # A4 usable ≈ 273mm, header ≈ 30mm, title ≈ 12mm → grid ≈ 225mm
+    row_height_mm = min(225.0 / rows, 130.0)
+
+    table_rows = []
+    for r in range(rows):
+        cells = []
+        for c in range(cols):
+            img_idx = r * cols + c
+            if img_idx < n:
+                uri = image_data_uris[img_idx]  # pyre-ignore
+                cells.append(
+                    f'<td style="width:{cell_width_pct:.1f}%;text-align:center;'
+                    f'vertical-align:middle;padding:2px;height:{row_height_mm:.1f}mm;">'
+                    f'<img src="{uri}" style="max-width:100%;max-height:{row_height_mm - 4:.1f}mm;'
+                    f'object-fit:contain;border:0.5px solid #ddd;border-radius:2px;" />'
+                    f'</td>'
+                )
+            else:
+                cells.append(f'<td style="width:{cell_width_pct:.1f}%;"></td>')
+        table_rows.append(f'<tr>{"".join(cells)}</tr>')
+
+    return (
+        '<table style="width:100%;border-collapse:separate;border-spacing:3px;'
+        'table-layout:fixed;">'
+        f'{"".join(table_rows)}'
+        '</table>'
+    )
+
+
+def _build_page_html(
+    header_html: str,
+    title: str,
+    image_data_uris: list[str],
+    images_per_page: int,
+    page_num: int,
+    total_pages: int,
+) -> str:
+    """Construye una página HTML completa A4 con encabezado + título + grilla."""
+    grid_html = _build_image_grid_html(image_data_uris, images_per_page)
+
+    page_indicator = f" &mdash; Pág. {page_num}/{total_pages}" if total_pages > 1 else ""
+    title_html = ""
+    if title:
+        title_html = (
+            f'<div style="font-size:10pt;font-weight:bold;text-align:center;'
+            f'margin:4px 0 6px;font-family:Arial,sans-serif;color:#333;">'
+            f'{title}{page_indicator}</div>'
+        )
+
+    return f"""<!DOCTYPE html>
+<html><head><meta charset="utf-8">
+<style>
+@page {{
+    size: A4 portrait;
+    margin: 12mm 15mm 10mm 15mm;
+}}
+html, body {{
+    margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+}}
+</style>
+</head><body>
+{header_html}
+{title_html}
+{grid_html}
+</body></html>"""
 
 
 # ── Motor PDF ─────────────────────────────────────────────────────────────────
 
-
 def _render_html_to_pdf(html_string: str, base_url: str, output_path: str) -> None:
-    """
-    Convierte una cadena HTML a PDF usando WeasyPrint.
-
-    Para cambiar de motor PDF (pdfkit, xhtml2pdf, etc.) reemplazar únicamente
-    esta función manteniendo la misma firma.
-    """
     try:
         from weasyprint import HTML  # type: ignore
     except ImportError as exc:
         raise RuntimeError(
             "WeasyPrint no está instalado. Ejecuta: pip install weasyprint"
         ) from exc
-
     HTML(string=html_string, base_url=base_url).write_pdf(output_path)
 
 
 # ── Utilidades ────────────────────────────────────────────────────────────────
-
 
 def _safe_remove(path: str) -> None:
     try:
@@ -176,7 +226,6 @@ def _safe_remove(path: str) -> None:
 
 
 def _image_to_b64(img_path: str) -> Optional[str]:
-    """Convierte una imagen en disco a data URI base64."""
     ext = os.path.splitext(img_path)[1].lower().lstrip(".")
     mime = _MIME_MAP.get(ext, "image/jpeg")
     try:
@@ -190,18 +239,15 @@ def _image_to_b64(img_path: str) -> Optional[str]:
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
+# Built-in layouts supported by this router's HTML generator.
+# The frontend uses this list to populate the sheet-template dropdown.
+_BUILTIN_LAYOUTS: list[str] = ["Grilla de Imágenes"]
+
 
 @router.get("/templates")
-async def list_templates_multi_sheet():
-    """Lista las plantillas HTML disponibles en backend/templates/."""
-    if not os.path.exists(TEMPLATES_DIR):
-        return {"templates": []}
-    templates = sorted(
-        f
-        for f in os.listdir(TEMPLATES_DIR)
-        if f.endswith(".html") and f != "report.html"
-    )
-    return {"templates": templates}
+async def list_templates() -> dict:
+    """Return the available built-in sheet layouts."""
+    return {"templates": _BUILTIN_LAYOUTS}
 
 
 @router.post("/generate-pdf")
@@ -210,56 +256,44 @@ async def generate_multi_sheet_pdf(
     sheets_config: str = Form(...),
     header_config: str = Form(...),
     alt_header_config: str = Form(...),
-    files: List[UploadFile] = File(default=[]),
+    files: list[UploadFile] = File(default=[]),
 ):
     """
-    Genera un PDF multi-sección.
+    Genera un PDF multi-sección con grillas de imágenes.
 
-    Cómo añadir una nueva hoja al informe desde el cliente:
-      Incluir un objeto adicional en sheets_config con los campos:
-        { order, title, templateName, useAltHeader, rowData, imageFilenames }
-      y adjuntar las imágenes referenciadas en imageFilenames dentro del
-      campo 'files' del FormData.
-
-    Modos de exportación:
-      - Registro único:   sheets_config contiene M hojas con el rowData del registro.
-      - Todos los registros: sheets_config contiene N×M entradas (N registros × M hojas),
-        generando un PDF continuo con todos los registros concatenados.
+    Cada entrada en sheets_config representa una página del PDF con:
+      { order, title, useAltHeader, rowData, imageFilenames,
+        imagesPerPage, pageNum, totalPages }
     """
-    # ── Parsear campos JSON ───────────────────────────────────────────────────
     try:
-        sheets: List[Any] = json.loads(sheets_config)
+        sheets: list[Any] = json.loads(sheets_config)
     except json.JSONDecodeError as exc:
         raise HTTPException(
             status_code=400, detail=f"sheets_config JSON inválido: {exc}"
         ) from exc
 
     try:
-        header: Dict[str, Any] = json.loads(header_config)
+        header: dict[str, Any] = json.loads(header_config)
     except json.JSONDecodeError as exc:
         raise HTTPException(
             status_code=400, detail=f"header_config JSON inválido: {exc}"
         ) from exc
 
     try:
-        alt_header: Dict[str, Any] = json.loads(alt_header_config)
+        alt_header: dict[str, Any] = json.loads(alt_header_config)
     except json.JSONDecodeError as exc:
         raise HTTPException(
             status_code=400, detail=f"alt_header_config JSON inválido: {exc}"
         ) from exc
 
-    active_sheets = [s for s in sheets if s.get("templateName")]
-    if not active_sheets:
-        raise HTTPException(
-            status_code=400, detail="Ninguna hoja tiene una plantilla asignada"
-        )
+    if not sheets:
+        raise HTTPException(status_code=400, detail="No hay páginas configuradas")
 
-    # ── Crear directorio temporal de trabajo ─────────────────────────────────
     tmp_dir = tempfile.mkdtemp(prefix="multi_sheet_")
     output_path: Optional[str] = None
 
     try:
-        # ── Guardar imágenes adjuntas ─────────────────────────────────────────
+        # Guardar imágenes adjuntas
         for upload_file in files:
             if upload_file.filename:
                 dest = os.path.join(tmp_dir, upload_file.filename)
@@ -267,44 +301,28 @@ async def generate_multi_sheet_pdf(
                 with open(dest, "wb") as fout:
                     fout.write(content)
 
-        from jinja2 import Template  # type: ignore
         from pypdf import PdfWriter  # type: ignore
 
-        # ── Ordenar hojas y generar un PDF por hoja ───────────────────────────
-        sorted_sheets = sorted(active_sheets, key=lambda s: s.get("order", 0))
-        temp_pdf_paths: List[str] = []
+        sorted_sheets = sorted(sheets, key=lambda s: s.get("order", 0))
+        temp_pdf_paths: list[str] = []
 
         for sheet in sorted_sheets:
-            template_name: str = sheet["templateName"]
-            template_path = os.path.join(TEMPLATES_DIR, template_name)
-
-            if not os.path.exists(template_path):
-                raise HTTPException(
-                    status_code=404,
-                    detail=(
-                        f"Plantilla '{template_name}' no encontrada en "
-                        f"{TEMPLATES_DIR}"
-                    ),
-                )
-
-            row_data: Dict[str, Any] = sheet.get("rowData") or {}
-            image_filenames: List[str] = sheet.get("imageFilenames") or []
+            row_data: dict[str, Any] = sheet.get("rowData") or {}
+            image_filenames: list[str] = sheet.get("imageFilenames") or []
             use_alt_header: bool = bool(sheet.get("useAltHeader", False))
+            title: str = sheet.get("title") or ""
+            images_per_page: int = int(sheet.get("imagesPerPage", 4))
+            page_num: int = int(sheet.get("pageNum", 1))
+            total_pages: int = int(sheet.get("totalPages", 1))
 
-            # Leer HTML de la plantilla
-            with open(template_path, "r", encoding="utf-8") as tf:
-                raw_html = tf.read()
-
-            # Construir e inyectar encabezado apropiado
+            # Encabezado
             if use_alt_header:
                 header_html = _build_alt_header_html(alt_header, row_data)
             else:
                 header_html = _build_main_header_html(header)
 
-            raw_html = _inject_header_into_html(raw_html, header_html)
-
-            # Resolver imágenes a data URIs base64 para WeasyPrint
-            images_b64: List[str] = []
+            # Resolver imágenes a data URIs
+            images_b64: list[str] = []
             for fname in image_filenames:
                 img_path = os.path.join(tmp_dir, fname)
                 if os.path.exists(img_path):
@@ -312,43 +330,37 @@ async def generate_multi_sheet_pdf(
                     if data_uri:
                         images_b64.append(data_uri)
 
-            # Renderizar template Jinja2
-            try:
-                jinja_tpl = Template(raw_html)
-                rendered_html = jinja_tpl.render(
-                    data=row_data,
-                    images=images_b64,
-                    # Compatibilidad con plantillas batch (report_list / reports)
-                    reports=[{"data": row_data, "images": images_b64}],
-                    report_list=[{"data": row_data, "images": images_b64}],
-                )
-            except Exception as exc:
-                raise HTTPException(
-                    status_code=500,
-                    detail=f"Error al renderizar '{template_name}': {exc}",
-                ) from exc
+            # Construir HTML de la página
+            page_html = _build_page_html(
+                header_html=header_html,
+                title=title,
+                image_data_uris=images_b64,
+                images_per_page=images_per_page,
+                page_num=page_num,
+                total_pages=total_pages,
+            )
 
-            # Convertir HTML renderizado a PDF
+            # Renderizar a PDF
             try:
                 tmp_pdf_file = tempfile.NamedTemporaryFile(
                     delete=False, suffix=".pdf", dir=tmp_dir
                 )
                 tmp_pdf_path = tmp_pdf_file.name
                 tmp_pdf_file.close()
-                _render_html_to_pdf(rendered_html, TEMPLATES_DIR, tmp_pdf_path)
+                _render_html_to_pdf(page_html, tmp_dir, tmp_pdf_path)
                 temp_pdf_paths.append(tmp_pdf_path)
             except Exception as exc:
                 raise HTTPException(
                     status_code=500,
-                    detail=f"Error al generar PDF para '{template_name}': {exc}",
+                    detail=f"Error al generar PDF de página: {exc}",
                 ) from exc
 
         if not temp_pdf_paths:
             raise HTTPException(
-                status_code=400, detail="No se pudo generar ninguna hoja PDF"
+                status_code=400, detail="No se generó ninguna página PDF"
             )
 
-        # ── Concatenar PDFs con pypdf ─────────────────────────────────────────
+        # Concatenar PDFs
         output_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
         output_path = output_file.name
         output_file.close()
@@ -362,7 +374,6 @@ async def generate_multi_sheet_pdf(
         finally:
             pdf_writer.close()
 
-        # ── Respuesta streaming + limpieza en background ──────────────────────
         def _iter_file(path: str):
             with open(path, "rb") as fread:
                 yield from fread
