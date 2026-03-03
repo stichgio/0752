@@ -914,7 +914,6 @@
             <button class="tab-btn" onclick="switchMainTab('merge-normal')">MERGE NORMAL</button>
             <button class="tab-btn" onclick="switchMainTab('split')">SPLIT PDF</button>
             <button class="tab-btn" onclick="switchMainTab('organize')">ORGANIZAR</button>
-            <button class="tab-btn" onclick="switchMainTab('ocr')">OCR</button>
         </div>
 
         <!-- MERGE INTERCALADO SECTION -->
@@ -1215,70 +1214,6 @@
             </div>
         </div>
 
-        <!-- OCR SECTION -->
-        <div id="section-ocr" class="section">
-            <div class="tool-header">
-                <div class="tool-title">OCR Profesional</div>
-            </div>
-
-            <div
-                style="display: flex; align-items: center; gap: 12px; padding: 12px 16px; background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 6px; margin-bottom: 16px;">
-                <i data-lucide="scan-text" width="18" style="color: #4CAF50; flex-shrink: 0;"></i>
-                <div style="font-size: 12px; color: var(--text-main);">
-                    <strong>Extraccion OCR:</strong> Sube un PDF escaneado o imagen con datos y descarga el resultado en
-                    <strong>TXT</strong> o <strong>Word (.docx)</strong>.
-                </div>
-            </div>
-
-            <div class="dropzone" id="ocr-dropzone" onclick="document.getElementById('file-input-ocr').click()"
-                ondragover="handleDropzoneDragOver(event)" ondragleave="handleDropzoneDragLeave(event)"
-                ondrop="handleOcrDropzoneDrop(event)">
-                <i data-lucide="scan-line" width="32" class="drop-icon"></i>
-                <div id="ocr-filename" style="font-size: 14px; margin-bottom: 4px;">Selecciona un PDF o imagen</div>
-                <div style="font-size: 12px; color: var(--text-dim);">Formatos: PDF, PNG, JPG, TIFF, BMP, WEBP, HEIC</div>
-            </div>
-            <input type="file" id="file-input-ocr" accept=".pdf,image/*" hidden onchange="handleOcrFile(this.files[0])">
-
-            <div style="margin-top: 20px;">
-                <label style="display: block; font-size: 12px; margin-bottom: 8px; color: var(--text-dim);">FORMATO DE
-                    SALIDA</label>
-                <select id="ocr-output-format"
-                    style="background: #000; border: 1px solid var(--border); color: var(--text-main); padding: 10px 12px; border-radius: 4px; font-family: var(--font-mono); font-size: 13px; min-width: 200px;">
-                    <option value="txt" selected>TXT</option>
-                    <option value="docx">Word (.docx)</option>
-                </select>
-            </div>
-
-            <div style="margin-top: 16px;">
-                <label style="display: block; font-size: 12px; margin-bottom: 8px; color: var(--text-dim);">PLANTILLA
-                    ESTRUCTURADA</label>
-                <select id="ocr-schema-type"
-                    style="background: #000; border: 1px solid var(--border); color: var(--text-main); padding: 10px 12px; border-radius: 4px; font-family: var(--font-mono); font-size: 13px; min-width: 200px;">
-                    <option value="general" selected>General</option>
-                    <option value="factura">Factura</option>
-                    <option value="identidad">Documento de Identidad</option>
-                </select>
-            </div>
-
-            <div style="margin-top: 12px;">
-                <label style="display: block; font-size: 12px; margin-bottom: 8px; color: var(--text-dim);">INSTRUCCIONES
-                    EXTRA (OPCIONAL)</label>
-                <textarea id="ocr-structured-instructions"
-                    style="width: 100%; min-height: 84px; background: #000; border: 1px solid var(--border); color: var(--text-main); padding: 10px 12px; border-radius: 4px; font-family: var(--font-mono); font-size: 12px; resize: vertical;"
-                    placeholder="Ejemplo: Prioriza numero de factura, RUC y total final."></textarea>
-            </div>
-
-            <div class="controls-row">
-                <div style="font-size: 11px; color: var(--text-dim);">
-                    Motor OCR: <strong style="color: var(--text-main);">RapidOCR Local (Gratis) / Ollama (Opcional)</strong>
-                </div>
-                <div style="display: flex; gap: 10px;">
-                    <button class="btn-action" onclick="executeOcrStructured()">EXTRAER JSON</button>
-                    <button class="btn-action" onclick="executeOcr()">EXTRAER TEXTO</button>
-                </div>
-            </div>
-        </div>
-
     </div>
 
     <!-- Loading Overlay -->
@@ -1308,13 +1243,10 @@
             mergeFiles: [], // Array of File objects (intercalado)
             mergeNormalFiles: [], // Array of File objects (normal/secuencial)
             splitFile: null,
-            ocrFile: null,
             splitMode: 'pages', // 'pages' | 'custom'
             mergeView: 'multiple', // 'multiple' | 'individual'
             slots: [], // Array of { id, file: File | null }
             cutPoints: [], // Array of split indices (1-based, after which page to cut)
-            ocrOutputFormat: 'txt',
-            ocrSchemaType: 'general'
         };
 
         // Initialize Slots
@@ -1339,7 +1271,6 @@
                 'merge-normal': 1,
                 'split': 2,
                 'organize': 3,
-                'ocr': 4
             };
             const index = tabIndexMap[tab] ?? 0;
             document.querySelectorAll('.tab-btn')[index].classList.add('active');
@@ -1355,7 +1286,7 @@
             const hashTab = (window.location.hash || '').replace('#', '').trim().toLowerCase();
             const requestedTab = queryTab || hashTab;
 
-            const allowedTabs = ['merge', 'merge-normal', 'split', 'organize', 'ocr'];
+            const allowedTabs = ['merge', 'merge-normal', 'split', 'organize'];
             if (allowedTabs.includes(requestedTab)) {
                 switchMainTab(requestedTab);
             }
@@ -1553,17 +1484,6 @@
             }
         }
 
-        function handleOcrDropzoneDrop(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.currentTarget.classList.remove('dragover');
-
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                handleOcrFile(files[0]);
-            }
-        }
-
         // --- Merge Normal Logic ---
         function handleNormalMergeFiles(files) {
             state.mergeNormalFiles = [...state.mergeNormalFiles, ...Array.from(files)];
@@ -1744,25 +1664,6 @@
 
             if (state.splitMode === 'custom') {
                 renderCustomPreview(file, currentZoom);
-            }
-        }
-
-        function handleOcrFile(file) {
-            if (!file) return;
-
-            const lowerName = file.name.toLowerCase();
-            const isPdf = lowerName.endsWith('.pdf') || file.type === 'application/pdf';
-            const isImage = file.type.startsWith('image/');
-
-            if (!isPdf && !isImage) {
-                alert('Formato no soportado. Sube un PDF o imagen.');
-                return;
-            }
-
-            state.ocrFile = file;
-            const nameEl = document.getElementById('ocr-filename');
-            if (nameEl) {
-                nameEl.textContent = file.name;
             }
         }
 
@@ -2098,67 +1999,6 @@
             }
 
             return null;
-        }
-
-        async function executeOcr() {
-            if (!state.ocrFile) {
-                alert('Selecciona un archivo PDF o imagen primero.');
-                return;
-            }
-
-            setLoading(true);
-
-            const selectedOutput = document.getElementById('ocr-output-format').value || 'txt';
-            state.ocrOutputFormat = selectedOutput;
-
-            const formData = new FormData();
-            formData.append('file', state.ocrFile);
-            formData.append('output_format', state.ocrOutputFormat);
-
-            try {
-                const res = await callPdfToolsApi('/api/tools/ocr-extract', formData);
-                const blob = await res.blob();
-                const contentDisposition = res.headers.get('content-disposition');
-                const fallbackName = state.ocrOutputFormat === 'docx' ? 'resultado_ocr.docx' : 'resultado_ocr.txt';
-                const filename = getFilenameFromContentDisposition(contentDisposition) || fallbackName;
-                downloadBlob(blob, filename);
-            } catch (err) {
-                alert('Error al ejecutar OCR: ' + err.message);
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        async function executeOcrStructured() {
-            if (!state.ocrFile) {
-                alert('Selecciona un archivo PDF o imagen primero.');
-                return;
-            }
-
-            setLoading(true);
-
-            const schemaSelect = document.getElementById('ocr-schema-type');
-            const instructionsInput = document.getElementById('ocr-structured-instructions');
-            state.ocrSchemaType = (schemaSelect && schemaSelect.value) ? schemaSelect.value : 'general';
-            const instructions = instructionsInput ? instructionsInput.value || '' : '';
-
-            const formData = new FormData();
-            formData.append('file', state.ocrFile);
-            formData.append('schema_type', state.ocrSchemaType);
-            formData.append('instructions', instructions);
-
-            try {
-                const res = await callPdfToolsApi('/api/tools/ocr-extract-structured', formData);
-                const blob = await res.blob();
-                const contentDisposition = res.headers.get('content-disposition');
-                const fallbackName = `resultado_ocr_${state.ocrSchemaType}.json`;
-                const filename = getFilenameFromContentDisposition(contentDisposition) || fallbackName;
-                downloadBlob(blob, filename);
-            } catch (err) {
-                alert('Error en extraccion estructurada: ' + err.message);
-            } finally {
-                setLoading(false);
-            }
         }
 
         function downloadBlob(blob, name) {
