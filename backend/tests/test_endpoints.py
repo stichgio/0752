@@ -149,7 +149,7 @@ class TestOCRTool:
     class _DummyResult:
         def __init__(self, text: str):
             self.text = text
-            self.model = "mistral-ocr-latest"
+            self.model = "rapidocr-local-free"
             self.pages_processed = 1
 
     class _DummyOCRService:
@@ -170,7 +170,7 @@ class TestOCRTool:
     class _DummyStructuredResult:
         def __init__(self, data):
             self.data = data
-            self.model = "mistral-ocr-latest"
+            self.model = "rapidocr-local-free"
             self.pages_processed = 1
 
     def test_ocr_extract_txt(self, monkeypatch):

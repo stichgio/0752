@@ -8,7 +8,7 @@ Todos los modulos del backend deben importar desde aqui:
 from pathlib import Path
 from typing import List
 
-from pydantic import AliasChoices, Field
+from pydantic import AliasChoices, Field  # type: ignore
 from pydantic_settings import BaseSettings  # type: ignore
 
 
@@ -41,18 +41,10 @@ class Settings(BaseSettings):
     ghostscript_enabled: bool = Field(default=True)
     ghostscript_quality: str = Field(default="printer")
 
-    # ── OCR (Mistral OCR) ─────────────────────────────────────────────────────
-    mistral_api_key: str = Field(
-        default="",
-        validation_alias=AliasChoices("MISTRAL_API_KEY", "OCR_API_KEY"),
-    )
-    mistral_api_base: str = Field(
-        default="https://api.mistral.ai",
-        validation_alias=AliasChoices("MISTRAL_API_BASE", "OCR_API_BASE"),
-    )
-    mistral_ocr_model: str = Field(
-        default="mistral-ocr-latest",
-        validation_alias=AliasChoices("MISTRAL_OCR_MODEL", "OCR_MODEL"),
+    # ── OCR (Free Local Engine) ───────────────────────────────────────────────
+    ocr_backend: str = Field(
+        default="rapidocr",
+        validation_alias=AliasChoices("OCR_BACKEND", "OCR_PROVIDER"),
     )
     ocr_request_timeout_seconds: int = Field(
         default=180,
@@ -61,6 +53,30 @@ class Settings(BaseSettings):
     ocr_max_upload_mb: int = Field(
         default=25,
         validation_alias=AliasChoices("OCR_MAX_UPLOAD_MB", "OCR_MAX_MB"),
+    )
+    ocr_pdf_dpi: int = Field(
+        default=220,
+        validation_alias=AliasChoices("OCR_PDF_DPI", "OCR_DPI"),
+    )
+    ocr_max_pages: int = Field(
+        default=25,
+        validation_alias=AliasChoices("OCR_MAX_PAGES", "OCR_PAGES_LIMIT"),
+    )
+    ocr_ollama_base_url: str = Field(
+        default="http://127.0.0.1:11434",
+        validation_alias=AliasChoices("OCR_OLLAMA_BASE_URL", "OLLAMA_BASE_URL"),
+    )
+    ocr_ollama_model_deepseek: str = Field(
+        default="deepseek-ocr:latest",
+        validation_alias=AliasChoices("OCR_OLLAMA_MODEL_DEEPSEEK", "OCR_DEEPSEEK_MODEL"),
+    )
+    ocr_ollama_model_glm: str = Field(
+        default="glm-ocr:latest",
+        validation_alias=AliasChoices("OCR_OLLAMA_MODEL_GLM", "OCR_GLM_MODEL"),
+    )
+    ocr_ollama_model_custom: str = Field(
+        default="",
+        validation_alias=AliasChoices("OCR_OLLAMA_MODEL_CUSTOM", "OCR_CUSTOM_MODEL"),
     )
 
     model_config = {

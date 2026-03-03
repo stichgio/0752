@@ -187,13 +187,13 @@ function ImageGridPreview({ images, imagesPerPage }) {
 }
 
 /** Tarjeta de preview de una hoja individual */
-function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, logoLeft, logoRight, altHeaderConfig, rowData, allImages }) {
+function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, logoLeft, logoRight, altHeaderConfig, rowData, allImages, idColumn }) {
     const hasTemplate = Boolean(sheet.templateName);
 
     // Obtener imágenes para esta fila si hay datos
     const getImagesForRow = () => {
         if (!rowData || !allImages || allImages.length === 0) return [];
-        const recordId = rowData.ID_UNICO || rowData.id || rowData.ID;
+        const recordId = idColumn ? rowData[idColumn] : (rowData.ID_UNICO || rowData.id || rowData.ID);
         if (!recordId) return [];
 
         const filtered = allImages.filter(img => matchesRecordId(img.name, recordId));
@@ -433,8 +433,10 @@ export default function MultiSheetReportApp() {
         const imgs = Array.from(fileList).filter(f => f.type.startsWith('image/'));
         if (imgs.length === 0) return;
         setImages(prev => {
-            const existingNames = new Set(prev.map(f => f.name));
-            const newImgs = imgs.filter(f => !existingNames.has(f.name));
+            const existingNames = new Set(prev.map(obj => obj.name));
+            const newImgs = imgs
+                .filter(f => !existingNames.has(f.name))
+                .map(f => ({ name: f.name, url: URL.createObjectURL(f), file: f }));
             return [...prev, ...newImgs];
         });
     }, []);
@@ -602,7 +604,7 @@ export default function MultiSheetReportApp() {
         }));
         formData.append('alt_header_config', JSON.stringify(altHeaderConfig));
 
-        allImages.forEach(img => formData.append('files', img));
+        allImages.forEach(img => formData.append('files', img.file));
         if (logoLeftFile) formData.append('logoLeftFile', logoLeftFile);
         if (logoRightFile) formData.append('logoRightFile', logoRightFile);
 
@@ -952,7 +954,7 @@ export default function MultiSheetReportApp() {
                                     <input type="file" hidden multiple accept="image/*" onChange={handleImageInput} />
                                 </label>
                                 {images.length > 0 && (
-                                    <button onClick={() => setImages([])}
+                                    <button onClick={() => { images.forEach(img => URL.revokeObjectURL(img.url)); setImages([]); }}
                                         className="text-[10px] text-red-400/60 hover:text-red-400 w-full text-right">
                                         Limpiar imágenes
                                     </button>
@@ -1158,9 +1160,9 @@ export default function MultiSheetReportApp() {
                                 let globalIdx = 0;
 
                                 sheets.forEach((sheet) => {
-                                    const recordId = selectedRow?.ID_UNICO || selectedRow?.id || selectedRow?.ID;
+                                    const recordId = idColumn ? selectedRow?.[idColumn] : null;
                                     const rowImages = (recordId && images)
-                                        ? images.filter(img => matchesRecordId(img.name, recordId))
+                                        ? images.filter(img => matchesRecordId(img.name, String(recordId)))
                                         : [];
 
                                     const photosPerPage = sheet.imagesPerPage || 4;
@@ -1182,6 +1184,7 @@ export default function MultiSheetReportApp() {
                                                         altHeaderConfig={altHeaderConfig}
                                                         rowData={selectedRow}
                                                         allImages={images}
+                                                        idColumn={idColumn}
                                                     />
                                                     <div className="flex items-center gap-2 my-2">
                                                         <div className="flex-1 border-b border-neutral-600 border-dashed" />
@@ -1205,6 +1208,7 @@ export default function MultiSheetReportApp() {
                                                     altHeaderConfig={altHeaderConfig}
                                                     rowData={selectedRow}
                                                     allImages={images}
+                                                    idColumn={idColumn}
                                                 />
                                                 <div className="flex items-center gap-2 my-2">
                                                     <div className="flex-1 border-b border-neutral-600 border-dashed" />

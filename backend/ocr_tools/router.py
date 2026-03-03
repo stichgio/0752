@@ -11,11 +11,11 @@ from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, Uploa
 from fastapi.responses import FileResponse  # type: ignore
 
 from config import settings  # type: ignore
-from .service import MistralOCRService, OCRConfigurationError, OCRServiceError
+from .service import OCRConfigurationError, OCRServiceError, create_ocr_service
 
 router = APIRouter(prefix="/api/tools", tags=["ocr-tools"])
 
-_ocr_service = MistralOCRService()
+_ocr_service = create_ocr_service()
 
 _SUPPORTED_EXTENSIONS = {
     ".pdf",

@@ -25,10 +25,14 @@ Configure these as **Repository Secrets** in your Hugging Face Space settings
 | `FEATURE_TEMPLATE_EDITOR` | No | `true` to enable the Template Editor. Default: `false`. |
 | `GHOSTSCRIPT_ENABLED` | No | `false` to disable Ghostscript PDF compression. Default: `true`. |
 | `GHOSTSCRIPT_QUALITY` | No | Ghostscript quality: `screen`, `ebook`, `printer`, `prepress`. Default: `printer`. |
-| `MISTRAL_API_KEY` | For OCR tool | API key for professional OCR extraction (PDF/image to TXT/DOCX). |
-| `MISTRAL_API_BASE` | No | Mistral API base URL. Default: `https://api.mistral.ai`. |
-| `MISTRAL_OCR_MODEL` | No | OCR model name. Default: `mistral-ocr-latest`. |
+| `OCR_BACKEND` | No | OCR backend selector: `rapidocr` (default), `ollama-deepseek`, `ollama-glm`, `ollama-custom`. |
 | `OCR_REQUEST_TIMEOUT_SECONDS` | No | OCR request timeout in seconds. Default: `180`. |
 | `OCR_MAX_UPLOAD_MB` | No | Max upload size for OCR tool. Default: `25`. |
+| `OCR_PDF_DPI` | No | Render DPI for scanned PDF OCR pages. Default: `220`. |
+| `OCR_MAX_PAGES` | No | Max pages processed per OCR request. Default: `25`. |
+| `OCR_OLLAMA_BASE_URL` | No | Ollama base URL for optional OCR backends. Default: `http://127.0.0.1:11434`. |
+| `OCR_OLLAMA_MODEL_DEEPSEEK` | No | Model name in Ollama for DeepSeek OCR backend. |
+| `OCR_OLLAMA_MODEL_GLM` | No | Model name in Ollama for GLM OCR backend. |
+| `OCR_OLLAMA_MODEL_CUSTOM` | No | Custom model name used only when `OCR_BACKEND=ollama-custom`. |
 
 > For local development, copy `backend/.env.example` to `.env` in the project root.
