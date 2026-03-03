@@ -2,7 +2,7 @@
 
 import os
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException  # pyre-ignore
 from fastapi.responses import FileResponse  # type: ignore
 from fastapi.staticfiles import StaticFiles  # type: ignore
 

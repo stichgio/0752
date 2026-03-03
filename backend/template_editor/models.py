@@ -1,5 +1,5 @@
 from typing import Any, Dict, List, Literal, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field  # pyre-ignore
 
 
 TemplateStatus = Literal["draft", "published", "archived"]

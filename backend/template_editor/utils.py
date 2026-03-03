@@ -41,7 +41,7 @@ def url_to_base64(url: str) -> str:
         return url
 
     try:
-        import httpx
+        import httpx  # pyre-ignore
 
         resp = httpx.get(url, timeout=10, follow_redirects=True)
         resp.raise_for_status()

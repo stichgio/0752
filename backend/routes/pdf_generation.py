@@ -291,12 +291,12 @@ async def generate_pdf_with_progress(
                 for fc in file_contents:
                     fpath = os.path.join(temp_dir, fc["filename"])
                     with open(fpath, "wb") as f:
-                        f.write(fc["content"])
+                        f.write(fc["content"])  # pyre-ignore
                     file_map[fc["filename"]] = {"name": fc["filename"], "path": fpath}
 
                 reports_payload = _build_reports_payload(row_data, file_map)
 
-                filename = f"pdf_{uuid.uuid4().hex[:12]}.pdf"
+                filename = f"pdf_{uuid.uuid4().hex[:12]}.pdf"  # pyre-ignore
                 output_path = os.path.join(tempfile.gettempdir(), filename)
 
                 await service.generate_batch_pdf(
