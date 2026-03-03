@@ -5,6 +5,17 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
     const [layoutMode, setLayoutMode] = useState('grid');
     const [renderedHtml, setRenderedHtml] = useState('');
     const templateObjUrlsRef = useRef([]);
+    const [imageUrls, setImageUrls] = useState([]);
+
+    useEffect(() => {
+        if (!images || images.length === 0) {
+            setImageUrls([]);
+            return;
+        }
+        const urls = images.map(img => URL.createObjectURL(img));
+        setImageUrls(urls);
+        return () => urls.forEach(url => URL.revokeObjectURL(url));
+    }, [images]);
 
     const normalizePhotoGridTemplate = (sourceHtml) => {
         if (!sourceHtml || typeof sourceHtml !== 'string') return sourceHtml;
@@ -656,7 +667,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                                         padding: '2mm',
                                     }}>
                                         <img
-                                            src={URL.createObjectURL(images[0])}
+                                            src={imageUrls[0] || ''}
                                             alt={images[0].name}
                                             style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
                                         />
@@ -672,7 +683,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                                         padding: '2mm',
                                     }}>
                                         <img
-                                            src={URL.createObjectURL(images[1])}
+                                            src={imageUrls[1] || ''}
                                             alt={images[1].name}
                                             style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
                                         />
@@ -692,7 +703,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                                         padding: '2mm',
                                     }}>
                                         <img
-                                            src={URL.createObjectURL(images[2])}
+                                            src={imageUrls[2] || ''}
                                             alt={images[2].name}
                                             style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
                                         />
@@ -708,7 +719,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                                         style={getPhotoItemStyle(idx)}
                                     >
                                         <img
-                                            src={URL.createObjectURL(img)}
+                                            src={imageUrls[idx] || ''}
                                             alt={img.name}
                                             style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
                                         />

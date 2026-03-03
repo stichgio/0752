@@ -272,8 +272,8 @@ class ReportService:
         self.template = self.env.get_template("report.html")
         try:
             _ = self.template.module  # Forzar compilación
-        except Exception:
-            pass  # Ignorar errores de compilación
+        except Exception as e:
+            logging.warning("Pre-compilación de report.html falló: %s", e)
 
         # Cache de templates adicionales
         self._template_cache = {}

@@ -6,6 +6,7 @@ from fastapi.responses import Response, FileResponse, StreamingResponse  # type:
 from typing import Optional, List, Dict, Any
 import io
 import csv
+import logging
 import os
 import json
 import unicodedata
@@ -49,7 +50,8 @@ def parse_csv_file(content: bytes) -> List[Dict[str, Any]]:
             rows = temp_rows
         else:
             raise ValueError("Muy pocas columnas con punto y coma")
-    except Exception:
+    except Exception as e:
+        logging.debug("CSV parsing con ';' falló (%s), reintentando con ','", e)
         reader = csv.DictReader(io.StringIO(decoded), delimiter=',')
         rows = list(reader)
 

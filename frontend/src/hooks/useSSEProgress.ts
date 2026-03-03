@@ -116,7 +116,10 @@ export function useSSEProgress() {
                                 phaseLabel: PHASE_LABELS[phase] || phase,
                             });
                         } catch (parseErr) {
-                            if (parseErr instanceof SyntaxError) continue;
+                            if (parseErr instanceof SyntaxError) {
+                                console.warn('[SSE] Chunk malformado descartado:', currentEvent.slice(0, 120), parseErr);
+                                continue;
+                            }
                             throw parseErr;
                         }
                         currentEvent = '';
