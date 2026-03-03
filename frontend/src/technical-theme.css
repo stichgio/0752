@@ -70,7 +70,6 @@ body.technical-theme {
 .technical-theme select:focus,
 .technical-theme textarea:focus {
     border-color: var(--accent) !important;
-    ring-color: var(--accent) !important;
     outline: none !important;
     box-shadow: 0 0 0 1px var(--accent) !important;
 }
