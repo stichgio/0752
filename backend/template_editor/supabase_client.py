@@ -1,4 +1,3 @@
-import os
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
@@ -19,9 +18,10 @@ class SupabaseSettings:
 
 
 def load_supabase_settings() -> Optional[SupabaseSettings]:
-    url = (os.getenv("SUPABASE_URL") or "").strip()
-    key = (os.getenv("SUPABASE_SERVICE_ROLE_KEY") or "").strip()
-    bucket = (os.getenv("TEMPLATE_STORAGE_BUCKET") or "template-assets").strip() or "template-assets"
+    from config import settings  # type: ignore  # lazy to avoid circular import at module init
+    url = settings.supabase_url.strip()
+    key = settings.effective_supabase_key.strip()
+    bucket = settings.template_storage_bucket.strip() or "template-assets"
     if not url or not key:
         return None
     return SupabaseSettings(url=url, service_role_key=key, bucket=bucket)

@@ -28,6 +28,8 @@ from fichas_tecnicas.router import router as fichas_tecnicas_router  # type: ign
 from image_optimizer.router import router as image_optimizer_router  # type: ignore
 from compressor.router import router as compressor_router  # type: ignore
 from template_editor.router import router as template_editor_router  # type: ignore
+from routers.multi_sheet_report import router as multi_sheet_router  # type: ignore
+from config import settings  # type: ignore
 from template_editor.service import (  # type: ignore
     get_all_published_templates,
     get_preview_html,
@@ -179,30 +181,6 @@ async def lifespan(app: FastAPI):
 app = FastAPI(lifespan=lifespan)
 
 
-def _is_development_environment() -> bool:
-    env_name = os.getenv("ENVIRONMENT") or os.getenv("APP_ENV") or "production"
-    return env_name.strip().lower() in {"dev", "development", "local"}
-
-
-def _get_cors_allowed_origins() -> List[str]:
-    raw_origins = (os.getenv("CORS_ALLOWED_ORIGINS") or os.getenv("CORS_ORIGINS") or "").strip()
-    if raw_origins:
-        origins = [origin.strip() for origin in raw_origins.split(",") if origin.strip()]
-        if "*" in origins:
-            if _is_development_environment():
-                return ["*"]
-            filtered_origins = [origin for origin in origins if origin != "*"]
-            print("[CORS] Ignoring wildcard origin outside development environment")
-            return filtered_origins
-        return origins
-
-    if _is_development_environment():
-        return ["*"]
-
-    print("[CORS] CORS_ALLOWED_ORIGINS/CORS_ORIGINS is not configured; no cross-origin requests will be allowed")
-    return []
-
-
 def _error_code_from_status(status_code: int) -> str:
     if status_code == 400:
         return "BAD_REQUEST"
@@ -267,7 +245,7 @@ async def request_validation_exception_handler(_: Request, exc: RequestValidatio
     )
 
 # Enable CORS with environment-based allowed origins.
-cors_allowed_origins = _get_cors_allowed_origins()
+cors_allowed_origins = settings.effective_cors_origins
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_allowed_origins,
@@ -298,6 +276,7 @@ app.include_router(fichas_tecnicas_router)
 app.include_router(image_optimizer_router)
 app.include_router(compressor_router)
 app.include_router(template_editor_router)
+app.include_router(multi_sheet_router, prefix="/api/multi-sheet", tags=["multi-sheet-report"])
 
 @api_router.get("/templates")
 async def list_templates():

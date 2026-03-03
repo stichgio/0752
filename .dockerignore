@@ -1,8 +1,17 @@
 .git/
 node_modules/
 frontend/node_modules/
+frontend/
+
+# Environment files — add secrets via HF Space settings, not files
 .env
+.env.*
+!.env.example
+!backend/.env.example
+
+# Python cache
 __pycache__/
+**/__pycache__/
 *.pyc
 *.pyo
-frontend
+*.pyd

@@ -13,7 +13,8 @@ export default defineConfig({
                 fichas: resolve(__dirname, 'fichas-tecnicas.html'),
                 imageOptimizer: resolve(__dirname, 'image-optimizer.html'),
                 compressor: resolve(__dirname, 'compressor.html'),
-                templateEditor: resolve(__dirname, 'template-editor.html')
+                templateEditor: resolve(__dirname, 'template-editor.html'),
+                multiSheetReport: resolve(__dirname, 'multi-sheet-report.html')
             }
         }
     },

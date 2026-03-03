@@ -32,10 +32,13 @@ coverage/
 .env.local
 .env.production
 .env.development
+.env.*.local
 */.env
 */.env.local
 */.env.production
 */.env.development
+**/.env
+**/.env.local
 # Mantener solo los archivos de ejemplo (plantillas sin secretos)
 !.env.example
 !*/.env.example

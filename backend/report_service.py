@@ -9,13 +9,15 @@ import logging
 from jinja2 import Environment, FileSystemLoader  # pyre-ignore[21]
 import jinja2  # pyre-ignore[21]
 from fastapi import HTTPException  # type: ignore
+from config import settings  # type: ignore
+
 
 def _configure_windows_gtk_runtime() -> None:
     """Optionally add GTK runtime directory on Windows for WeasyPrint dependencies."""
     if os.name != "nt":
         return
 
-    gtk_path = (os.getenv("GTK_RUNTIME_BIN") or "").strip()
+    gtk_path = settings.gtk_runtime_bin.strip()
     if not gtk_path or not os.path.isdir(gtk_path):
         return
 
@@ -109,8 +111,8 @@ PDF_BATCH_SIZE = 5  # Número de PDFs a generar en paralelo por lote
 HTML_PREFETCH_SIZE = 10  # Número de HTMLs a pre-renderizar adelante
 
 # ✅ GHOSTSCRIPT COMPRESSION: Reducir tamaño del PDF final
-GHOSTSCRIPT_ENABLED = True  # Habilitar compresión post-proceso
-GHOSTSCRIPT_QUALITY = "printer"  # Opciones: screen (72dpi), ebook (150dpi), printer (300dpi), prepress (300dpi+)
+GHOSTSCRIPT_ENABLED = settings.ghostscript_enabled   # Habilitar compresión post-proceso
+GHOSTSCRIPT_QUALITY = settings.ghostscript_quality   # Opciones: screen (72dpi), ebook (150dpi), printer (300dpi), prepress (300dpi+)
 
 TEMP_DIR = tempfile.gettempdir()
 

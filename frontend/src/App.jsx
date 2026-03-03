@@ -28,6 +28,10 @@ export default function App() {
     const [data, setData] = useState([]);
     const [headers, setHeaders] = useState([]);
     const [images, setImages] = useState([]);
+    // --- Drag & Drop Step 2
+    const [isDraggingOverStep2, setIsDraggingOverStep2] = useState(false);
+    // --- Drag & Drop Step 4
+    const [isDraggingOverStep4, setIsDraggingOverStep4] = useState(false);
 
     // Configuration State
     const [mappings, setMappings] = useState({});
@@ -71,6 +75,23 @@ export default function App() {
 
     // Data Preview Table visibility
     const [showDataPreview, setShowDataPreview] = useState(false);
+    const [dataPreviewAutoOpened, setDataPreviewAutoOpened] = useState(false);
+
+    // Auto-show data preview for verification when images + data are both loaded
+    const prevImagesLen = useRef(0);
+    const prevDataLen = useRef(0);
+    useEffect(() => {
+        const imagesJustLoaded = prevImagesLen.current === 0 && images.length > 0;
+        const dataJustLoaded = prevDataLen.current === 0 && data.length > 0;
+        prevImagesLen.current = images.length;
+        prevDataLen.current = data.length;
+
+        const bothReady = data.length > 0 && (images.length > 0 || !requiresImages);
+        if (bothReady && (imagesJustLoaded || dataJustLoaded)) {
+            setShowDataPreview(true);
+            setDataPreviewAutoOpened(true);
+        }
+    }, [images, data, requiresImages]);
 
     // PDF Loading State
     const [isPdfLoading, setIsPdfLoading] = useState(false);
@@ -807,16 +828,43 @@ export default function App() {
                         {/* Step 2: Upload Data */}
                         <Step number="2" title="Cargar Datos" icon={<FileSpreadsheet size={16} />}>
                             <label className="block w-full cursor-pointer group">
-                                <div className="border border-dashed border-neutral-700 rounded-lg p-3 text-center hover:bg-neutral-900 transition-colors">
-                                    <div className="text-neutral-400 text-xs group-hover:text-white transition-colors">
-                                        {headers.length > 0 ? `${data.length} registros cargados` : 'Seleccionar Excel / CSV'}
+                                <div
+                                    onDragOver={(e) => {
+                                        e.preventDefault();
+                                        setIsDraggingOverStep2(true);
+                                    }}
+                                    onDragEnter={(e) => {
+                                        e.preventDefault();
+                                        setIsDraggingOverStep2(true);
+                                    }}
+                                    onDragLeave={(e) => {
+                                        if (e.currentTarget.contains(e.relatedTarget)) return;
+                                        setIsDraggingOverStep2(false);
+                                    }}
+                                    onDrop={(e) => {
+                                        e.preventDefault();
+                                        setIsDraggingOverStep2(false);
+
+                                        const [file] = Array.from(e.dataTransfer.files || []);
+                                        if (!file) return;
+
+                                        const fileName = file.name.toLowerCase();
+                                        const isAcceptedFile = fileName.endsWith('.csv') || fileName.endsWith('.xlsx') || fileName.endsWith('.xls');
+                                        if (!isAcceptedFile) return;
+
+                                        handleFileUpload({ target: { files: [file] } });
+                                    }}
+                                    className={`border border-dashed rounded-lg p-3 text-center transition-colors ${isDraggingOverStep2 ? 'border-violet-500 bg-neutral-800' : 'border-neutral-700 hover:bg-neutral-900'}`}
+                                >
+                                    <div className={`text-xs transition-colors ${isDraggingOverStep2 ? 'text-white' : 'text-neutral-400 group-hover:text-white'}`}>
+                                        {isDraggingOverStep2 ? 'Soltar aquí' : headers.length > 0 ? `${data.length} registros cargados` : 'Seleccionar Excel / CSV'}
                                     </div>
                                 </div>
                                 <input type="file" hidden accept=".csv,.xlsx,.xls" onChange={handleFileUpload} />
                             </label>
                             {data.length > 0 && (
                                 <button
-                                    onClick={() => setShowDataPreview(true)}
+                                    onClick={() => { setShowDataPreview(true); setDataPreviewAutoOpened(false); }}
                                     className="w-full mt-2 flex items-center justify-center gap-2 border border-neutral-700 hover:border-neutral-500 rounded-lg p-2 text-center hover:bg-neutral-800 transition-all text-xs text-neutral-400 hover:text-white"
                                 >
                                     <Table2 size={14} />
@@ -901,9 +949,34 @@ export default function App() {
                         <Step number="4" title={requiresImages ? "Cargar Imágenes" : "Imágenes (Opcional)"} disabled={!idColumn || !requiresImages} icon={<ImageIcon size={16} />}>
                             {requiresImages ? (
                                 <label className="block w-full cursor-pointer group">
-                                    <div className="border border-dashed border-neutral-700 rounded-lg p-3 text-center hover:bg-neutral-900 transition-colors">
-                                        <div className="text-neutral-400 text-xs group-hover:text-white transition-colors">
-                                            {images.length > 0 ? `${images.length} imágenes` : 'Subir Carpeta de Fotos'}
+                                    <div
+                                        onDragOver={(e) => {
+                                            e.preventDefault();
+                                            setIsDraggingOverStep4(true);
+                                        }}
+                                        onDragEnter={(e) => {
+                                            e.preventDefault();
+                                            setIsDraggingOverStep4(true);
+                                        }}
+                                        onDragLeave={(e) => {
+                                            if (e.currentTarget.contains(e.relatedTarget)) return;
+                                            setIsDraggingOverStep4(false);
+                                        }}
+                                        onDrop={(e) => {
+                                            e.preventDefault();
+                                            setIsDraggingOverStep4(false);
+
+                                            const droppedImages = Array.from(e.dataTransfer.files || []).filter(file =>
+                                                ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(file.type)
+                                            );
+                                            if (droppedImages.length === 0) return;
+
+                                            handleImageUpload({ target: { files: droppedImages } });
+                                        }}
+                                        className={`border border-dashed rounded-lg p-3 text-center transition-colors ${isDraggingOverStep4 ? 'border-violet-500 bg-neutral-800' : 'border-neutral-700 hover:bg-neutral-900'}`}
+                                    >
+                                        <div className={`text-xs transition-colors ${isDraggingOverStep4 ? 'text-white' : 'text-neutral-400 group-hover:text-white'}`}>
+                                            {isDraggingOverStep4 ? 'Soltar aquí' : images.length > 0 ? `${images.length} imágenes` : 'Subir Carpeta de Fotos'}
                                         </div>
                                     </div>
                                     <input type="file" hidden multiple accept="image/*" onChange={handleImageUpload} />
@@ -1059,12 +1132,17 @@ export default function App() {
                             idColumn={idColumn}
                             matchesRecordId={matchesRecordId}
                             selectedIndex={selectedIndex}
+                            autoOpened={dataPreviewAutoOpened}
                             onSelectRow={(idx) => {
                                 setSelectedIndex(String(idx));
                                 setExportScope('single');
                                 setShowDataPreview(false);
+                                setDataPreviewAutoOpened(false);
                             }}
-                            onClose={() => setShowDataPreview(false)}
+                            onClose={() => {
+                                setShowDataPreview(false);
+                                setDataPreviewAutoOpened(false);
+                            }}
                         />
                     )}
 

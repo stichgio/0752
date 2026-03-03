@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight, Image as ImageIcon, Search, Table2 } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, Image as ImageIcon, Search, Table2, ShieldCheck } from 'lucide-react';
 
 const ROWS_PER_PAGE = 15;
 
@@ -16,6 +16,7 @@ export default function DataPreviewTable({
     selectedIndex,
     onSelectRow,
     onClose,
+    autoOpened = false,
 }) {
     const [page, setPage] = useState(0);
     const [search, setSearch] = useState('');
@@ -107,13 +108,21 @@ export default function DataPreviewTable({
                             {data.length} filas · {headers.length} columnas
                         </span>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="text-neutral-500 hover:text-white transition-colors p-1 rounded hover:bg-neutral-800"
-                        title="Cerrar"
-                    >
-                        <X size={18} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {autoOpened && (
+                            <span className="flex items-center gap-1.5 text-[10px] font-mono text-amber-400/80 bg-amber-500/10 border border-amber-500/20 rounded px-2 py-1">
+                                <ShieldCheck size={11} />
+                                Verifica que cargaste el archivo correcto
+                            </span>
+                        )}
+                        <button
+                            onClick={onClose}
+                            className="text-neutral-500 hover:text-white transition-colors p-1 rounded hover:bg-neutral-800"
+                            title="Cerrar"
+                        >
+                            <X size={18} />
+                        </button>
+                    </div>
                 </div>
 
                 {/* ── Stats Bar ───────────────────────────────────── */}
@@ -265,10 +274,19 @@ export default function DataPreviewTable({
                 </div>
 
                 {/* ── Footer Hint ─────────────────────────────────── */}
-                <div className="px-5 py-2 border-t border-neutral-800/40 text-center">
+                <div className={`px-5 py-2.5 border-t border-neutral-800/40 flex items-center ${autoOpened ? 'justify-between' : 'justify-center'}`}>
                     <span className="text-neutral-600 text-[10px] font-mono">
                         Haz clic en una fila para previsualizarla · ESC para cerrar
                     </span>
+                    {autoOpened && (
+                        <button
+                            onClick={onClose}
+                            className="flex items-center gap-1.5 bg-green-600 hover:bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded transition-colors"
+                        >
+                            <ShieldCheck size={13} />
+                            Todo correcto, continuar
+                        </button>
+                    )}
                 </div>
             </div>
         </div>

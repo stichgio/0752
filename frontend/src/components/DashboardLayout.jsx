@@ -10,6 +10,7 @@ import {
     Archive,
     Shrink,
     FileCode,
+    BookOpen,
 } from 'lucide-react';
 import PomodoroTimer from './PomodoroTimer';
 
@@ -64,6 +65,12 @@ const DashboardLayout = ({ children }) => {
             label: "Template Editor",
             href: "/template-editor.html",
             active: window.location.pathname.includes('template-editor')
+        },
+        {
+            icon: <BookOpen size={20} />,
+            label: "Informe Multi-Hoja",
+            href: "/multi-sheet-report.html",
+            active: window.location.pathname.includes('multi-sheet-report')
         },
     ];
 

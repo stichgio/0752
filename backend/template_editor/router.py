@@ -29,12 +29,13 @@ from .service import (  # pyre-ignore[21]
     update_template,
 )
 from .supabase_client import SupabaseNotConfiguredError, SupabaseOperationError  # pyre-ignore[21]
+from config import settings  # type: ignore
 
 router = APIRouter(prefix="/api/template-editor", tags=["template-editor"])
 
 
 def _feature_enabled() -> bool:
-    return os.getenv("FEATURE_TEMPLATE_EDITOR", "false").lower() == "true"
+    return settings.feature_template_editor
 
 
 def _model_dump(model: Any) -> Dict[str, Any]:
