@@ -267,10 +267,10 @@ class FreeOCRService(StructuredPostProcessor):
 class OllamaOCRService(StructuredPostProcessor):
     """Optional OCR backend using local Ollama models (DeepSeek/GLM)."""
 
-    def __init__(self, *, model: str, backend_name: str) -> None:
+    def __init__(self, *, model: str, backend_name: str = "ollama-custom", base_url: str = "") -> None:
         self.model = model.strip()
         self.backend_name = backend_name
-        self.base_url = settings.ocr_ollama_base_url.rstrip("/")
+        self.base_url = (base_url.strip() or settings.ocr_ollama_base_url).rstrip("/")
         self.timeout_seconds = max(20, int(settings.ocr_request_timeout_seconds))
         self.pdf_dpi = max(96, int(settings.ocr_pdf_dpi))
         self.max_pages = max(1, int(settings.ocr_max_pages))

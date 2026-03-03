@@ -6,16 +6,40 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Literal, Tuple
 
+import httpx  # type: ignore
 from docx import Document  # type: ignore
 from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile  # type: ignore
-from fastapi.responses import FileResponse  # type: ignore
+from fastapi.responses import FileResponse, JSONResponse  # type: ignore
 
 from config import settings  # type: ignore
-from .service import OCRConfigurationError, OCRServiceError, create_ocr_service
+from .service import OCRConfigurationError, OCRServiceError, OllamaOCRService, create_ocr_service
 
 router = APIRouter(prefix="/api/tools", tags=["ocr-tools"])
 
 _ocr_service = create_ocr_service()
+
+_OLLAMA_URL_MAX_LENGTH = 300
+_OLLAMA_MODEL_MAX_LENGTH = 120
+
+
+def _resolve_service(ollama_url: str, ollama_model: str) -> Any:
+    """Return an on-the-fly OllamaOCRService if the caller supplies URL+model,
+    otherwise fall back to the module-level singleton configured via env vars."""
+    url = (ollama_url or "").strip()
+    model = (ollama_model or "").strip()
+
+    if not url or not model:
+        return _ocr_service
+
+    if not url.startswith(("http://", "https://")):
+        raise HTTPException(status_code=400, detail="ollama_url debe comenzar con http:// o https://")
+    if len(url) > _OLLAMA_URL_MAX_LENGTH or len(model) > _OLLAMA_MODEL_MAX_LENGTH:
+        raise HTTPException(status_code=400, detail="ollama_url o ollama_model demasiado largo")
+
+    try:
+        return OllamaOCRService(model=model, base_url=url, backend_name="ollama-custom")
+    except OCRConfigurationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
 
 _SUPPORTED_EXTENSIONS = {
     ".pdf",
@@ -236,16 +260,59 @@ async def _read_upload_bytes(file: UploadFile) -> Tuple[bytes, str, str]:
     return raw, filename, content_type
 
 
+@router.get("/ocr-status")
+async def ocr_status():
+    """Returns the configured OCR backend and Ollama base URL."""
+    return JSONResponse({
+        "backend": settings.ocr_backend,
+        "ollama_base_url": settings.ocr_ollama_base_url,
+        "ollama_model_deepseek": settings.ocr_ollama_model_deepseek,
+        "ollama_model_glm": settings.ocr_ollama_model_glm,
+        "ollama_model_custom": settings.ocr_ollama_model_custom,
+    })
+
+
+@router.post("/ocr-probe")
+async def probe_ollama(ollama_url: str = Form(...)):
+    """Test connectivity to an Ollama server and list its available models."""
+    url = (ollama_url or "").strip().rstrip("/")
+    if not url.startswith(("http://", "https://")):
+        raise HTTPException(status_code=400, detail="URL debe comenzar con http:// o https://")
+    if len(url) > _OLLAMA_URL_MAX_LENGTH:
+        raise HTTPException(status_code=400, detail="URL demasiado larga")
+
+    try:
+        timeout = httpx.Timeout(timeout=8.0, connect=5.0)
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            resp = await client.get(f"{url}/api/tags")
+    except httpx.HTTPError as exc:
+        return JSONResponse({"ok": False, "error": f"No se pudo conectar: {exc}"})
+
+    if resp.status_code != 200:
+        return JSONResponse({"ok": False, "error": f"Ollama respondió HTTP {resp.status_code}"})
+
+    try:
+        data = resp.json()
+        models = [m["name"] for m in data.get("models", [])]
+    except Exception:
+        return JSONResponse({"ok": False, "error": "Respuesta inesperada de Ollama"})
+
+    return JSONResponse({"ok": True, "models": models})
+
+
 @router.post("/ocr-extract")
 async def extract_ocr_to_file(
     background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     output_format: Literal["txt", "docx"] = Form("txt"),
+    ollama_url: str = Form(""),
+    ollama_model: str = Form(""),
 ):
     raw, filename, content_type = await _read_upload_bytes(file)
+    service = _resolve_service(ollama_url, ollama_model)
 
     try:
-        result = await _ocr_service.extract_text(
+        result = await service.extract_text(
             file_bytes=raw,
             filename=filename,
             content_type=content_type,
@@ -288,8 +355,11 @@ async def extract_ocr_structured(
     file: UploadFile = File(...),
     schema_type: Literal["general", "factura", "identidad"] = Form("general"),
     instructions: str = Form(""),
+    ollama_url: str = Form(""),
+    ollama_model: str = Form(""),
 ):
     raw, filename, content_type = await _read_upload_bytes(file)
+    service = _resolve_service(ollama_url, ollama_model)
 
     preset = _STRUCTURED_PRESETS[schema_type]
     extra_prompt = (instructions or "").strip()
@@ -298,7 +368,7 @@ async def extract_ocr_structured(
         prompt = f"{prompt}\n\nInstrucciones adicionales del usuario:\n{extra_prompt}"
 
     try:
-        result = await _ocr_service.extract_structured(
+        result = await service.extract_structured(
             file_bytes=raw,
             filename=filename,
             content_type=content_type,

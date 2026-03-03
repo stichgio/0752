@@ -1140,7 +1140,7 @@ export default function MultiSheetReportApp() {
                             </p>
                         </div>
                     ) : (
-                        <div className="max-w-2xl mx-auto space-y-4">
+                        <div className="w-[210mm] mx-auto space-y-4">
                             {/* Cabecera del preview */}
                             <div className="flex items-center gap-2 mb-2">
                                 <Layers size={16} className="text-neutral-400" />
