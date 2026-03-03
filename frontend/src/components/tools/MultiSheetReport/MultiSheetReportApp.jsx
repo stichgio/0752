@@ -446,7 +446,6 @@ export default function MultiSheetReportApp() {
         const formData = new FormData();
 
         const activeSheets = sheets
-            .filter(s => s.templateName)
             .map((s, sheetIdx) => ({ ...s, _sheetIdx: sheetIdx }));
 
         let globalOrder = 0;
@@ -493,8 +492,8 @@ export default function MultiSheetReportApp() {
     // ─────────────────────────────────────────────────────────────────────────
     // Exportar PDF
     // ─────────────────────────────────────────────────────────────────────────
-    const hasActiveSheetsWithTemplate = sheets.some(s => s.templateName);
-    const canExport = hasActiveSheetsWithTemplate &&
+    const hasActiveSheets = sheets.length > 0;
+    const canExport = hasActiveSheets &&
         (exportScope === 'all' ? data.length > 0 : selectedIndex !== '');
 
     const handleDownloadPdf = useCallback(async () => {
@@ -506,7 +505,7 @@ export default function MultiSheetReportApp() {
 
         const { formData, count } = buildFormData(rowIndices);
         const msgBase = exportScope === 'all'
-            ? `Generando informe (${data.length} registros × ${sheets.filter(s => s.templateName).length} hojas)...`
+            ? `Generando informe (${data.length} registros × ${sheets.length} hojas)...`
             : 'Generando informe PDF...';
 
         try {
@@ -897,7 +896,7 @@ export default function MultiSheetReportApp() {
                         <Step
                             number="4"
                             title="Seleccionar y Exportar"
-                            disabled={!hasActiveSheetsWithTemplate}
+                            disabled={!hasActiveSheets}
                         >
                             <div className="space-y-3">
                                 {/* Buscador */}
@@ -956,10 +955,10 @@ export default function MultiSheetReportApp() {
 
                                 {/* Resumen */}
                                 <div className="bg-neutral-900 border border-neutral-800 rounded p-2 text-[10px] font-mono text-neutral-500 space-y-0.5">
-                                    <div>Hojas activas: <span className="text-white">{sheets.filter(s => s.templateName).length}</span></div>
+                                    <div>Hojas activas: <span className="text-white">{sheets.length}</span></div>
                                     <div>Imágenes: <span className="text-white">{images.length}</span></div>
                                     {exportScope === 'all' && (
-                                        <div>PDFs a generar: <span className="text-amber-400">{data.length} × {sheets.filter(s => s.templateName).length} hojas</span></div>
+                                        <div>PDFs a generar: <span className="text-amber-400">{data.length} × {sheets.length} hojas</span></div>
                                     )}
                                 </div>
 
@@ -973,9 +972,9 @@ export default function MultiSheetReportApp() {
                                     {isPdfLoading ? 'Generando...' : 'Descargar PDF'}
                                 </button>
 
-                                {!hasActiveSheetsWithTemplate && (
+                                {!hasActiveSheets && (
                                     <p className="text-[10px] text-amber-400/70 text-center">
-                                        Asigna plantillas a las hojas en el Step 1
+                                        Agrega hojas en el Step 1 para exportar
                                     </p>
                                 )}
                             </div>
@@ -1039,7 +1038,7 @@ export default function MultiSheetReportApp() {
                             <div className="mt-4 bg-neutral-900/60 border border-neutral-700 rounded-lg p-3 text-[10px] font-mono text-neutral-500">
                                 <div className="flex items-center gap-1.5 mb-1">
                                     <CheckCircle size={10} className="text-emerald-400" />
-                                    <span className="text-neutral-400">Plantillas asignadas: {sheets.filter(s => s.templateName).length}/{sheets.length}</span>
+                                    <span className="text-neutral-400">Hojas configuradas: {sheets.length}</span>
                                 </div>
                                 <div className="flex items-center gap-1.5">
                                     <ImageIcon size={10} className="text-blue-400" />
