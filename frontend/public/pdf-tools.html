@@ -1349,6 +1349,20 @@
             lucide.createIcons();
         }
 
+        function initializeMainTabFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            const queryTab = (params.get('tab') || '').trim().toLowerCase();
+            const hashTab = (window.location.hash || '').replace('#', '').trim().toLowerCase();
+            const requestedTab = queryTab || hashTab;
+
+            const allowedTabs = ['merge', 'merge-normal', 'split', 'organize', 'ocr'];
+            if (allowedTabs.includes(requestedTab)) {
+                switchMainTab(requestedTab);
+            }
+        }
+
+        initializeMainTabFromUrl();
+
         function switchMergeView(view) {
             state.mergeView = view;
 

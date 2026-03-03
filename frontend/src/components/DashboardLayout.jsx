@@ -4,6 +4,7 @@ import {
     LayoutDashboard,
     Calculator,
     FileStack,
+    ScanLine,
     ChevronLeft,
     ChevronRight,
     ClipboardList,
@@ -16,6 +17,8 @@ import PomodoroTimer from './PomodoroTimer';
 
 const DashboardLayout = ({ children }) => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
+    const isPdfToolsPath = window.location.pathname.includes('pdf-tools');
+    const isOcrTab = window.location.search.includes('tab=ocr') || window.location.hash.toLowerCase() === '#ocr';
 
     const navItems = [
         {
@@ -46,7 +49,13 @@ const DashboardLayout = ({ children }) => {
             icon: <FileStack size={20} />,
             label: "PDF Tools",
             href: "/pdf-tools.html",
-            active: window.location.pathname.includes('pdf-tools')
+            active: isPdfToolsPath && !isOcrTab
+        },
+        {
+            icon: <ScanLine size={20} />,
+            label: "OCR",
+            href: "/pdf-tools.html?tab=ocr",
+            active: isPdfToolsPath && isOcrTab
         },
         {
             icon: <Archive size={20} />,
