@@ -600,8 +600,8 @@ def _list_independent_template_names() -> list[str]:
     return [name for name in independent_names if name not in _BUILTIN_LAYOUTS]
 
 
-# ── Local templates (backend/routers/multi_sheet_templates/) ──────────────────
-_LOCAL_TEMPLATES_DIR: str = os.path.join(os.path.dirname(__file__), "multi_sheet_templates")
+# ── Local templates (backend/routers/mtemplates/) ─────────────────────────────
+_LOCAL_TEMPLATES_DIR: str = os.path.join(os.path.dirname(__file__), "mtemplates")
 
 
 def _list_local_template_names() -> list[str]:
@@ -748,6 +748,7 @@ async def generate_multi_sheet_pdf(
         from pypdf import PdfWriter  # type: ignore
 
         sorted_sheets = sorted(sheets, key=lambda s: s.get("order", 0))
+        local_names = _list_local_template_names()
         temp_pdf_paths: list[str] = []
 
         for sheet in sorted_sheets:
@@ -757,64 +758,87 @@ async def generate_multi_sheet_pdf(
             use_alt_header: bool = bool(sheet.get("useAltHeader", False))
             title: str = sheet.get("title") or ""
             images_per_page: int = int(sheet.get("imagesPerPage", 4))
-            page_num: int = int(sheet.get("pageNum", 1))
-            total_pages: int = int(sheet.get("totalPages", 1))
+            if images_per_page < 1:
+                images_per_page = 1
+            configured_page_num: int = int(sheet.get("pageNum", 1))
+            configured_total_pages: int = int(sheet.get("totalPages", 1))
 
-            # Resolver imágenes a data URIs
-            images_b64: list[str] = []
-            for fname in image_filenames:
-                img_path = os.path.join(tmp_dir, fname)
-                if os.path.exists(img_path):
-                    data_uri = _image_to_b64(img_path)
-                    if data_uri:
-                        images_b64.append(data_uri)
+            # Ordenar por sufijo secuencial 3 dígitos: COLUMNA_ID_001, _010, _100...
+            image_filenames = _sort_image_filenames_by_seq(image_filenames)
 
-            # Construir HTML de la página
-            local_names = _list_local_template_names()
-            if template_name in local_names:
-                page_html = _render_local_template(
-                    template_name=template_name,
-                    header=header,
-                    row_data=row_data,
-                    images_b64=images_b64,
-                    image_filenames=image_filenames,
-                )
-            elif template_name == _VOLANTEO_TEMPLATE_NAME:
-                page_html = _build_volanteo_page_html(
-                    header_config=header,
-                    row_data=row_data,
-                    image_data_uris=images_b64,
-                )
+            # Dividir en grupos de images_per_page → N páginas con los mismos datos de fila
+            if image_filenames:
+                image_groups: list[list[str]] = [
+                    image_filenames[i : i + images_per_page]
+                    for i in range(0, len(image_filenames), images_per_page)
+                ]
             else:
-                # Encabezado
-                if use_alt_header:
-                    header_html = _build_alt_header_html(alt_header, row_data)
+                image_groups = [[]]
+
+            if len(image_groups) > 1:
+                page_ranges = [
+                    (idx + 1, len(image_groups), group)
+                    for idx, group in enumerate(image_groups)
+                ]
+            else:
+                page_ranges = [
+                    (configured_page_num, configured_total_pages, image_groups[0])
+                ]
+
+            for page_num, total_pages, page_filenames in page_ranges:
+                # Resolver imágenes a data URIs
+                images_b64: list[str] = []
+                for fname in page_filenames:
+                    img_path = os.path.join(tmp_dir, fname)
+                    if os.path.exists(img_path):
+                        data_uri = _image_to_b64(img_path)
+                        if data_uri:
+                            images_b64.append(data_uri)
+
+                # Construir HTML de la página
+                if template_name in local_names:
+                    page_html = _render_local_template(
+                        template_name=template_name,
+                        header=header,
+                        row_data=row_data,
+                        images_b64=images_b64,
+                        image_filenames=page_filenames,
+                    )
+                elif template_name == _VOLANTEO_TEMPLATE_NAME:
+                    page_html = _build_volanteo_page_html(
+                        header_config=header,
+                        row_data=row_data,
+                        image_data_uris=images_b64,
+                    )
                 else:
-                    header_html = _build_main_header_html(header)
+                    if use_alt_header:
+                        header_html = _build_alt_header_html(alt_header, row_data)
+                    else:
+                        header_html = _build_main_header_html(header)
 
-                page_html = _build_page_html(
-                    header_html=header_html,
-                    title=title,
-                    image_data_uris=images_b64,
-                    images_per_page=images_per_page,
-                    page_num=page_num,
-                    total_pages=total_pages,
-                )
+                    page_html = _build_page_html(
+                        header_html=header_html,
+                        title=title,
+                        image_data_uris=images_b64,
+                        images_per_page=images_per_page,
+                        page_num=page_num,
+                        total_pages=total_pages,
+                    )
 
-            # Renderizar a PDF
-            try:
-                tmp_pdf_file = tempfile.NamedTemporaryFile(
-                    delete=False, suffix=".pdf", dir=tmp_dir
-                )
-                tmp_pdf_path = tmp_pdf_file.name
-                tmp_pdf_file.close()
-                _render_html_to_pdf(page_html, tmp_dir, tmp_pdf_path)
-                temp_pdf_paths.append(tmp_pdf_path)
-            except Exception as exc:
-                raise HTTPException(
-                    status_code=500,
-                    detail=f"Error al generar PDF de página: {exc}",
-                ) from exc
+                # Renderizar a PDF
+                try:
+                    tmp_pdf_file = tempfile.NamedTemporaryFile(
+                        delete=False, suffix=".pdf", dir=tmp_dir
+                    )
+                    tmp_pdf_path = tmp_pdf_file.name
+                    tmp_pdf_file.close()
+                    _render_html_to_pdf(page_html, tmp_dir, tmp_pdf_path)
+                    temp_pdf_paths.append(tmp_pdf_path)
+                except Exception as exc:
+                    raise HTTPException(
+                        status_code=500,
+                        detail=f"Error al generar PDF de página: {exc}",
+                    ) from exc
 
         if not temp_pdf_paths:
             raise HTTPException(
