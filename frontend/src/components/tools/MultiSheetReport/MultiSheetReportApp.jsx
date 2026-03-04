@@ -68,6 +68,36 @@ const matchesRecordId = (imageName, recordId) => {
 // Grid layout helper — maps N images to optimal columns (mirrors backend _grid_cols)
 const GRID_COLS_MAP = { 1: 1, 2: 2, 3: 2, 4: 2, 5: 3, 6: 3, 7: 3, 8: 4, 9: 3 };
 const getGridCols = (n) => GRID_COLS_MAP[n] || 3;
+const GRID_TEMPLATE_NAME = 'Grilla de Imágenes';
+const VOLANTEO_TEMPLATE_NAME = 'Panel Fotográfico Volanteo';
+
+const getRowTextValue = (rowData, key) => {
+    if (!rowData) return '-';
+    const value = rowData[key];
+    if (value === null || value === undefined) return '-';
+    const text = String(value).trim();
+    return text || '-';
+};
+
+const normalizeTemplateSections = (rawSections) => {
+    if (!Array.isArray(rawSections)) return [];
+
+    return rawSections
+        .map((section, index) => {
+            const id = typeof section?.id === 'string' && section.id.trim()
+                ? section.id.trim()
+                : `section-${index + 1}`;
+            const label = typeof section?.label === 'string' && section.label.trim()
+                ? section.label.trim()
+                : `Sección ${index + 1}`;
+            const templates = Array.isArray(section?.templates)
+                ? Array.from(new Set(section.templates.map(t => String(t || '').trim()).filter(Boolean)))
+                : [];
+
+            return { id, label, templates };
+        })
+        .filter(section => section.templates.length > 0);
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Subcomponentes de preview
@@ -186,6 +216,94 @@ function ImageGridPreview({ images, imagesPerPage }) {
     );
 }
 
+function VolanteoTemplatePreview({ rowData, images, logoLeft, logoRight }) {
+    const photos = Array.isArray(images) ? images.slice(0, 4) : [];
+    const hasPhotos = photos.length > 0;
+    const centro = getRowTextValue(rowData, 'CENTRO');
+    const nis = getRowTextValue(rowData, 'NIS');
+    const sector = getRowTextValue(rowData, 'SECTOR');
+    const fechaCorte = getRowTextValue(rowData, 'FECHA CORTE');
+    const direcciones = getRowTextValue(rowData, 'DIRECCIONES AFECTADAS');
+    const distrito = getRowTextValue(rowData, 'DISTRITO');
+    const codigoComponente = getRowTextValue(rowData, 'CODIGO COMPONENTE');
+    const estado = getRowTextValue(rowData, 'ESTADO');
+
+    return (
+        <div className="mt-2 border border-neutral-300 rounded-md bg-white p-3 aspect-[210/297] flex flex-col overflow-hidden">
+            <header className="flex items-center justify-between border-b-2 border-neutral-700 pb-2 mb-2 shrink-0">
+                <div className="w-24 h-10 flex items-center justify-center">
+                    {logoLeft
+                        ? <img src={logoLeft} alt="logo-left" className="max-h-10 max-w-full object-contain" />
+                        : <div className="w-16 h-8 border border-dashed border-neutral-300 rounded" />
+                    }
+                </div>
+                <div className="text-center px-2">
+                    <h3 className="text-[11px] font-bold uppercase tracking-wide text-neutral-900">Panel Fotográfico Volanteo</h3>
+                </div>
+                <div className="w-24 h-10 flex items-center justify-center">
+                    {logoRight
+                        ? <img src={logoRight} alt="logo-right" className="max-h-10 max-w-full object-contain" />
+                        : <div className="w-16 h-8 border border-dashed border-neutral-300 rounded" />
+                    }
+                </div>
+            </header>
+
+            <div className="grid grid-cols-4 border border-neutral-300 divide-x divide-neutral-300 text-[8px] shrink-0">
+                <div className="px-1.5 py-1">
+                    <div className="font-bold uppercase text-neutral-500">Centro de Servicios</div>
+                    <div className="font-semibold text-neutral-900 truncate">{centro}</div>
+                </div>
+                <div className="px-1.5 py-1">
+                    <div className="font-bold uppercase text-neutral-500">NIS</div>
+                    <div className="font-semibold text-neutral-900 truncate">{nis}</div>
+                </div>
+                <div className="px-1.5 py-1">
+                    <div className="font-bold uppercase text-neutral-500">Sector</div>
+                    <div className="font-semibold text-neutral-900 truncate">{sector}</div>
+                </div>
+                <div className="px-1.5 py-1">
+                    <div className="font-bold uppercase text-neutral-500">Fecha de Corte</div>
+                    <div className="font-semibold text-neutral-900 truncate">{fechaCorte}</div>
+                </div>
+            </div>
+
+            <section className="mt-2 shrink-0">
+                <div className="text-[9px] font-bold uppercase text-blue-700 border-b border-blue-700 pb-1 mb-1">1.0 Localización</div>
+                <div className="text-[8px] text-neutral-800">
+                    <div className="mb-1 truncate"><span className="font-bold uppercase">Direcciones Afectadas:</span> {direcciones}</div>
+                    <div className="flex gap-3 flex-wrap">
+                        <div><span className="font-bold uppercase">Distrito:</span> {distrito}</div>
+                        <div><span className="font-bold uppercase">Código de Componente:</span> {codigoComponente}</div>
+                        <div><span className="font-bold uppercase">Estado:</span> {estado}</div>
+                    </div>
+                </div>
+            </section>
+
+            <section className="mt-2 flex-1 min-h-0 flex flex-col">
+                <div className="text-[9px] font-bold uppercase text-blue-700 border-b border-blue-700 pb-1 mb-1 shrink-0">2.0 Panel Fotográfico</div>
+                {hasPhotos ? (
+                    <div className="grid grid-cols-2 grid-rows-2 gap-1 border border-blue-700 p-1 flex-1 min-h-0">
+                        {photos.map((img, idx) => (
+                            <div key={`${img.name}-${idx}`} className="border border-neutral-300 bg-neutral-100 overflow-hidden min-h-0">
+                                <img src={img.url} alt={img.name} className="w-full h-full object-contain" />
+                            </div>
+                        ))}
+                        {Array.from({ length: Math.max(0, 4 - photos.length) }).map((_, idx) => (
+                            <div key={`placeholder-${idx}`} className="border border-dashed border-neutral-300 bg-neutral-50 text-neutral-400 text-[8px] italic flex items-center justify-center">
+                                Sin imagen
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="border border-blue-700 text-neutral-400 text-[9px] italic flex-1 min-h-0 flex items-center justify-center text-center px-2">
+                        No se encontraron imágenes asociadas a este registro.
+                    </div>
+                )}
+            </section>
+        </div>
+    );
+}
+
 /** Tarjeta de preview de una hoja individual */
 function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, logoLeft, logoRight, altHeaderConfig, rowData, allImages, idColumn }) {
     const hasTemplate = Boolean(sheet.templateName);
@@ -208,7 +326,9 @@ function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, lo
     };
 
     const rowImages = getImagesForRow();
-    const isGridTemplate = sheet.templateName === 'Grilla de Imágenes';
+    const isGridTemplate = sheet.templateName === GRID_TEMPLATE_NAME;
+    const isVolanteoTemplate = sheet.templateName === VOLANTEO_TEMPLATE_NAME;
+    const showStandardHeaderPreview = !isVolanteoTemplate;
     const pageIndicator = sheet.totalPages && sheet.totalPages > 1
         ? ` (Pág ${sheet.pageNum}/${sheet.totalPages})`
         : '';
@@ -240,14 +360,15 @@ function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, lo
             {/* Contenido preview */}
             <div className="p-3">
                 {/* Encabezado preview */}
-                {sheet.useAltHeader
-                    ? <AltHeaderPreview altHeaderConfig={altHeaderConfig} rowData={rowData} />
-                    : <MainHeaderPreview title={headerTitle} subtitle={headerSubtitle} logoLeft={logoLeft} logoRight={logoRight} />
-                }
+                {showStandardHeaderPreview && (
+                    sheet.useAltHeader
+                        ? <AltHeaderPreview altHeaderConfig={altHeaderConfig} rowData={rowData} />
+                        : <MainHeaderPreview title={headerTitle} subtitle={headerSubtitle} logoLeft={logoLeft} logoRight={logoRight} />
+                )}
 
                 {/* Área de plantilla */}
                 {hasTemplate ? (
-                    <div className="mt-2 space-y-2">
+                    <div className={`${showStandardHeaderPreview ? 'mt-2 ' : ''}space-y-2`}>
                         <div className="border border-emerald-200 rounded bg-emerald-50 px-3 py-2 flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2 min-w-0">
                                 <FileText size={14} className="text-emerald-600 shrink-0" />
@@ -262,11 +383,25 @@ function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, lo
                                     <span className="text-[9px] font-bold text-emerald-700 underline underline-offset-2">{sheet.imagesPerPage || 4} fotos</span>
                                 </div>
                             )}
+                            {isVolanteoTemplate && (
+                                <div className="bg-white/50 px-1.5 py-0.5 rounded border border-emerald-100 flex items-center gap-1">
+                                    <Grid2X2 size={10} className="text-emerald-600" />
+                                    <span className="text-[9px] font-bold text-emerald-700 underline underline-offset-2">4 fotos</span>
+                                </div>
+                            )}
                         </div>
 
                         {/* Preview específico de Grilla */}
                         {isGridTemplate && (
                             <ImageGridPreview images={rowImages} imagesPerPage={sheet.imagesPerPage || 4} />
+                        )}
+                        {isVolanteoTemplate && (
+                            <VolanteoTemplatePreview
+                                rowData={rowData}
+                                images={rowImages}
+                                logoLeft={logoLeft}
+                                logoRight={logoRight}
+                            />
                         )}
                     </div>
                 ) : (
@@ -328,6 +463,7 @@ export default function MultiSheetReportApp() {
 
     // ── Plantillas disponibles (del backend) ──────────────────────────────────
     const [availableTemplates, setAvailableTemplates] = useState([]);
+    const [templateSections, setTemplateSections] = useState([]);
 
     // ── Selección y exportación ───────────────────────────────────────────────
     const [selectedIndex, setSelectedIndex] = useState('');
@@ -349,7 +485,19 @@ export default function MultiSheetReportApp() {
                 const res = await fetch(`${API_BASE}/templates`);
                 if (!res.ok) throw new Error('Error al obtener plantillas');
                 const json = await res.json();
-                if (!cancelled) setAvailableTemplates(json.templates || []);
+                const templates = Array.isArray(json.templates)
+                    ? Array.from(new Set(json.templates.map(t => String(t || '').trim()).filter(Boolean)))
+                    : [];
+                const sections = normalizeTemplateSections(json.sections);
+                const sectionTemplates = sections.flatMap(section => section.templates);
+                const finalTemplates = templates.length > 0
+                    ? templates
+                    : Array.from(new Set(sectionTemplates));
+
+                if (!cancelled) {
+                    setAvailableTemplates(finalTemplates);
+                    setTemplateSections(sections);
+                }
             } catch (err) {
                 console.error('[MultiSheet] Error cargando plantillas:', err);
             }
@@ -457,7 +605,9 @@ export default function MultiSheetReportApp() {
     const addSheet = useCallback(() => {
         // Auto-assign the first available layout so the sheet is immediately
         // active and Step 4 is unlocked without an extra manual selection.
-        const defaultTemplate = availableTemplates[0] ?? null;
+        const defaultTemplate = availableTemplates.includes(GRID_TEMPLATE_NAME)
+            ? GRID_TEMPLATE_NAME
+            : (availableTemplates[0] ?? null);
         setSheets(prev => [...prev, {
             id: String(Date.now()),
             title: `Hoja ${prev.length + 1}`,
@@ -560,12 +710,15 @@ export default function MultiSheetReportApp() {
 
             activeSheets.forEach(s => {
                 const photosPerPage = s.imagesPerPage || 4;
+                const sheetImages = s.templateName === VOLANTEO_TEMPLATE_NAME
+                    ? rowImages.slice(0, 4)
+                    : rowImages;
 
                 // Si es plantilla de grilla, dividimos por páginas si hay muchas fotos
-                if (s.templateName === 'Grilla de Imágenes' && rowImages.length > photosPerPage) {
-                    const totalPages = Math.ceil(rowImages.length / photosPerPage);
+                if (s.templateName === GRID_TEMPLATE_NAME && sheetImages.length > photosPerPage) {
+                    const totalPages = Math.ceil(sheetImages.length / photosPerPage);
                     for (let p = 0; p < totalPages; p++) {
-                        const chunk = rowImages.slice(p * photosPerPage, (p + 1) * photosPerPage);
+                        const chunk = sheetImages.slice(p * photosPerPage, (p + 1) * photosPerPage);
                         sheetsConfig.push({
                             order: globalOrder++,
                             title: s.title,
@@ -587,7 +740,7 @@ export default function MultiSheetReportApp() {
                         useAltHeader: s.useAltHeader,
                         imagesPerPage: photosPerPage,
                         rowData,
-                        imageFilenames: rowImages.map(img => img.name),
+                        imageFilenames: sheetImages.map(img => img.name),
                         pageNum: 1,
                         totalPages: 1
                     });
@@ -842,13 +995,22 @@ export default function MultiSheetReportApp() {
                                             onChange={e => updateSheet(sheet.id, { templateName: e.target.value || null })}
                                         >
                                             <option value="">-- Asignar Plantilla --</option>
-                                            {availableTemplates.map(t => (
-                                                <option key={t} value={t}>{t}</option>
-                                            ))}
+                                            {templateSections.length > 0
+                                                ? templateSections.map(section => (
+                                                    <optgroup key={section.id} label={section.label}>
+                                                        {section.templates.map(t => (
+                                                            <option key={`${section.id}-${t}`} value={t}>{t}</option>
+                                                        ))}
+                                                    </optgroup>
+                                                ))
+                                                : availableTemplates.map(t => (
+                                                    <option key={t} value={t}>{t}</option>
+                                                ))
+                                            }
                                         </select>
 
                                         {/* Selector de tamaño de grilla (solo si es "Grilla de Imágenes") */}
-                                        {sheet.templateName === 'Grilla de Imágenes' && (
+                                        {sheet.templateName === GRID_TEMPLATE_NAME && (
                                             <div className="mt-1.5 flex flex-wrap gap-1 p-1.5 bg-neutral-900/50 rounded border border-neutral-700">
                                                 <div className="w-full text-[9px] text-neutral-500 font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
                                                     <Grid2X2 size={10} /> Fotos por página
@@ -1166,7 +1328,7 @@ export default function MultiSheetReportApp() {
                                         : [];
 
                                     const photosPerPage = sheet.imagesPerPage || 4;
-                                    const isGrid = sheet.templateName === 'Grilla de Imágenes';
+                                    const isGrid = sheet.templateName === GRID_TEMPLATE_NAME;
 
                                     if (isGrid && rowImages.length > photosPerPage) {
                                         const totalPages = Math.ceil(rowImages.length / photosPerPage);

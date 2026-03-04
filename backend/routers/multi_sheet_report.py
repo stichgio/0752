@@ -5,13 +5,15 @@ Genera un PDF multi-sección con grillas de imágenes en formato A4.
 NO depende de backend/templates/ — genera su propio HTML internamente.
 
 Endpoints expuestos (montados en /api/multi-sheet/):
-  GET  /templates        → lista los layouts de hoja disponibles (built-in)
+  GET  /templates/independent → lista plantillas independientes publicadas
+  GET  /templates        → lista layouts base + plantillas independientes
   POST /generate-pdf     → genera el PDF final
 """
 
 from __future__ import annotations
 
 import base64
+from html import escape
 import json
 import math
 import os
@@ -22,6 +24,8 @@ from typing import Any, Optional
 
 from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile  # pyre-ignore
 from fastapi.responses import StreamingResponse  # pyre-ignore
+
+from template_editor.service import get_all_published_templates  # type: ignore
 
 # ── Router ────────────────────────────────────────────────────────────────────
 router = APIRouter(tags=["multi-sheet-report"])
@@ -203,6 +207,255 @@ html, body {{
 </body></html>"""
 
 
+def _safe_text(value: Any, fallback: str = "-") -> str:
+    if value is None:
+        return fallback
+    text = str(value).strip()
+    if not text:
+        return fallback
+    return escape(text, quote=True)
+
+
+def _build_volanteo_page_html(
+    header_config: dict[str, Any],
+    row_data: dict[str, Any],
+    image_data_uris: list[str],
+) -> str:
+    """Single-page volanteo layout based on backend/templates/report_volanteo.html."""
+    logo_left = str(header_config.get("logoLeft") or "").strip()
+    logo_right = str(header_config.get("logoRight") or "").strip()
+
+    logo_left_html = (
+        f'<img src="{escape(logo_left, quote=True)}" alt="Logo Izquierdo">'
+        if logo_left
+        else '<span class="header-logo-placeholder"></span>'
+    )
+    logo_right_html = (
+        f'<img src="{escape(logo_right, quote=True)}" alt="Logo Derecho">'
+        if logo_right
+        else '<span class="header-logo-placeholder"></span>'
+    )
+
+    centro = _safe_text(row_data.get("CENTRO"))
+    nis = _safe_text(row_data.get("NIS"))
+    sector = _safe_text(row_data.get("SECTOR"))
+    fecha_corte = _safe_text(row_data.get("FECHA CORTE"))
+    direcciones_afectadas = _safe_text(row_data.get("DIRECCIONES AFECTADAS"))
+    distrito = _safe_text(row_data.get("DISTRITO"))
+    codigo_componente = _safe_text(row_data.get("CODIGO COMPONENTE"))
+    estado = _safe_text(row_data.get("ESTADO"))
+
+    image_cells: list[str] = []
+    for idx, uri in enumerate(image_data_uris[:4]):  # pyre-ignore
+        safe_uri = escape(str(uri), quote=True)
+        image_cells.append(
+            '<div class="photo-cell">'
+            f'<img src="{safe_uri}" alt="Foto {idx + 1}">'
+            '</div>'
+        )
+
+    if image_cells:
+        for _ in range(len(image_cells), 4):
+            image_cells.append(
+                '<div class="photo-cell">'
+                '<div class="photo-placeholder">Sin imagen</div>'
+                '</div>'
+            )
+        photos_html = '<div class="photo-grid">' + "".join(image_cells) + '</div>'
+    else:
+        photos_html = '<div class="no-photos">No se encontraron imágenes asociadas a este registro.</div>'
+
+    return f"""<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><style>
+* {{ margin: 0; padding: 0; box-sizing: border-box; }}
+@page {{ size: A4; margin: 0; }}
+html, body {{
+    margin: 0;
+    padding: 0;
+    width: 210mm;
+    height: 297mm;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 10px;
+    line-height: 1.3;
+    color: #222;
+    background: #fff;
+}}
+.page {{
+    width: 210mm;
+    height: 297mm;
+    max-height: 297mm;
+    margin: 0;
+    padding: 8mm;
+    background: #fff;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}}
+.header {{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 20mm;
+    padding-bottom: 4mm;
+    border-bottom: 2px solid #333;
+    margin-bottom: 3mm;
+    flex-shrink: 0;
+}}
+.header-logo {{
+    width: 55mm;
+    height: 18mm;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}}
+.header-logo img {{ max-width: 100%; max-height: 100%; object-fit: contain; }}
+.header-logo-placeholder {{ font-size: 14px; font-weight: bold; color: #666; }}
+.header-title {{ flex: 1; text-align: center; }}
+.header-title h1 {{
+    font-size: 20px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #000;
+}}
+.info-bar {{
+    display: flex;
+    justify-content: space-between;
+    border: 1px solid #ccc;
+    margin-bottom: 2mm;
+    flex-shrink: 0;
+}}
+.info-item {{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 1.5mm 2mm;
+    border-right: 1px solid #ccc;
+    line-height: 1.2;
+}}
+.info-item:last-child {{ border-right: none; }}
+.info-label {{
+    font-size: 9pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #666;
+}}
+.info-value {{ font-size: 9pt; font-weight: 600; color: #000; }}
+.section-title {{
+    font-size: 10pt;
+    font-weight: bold;
+    color: #0066cc;
+    text-transform: uppercase;
+    margin-bottom: 3mm;
+    padding-bottom: 3px;
+    border-bottom: 1px solid #0066cc;
+    flex-shrink: 0;
+}}
+.localizacion {{ margin-bottom: 3mm; flex-shrink: 0; }}
+.loc-row {{ display: flex; margin-bottom: 4px; }}
+.loc-row.full {{ display: block; }}
+.loc-field {{ display: flex; align-items: baseline; margin-right: 30px; }}
+.loc-field.full {{ width: 100%; margin-right: 0; }}
+.loc-label {{
+    font-size: 9pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #333;
+    margin-right: 8px;
+    white-space: nowrap;
+}}
+.loc-value {{ font-size: 9pt; color: #000; }}
+.panel-fotografico {{
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}}
+.photo-grid {{
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 2mm;
+    flex: 1;
+    min-height: 0;
+    border: 1px solid #0066cc;
+    padding: 2mm;
+    overflow: hidden;
+}}
+.photo-cell {{
+    position: relative;
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    overflow: hidden;
+    min-height: 0;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}}
+.photo-cell img {{
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    object-position: center;
+    display: block;
+}}
+.photo-placeholder {{
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    font-size: 11px;
+    font-style: italic;
+}}
+.no-photos {{
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    color: #999;
+    font-style: italic;
+    border: 1px solid #0066cc;
+}}
+</style></head><body>
+<div class="page">
+    <header class="header">
+        <div class="header-logo">{logo_left_html}</div>
+        <div class="header-title"><h1>Panel Fotográfico Volanteo</h1></div>
+        <div class="header-logo">{logo_right_html}</div>
+    </header>
+    <div class="info-bar">
+        <div class="info-item"><div class="info-label">Centro de Servicios:</div><div class="info-value">{centro}</div></div>
+        <div class="info-item"><div class="info-label">NIS:</div><div class="info-value">{nis}</div></div>
+        <div class="info-item"><div class="info-label">Sector:</div><div class="info-value">{sector}</div></div>
+        <div class="info-item"><div class="info-label">Fecha de Corte:</div><div class="info-value">{fecha_corte}</div></div>
+    </div>
+    <section class="localizacion">
+        <div class="section-title">1.0 Localización</div>
+        <div class="loc-row full">
+            <div class="loc-field full">
+                <span class="loc-label">Direcciones Afectadas:</span>
+                <span class="loc-value">{direcciones_afectadas}</span>
+            </div>
+        </div>
+        <div class="loc-row">
+            <div class="loc-field"><span class="loc-label">Distrito:</span><span class="loc-value">{distrito}</span></div>
+            <div class="loc-field"><span class="loc-label">Codigo de Componente:</span><span class="loc-value">{codigo_componente}</span></div>
+            <div class="loc-field"><span class="loc-label">Estado:</span><span class="loc-value">{estado}</span></div>
+        </div>
+    </section>
+    <section class="panel-fotografico">
+        <div class="section-title">2.0 Panel Fotográfico</div>
+        {photos_html}
+    </section>
+</div>
+</body></html>"""
+
+
 # ── Motor PDF ─────────────────────────────────────────────────────────────────
 
 def _render_html_to_pdf(html_string: str, base_url: str, output_path: str) -> None:
@@ -256,13 +509,79 @@ async def _upload_to_b64(upload_file: UploadFile) -> Optional[str]:
 
 # Built-in layouts supported by this router's HTML generator.
 # The frontend uses this list to populate the sheet-template dropdown.
-_BUILTIN_LAYOUTS: list[str] = ["Grilla de Imágenes"]
+_GRID_TEMPLATE_NAME = "Grilla de Imágenes"
+_VOLANTEO_TEMPLATE_NAME = "Panel Fotográfico Volanteo"
+_BUILTIN_LAYOUTS: list[str] = [_GRID_TEMPLATE_NAME, _VOLANTEO_TEMPLATE_NAME]
+
+
+def _dedupe_preserve_order(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for value in values:
+        normalized = str(value or "").strip()
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        out.append(normalized)
+    return out
+
+
+def _list_independent_template_names() -> list[str]:
+    """Collect independent templates published via template-editor backend."""
+    try:
+        published = get_all_published_templates()
+    except Exception as exc:
+        print(f"[MultiSheet] Error listing independent templates: {exc}")
+        return []
+
+    names: list[str] = []
+    for item in published:
+        if isinstance(item, dict):
+            name = str(item.get("name") or "").strip()
+        else:
+            name = str(item or "").strip()
+        if name:
+            names.append(name)
+
+    independent_names = _dedupe_preserve_order(names)
+    return [name for name in independent_names if name not in _BUILTIN_LAYOUTS]
+
+
+def _build_template_sections() -> list[dict[str, Any]]:
+    independent = _list_independent_template_names()
+    return [
+        {
+            "id": "builtin",
+            "label": "Plantillas base",
+            "templates": list(_BUILTIN_LAYOUTS),
+        },
+        {
+            "id": "independent",
+            "label": "Plantillas independientes",
+            "templates": independent,
+        },
+    ]
+
+
+@router.get("/templates/independent")
+async def list_independent_templates() -> dict:
+    """Return only independent templates available for multi-sheet reports."""
+    templates = _list_independent_template_names()
+    return {"templates": templates, "count": len(templates)}
 
 
 @router.get("/templates")
 async def list_templates() -> dict:
-    """Return the available built-in sheet layouts."""
-    return {"templates": _BUILTIN_LAYOUTS}
+    """Return built-in + independent sheet templates grouped by section."""
+    sections = _build_template_sections()
+    flattened: list[str] = []
+    for section in sections:
+        flattened.extend(section.get("templates", []))
+
+    return {
+        "templates": _dedupe_preserve_order(flattened),
+        "sections": sections,
+    }
 
 
 @router.post("/generate-pdf")
@@ -336,17 +655,12 @@ async def generate_multi_sheet_pdf(
         for sheet in sorted_sheets:
             row_data: dict[str, Any] = sheet.get("rowData") or {}
             image_filenames: list[str] = sheet.get("imageFilenames") or []
+            template_name: str = str(sheet.get("templateName") or _GRID_TEMPLATE_NAME)
             use_alt_header: bool = bool(sheet.get("useAltHeader", False))
             title: str = sheet.get("title") or ""
             images_per_page: int = int(sheet.get("imagesPerPage", 4))
             page_num: int = int(sheet.get("pageNum", 1))
             total_pages: int = int(sheet.get("totalPages", 1))
-
-            # Encabezado
-            if use_alt_header:
-                header_html = _build_alt_header_html(alt_header, row_data)
-            else:
-                header_html = _build_main_header_html(header)
 
             # Resolver imágenes a data URIs
             images_b64: list[str] = []
@@ -358,14 +672,27 @@ async def generate_multi_sheet_pdf(
                         images_b64.append(data_uri)
 
             # Construir HTML de la página
-            page_html = _build_page_html(
-                header_html=header_html,
-                title=title,
-                image_data_uris=images_b64,
-                images_per_page=images_per_page,
-                page_num=page_num,
-                total_pages=total_pages,
-            )
+            if template_name == _VOLANTEO_TEMPLATE_NAME:
+                page_html = _build_volanteo_page_html(
+                    header_config=header,
+                    row_data=row_data,
+                    image_data_uris=images_b64,
+                )
+            else:
+                # Encabezado
+                if use_alt_header:
+                    header_html = _build_alt_header_html(alt_header, row_data)
+                else:
+                    header_html = _build_main_header_html(header)
+
+                page_html = _build_page_html(
+                    header_html=header_html,
+                    title=title,
+                    image_data_uris=images_b64,
+                    images_per_page=images_per_page,
+                    page_num=page_num,
+                    total_pages=total_pages,
+                )
 
             # Renderizar a PDF
             try:

@@ -19,6 +19,56 @@ def client():
         yield c
 
 
+def test_list_templates_returns_grouped_sections(client, monkeypatch):
+    monkeypatch.setattr(
+        multi_sheet_report,
+        "get_all_published_templates",
+        lambda: [
+            {"name": "Plantilla Independiente A"},
+            {"name": "Plantilla Independiente B"},
+            {"name": "Grilla de Imágenes"},
+            {"name": "Plantilla Independiente A"},
+        ],
+    )
+
+    response = client.get("/api/multi-sheet/templates")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["templates"] == [
+        "Grilla de Imágenes",
+        "Panel Fotográfico Volanteo",
+        "Plantilla Independiente A",
+        "Plantilla Independiente B",
+    ]
+
+    sections = {section["id"]: section for section in payload["sections"]}
+    assert sections["builtin"]["templates"] == [
+        "Grilla de Imágenes",
+        "Panel Fotográfico Volanteo",
+    ]
+    assert sections["independent"]["templates"] == [
+        "Plantilla Independiente A",
+        "Plantilla Independiente B",
+    ]
+
+
+def test_list_independent_templates_handles_service_error(client, monkeypatch):
+    def _raise_error():
+        raise RuntimeError("service down")
+
+    monkeypatch.setattr(
+        multi_sheet_report,
+        "get_all_published_templates",
+        _raise_error,
+    )
+
+    response = client.get("/api/multi-sheet/templates/independent")
+
+    assert response.status_code == 200
+    assert response.json() == {"templates": [], "count": 0}
+
+
 def _make_blank_pdf() -> bytes:
     from pypdf import PdfWriter  # pyre-ignore[21]
 
@@ -28,6 +78,66 @@ def _make_blank_pdf() -> bytes:
     writer.write(buf)
     buf.seek(0)
     return buf.read()
+
+
+def test_generate_multi_sheet_pdf_volanteo_template_layout(client, monkeypatch):
+    captured_html = []
+
+    def fake_render_html_to_pdf(html_string: str, _base_url: str, output_path: str) -> None:
+        captured_html.append(html_string)
+        with open(output_path, "wb") as fout:
+            fout.write(_make_blank_pdf())
+
+    monkeypatch.setattr(multi_sheet_report, "_render_html_to_pdf", fake_render_html_to_pdf)
+
+    response = client.post(
+        "/api/multi-sheet/generate-pdf",
+        data={
+            "sheets_config": json.dumps(
+                [
+                    {
+                        "order": 0,
+                        "title": "Hoja Volanteo",
+                        "templateName": "Panel Fotográfico Volanteo",
+                        "useAltHeader": False,
+                        "rowData": {
+                            "CENTRO": "CS Norte",
+                            "NIS": "12345",
+                            "SECTOR": "S1",
+                            "FECHA CORTE": "2026-03-04",
+                            "DIRECCIONES AFECTADAS": "Av. Lima 123",
+                            "DISTRITO": "San Miguel",
+                            "CODIGO COMPONENTE": "CC-100",
+                            "ESTADO": "Ejecutado",
+                        },
+                        "imageFilenames": [],
+                        "imagesPerPage": 4,
+                        "pageNum": 1,
+                        "totalPages": 1,
+                    }
+                ]
+            ),
+            "header_config": json.dumps(
+                {
+                    "title": "Informe de prueba",
+                    "subtitle": "",
+                    "logoLeft": None,
+                    "logoRight": None,
+                }
+            ),
+            "alt_header_config": json.dumps(
+                {"idField": "", "dateField": "", "extraText": "", "height": "compact"}
+            ),
+        },
+    )
+
+    assert response.status_code == 200
+    assert captured_html
+    html = captured_html[0]
+    assert "Panel Fotográfico Volanteo" in html
+    assert "Centro de Servicios:" in html
+    assert "CS Norte" in html
+    assert "CC-100" in html
 
 
 def test_generate_multi_sheet_pdf_uses_uploaded_logo_files(client, monkeypatch):
