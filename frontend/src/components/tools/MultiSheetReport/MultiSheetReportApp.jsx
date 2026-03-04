@@ -1147,7 +1147,7 @@ export default function MultiSheetReportApp() {
                                             </button>
                                         </div>
 
-                                        {/* Selector de plantilla */}
+                                        {/* Selector de plantilla: solo Grilla de Imágenes + plantillas locales (.mtemplates/) */}
                                         <select
                                             className={`w-full bg-neutral-800 border rounded px-2 py-1 text-xs text-white outline-none transition-colors
                                                 ${sheet.templateName ? 'border-emerald-600' : 'border-neutral-700'}`}
@@ -1155,18 +1155,22 @@ export default function MultiSheetReportApp() {
                                             onChange={e => updateSheet(sheet.id, { templateName: e.target.value || null })}
                                         >
                                             <option value="">-- Asignar Plantilla --</option>
-                                            {templateSections.length > 0
-                                                ? templateSections.map(section => (
-                                                    <optgroup key={section.id} label={section.label}>
-                                                        {section.templates.map(t => (
-                                                            <option key={`${section.id}-${t}`} value={t}>{t}</option>
+                                            {/* Grilla de Imágenes siempre disponible */}
+                                            <optgroup label="Plantillas base">
+                                                <option value={GRID_TEMPLATE_NAME}>{GRID_TEMPLATE_NAME}</option>
+                                            </optgroup>
+                                            {/* Plantillas locales (.html en multi_sheet_templates/) */}
+                                            {(() => {
+                                                const localSection = templateSections.find(s => s.id === 'local');
+                                                if (!localSection || localSection.templates.length === 0) return null;
+                                                return (
+                                                    <optgroup label="Plantillas locales">
+                                                        {localSection.templates.map(t => (
+                                                            <option key={t} value={t}>{t}</option>
                                                         ))}
                                                     </optgroup>
-                                                ))
-                                                : availableTemplates.map(t => (
-                                                    <option key={t} value={t}>{t}</option>
-                                                ))
-                                            }
+                                                );
+                                            })()}
                                         </select>
 
                                         {/* Selector de tamaño de grilla (solo si es "Grilla de Imágenes") */}
