@@ -4,16 +4,16 @@ import json
 import os
 import sys
 
-import pytest  # pyre-ignore[21]
-from fastapi.testclient import TestClient  # pyre-ignore[21]
+import pytest
+from fastapi.testclient import TestClient
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from main import app  # pyre-ignore[21]
+from main import app
 try:
-    from msheets import multi_sheet_report  # pyre-ignore[21]
+    from msheets import multi_sheet_report
 except Exception:
-    from routers import multi_sheet_report  # pyre-ignore[21]
+    from routers import multi_sheet_report
 
 
 @pytest.fixture()
@@ -79,7 +79,7 @@ def test_list_independent_templates_handles_service_error(client, monkeypatch):
 
 
 def _make_blank_pdf() -> bytes:
-    from pypdf import PdfWriter  # pyre-ignore[21]
+    from pypdf import PdfWriter
 
     buf = io.BytesIO()
     writer = PdfWriter()

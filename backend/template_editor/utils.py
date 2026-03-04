@@ -65,7 +65,7 @@ def fetch_remote_binary(url: str, timeout: float = 10.0, max_redirects: int = 3)
         return None
 
     try:
-        import httpx  # pyre-ignore
+        import httpx
 
         current = url.strip()
         for _ in range(max_redirects + 1):

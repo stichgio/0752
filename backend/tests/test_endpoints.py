@@ -5,21 +5,21 @@ import json
 import io
 import os
 import sys
-import pytest  # pyre-ignore[21]
+import pytest
 from docx import Document  # type: ignore
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from fastapi.testclient import TestClient  # pyre-ignore[21]
-from main import app  # pyre-ignore[21]
-from ocr_tools import router as ocr_router  # pyre-ignore[21]
+from fastapi.testclient import TestClient
+from main import app
+from ocr_tools import router as ocr_router
 
 client = TestClient(app)
 
 
 def _make_blank_pdf(pages=1) -> bytes:
     """Create a minimal valid PDF with N blank pages."""
-    from pypdf import PdfWriter  # pyre-ignore[21]
+    from pypdf import PdfWriter
     buf = io.BytesIO()
     w = PdfWriter()
     for _ in range(pages):
@@ -71,7 +71,7 @@ class TestMergePDFs:
 
         assert response.status_code == 200
 
-        from pypdf import PdfReader  # pyre-ignore[21]
+        from pypdf import PdfReader
         merged = PdfReader(io.BytesIO(response.content))
         assert len(merged.pages) == 3
 

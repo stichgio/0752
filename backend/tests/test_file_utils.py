@@ -3,7 +3,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from utils.file_utils import build_safe_upload_path, sanitize_upload_filename  # pyre-ignore[21]
+from utils.file_utils import build_safe_upload_path, sanitize_upload_filename
 
 
 def test_sanitize_upload_filename_strips_traversal_segments_and_unsafe_chars():

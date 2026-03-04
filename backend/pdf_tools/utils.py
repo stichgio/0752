@@ -9,8 +9,8 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from pypdf import PdfReader  # pyre-ignore[21]
-from pypdf.errors import PdfReadError  # pyre-ignore[21]
+from pypdf import PdfReader
+from pypdf.errors import PdfReadError
 
 # Configuración de logging
 logger = logging.getLogger(__name__)

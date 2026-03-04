@@ -1,8 +1,8 @@
 """
 Endpoints API REST para Informes Técnicos
 """
-from fastapi import APIRouter, UploadFile, File, HTTPException, Form, BackgroundTasks  # pyre-ignore[21]
-from fastapi.responses import FileResponse, StreamingResponse  # pyre-ignore[21]
+from fastapi import APIRouter, UploadFile, File, HTTPException, Form, BackgroundTasks
+from fastapi.responses import FileResponse, StreamingResponse
 from typing import Optional, List, Dict, Any, cast
 import io
 import csv
@@ -15,14 +15,14 @@ from datetime import datetime
 
 # Para XLSX
 try:
-    import openpyxl  # pyre-ignore[21]
+    import openpyxl
     XLSX_SUPPORTED = True
 except ImportError:
     XLSX_SUPPORTED = False
     print("[TechReports] openpyxl not installed - XLSX support disabled")
 
-from .database import db  # pyre-ignore[21]
-from .models import TechnicalReport  # pyre-ignore[21]
+from .database import db
+from .models import TechnicalReport
 
 router = APIRouter(prefix="/api/technical-reports", tags=["technical-reports"])
 
@@ -515,10 +515,10 @@ def _humanize_variable_label(key: str) -> str:
         return VARIABLE_LABEL_OVERRIDES[key]
 
     if key.startswith('obs_'):
-        return f"Obs. {_humanize_variable_label(key[4:])}"  # pyre-ignore[6, 16]
+        return f"Obs. {_humanize_variable_label(key[4:])}"
 
     if key.startswith('sug_'):
-        return f"Sug. {_humanize_variable_label(key[4:])}"  # pyre-ignore[6, 16]
+        return f"Sug. {_humanize_variable_label(key[4:])}"
 
     words = []
     for token in key.split('_'):
@@ -674,7 +674,7 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
         header_row_index: int = -1
 
         # 2. Buscar fila de headers (Escaneo profundo primeras 30 filas)
-        for idx, row in enumerate(all_rows[:30]):  # pyre-ignore[16]
+        for idx, row in enumerate(all_rows[:30]):
             if not row: continue
             
             # Convertir fila a versiones normalizadas
@@ -686,7 +686,7 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
             for val in row_normalized:
                 for key in COLUMN_MAPPING.keys():
                     if key in val:  # 'nroinforme' in 'nroinformexxx'
-                        matches += 1  # pyre-ignore[58]
+                        matches += 1
                         break
                         
             # Si tiene coincidencias, verificamos con más detalle
@@ -726,12 +726,12 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
                             else:
                                 # Fallback: usar el valor original limpio como clave (para columnas custom que coincidan directo con modelo)
                                 # Ej: si la columna se llama "valvulas_conduccion_2" directamente
-                                clean_prop = original_val.lower().replace(' ', '_').replace('.', '')  # pyre-ignore[16]
+                                clean_prop = original_val.lower().replace(' ', '_').replace('.', '')
                                 found_key = clean_prop
 
-                    headers.append(str(found_key))  # pyre-ignore[6]
+                    headers.append(str(found_key))
 
-                print(f"[XLSX] Headers mapeados (primeros 5): {headers[:5]}")  # pyre-ignore[16]
+                print(f"[XLSX] Headers mapeados (primeros 5): {headers[:5]}")
                 break
         
         if header_row_index == -1:
@@ -739,7 +739,7 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
 
         # 3. Extraer Datos
         parsed_rows = []
-        for row in all_rows[header_row_index + 1:]:  # pyre-ignore[16]
+        for row in all_rows[header_row_index + 1:]:
             if not any(row): continue # Saltar filas totalmente vacias
             
             row_dict = {}
@@ -919,7 +919,7 @@ def transform_flat_to_nested(flat_data: Dict[str, Any]) -> Dict[str, Any]:
         for d in diametros_validos:
             key = f'valvulas_{tipo_valvula}_{d}'
             if key in flat_data:
-                valvulas[dict_name][d] = safe_int(flat_data[key])  # pyre-ignore[6, 7, 16, 29]
+                valvulas[dict_name][d] = safe_int(flat_data[key])
     
     result['valvulas'] = valvulas
     
@@ -950,7 +950,7 @@ def transform_flat_to_nested(flat_data: Dict[str, Any]) -> Dict[str, Any]:
         for d in diametros_canastillas:
             key = f'canastillas_{tipo_can}_{d}'
             if key in flat_data:
-                canastillas[tipo_can][d] = safe_int(flat_data[key])  # pyre-ignore[6, 7, 16, 29]
+                canastillas[tipo_can][d] = safe_int(flat_data[key])
     
     result['canastillas'] = canastillas
     
@@ -995,19 +995,19 @@ def transform_flat_to_nested(flat_data: Dict[str, Any]) -> Dict[str, Any]:
             inspeccion[obs_field] = safe_str(flat_data.get(obs_key, ''))
             inspeccion[sug_field] = safe_str(flat_data.get(sug_key, ''))
     
-    result['inspeccion'] = inspeccion  # pyre-ignore[6, 7, 26, 29]
+    result['inspeccion'] = inspeccion
 
     # =====================
     # 7. CAMPOS GENERALES
     # =====================
-    result['observaciones'] = safe_str(flat_data.get('observaciones', ''))  # pyre-ignore[6, 7, 26, 29]
-    result['sugerencias'] = safe_str(flat_data.get('sugerencias', ''))  # pyre-ignore[6, 7, 26, 29]
-    result['status'] = 'draft'  # pyre-ignore[6, 7, 26, 29]
-    result['last_modified'] = datetime.now().isoformat()  # pyre-ignore[6, 7, 26, 29]
+    result['observaciones'] = safe_str(flat_data.get('observaciones', ''))
+    result['sugerencias'] = safe_str(flat_data.get('sugerencias', ''))
+    result['status'] = 'draft'
+    result['last_modified'] = datetime.now().isoformat()
 
     # Generar ID único
-    informe_id = result['metadata']['informe_id']  # pyre-ignore[6, 7, 16, 29]
-    result['id'] = f"report_{informe_id}" if int(informe_id) > 0 else f"report_{datetime.now().strftime('%Y%m%d%H%M%S')}"  # pyre-ignore[6, 7, 26, 29]
+    informe_id = result['metadata']['informe_id']
+    result['id'] = f"report_{informe_id}" if int(informe_id) > 0 else f"report_{datetime.now().strftime('%Y%m%d%H%M%S')}"
     
     # =====================
     # 8. CAMPOS EXTRA (para report_volanteo y otros templates)
@@ -1194,7 +1194,7 @@ async def generate_consolidated_pdf(
     """
     import tempfile
     import base64
-    from jinja2 import Environment, FileSystemLoader  # pyre-ignore[21]
+    from jinja2 import Environment, FileSystemLoader
 
     try:
         # Obtener reportes
@@ -1233,8 +1233,8 @@ async def generate_consolidated_pdf(
         # =====================================================================
         # STREAMING OPTIMIZADO: Generar PDFs en lotes y merge incremental
         # =====================================================================
-        from weasyprint import HTML  # pyre-ignore[21]
-        from pypdf import PdfWriter  # pyre-ignore[21]
+        from weasyprint import HTML
+        from pypdf import PdfWriter
         from concurrent.futures import ThreadPoolExecutor
         import gc
 
@@ -1263,7 +1263,7 @@ async def generate_consolidated_pdf(
         # Generar PDFs en lotes paralelos
         for batch_start in range(0, len(all_reports), PDF_BATCH_SIZE):
             batch_end = min(batch_start + PDF_BATCH_SIZE, len(all_reports))
-            batch_reports = all_reports[batch_start:batch_end]  # pyre-ignore[6, 16, 29]
+            batch_reports = all_reports[batch_start:batch_end]
 
             # Procesar lote en paralelo
             with ThreadPoolExecutor(max_workers=PDF_BATCH_SIZE) as executor:
@@ -1310,7 +1310,7 @@ async def generate_consolidated_pdf(
         # =====================================================================
         # Compresión Ghostscript (opcional)
         # =====================================================================
-        from report_service import GHOSTSCRIPT_ENABLED, GHOSTSCRIPT_QUALITY, _compress_pdf_with_ghostscript  # pyre-ignore[21]
+        from report_service import GHOSTSCRIPT_ENABLED, GHOSTSCRIPT_QUALITY, _compress_pdf_with_ghostscript
 
         if GHOSTSCRIPT_ENABLED and len(all_reports) > 1:
             print(f"[PDF Consolidado] Aplicando compresión Ghostscript...")
@@ -1373,11 +1373,11 @@ async def generate_consolidated_pdf_progress(
 
         async def run_generation():
             try:
-                from jinja2 import Environment, FileSystemLoader  # pyre-ignore[21]
-                from weasyprint import HTML  # pyre-ignore[21]
-                from pypdf import PdfWriter  # pyre-ignore[21]
+                from jinja2 import Environment, FileSystemLoader
+                from weasyprint import HTML
+                from pypdf import PdfWriter
                 from concurrent.futures import ThreadPoolExecutor
-                from report_service import GHOSTSCRIPT_ENABLED, GHOSTSCRIPT_QUALITY, _compress_pdf_with_ghostscript  # pyre-ignore[21]
+                from report_service import GHOSTSCRIPT_ENABLED, GHOSTSCRIPT_QUALITY, _compress_pdf_with_ghostscript
                 import gc
 
                 all_reports = db.get_all_reports()
@@ -1425,7 +1425,7 @@ async def generate_consolidated_pdf_progress(
 
                 for batch_start in range(0, total, PDF_BATCH_SIZE):
                     batch_end = min(batch_start + PDF_BATCH_SIZE, total)
-                    batch_reports = all_reports[batch_start:batch_end]  # pyre-ignore[6]
+                    batch_reports = all_reports[batch_start:batch_end]
                     with ThreadPoolExecutor(max_workers=PDF_BATCH_SIZE) as executor:
                         results = list(executor.map(render_single_pdf, [r.model_dump() for r in batch_reports]))
                         temp_pdf_files.extend([p for p in results if p])
@@ -1437,7 +1437,7 @@ async def generate_consolidated_pdf_progress(
 
                 await on_progress("merging", 0, len(temp_pdf_files), "")
 
-                filename = f"pdf_{uuid.uuid4().hex[:12]}.pdf"  # pyre-ignore[6]
+                filename = f"pdf_{uuid.uuid4().hex[:12]}.pdf"
                 output_path = os.path.join(tempfile.gettempdir(), filename)
 
                 pdf_writer = PdfWriter()

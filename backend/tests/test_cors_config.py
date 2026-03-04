@@ -3,7 +3,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from main import _get_cors_allowed_origins  # pyre-ignore[21]
+from main import _get_cors_allowed_origins
 
 
 def _clear_cors_env(monkeypatch):

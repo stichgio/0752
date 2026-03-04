@@ -617,6 +617,7 @@ class ReportService:
                 row_data = report.get("data", {})
                 files = report.get("files", [])
 
+                # Procesar imágenes
                 images, layout_mode, img_count = await self._process_files_serial(
                     files,
                     max_size=MAX_IMAGE_SIZE,

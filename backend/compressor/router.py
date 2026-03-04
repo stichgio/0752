@@ -93,7 +93,7 @@ def is_ghostscript_available() -> tuple[bool, Optional[str]]:
 
 def validate_pdf_signature(content: bytes) -> bool:
     """Validate PDF magic number (%PDF-)."""
-    # pyre-ignore[16]: Allow byte array slicing
+    # Allow byte array slicing
     return len(content) >= 5 and content[:5] == b'%PDF-'
 
 
@@ -125,7 +125,7 @@ def analyze_pdf_content(input_path: str) -> dict:
                     try:
                         obj = xobj_dict[name].get_object()
                         if obj.get("/Subtype") == "/Image":
-                            # pyre-ignore[58]: Allow basic math
+                            # Allow basic math
                             image_count += 1
                     except Exception:
                         continue
@@ -530,7 +530,7 @@ async def _process_single_pdf(
         error_msg = str(e)
         logger.error(f"Error compressing {filename}: {e}")
 
-    # pyre-ignore[6]: Subtraction and rounding issue
+    # Subtraction and rounding issue
     processing_time = round(time.monotonic() - t_start, 2)
     compressed_size = len(compressed_content) if compressed_content else original_size
 
@@ -650,7 +650,7 @@ async def compress_single_pdf(
                 f.write(original_content)
 
             ok, method, failure_reason = _compress_pdf(input_path, output_path, pdf_quality, original_size)
-            # pyre-ignore[6]: round time issue
+            # round time issue
             processing_time = round(time.monotonic() - t_start, 2)
 
             # Encrypted PDF — return original with informative header

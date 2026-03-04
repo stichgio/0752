@@ -27,8 +27,8 @@ from typing import Any, Optional
 
 logger = logging.getLogger("multi_sheet_report")
 
-from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile  # pyre-ignore
-from fastapi.responses import StreamingResponse, HTMLResponse  # pyre-ignore
+from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile
+from fastapi.responses import StreamingResponse, HTMLResponse
 
 try:
     from template_editor.service import (  # type: ignore
@@ -183,7 +183,7 @@ def _build_image_grid_html(image_data_uris: list[str], images_per_page: int) -> 
         for c in range(cols):
             img_idx = r * cols + c
             if img_idx < n:
-                uri = image_data_uris[img_idx]  # pyre-ignore
+                uri = image_data_uris[img_idx]
                 cells.append(
                     f'<td style="width:{cell_width_pct:.1f}%;text-align:center;'
                     f'vertical-align:middle;padding:2px;height:{row_height_mm:.1f}mm;">'
@@ -282,7 +282,7 @@ def _build_volanteo_page_html(
     estado = _safe_text(row_data.get("ESTADO"))
 
     image_cells: list[str] = []
-    for idx, uri in enumerate(image_data_uris[:4]):  # pyre-ignore
+    for idx, uri in enumerate(image_data_uris[:4]):
         safe_uri = escape(str(uri), quote=True)
         image_cells.append(
             '<div class="photo-cell">'
@@ -556,7 +556,7 @@ async def _render_html_to_pdf_async(html_string: str, base_url: str, output_path
     loop = asyncio.get_running_loop()
     await loop.run_in_executor(
         _pdf_executor,
-        functools.partial(_render_html_to_pdf, html_string, base_url, output_path),  # pyre-ignore
+        functools.partial(_render_html_to_pdf, html_string, base_url, output_path),
     )
 
 
@@ -930,7 +930,7 @@ async def generate_multi_sheet_pdf(
             # Dividir en grupos de images_per_page → N páginas con los mismos datos de fila
             if image_filenames:
                 image_groups: list[list[str]] = [
-                    image_filenames[i : i + images_per_page]  # pyre-ignore
+                    image_filenames[i : i + images_per_page]
                     for i in range(0, len(image_filenames), images_per_page)
                 ]
             else:

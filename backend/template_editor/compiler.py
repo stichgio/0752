@@ -12,8 +12,8 @@ import re
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
-from .models import EditorBlock, TemplateJson  # pyre-ignore[21]
-from .utils import fetch_remote_binary, url_to_base64  # pyre-ignore[21]
+from .models import EditorBlock, TemplateJson
+from .utils import fetch_remote_binary, url_to_base64
 
 # ─── CSS that matches the existing hand-crafted templates ───
 
@@ -253,7 +253,7 @@ def _compile_data_grid(block: EditorBlock) -> str:
                 current_row = []
                 col_pos = 0
             # Span field gets full row with colspan
-            remaining_val_cols = pairs_per_row * 2 - 1  # pyre-ignore[6]
+            remaining_val_cols = pairs_per_row * 2 - 1
             current_row.append(
                 f'<td class="lbl">{label}:</td>'
                 f'<td class="val" colspan="{remaining_val_cols}">'
@@ -648,32 +648,32 @@ def _compile_table(block: EditorBlock) -> str:
         return matrix
 
     has_table_cells_shape = any(
-        key in table_meta for key in ("rowCount", "colCount", "data", "colWidths", "rowHeights")  # pyre-ignore[6]
+        key in table_meta for key in ("rowCount", "colCount", "data", "colWidths", "rowHeights")
     ) or any(
         key in metadata for key in ("rowCount", "colCount", "data", "colWidths", "rowHeights")
     )
 
     if has_table_cells_shape:
-        table_data = _to_string_matrix(table_meta.get("data", metadata.get("data", [])))  # pyre-ignore[16]
+        table_data = _to_string_matrix(table_meta.get("data", metadata.get("data", [])))
 
         inferred_row_count = len(table_data) if table_data else 2
         inferred_col_count = max((len(row) for row in table_data), default=0) or 2
 
         row_count = _to_positive_int(
-            table_meta.get("rowCount", metadata.get("rowCount")),  # pyre-ignore[16]
+            table_meta.get("rowCount", metadata.get("rowCount")),
             inferred_row_count,
         )
         col_count = _to_positive_int(
-            table_meta.get("colCount", metadata.get("colCount")),  # pyre-ignore[16]
+            table_meta.get("colCount", metadata.get("colCount")),
             inferred_col_count,
         )
-        border_color = _escape_html(table_meta.get("borderColor") or metadata.get("borderColor") or "#cbd5e1")  # pyre-ignore[16]
+        border_color = _escape_html(table_meta.get("borderColor") or metadata.get("borderColor") or "#cbd5e1")
         col_widths = _normalize_percentages(
-            table_meta.get("colWidths", metadata.get("colWidths", [])),  # pyre-ignore[16]
+            table_meta.get("colWidths", metadata.get("colWidths", [])),
             col_count,
         )
         row_heights = _normalize_percentages(
-            table_meta.get("rowHeights", metadata.get("rowHeights", [])),  # pyre-ignore[16]
+            table_meta.get("rowHeights", metadata.get("rowHeights", [])),
             row_count,
         )
 
@@ -688,7 +688,7 @@ def _compile_table(block: EditorBlock) -> str:
             row_height = row_heights[r] if r < len(row_heights) else (100.0 / row_count if row_count > 0 else 100.0)
             cells: List[str] = []
             for c in range(col_count):
-                text = table_data[r][c] if r < len(table_data) and c < len(table_data[r]) else ""  # pyre-ignore[6]
+                text = table_data[r][c] if r < len(table_data) and c < len(table_data[r]) else ""
                 cells.append(
                     f'<td style="border: 1px solid {border_color}; padding: 2px;">'
                     f'{_escape_html(text)}</td>'
@@ -703,10 +703,10 @@ def _compile_table(block: EditorBlock) -> str:
         )
 
         if layout:
-            x = _to_float(layout.get("x"), 0.0)  # pyre-ignore[16]
-            y = _to_float(layout.get("y"), 0.0)  # pyre-ignore[16]
-            w = _to_float(layout.get("width"), 100.0)  # pyre-ignore[16]
-            h = _to_float(layout.get("height"), 30.0)  # pyre-ignore[16]
+            x = _to_float(layout.get("x"), 0.0)
+            y = _to_float(layout.get("y"), 0.0)
+            w = _to_float(layout.get("width"), 100.0)
+            h = _to_float(layout.get("height"), 30.0)
             return (
                 '<div class="element table" '
                 f'style="position: absolute; left: {x}mm; top: {y}mm; width: {w}mm; height: {h}mm;">'
@@ -726,7 +726,7 @@ def _compile_table(block: EditorBlock) -> str:
     body_rows = []
     for row in rows:
         safe_row = row if isinstance(row, list) else []
-        cells = "".join(f"<td>{_escape_html('' if c is None else c)}</td>" for c in safe_row)  # pyre-ignore[6]
+        cells = "".join(f"<td>{_escape_html('' if c is None else c)}</td>" for c in safe_row)
         body_rows.append(f"<tr>{cells}</tr>")
 
     return (
@@ -1254,11 +1254,11 @@ def _escape_html_preserve_jinja(text: str) -> str:
     result: List[str] = []
     pos = 0
     for match in re.finditer(r'\{\{[^}]*\}\}', text):
-        before = text[pos:match.start()]  # pyre-ignore[6]
+        before = text[pos:match.start()]
         result.append(_escape_html(before))
         result.append(match.group())
         pos = match.end()
-    result.append(_escape_html(text[pos:]))  # pyre-ignore[6]
+    result.append(_escape_html(text[pos:]))
     return ''.join(result)
 
 
@@ -1390,9 +1390,9 @@ def _build_canvas_photo_grid(
     )
 
     for idx in range(count):
-        col = idx % cols  # pyre-ignore[6]
-        row_idx = idx // cols  # pyre-ignore[6]
-        is_last_odd = (idx == count - 1 and count % 2 == 1 and cols == 2)  # pyre-ignore[6]
+        col = idx % cols
+        row_idx = idx // cols
+        is_last_odd = (idx == count - 1 and count % 2 == 1 and cols == 2)
 
         if is_last_odd:
             if odd_position == "center":
@@ -1540,7 +1540,7 @@ def _canvas_element_content(block: EditorBlock) -> Optional[str]:
         el_w = _to_float(layout.get("width"), 190.0)
         el_h = _to_float(layout.get("height"), 215.0) - title_offset
         grid_html = _build_canvas_photo_grid(
-            count, odd_position, labels, show_labels, el_w, el_h,  # pyre-ignore[6]
+            count, odd_position, labels, show_labels, el_w, el_h,
         )
         return title_html + grid_html
 
@@ -1548,21 +1548,21 @@ def _canvas_element_content(block: EditorBlock) -> Optional[str]:
         table_meta = meta.get("tableData") if isinstance(meta.get("tableData"), dict) else {}
         # Merge top-level metadata keys used by table data
         for key in ("rowCount", "colCount", "data", "colWidths", "rowHeights", "borderColor"):
-            if key not in table_meta and key in meta:  # pyre-ignore[6]
-                table_meta[key] = meta[key]  # pyre-ignore[6]
+            if key not in table_meta and key in meta:
+                table_meta[key] = meta[key]
 
-        data_matrix = table_meta.get("data", [])  # pyre-ignore[16]
+        data_matrix = table_meta.get("data", [])
         if not isinstance(data_matrix, list):
             data_matrix = []
 
         inferred_rows = len(data_matrix) if data_matrix else 2
         inferred_cols = max((len(r) for r in data_matrix if isinstance(r, list)), default=0) or 2
 
-        row_count = int(table_meta.get("rowCount", inferred_rows) or inferred_rows)  # pyre-ignore[6, 16]
-        col_count = int(table_meta.get("colCount", inferred_cols) or inferred_cols)  # pyre-ignore[6, 16]
-        border_color = _escape_html(str(table_meta.get("borderColor", "#cbd5e1") or "#cbd5e1"))  # pyre-ignore[16]
-        col_widths = _normalize_percentages(table_meta.get("colWidths", []), col_count)  # pyre-ignore[16]
-        row_heights = _normalize_percentages(table_meta.get("rowHeights", []), row_count)  # pyre-ignore[16]
+        row_count = int(table_meta.get("rowCount", inferred_rows) or inferred_rows)
+        col_count = int(table_meta.get("colCount", inferred_cols) or inferred_cols)
+        border_color = _escape_html(str(table_meta.get("borderColor", "#cbd5e1") or "#cbd5e1"))
+        col_widths = _normalize_percentages(table_meta.get("colWidths", []), col_count)
+        row_heights = _normalize_percentages(table_meta.get("rowHeights", []), row_count)
 
         table_html = (
             '<table style="width: 100%; height: 100%; border-collapse: collapse; table-layout: fixed;">'
@@ -1577,8 +1577,8 @@ def _canvas_element_content(block: EditorBlock) -> Optional[str]:
             table_html += f'<tr style="height: {rh:.4f}%;">'
             for c in range(col_count):
                 cell = ""
-                if r < len(data_matrix) and isinstance(data_matrix[r], list) and c < len(data_matrix[r]):  # pyre-ignore[6]
-                    cell = data_matrix[r][c] if data_matrix[r][c] is not None else ""  # pyre-ignore[6]
+                if r < len(data_matrix) and isinstance(data_matrix[r], list) and c < len(data_matrix[r]):
+                    cell = data_matrix[r][c] if data_matrix[r][c] is not None else ""
                 cell_html = _escape_html_preserve_jinja(str(cell)).replace("\n", "<br>")
                 table_html += (
                     f'<td style="border: 1px solid {border_color}; '
@@ -1761,7 +1761,7 @@ def _local_image_to_base64(path: str) -> Optional[str]:
         return None
 
     if source.lower().startswith("file://"):
-        source = source[7:]  # pyre-ignore[6]
+        source = source[7:]
 
     if not os.path.isfile(source):
         return None
@@ -1933,8 +1933,8 @@ def compile_canvas_to_html(canvas_doc: dict, variables: Optional[dict] = None) -
             images = _extract_canvas_images(variables)
             cells_html: List[str] = []
             for idx in range(total_cells):
-                col = idx % cols  # pyre-ignore[6]
-                row = idx // cols  # pyre-ignore[6]
+                col = idx % cols
+                row = idx // cols
                 cell_x = gap + col * (cell_w + gap)
                 cell_y = gap + row * (cell_h + gap)
                 label = labels[idx]
@@ -2004,7 +2004,7 @@ def compile_canvas_to_html(canvas_doc: dict, variables: Optional[dict] = None) -
             safe_img = el_for_logo.get("imageUrl", "")
             if safe_img and not safe_img.startswith('data:'):
                 try:
-                    from .utils import url_to_base64  # pyre-ignore[21]
+                    from .utils import url_to_base64
                     safe_img = url_to_base64(safe_img)
                 except Exception:
                     pass
@@ -2015,7 +2015,7 @@ def compile_canvas_to_html(canvas_doc: dict, variables: Optional[dict] = None) -
                 # If variables were provided but the logo var is empty, it falls back to safe_img
                 if src and not src.startswith('data:'):
                     try:
-                        from .utils import url_to_base64  # pyre-ignore[21]
+                        from .utils import url_to_base64
                         src = url_to_base64(src)
                     except Exception:
                         pass
@@ -2059,7 +2059,7 @@ def compile_canvas_to_html(canvas_doc: dict, variables: Optional[dict] = None) -
             img_url = el.get("imageUrl", meta.get("imageUrl", ""))
             if img_url:
                 try:
-                    from .utils import url_to_base64  # pyre-ignore[21]
+                    from .utils import url_to_base64
                     safe_url = url_to_base64(img_url)
                     img_style_local = f"display: block; width: 100%; height: 100%; max-width: {w}mm; max-height: {h}mm; object-fit: contain;"
                     content_html = f'<img src="{safe_url}" style="{img_style_local}">'
@@ -2133,7 +2133,7 @@ def compile_canvas_to_html(canvas_doc: dict, variables: Optional[dict] = None) -
 
     # Procesar plantillas dinamicas de Jinja si las variables estan present
     if variables:
-        from jinja2.sandbox import SandboxedEnvironment  # pyre-ignore[21]
+        from jinja2.sandbox import SandboxedEnvironment
         try:
             html = SandboxedEnvironment(autoescape=True).from_string(html).render(**variables)
         except Exception:
@@ -2150,7 +2150,7 @@ def compile_canvas_to_html(canvas_doc: dict, variables: Optional[dict] = None) -
         if url.startswith('data:'):
             return match.group(0)
         try:
-            from .utils import url_to_base64  # pyre-ignore[21]
+            from .utils import url_to_base64
             return f'src="{url_to_base64(url)}"'
         except:
             return match.group(0)

@@ -6,18 +6,18 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional, Tuple
 from uuid import uuid4
 
-from pydantic import ValidationError  # pyre-ignore[21]
+from pydantic import ValidationError
 
-from .compiler import _compile_canvas_template, _has_canvas_layout, compileTemplateJsonToJinja  # pyre-ignore[21]
-from .models import (  # pyre-ignore[21]
+from .compiler import _compile_canvas_template, _has_canvas_layout, compileTemplateJsonToJinja
+from .models import (
     TemplateEditorRecord,
     TemplateJson,
     TemplateVersion,
     UserRole,
     ValidationResult,
 )
-from .supabase_client import SupabaseTemplateClient, is_supabase_enabled  # pyre-ignore[21]
-from .validators import sanitizeHtml, validateProtectedBlocks, validateTemplateStructure, validateVariables  # pyre-ignore[21]
+from .supabase_client import SupabaseTemplateClient, is_supabase_enabled
+from .validators import sanitizeHtml, validateProtectedBlocks, validateTemplateStructure, validateVariables
 
 ALLOWED_VARIABLES: Dict[str, Dict[str, Dict[str, bool]]] = {
     "technical_report": {
@@ -592,9 +592,9 @@ class SupabaseTemplateStore:
         record = self.get_template(template_id)
         if not record or not record.versions:
             return None
-        current = next((v for v in record.versions if int(v.version) == int(record.currentVersion)), None)  # pyre-ignore[16]
+        current = next((v for v in record.versions if int(v.version) == int(record.currentVersion)), None)
         if not current:
-            current = record.versions[-1]  # pyre-ignore[16]
+            current = record.versions[-1]
 
         # For canvas templates, always re-compile from templateJson to ensure
         # the output matches the frontend's exportToJinja2().  This fixes
@@ -609,7 +609,7 @@ class SupabaseTemplateStore:
 
         if current.compiledJinja:
             return current.compiledJinja
-        return record.versions[-1].compiledJinja  # pyre-ignore[16]
+        return record.versions[-1].compiledJinja
 
     def rollback_template(self, template_id: str, target_version: Optional[int], author: str) -> TemplateEditorRecord:
         row = self.client.get_template(template_id)
@@ -674,11 +674,11 @@ class SupabaseTemplateStore:
         fallback_versions = self.client.list_template_versions(template_id)
         fallback_versions.sort(key=lambda item: int(item.get("version_number") or 0), reverse=True)
         for version_row in fallback_versions:
-            _, compiled = self._load_version_assets(version_row, row.get("report_type"))  # pyre-ignore[16]
+            _, compiled = self._load_version_assets(version_row, row.get("report_type"))
             if compiled:
                 return compiled
 
-        inline_data = row.get("data")  # pyre-ignore[16]
+        inline_data = row.get("data")
         if isinstance(inline_data, dict):
             compiled = inline_data.get("compiledJinja")
             if isinstance(compiled, str):

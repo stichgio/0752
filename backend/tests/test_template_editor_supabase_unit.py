@@ -5,8 +5,8 @@ from uuid import uuid4
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from template_editor.models import EditorBlock, EditorSection, ProtectionRules, TemplateJson  # pyre-ignore[21]
-from template_editor.service import SupabaseTemplateStore  # pyre-ignore[21]
+from template_editor.models import EditorBlock, EditorSection, ProtectionRules, TemplateJson
+from template_editor.service import SupabaseTemplateStore
 
 
 def _sample_json(content: str = "<p>{{cs}}</p>") -> TemplateJson:
@@ -264,9 +264,9 @@ def test_get_published_template_by_name_recompiles_canvas_templates():
     published = store.publish_template(created.id, author="qa")
     assert published.status == "published"
 
-    current_version = fake_client.get_template(created.id)["current_version"]  # pyre-ignore[16, 29]
+    current_version = fake_client.get_template(created.id)["current_version"]
     version_row = fake_client.get_template_version(created.id, current_version)
-    compiled_path = str(version_row.get("compiled_html_path"))  # pyre-ignore[16]
+    compiled_path = str(version_row.get("compiled_html_path"))
     fake_client.storage[compiled_path] = "<!-- stale compiled html -->"
 
     compiled = store.get_published_template_by_name("canvas-resolver-template")

@@ -4,9 +4,9 @@ import os
 import re
 from typing import Any, Dict
 
-from fastapi import APIRouter, HTTPException, Request  # pyre-ignore[21]
+from fastapi import APIRouter, HTTPException, Request
 
-from .schemas import (  # pyre-ignore[21]
+from .schemas import (
     CreateTemplatePayload,
     PreviewTemplatePayload,
     PublishTemplatePayload,
@@ -15,7 +15,7 @@ from .schemas import (  # pyre-ignore[21]
     UpdateTemplateResponse,
     ValidateTemplatePayload,
 )
-from .service import (  # pyre-ignore[21]
+from .service import (
     create_template,
     delete_template,
     get_all_editor_templates,
@@ -29,7 +29,7 @@ from .service import (  # pyre-ignore[21]
     run_validations,
     update_template,
 )
-from .supabase_client import SupabaseNotConfiguredError, SupabaseOperationError  # pyre-ignore[21]
+from .supabase_client import SupabaseNotConfiguredError, SupabaseOperationError
 from config import settings  # type: ignore
 
 router = APIRouter(prefix="/api/template-editor", tags=["template-editor"])
@@ -194,7 +194,7 @@ def _render_compiled_html(
     }
 
     try:
-        from jinja2.sandbox import SandboxedEnvironment  # pyre-ignore[21]
+        from jinja2.sandbox import SandboxedEnvironment
 
         template = SandboxedEnvironment(autoescape=True).from_string(compiled_html)
         return template.render(**context)

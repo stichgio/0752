@@ -1,7 +1,7 @@
 """
 Modelos Pydantic para Informes Técnicos
 """
-from pydantic import BaseModel, model_validator  # pyre-ignore[21]
+from pydantic import BaseModel, model_validator
 from typing import Any, Dict, Literal, Optional
 from datetime import datetime
 

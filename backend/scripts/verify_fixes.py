@@ -6,8 +6,8 @@ import asyncio
 import os
 import tempfile
 
-from report_service import ReportService, _render_pdf_with_chrome  # pyre-ignore
-from main import _normalize_photo_grid_template_compat  # pyre-ignore
+from report_service import ReportService, _render_pdf_with_chrome
+from main import _normalize_photo_grid_template_compat
 
 
 def _assert(condition: bool, message: str) -> None:

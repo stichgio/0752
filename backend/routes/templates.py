@@ -1,6 +1,6 @@
 """Template listing, status update, and rendering endpoints."""
 
-from fastapi import APIRouter, HTTPException  # pyre-ignore
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field  # type: ignore
 from typing import Any, Dict, Literal, Optional
 import os

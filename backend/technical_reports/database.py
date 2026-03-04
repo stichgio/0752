@@ -4,8 +4,8 @@ Gestor de Base de Datos en JSON para Informes Técnicos
 import os
 from typing import List, Dict
 from datetime import datetime
-from .models import TechnicalReport  # pyre-ignore[21]
-from db.base_json_db import BaseJsonDB  # pyre-ignore[21]
+from .models import TechnicalReport
+from db.base_json_db import BaseJsonDB
 
 
 class TechnicalReportsDB(BaseJsonDB[TechnicalReport]):
@@ -15,7 +15,7 @@ class TechnicalReportsDB(BaseJsonDB[TechnicalReport]):
             backend_dir = os.path.dirname(current_dir)
             storage_dir = os.path.join(backend_dir, "data")
         db_file = os.path.join(storage_dir, "technical_reports.json")
-        super().__init__(db_file, TechnicalReport, label="TechReports")  # pyre-ignore[19, 28]
+        super().__init__(db_file, TechnicalReport, label="TechReports")
 
     # --- Backward-compatible API (delegating to BaseJsonDB) ---
 
@@ -117,7 +117,7 @@ class TechnicalReportsDB(BaseJsonDB[TechnicalReport]):
                             informe_id = raw_informe_id
                             auto_increment_counter = max(auto_increment_counter, informe_id)
                         else:
-                            auto_increment_counter += 1  # pyre-ignore[58]
+                            auto_increment_counter += 1
                             informe_id = auto_increment_counter
 
                         report_id = f"RPT-{str(informe_id).zfill(4)}"
@@ -136,7 +136,7 @@ class TechnicalReportsDB(BaseJsonDB[TechnicalReport]):
                             informe_id = raw_informe_id
                             auto_increment_counter = max(auto_increment_counter, informe_id)
                         else:
-                            auto_increment_counter += 1  # pyre-ignore[58]
+                            auto_increment_counter += 1
                             informe_id = auto_increment_counter
 
                         report_id = f"RPT-{str(informe_id).zfill(4)}"

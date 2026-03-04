@@ -1,8 +1,8 @@
 from typing import Any, Dict, Optional
 
-from pydantic import BaseModel, Field  # pyre-ignore[21]
+from pydantic import BaseModel, Field
 
-from .models import TemplateEditorRecord, TemplateJson, UserRole, ValidationResult  # pyre-ignore[21]
+from .models import TemplateEditorRecord, TemplateJson, UserRole, ValidationResult
 
 
 class CreateTemplatePayload(BaseModel):

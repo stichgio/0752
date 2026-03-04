@@ -2,12 +2,12 @@ import json
 import os
 import sys
 
-import pytest  # pyre-ignore[21]
-from fastapi.testclient import TestClient  # pyre-ignore[21]
+import pytest
+from fastapi.testclient import TestClient
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from main import app  # pyre-ignore[21]
+from main import app
 
 
 @pytest.fixture()
@@ -65,7 +65,7 @@ def test_template_editor_crud_validate_preview_publish_and_rollback(client, monk
     assert validate_res.json()["valid"] is True
 
     update_payload = _template_payload()
-    update_payload["templateJson"]["sections"][0]["blocks"][0]["content"] = "<p>{{cs|upper}}</p>"  # pyre-ignore[6, 7, 16, 26, 29]
+    update_payload["templateJson"]["sections"][0]["blocks"][0]["content"] = "<p>{{cs|upper}}</p>"
     update_res = client.put(f"/api/template-editor/templates/{template_id}", json=update_payload)
     assert update_res.status_code == 200
 
@@ -202,7 +202,7 @@ def test_saving_published_template_moves_it_back_to_draft_until_republished(clie
     assert any(t["id"] == template_id for t in published_before.json().get("templates", []))
 
     update_payload = _template_payload(name="save-draft-behavior-template")
-    update_payload["templateJson"]["sections"][0]["blocks"][0]["content"] = "<p>{{cs|lower}}</p>"  # pyre-ignore[6, 7, 16, 26, 29]
+    update_payload["templateJson"]["sections"][0]["blocks"][0]["content"] = "<p>{{cs|lower}}</p>"
     update_res = client.put(f"/api/template-editor/templates/{template_id}", json=update_payload)
     assert update_res.status_code == 200
     assert update_res.json()["template"]["status"] == "draft"

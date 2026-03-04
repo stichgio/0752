@@ -6,7 +6,7 @@ import os
 import re
 import shutil
 
-from fastapi import UploadFile  # pyre-ignore[21]
+from fastapi import UploadFile
 
 _SAFE_FILENAME_RE = re.compile(r"[^A-Za-z0-9._-]+")
 

@@ -5,8 +5,8 @@ The actual image compression is done client-side using browser-image-compression
 This backend handles ZIP creation for batch downloads.
 """
 
-from fastapi import APIRouter, UploadFile, File, HTTPException  # pyre-ignore[21]
-from fastapi.responses import Response  # pyre-ignore[21]
+from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi.responses import Response
 from typing import List
 import zipfile
 import io

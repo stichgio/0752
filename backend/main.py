@@ -624,7 +624,7 @@ async def generate_pdf_with_progress(
                     fpath = os.path.join(temp_dir, fc["filename"])
                     with open(fpath, "wb") as f:
                         f.write(fc["content"])
-                    file_map[fc["filename"]] = {"name": fc["filename"], "path": fpath}  # pyre-ignore[6]
+                    file_map[fc["filename"]] = {"name": fc["filename"], "path": fpath}
 
                 reports_payload: List[ReportPayloadEntry] = []
                 if isinstance(row_data, list):
@@ -636,7 +636,7 @@ async def generate_pdf_with_progress(
                 else:
                     reports_payload.append({"data": row_data, "files": list(file_map.values())})
 
-                filename = f"pdf_{uuid.uuid4().hex[:12]}.pdf"  # pyre-ignore[6]
+                filename = f"pdf_{uuid.uuid4().hex[:12]}.pdf"
                 output_path = os.path.join(tempfile.gettempdir(), filename)
 
                 await service.generate_batch_pdf(

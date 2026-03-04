@@ -1,14 +1,14 @@
 import os
 import sys
 
-import pytest  # pyre-ignore[21]
+import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-import template_editor.validators as validators_module  # pyre-ignore[21]
-from template_editor.compiler import _compile_photo_grid, _compile_table, compileTemplateJsonToJinja  # pyre-ignore[21]
-from template_editor.models import EditorBlock, EditorSection, ProtectionRules, TemplateJson  # pyre-ignore[21]
-from template_editor.validators import sanitizeHtml, validateProtectedBlocks, validateVariables  # pyre-ignore[21]
+import template_editor.validators as validators_module
+from template_editor.compiler import _compile_photo_grid, _compile_table, compileTemplateJsonToJinja
+from template_editor.models import EditorBlock, EditorSection, ProtectionRules, TemplateJson
+from template_editor.validators import sanitizeHtml, validateProtectedBlocks, validateVariables
 
 
 def _sample_json() -> TemplateJson:
@@ -237,7 +237,7 @@ def test_compile_signature_supports_legacy_signature_config_fallback():
 # _normalize_photo_grid_template_compat tests
 # ---------------------------------------------------------------------------
 
-from main import _normalize_photo_grid_template_compat  # pyre-ignore[21]
+from main import _normalize_photo_grid_template_compat
 
 
 def test_compat_returns_none_for_none():
