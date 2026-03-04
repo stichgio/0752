@@ -175,8 +175,8 @@ def _build_image_grid_html(image_data_uris: list[str], images_per_page: int) -> 
     rows = math.ceil(n / cols)
     cell_width_pct = 100.0 / cols
     # Altura segura para evitar recorte cuando el encabezado/título ocupan más espacio.
-    usable_height_mm = 235.0
-    row_height_mm = min(usable_height_mm / rows, 140.0)
+    usable_height_mm = 230.0
+    row_height_mm = min(usable_height_mm / rows, 135.0)
 
     table_rows = []
     for r in range(rows):
@@ -228,18 +228,24 @@ def _build_page_html(
 <style>
 @page {{
     size: A4 portrait;
-    margin: 10mm 12mm 10mm 12mm;
+    margin: 0;
 }}
 html, body {{
     margin: 0;
     padding: 0;
     font-family: Arial, sans-serif;
-    width: 100%;
+    width: 210mm;
+    height: 297mm;
 }}
 .page-container {{
-    width: 100%;
+    width: 210mm;
+    height: 297mm;
+    max-height: 297mm;
+    padding: 10mm 12mm;
     page-break-after: always;
     page-break-inside: avoid;
+    overflow: hidden;
+    box-sizing: border-box;
 }}
 </style>
 </head><body>
@@ -312,7 +318,7 @@ def _build_volanteo_page_html(
     return f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="UTF-8"><style>
 * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-@page {{ size: A4 portrait; margin: 10mm 12mm 10mm 12mm; }}
+@page {{ size: A4 portrait; margin: 0; }}
 html, body {{
     margin: 0;
     padding: 0;
@@ -321,18 +327,22 @@ html, body {{
     line-height: 1.3;
     color: #222;
     background: #fff;
+    width: 210mm;
+    height: 297mm;
 }}
 .page {{
-    width: 100%;
-    min-height: 277mm;
+    width: 210mm;
+    height: 297mm;
+    max-height: 297mm;
     margin: 0;
-    padding: 8mm;
+    padding: 10mm 12mm;
     background: #fff;
     display: flex;
     flex-direction: column;
     page-break-after: always;
     page-break-inside: avoid;
     box-sizing: border-box;
+    overflow: hidden;
 }}
 .header {{
     display: flex;
