@@ -4,9 +4,9 @@
  * encabezado principal único y mini-encabezados opcionales por hoja.
  *
  * Cómo añadir una nueva hoja al informe (runtime):
- *   Pulsar "+ Agregar Hoja" en el Step 1 y asignarle una plantilla desde el
- *   dropdown. La hoja aparece automáticamente en el preview y se incluye en el
- *   PDF al exportar.
+ *   Selecciona una plantilla del dropdown "+ Agregar Hoja" en el Step 1.
+ *   La hoja aparece automáticamente en el preview y se incluye en el PDF al exportar.
+ *   Para "Grilla de Imágenes", puedes seleccionar imágenes específicas del pool global.
  *
  * Cómo extender el mini-encabezado alternativo:
  *   Añadir campos al objeto altHeaderConfig y referenciarlos en el backend
@@ -750,18 +750,19 @@ export default function MultiSheetReportApp() {
     // ─────────────────────────────────────────────────────────────────────────
     // Handlers: gestión de hojas
     // ─────────────────────────────────────────────────────────────────────────
-    const addSheet = useCallback(() => {
-        // Auto-assign the first available layout so the sheet is immediately
-        // active and Step 4 is unlocked without an extra manual selection.
-        const defaultTemplate = availableTemplates.includes(GRID_TEMPLATE_NAME)
+    const addSheet = useCallback((templateName) => {
+        // Use provided template or default to Grilla de Imágenes
+        const defaultTemplate = templateName || (availableTemplates.includes(GRID_TEMPLATE_NAME)
             ? GRID_TEMPLATE_NAME
-            : (availableTemplates[0] ?? null);
+            : (availableTemplates[0] ?? null));
         setSheets(prev => [...prev, {
             id: String(Date.now()),
             title: `Hoja ${prev.length + 1}`,
             templateName: defaultTemplate,
             useAltHeader: false,
             imagesPerPage: 4,
+            // For Grilla de Imágenes: store selected image indices from global pool
+            selectedImageIndices: defaultTemplate === GRID_TEMPLATE_NAME ? [] : undefined,
         }]);
     }, [availableTemplates]);
 
@@ -870,12 +871,40 @@ export default function MultiSheetReportApp() {
 
             activeSheets.forEach(s => {
                 const photosPerPage = s.imagesPerPage || 4;
-                const sheetImages = s.templateName === VOLANTEO_TEMPLATE_NAME
-                    ? rowImages.slice(0, 4)
-                    : rowImages;
+
+                // Determinar las imágenes a usar: primero las seleccionadas manualmente, luego las de la fila
+                let sheetImages;
+                const hasManualSelection = s.selectedImageIndices && s.selectedImageIndices.length > 0;
+
+                if (hasManualSelection) {
+                    // Usar imágenes seleccionadas manualmente del pool global de imágenes
+                    sheetImages = s.selectedImageIndices.map(idx => images[idx]).filter(Boolean);
+                } else if (s.templateName === VOLANTEO_TEMPLATE_NAME) {
+                    // Volanteo usa solo las primeras 4 imágenes de la fila
+                    sheetImages = rowImages.slice(0, 4);
+                } else {
+                    // Para otras plantillas, usar todas las imágenes de la fila
+                    sheetImages = rowImages;
+                }
+
+                // Si no hay imágenes, crear una página vacía para mantener la estructura
+                if (sheetImages.length === 0) {
+                    sheetsConfig.push({
+                        order: globalOrder++,
+                        title: s.title,
+                        templateName: s.templateName,
+                        useAltHeader: s.useAltHeader,
+                        imagesPerPage: photosPerPage,
+                        rowData,
+                        imageFilenames: [],
+                        pageNum: 1,
+                        totalPages: 1
+                    });
+                    return;
+                }
 
                 // Si es plantilla de grilla, dividimos por páginas si hay muchas fotos
-                if (s.templateName === GRID_TEMPLATE_NAME && sheetImages.length > photosPerPage) {
+                if (sheetImages.length > 0 && s.templateName === GRID_TEMPLATE_NAME && sheetImages.length > photosPerPage) {
                     const totalPages = Math.ceil(sheetImages.length / photosPerPage);
                     for (let p = 0; p < totalPages; p++) {
                         const chunk = sheetImages.slice(p * photosPerPage, (p + 1) * photosPerPage);
@@ -1098,7 +1127,7 @@ export default function MultiSheetReportApp() {
                                 {/* Lista de hojas */}
                                 {sheets.length === 0 && (
                                     <div className="text-center text-neutral-600 text-xs py-3 border border-dashed border-neutral-800 rounded">
-                                        Sin hojas — pulsa "+ Agregar Hoja"
+                                        Selecciona una plantilla para agregar hoja
                                     </div>
                                 )}
 
@@ -1175,23 +1204,89 @@ export default function MultiSheetReportApp() {
 
                                         {/* Selector de tamaño de grilla (solo si es "Grilla de Imágenes") */}
                                         {sheet.templateName === GRID_TEMPLATE_NAME && (
-                                            <div className="mt-1.5 flex flex-wrap gap-1 p-1.5 bg-neutral-900/50 rounded border border-neutral-700">
-                                                <div className="w-full text-[9px] text-neutral-500 font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
-                                                    <Grid2X2 size={10} /> Fotos por página
+                                            <>
+                                                <div className="mt-1.5 flex flex-wrap gap-1 p-1.5 bg-neutral-900/50 rounded border border-neutral-700">
+                                                    <div className="w-full text-[9px] text-neutral-500 font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
+                                                        <Grid2X2 size={10} /> Fotos por página
+                                                    </div>
+                                                    {[2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+                                                        <button
+                                                            key={num}
+                                                            onClick={() => updateSheet(sheet.id, { imagesPerPage: num })}
+                                                            className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold transition-all
+                                                                ${(sheet.imagesPerPage || 4) === num
+                                                                    ? 'bg-white text-black scale-110 shadow-lg'
+                                                                    : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'}`}
+                                                        >
+                                                            {num}
+                                                        </button>
+                                                    ))}
                                                 </div>
-                                                {[2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-                                                    <button
-                                                        key={num}
-                                                        onClick={() => updateSheet(sheet.id, { imagesPerPage: num })}
-                                                        className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold transition-all
-                                                            ${(sheet.imagesPerPage || 4) === num
-                                                                ? 'bg-white text-black scale-110 shadow-lg'
-                                                                : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'}`}
-                                                    >
-                                                        {num}
-                                                    </button>
-                                                ))}
-                                            </div>
+
+                                                {/* Selector de imágenes para la grilla */}
+                                                {images.length > 0 && (
+                                                    <div className="mt-1.5 p-1.5 bg-neutral-900/50 rounded border border-neutral-700 max-h-32 overflow-y-auto">
+                                                        <div className="text-[9px] text-neutral-500 font-bold uppercase tracking-wider mb-1 flex items-center gap-1 sticky top-0 bg-neutral-900/80">
+                                                            <ImageIcon size={10} /> Seleccionar imágenes ({sheet.selectedImageIndices?.length || 0}/{sheet.imagesPerPage || 4})
+                                                        </div>
+                                                        <div className="grid grid-cols-4 gap-1">
+                                                            {images.slice(0, 20).map((img, idx) => {
+                                                                const isSelected = sheet.selectedImageIndices?.includes(idx);
+                                                                const isDisabled = !isSelected && (sheet.selectedImageIndices?.length || 0) >= (sheet.imagesPerPage || 4);
+                                                                return (
+                                                                    <button
+                                                                        key={idx}
+                                                                        disabled={isDisabled && !isSelected}
+                                                                        onClick={() => {
+                                                                            const current = sheet.selectedImageIndices || [];
+                                                                            let updated;
+                                                                            if (isSelected) {
+                                                                                updated = current.filter(i => i !== idx);
+                                                                            } else if (current.length < (sheet.imagesPerPage || 4)) {
+                                                                                updated = [...current, idx];
+                                                                            } else {
+                                                                                return;
+                                                                            }
+                                                                            updateSheet(sheet.id, { selectedImageIndices: updated });
+                                                                        }}
+                                                                        className={`relative aspect-square rounded overflow-hidden border text-[8px] transition-all
+                                                                            ${isSelected
+                                                                                ? 'border-emerald-500 ring-1 ring-emerald-500/50'
+                                                                                : 'border-neutral-600 hover:border-neutral-400'}
+                                                                            ${isDisabled && !isSelected ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
+                                                                    >
+                                                                        <img src={img.url} alt={img.name} className="w-full h-full object-cover" />
+                                                                        {isSelected && (
+                                                                            <div className="absolute inset-0 bg-emerald-500/30 flex items-center justify-center">
+                                                                                <CheckCircle size={12} className="text-white" />
+                                                                            </div>
+                                                                        )}
+                                                                        <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white px-0.5 truncate text-[6px]">
+                                                                            {idx + 1}
+                                                                        </div>
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                        {images.length > 20 && (
+                                                            <div className="text-[8px] text-neutral-500 text-center mt-1">
+                                                                +{images.length - 20} más
+                                                            </div>
+                                                        )}
+                                                        <button
+                                                            onClick={() => updateSheet(sheet.id, { selectedImageIndices: [] })}
+                                                            className="mt-1 text-[8px] text-neutral-500 hover:text-neutral-300 underline w-full text-center"
+                                                        >
+                                                            Limpiar selección
+                                                        </button>
+                                                    </div>
+                                                )}
+                                                {images.length === 0 && (
+                                                    <div className="mt-1.5 p-2 text-[9px] text-neutral-500 text-center border border-dashed border-neutral-700 rounded">
+                                                        Sube imágenes en el paso 2 para seleccionarlas
+                                                    </div>
+                                                )}
+                                            </>
                                         )}
 
                                         {/* Badge de estado */}
@@ -1213,13 +1308,34 @@ export default function MultiSheetReportApp() {
                                     </div>
                                 ))}
 
-                                {/* Botón agregar hoja */}
-                                <button
-                                    onClick={addSheet}
-                                    className="w-full mt-1 border border-dashed border-white/40 hover:border-white text-white/60 hover:text-white rounded p-2 text-center hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-xs"
-                                >
-                                    <Plus size={14} /> Agregar Hoja
-                                </button>
+                                {/* Selector de plantilla para agregar nueva hoja */}
+                                <div className="mb-2">
+                                    <select
+                                        className="w-full bg-neutral-800 border border-neutral-700 rounded px-2 py-2 text-xs text-white outline-none focus:border-white"
+                                        value=""
+                                        onChange={e => {
+                                            if (e.target.value) {
+                                                addSheet(e.target.value);
+                                            }
+                                        }}
+                                    >
+                                        <option value="">+ Agregar Hoja (selecciona plantilla)</option>
+                                        <optgroup label="Plantillas base">
+                                            <option value={GRID_TEMPLATE_NAME}>{GRID_TEMPLATE_NAME}</option>
+                                        </optgroup>
+                                        {(() => {
+                                            const localSection = templateSections.find(s => s.id === 'local');
+                                            if (!localSection || localSection.templates.length === 0) return null;
+                                            return (
+                                                <optgroup label="Plantillas locales">
+                                                    {localSection.templates.map(t => (
+                                                        <option key={t} value={t}>{t}</option>
+                                                    ))}
+                                                </optgroup>
+                                            );
+                                        })()}
+                                    </select>
+                                </div>
                             </div>
                         </Step>
 

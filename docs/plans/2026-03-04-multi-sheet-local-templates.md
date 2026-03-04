@@ -838,3 +838,60 @@ Expected: Only files in `backend/routers/multi_sheet_templates/`, `backend/route
 git add -p  # review any uncommitted changes
 git commit -m "chore(multi-sheet): final cleanup"
 ```
+
+---
+
+## Technical Specification (Implemented)
+
+- **Template storage model**
+  - Local templates are HTML files stored under `backend/msheets/multi_sheet_templates/`.
+  - Backward compatibility is preserved with `backend/msheets/mtemplates/` as a fallback source.
+  - Templates are identified by filename without `.html` and exposed as display names.
+
+- **Discovery and persistence layer**
+  - Discovery scans candidate directories in deterministic order and de-duplicates by template name.
+  - The first discovered template name wins, allowing controlled override precedence.
+  - Rendering and preview retrieval use resolved template records (`name`, `file_path`, `directory`).
+
+- **Backend API contract**
+  - `GET /api/multi-sheet/templates`: returns grouped sections (`builtin`, `local`, `independent`).
+  - `GET /api/multi-sheet/templates/{template_name}/html`: returns raw local HTML for client preview.
+  - `POST /api/multi-sheet/generate-pdf`: supports built-in templates, local templates, and independent templates.
+
+- **Template engine integration**
+  - Local templates are rendered via Jinja2 from file content and context:
+    - `logo_left`, `logo_right`
+    - `data` (row data object)
+    - `images` (`[{path, name}]`)
+  - Multi-page generation splits each sheet images array by `imagesPerPage`.
+  - Sequential image names (`*_001`, `*_010`, etc.) are sorted before grouping for deterministic output.
+
+- **Validation and error handling**
+  - Invalid template names return `404` for unknown resources.
+  - JSON parse failures return `400`.
+  - PDF render failures return `500` with explicit page-level context.
+  - Temporary file cleanup is always scheduled and also enforced on exceptions.
+
+- **Performance and compatibility**
+  - Local template preview HTML is cached on the frontend.
+  - A4 iframe preview scales with `ResizeObserver` to avoid layout thrashing.
+  - Uses filesystem-safe APIs (`os.path`, realpath-based directory resolution) for Windows/Linux compatibility.
+
+## User Guide
+
+1. Open **Multi-Sheet Report**.
+2. In template selector, choose any item under **Plantillas locales** (e.g., `Volanteo Local`).
+3. Load Excel/CSV data and upload related images.
+4. Assign template(s) to sheet(s) and review the A4 iframe preview.
+5. Export PDF; the system will:
+   - keep row data per sheet,
+   - split images into multiple pages by `imagesPerPage`,
+   - and render the selected local template with dynamic values.
+
+## QA Checklist
+
+- Local section appears in `/api/multi-sheet/templates`.
+- `/api/multi-sheet/templates/Volanteo%20Local/html` returns template HTML.
+- Local template PDF generation renders row fields and images correctly.
+- Image sorting and page splitting are deterministic.
+- Backend tests pass, frontend tests pass, and frontend build succeeds.

@@ -30,7 +30,10 @@ from image_optimizer.router import router as image_optimizer_router  # type: ign
 from compressor.router import router as compressor_router  # type: ignore
 from ocr_tools.router import router as ocr_tools_router  # type: ignore
 from template_editor.router import router as template_editor_router  # type: ignore
-from routers.multi_sheet_report import router as multi_sheet_router  # type: ignore
+try:
+    from msheets.multi_sheet_report import router as multi_sheet_router  # type: ignore
+except Exception:
+    from routers.multi_sheet_report import router as multi_sheet_router  # type: ignore
 from config import settings  # type: ignore
 from template_editor.service import (  # type: ignore
     get_all_published_templates,

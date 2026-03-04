@@ -13,6 +13,7 @@ Endpoints expuestos (montados en /api/multi-sheet/):
 from __future__ import annotations
 
 import base64
+from dataclasses import dataclass
 from html import escape
 import json
 import math
@@ -486,15 +487,19 @@ def _render_local_template(
 ) -> str:
     """Render a local HTML template (Jinja2) with row data and images."""
     try:
-        from jinja2 import Environment, FileSystemLoader, select_autoescape  # type: ignore
+        from jinja2 import Environment, select_autoescape  # type: ignore
     except ImportError as exc:
         raise RuntimeError("Jinja2 no está instalado.") from exc
 
-    env = Environment(
-        loader=FileSystemLoader(_LOCAL_TEMPLATES_DIR),
-        autoescape=select_autoescape(["html"]),
-    )
-    tmpl = env.get_template(f"{template_name}.html")
+    record = _find_local_template(template_name)
+    if record is None:
+        raise RuntimeError(f"Plantilla local no encontrada: {template_name}")
+
+    with open(record.file_path, "r", encoding="utf-8") as fh:
+        template_source = fh.read()
+
+    env = Environment(autoescape=select_autoescape(["html"]))
+    tmpl = env.from_string(template_source)
 
     images_list = [
         {"path": uri, "name": fname}
@@ -565,6 +570,14 @@ async def _upload_to_b64(upload_file: UploadFile) -> Optional[str]:
 _GRID_TEMPLATE_NAME = "Grilla de Imágenes"
 _VOLANTEO_TEMPLATE_NAME = "Panel Fotográfico Volanteo"
 _BUILTIN_LAYOUTS: list[str] = [_GRID_TEMPLATE_NAME, _VOLANTEO_TEMPLATE_NAME]
+_LOCAL_TEMPLATE_DIR_CANDIDATES: tuple[str, ...] = ("multi_sheet_templates", "mtemplates")
+
+
+@dataclass(frozen=True)
+class LocalTemplateRecord:
+    name: str
+    file_path: str
+    directory: str
 
 
 def _dedupe_preserve_order(values: list[str]) -> list[str]:
@@ -600,20 +613,51 @@ def _list_independent_template_names() -> list[str]:
     return [name for name in independent_names if name not in _BUILTIN_LAYOUTS]
 
 
-# ── Local templates (backend/routers/mtemplates/) ─────────────────────────────
-_LOCAL_TEMPLATES_DIR: str = os.path.join(os.path.dirname(__file__), "mtemplates")
+def _local_template_directories() -> list[str]:
+    base_dir = os.path.dirname(__file__)
+    dirs = [
+        os.path.realpath(os.path.join(base_dir, candidate))
+        for candidate in _LOCAL_TEMPLATE_DIR_CANDIDATES
+    ]
+    return [path for path in dirs if os.path.isdir(path)]
+
+
+def _scan_local_templates() -> list[LocalTemplateRecord]:
+    records_by_name: dict[str, LocalTemplateRecord] = {}
+    for directory in _local_template_directories():
+        try:
+            filenames = sorted(os.listdir(directory))
+        except Exception as exc:
+            print(f"[MultiSheet] Error listing local templates from {directory}: {exc}")
+            continue
+        for filename in filenames:
+            if not filename.lower().endswith(".html"):
+                continue
+            name = os.path.splitext(filename)[0].strip()
+            if not name or name in records_by_name:
+                continue
+            records_by_name[name] = LocalTemplateRecord(
+                name=name,
+                file_path=os.path.join(directory, filename),
+                directory=directory,
+            )
+    return list(records_by_name.values())
+
+
+def _find_local_template(template_name: str) -> Optional[LocalTemplateRecord]:
+    normalized = str(template_name or "").strip()
+    if not normalized:
+        return None
+    for record in _scan_local_templates():
+        if record.name == normalized:
+            return record
+    return None
 
 
 def _list_local_template_names() -> list[str]:
     """Return display names (filename without .html) of local HTML templates."""
     try:
-        if not os.path.isdir(_LOCAL_TEMPLATES_DIR):
-            return []
-        return [
-            os.path.splitext(f)[0]
-            for f in sorted(os.listdir(_LOCAL_TEMPLATES_DIR))
-            if f.lower().endswith(".html")
-        ]
+        return [record.name for record in _scan_local_templates()]
     except Exception as exc:
         print(f"[MultiSheet] Error listing local templates: {exc}")
         return []
@@ -665,20 +709,10 @@ async def list_templates() -> dict:
 @router.get("/templates/{template_name}/html", response_class=HTMLResponse)
 async def get_local_template_html(template_name: str):
     """Return the raw HTML of a local template file (for client-side preview)."""
-    file_path = os.path.join(_LOCAL_TEMPLATES_DIR, f"{template_name}.html")
-    try:
-        resolved = os.path.realpath(file_path)
-        expected_prefix = os.path.realpath(_LOCAL_TEMPLATES_DIR)
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid template name")
-
-    if not resolved.startswith(expected_prefix + os.sep) and resolved != expected_prefix:
-        raise HTTPException(status_code=400, detail="Invalid template name")
-
-    if not os.path.isfile(resolved):
+    record = _find_local_template(template_name)
+    if record is None:
         raise HTTPException(status_code=404, detail=f"Template '{template_name}' not found")
-
-    with open(resolved, "r", encoding="utf-8") as fh:
+    with open(record.file_path, "r", encoding="utf-8") as fh:
         return HTMLResponse(content=fh.read())
 
 

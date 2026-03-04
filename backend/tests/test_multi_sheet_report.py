@@ -10,7 +10,10 @@ from fastapi.testclient import TestClient  # pyre-ignore[21]
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from main import app  # pyre-ignore[21]
-from routers import multi_sheet_report  # pyre-ignore[21]
+try:
+    from msheets import multi_sheet_report  # pyre-ignore[21]
+except Exception:
+    from routers import multi_sheet_report  # pyre-ignore[21]
 
 
 @pytest.fixture()
@@ -269,3 +272,94 @@ def test_generate_pdf_with_local_volanteo_template(client, monkeypatch):
     assert "99999" in html
     assert "CC-200" in html
     assert "Panel Fotográfico Volanteo" in html
+
+
+def test_generate_multi_sheet_pdf_splits_sorted_images_into_multiple_pages(client, monkeypatch):
+    captured_html: list[str] = []
+
+    def fake_render(html_string: str, _base_url: str, output_path: str) -> None:
+        captured_html.append(html_string)
+        with open(output_path, "wb") as fout:
+            fout.write(_make_blank_pdf())
+
+    monkeypatch.setattr(multi_sheet_report, "_render_html_to_pdf", fake_render)
+
+    image_payloads = {
+        "NIS_010.jpg": b"img-10",
+        "NIS_002.jpg": b"img-02",
+        "NIS_001.jpg": b"img-01",
+        "NIS_011.jpg": b"img-11",
+        "NIS_003.jpg": b"img-03",
+    }
+    expected_uris = {
+        name: "data:image/jpeg;base64," + base64.b64encode(content).decode()
+        for name, content in image_payloads.items()
+    }
+
+    response = client.post(
+        "/api/multi-sheet/generate-pdf",
+        data={
+            "sheets_config": json.dumps(
+                [
+                    {
+                        "order": 0,
+                        "title": "Hoja paginada",
+                        "templateName": "Grilla de Imágenes",
+                        "useAltHeader": False,
+                        "rowData": {"NIS": "99999"},
+                        "imageFilenames": list(image_payloads.keys()),
+                        "imagesPerPage": 2,
+                        "pageNum": 1,
+                        "totalPages": 1,
+                    }
+                ]
+            ),
+            "header_config": json.dumps(
+                {
+                    "title": "Informe de prueba",
+                    "subtitle": "",
+                    "logoLeft": None,
+                    "logoRight": None,
+                }
+            ),
+            "alt_header_config": json.dumps(
+                {"idField": "", "dateField": "", "extraText": "", "height": "compact"}
+            ),
+        },
+        files=[
+            ("files", (name, content, "image/jpeg"))
+            for name, content in image_payloads.items()
+        ],
+    )
+
+    assert response.status_code == 200
+    assert len(captured_html) == 3
+    assert "Pág. 1/3" in captured_html[0]
+    assert "Pág. 2/3" in captured_html[1]
+    assert "Pág. 3/3" in captured_html[2]
+    assert expected_uris["NIS_001.jpg"] in captured_html[0]
+    assert expected_uris["NIS_002.jpg"] in captured_html[0]
+    assert expected_uris["NIS_003.jpg"] in captured_html[1]
+    assert expected_uris["NIS_010.jpg"] in captured_html[1]
+    assert expected_uris["NIS_011.jpg"] in captured_html[2]
+
+
+def test_list_local_template_names_merges_candidate_directories(tmp_path, monkeypatch):
+    dir_primary = tmp_path / "multi_sheet_templates"
+    dir_legacy = tmp_path / "mtemplates"
+    dir_primary.mkdir()
+    dir_legacy.mkdir()
+
+    (dir_primary / "B Template.html").write_text("<html>B</html>", encoding="utf-8")
+    (dir_primary / "A Template.html").write_text("<html>A</html>", encoding="utf-8")
+    (dir_legacy / "A Template.html").write_text("<html>legacy-A</html>", encoding="utf-8")
+    (dir_legacy / "C Template.html").write_text("<html>C</html>", encoding="utf-8")
+
+    monkeypatch.setattr(
+        multi_sheet_report,
+        "_local_template_directories",
+        lambda: [str(dir_primary), str(dir_legacy)],
+    )
+
+    names = multi_sheet_report._list_local_template_names()
+    assert names == ["A Template", "B Template", "C Template"]
