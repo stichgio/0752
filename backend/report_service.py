@@ -717,6 +717,7 @@ class ReportService:
 
         loop = asyncio.get_running_loop()
         all_pdf_paths = []
+        final_writer = None
 
         # Procesar en lotes de PDF_BATCH_SIZE
         for batch_start in range(0, len(all_html_items), PDF_BATCH_SIZE):
@@ -867,7 +868,7 @@ class ReportService:
                         os.remove(pdf_path)  # pyre-ignore[6]
                 except OSError:
                     pass
-            if final_writer is not None:  # pyre-ignore[61]
+            if final_writer is not None:
                 try:
                     final_writer.close()
                 except Exception:
