@@ -24,7 +24,7 @@ import traceback
 from typing import Any, Optional
 
 from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile  # pyre-ignore
-from fastapi.responses import StreamingResponse  # pyre-ignore
+from fastapi.responses import StreamingResponse, HTMLResponse  # pyre-ignore
 
 from template_editor.service import get_all_published_templates  # type: ignore
 
@@ -662,8 +662,8 @@ async def list_templates() -> dict:
     }
 
 
-@router.get("/templates/{template_name}/html")
-async def get_local_template_html(template_name: str) -> str:
+@router.get("/templates/{template_name}/html", response_class=HTMLResponse)
+async def get_local_template_html(template_name: str):
     """Return the raw HTML of a local template file (for client-side preview)."""
     file_path = os.path.join(_LOCAL_TEMPLATES_DIR, f"{template_name}.html")
     try:
@@ -679,7 +679,7 @@ async def get_local_template_html(template_name: str) -> str:
         raise HTTPException(status_code=404, detail=f"Template '{template_name}' not found")
 
     with open(resolved, "r", encoding="utf-8") as fh:
-        return fh.read()
+        return HTMLResponse(content=fh.read())
 
 
 @router.post("/generate-pdf")

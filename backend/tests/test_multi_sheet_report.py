@@ -30,6 +30,11 @@ def test_list_templates_returns_grouped_sections(client, monkeypatch):
             {"name": "Plantilla Independiente A"},
         ],
     )
+    monkeypatch.setattr(
+        multi_sheet_report,
+        "_list_local_template_names",
+        lambda: ["Volanteo Local"],
+    )
 
     response = client.get("/api/multi-sheet/templates")
 
