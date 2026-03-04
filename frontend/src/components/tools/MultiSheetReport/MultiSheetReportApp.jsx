@@ -170,6 +170,13 @@ const normalizeTemplateSections = (rawSections) => {
         .filter(section => section.templates.length > 0);
 };
 
+const orderSheetsForFirstPage = (sheetList) => {
+    if (!Array.isArray(sheetList) || sheetList.length === 0) return [];
+    const firstPageSheets = sheetList.filter(sheet => Boolean(sheet?.firstPageOnly));
+    const regularSheets = sheetList.filter(sheet => !sheet?.firstPageOnly);
+    return [...firstPageSheets, ...regularSheets];
+};
+
 const VOLANTEO_TEMPLATE_FIELDS = [
     'CENTRO',
     'NIS',
@@ -239,7 +246,8 @@ const createCustomMappingEntry = () => ({
 
 const resolveMappedValue = (row, mapping, fallbackKey = '') => {
     if (!mapping) {
-        return fallbackKey ? row?.[fallbackKey] : '';
+        const fallbackValue = fallbackKey ? row?.[fallbackKey] : '';
+        return fallbackValue === undefined ? '' : fallbackValue;
     }
 
     if (mapping.sourceType === 'manual') {
@@ -248,10 +256,12 @@ const resolveMappedValue = (row, mapping, fallbackKey = '') => {
 
     const sourceKey = String(mapping.sourceValue || '').trim();
     if (sourceKey) {
-        return row?.[sourceKey];
+        const sourceValue = row?.[sourceKey];
+        return sourceValue === undefined ? '' : sourceValue;
     }
 
-    return fallbackKey ? row?.[fallbackKey] : '';
+    const fallbackValue = fallbackKey ? row?.[fallbackKey] : '';
+    return fallbackValue === undefined ? '' : fallbackValue;
 };
 
 const buildMappedDataset = (sourceHeaders, sourceRows, templateFieldMappings, customFieldMappings) => {
@@ -305,6 +315,7 @@ function ColumnMappingModal({
     onAddCustomField,
     onCustomFieldChange,
     onRemoveCustomField,
+    closeLabel,
     onClose,
     onApply,
 }) {
@@ -546,7 +557,7 @@ function ColumnMappingModal({
                             onClick={onClose}
                             className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium text-neutral-200 transition-colors hover:bg-white/10"
                         >
-                            Usar datos originales
+                            {closeLabel || 'Cerrar'}
                         </button>
                         <button
                             type="button"
@@ -975,6 +986,7 @@ export default function MultiSheetReportApp() {
      * @property {string}      title        - Título visible de la hoja
      * @property {string|null} templateName - Nombre de la plantilla asignada
      * @property {boolean}     useAltHeader - true → usar mini-encabezado
+     * @property {boolean}     firstPageOnly - true → se usa solo como 1° hoja
      */
     const [sheets, setSheets] = useState([]);
 
@@ -993,6 +1005,7 @@ export default function MultiSheetReportApp() {
     const [mappingTemplateFields, setMappingTemplateFields] = useState([]);
     const [templateFieldMappings, setTemplateFieldMappings] = useState({});
     const [customFieldMappings, setCustomFieldMappings] = useState([]);
+    const [hasPendingDataCommit, setHasPendingDataCommit] = useState(false);
 
     // ── Mini-encabezado alternativo ───────────────────────────────────────────
     const [altHeaderConfig, setAltHeaderConfig] = useState({
@@ -1115,6 +1128,7 @@ export default function MultiSheetReportApp() {
             idField: normalizedHeaders.includes(prev.idField) ? prev.idField : '',
             dateField: normalizedHeaders.includes(prev.dateField) ? prev.dateField : '',
         }));
+        setHasPendingDataCommit(false);
         setIsColumnMappingOpen(false);
         toast.success(successMessage || `${normalizedRows.length} registros cargados`);
     }, []);
@@ -1142,6 +1156,7 @@ export default function MultiSheetReportApp() {
         setSourceData(safeRows);
         setLoadedDataFileName(fileName || '');
         setMappingTemplateNames(activeTemplateNames);
+        setHasPendingDataCommit(!preserveExisting);
         setIsColumnMappingOpen(true);
         setIsColumnMappingLoading(true);
         setColumnMappingError('');
@@ -1188,6 +1203,14 @@ export default function MultiSheetReportApp() {
     const useOriginalLoadedData = useCallback(() => {
         commitLoadedData(sourceHeaders, sourceData, `${sourceData.length} registros cargados`);
     }, [sourceHeaders, sourceData, commitLoadedData]);
+
+    const handleCloseColumnMappingModal = useCallback(() => {
+        if (hasPendingDataCommit) {
+            useOriginalLoadedData();
+            return;
+        }
+        setIsColumnMappingOpen(false);
+    }, [hasPendingDataCommit, useOriginalLoadedData]);
 
     const updateTemplateFieldMapping = useCallback((field, patch) => {
         setTemplateFieldMappings(prev => ({
@@ -2307,7 +2330,8 @@ export default function MultiSheetReportApp() {
                 onAddCustomField={addCustomFieldMapping}
                 onCustomFieldChange={updateCustomFieldMapping}
                 onRemoveCustomField={removeCustomFieldMapping}
-                onClose={useOriginalLoadedData}
+                closeLabel={hasPendingDataCommit ? 'Usar datos originales' : 'Cerrar'}
+                onClose={handleCloseColumnMappingModal}
                 onApply={applyColumnMapping}
             />
 
