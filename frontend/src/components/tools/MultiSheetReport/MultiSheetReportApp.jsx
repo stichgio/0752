@@ -368,21 +368,21 @@ function ColumnMappingModal({
                     <div className="shrink-0 border-b border-white/10 px-5 py-4 sm:px-6 sm:py-5">
                         <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                             <div className="min-w-0 flex-1 space-y-2">
-                            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-emerald-200">
-                                <Layers size={12} />
-                                Mapeo de columnas
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-semibold text-white">Conecta tu base de datos con la plantilla</h3>
-                                <p className="mt-1 text-sm text-neutral-300">
-                                    Relaciona las columnas del archivo con los c&oacute;digos Jinja detectados y crea campos extra si necesitas valores fijos.
-                                </p>
-                            </div>
-                            {fileName && (
-                                <p className="text-[11px] font-mono text-neutral-400">
-                                    Archivo: <span className="text-neutral-200">{fileName}</span>
-                                </p>
-                            )}
+                                <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-emerald-200">
+                                    <Layers size={12} />
+                                    Mapeo de columnas
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-semibold text-white">Conecta tu base de datos con la plantilla</h3>
+                                    <p className="mt-1 text-sm text-neutral-300">
+                                        Relaciona las columnas del archivo con los c&oacute;digos Jinja detectados y crea campos extra si necesitas valores fijos.
+                                    </p>
+                                </div>
+                                {fileName && (
+                                    <p className="text-[11px] font-mono text-neutral-400">
+                                        Archivo: <span className="text-neutral-200">{fileName}</span>
+                                    </p>
+                                )}
                             </div>
 
                             <div className="grid grid-cols-3 gap-2 xl:w-[360px] xl:shrink-0">
@@ -915,33 +915,24 @@ function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, lo
                 {/* Área de plantilla */}
                 {hasTemplate ? (
                     <div className={`${showStandardHeaderPreview ? 'mt-2 ' : ''}space-y-2`}>
-                        <div className="border border-emerald-200 rounded bg-emerald-50 px-3 py-2 flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                                <FileText size={14} className="text-emerald-600 shrink-0" />
-                                <div className="min-w-0">
-                                    <div className="text-[10px] font-mono text-emerald-700 font-semibold truncate">{sheet.templateName}</div>
-                                    <div className="text-[9px] text-emerald-600 mt-0.5">Plantilla asignada</div>
+                        {/* Mostrar tarjeta de info solo si NO es plantilla local NI grilla de imágenes */}
+                        {!isLocalTemplate && !isGridTemplate && (
+                            <div className="border border-emerald-200 rounded bg-emerald-50 px-3 py-2 flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <FileText size={14} className="text-emerald-600 shrink-0" />
+                                    <div className="min-w-0">
+                                        <div className="text-[10px] font-mono text-emerald-700 font-semibold truncate">{sheet.templateName}</div>
+                                        <div className="text-[9px] text-emerald-600 mt-0.5">Plantilla asignada</div>
+                                    </div>
                                 </div>
+                                {isVolanteoTemplate && (
+                                    <div className="bg-white/50 px-1.5 py-0.5 rounded border border-emerald-100 flex items-center gap-1">
+                                        <Grid2X2 size={10} className="text-emerald-600" />
+                                        <span className="text-[9px] font-bold text-emerald-700 underline underline-offset-2">4 fotos</span>
+                                    </div>
+                                )}
                             </div>
-                            {isGridTemplate && (
-                                <div className="bg-white/50 px-1.5 py-0.5 rounded border border-emerald-100 flex items-center gap-1">
-                                    <Grid2X2 size={10} className="text-emerald-600" />
-                                    <span className="text-[9px] font-bold text-emerald-700 underline underline-offset-2">{sheet.imagesPerPage || 4} fotos</span>
-                                </div>
-                            )}
-                            {isVolanteoTemplate && (
-                                <div className="bg-white/50 px-1.5 py-0.5 rounded border border-emerald-100 flex items-center gap-1">
-                                    <Grid2X2 size={10} className="text-emerald-600" />
-                                    <span className="text-[9px] font-bold text-emerald-700 underline underline-offset-2">4 fotos</span>
-                                </div>
-                            )}
-                            {isLocalTemplate && (
-                                <div className="bg-white/50 px-1.5 py-0.5 rounded border border-emerald-100 flex items-center gap-1">
-                                    <FileText size={10} className="text-emerald-600" />
-                                    <span className="text-[9px] font-bold text-emerald-700">Plantilla local</span>
-                                </div>
-                            )}
-                        </div>
+                        )}
 
                         {/* Preview específico de Grilla */}
                         {isGridTemplate && (
