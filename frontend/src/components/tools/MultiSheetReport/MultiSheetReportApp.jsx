@@ -170,6 +170,399 @@ const normalizeTemplateSections = (rawSections) => {
         .filter(section => section.templates.length > 0);
 };
 
+const VOLANTEO_TEMPLATE_FIELDS = [
+    'CENTRO',
+    'NIS',
+    'SECTOR',
+    'FECHA CORTE',
+    'DIRECCIONES AFECTADAS',
+    'DISTRITO',
+    'CODIGO COMPONENTE',
+    'ESTADO',
+];
+
+const normalizeMappingToken = (value) => String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '');
+
+const dedupeStrings = (values) => Array.from(new Set(
+    values
+        .map(value => String(value || '').trim())
+        .filter(Boolean)
+));
+
+const findBestHeaderMatch = (targetKey, sourceHeaders) => {
+    const cleanTarget = String(targetKey || '').trim();
+    if (!cleanTarget) return '';
+
+    const exactMatch = sourceHeaders.find(header =>
+        String(header || '').trim().toLowerCase() === cleanTarget.toLowerCase()
+    );
+    if (exactMatch) return String(exactMatch);
+
+    const normalizedTarget = normalizeMappingToken(cleanTarget);
+    if (!normalizedTarget) return '';
+
+    const normalizedMatch = sourceHeaders.find(header =>
+        normalizeMappingToken(header) === normalizedTarget
+    );
+    if (normalizedMatch) return String(normalizedMatch);
+
+    const fuzzyMatch = sourceHeaders.find(header => {
+        const normalizedHeader = normalizeMappingToken(header);
+        return normalizedHeader && (
+            normalizedHeader.includes(normalizedTarget) ||
+            normalizedTarget.includes(normalizedHeader)
+        );
+    });
+
+    return fuzzyMatch ? String(fuzzyMatch) : '';
+};
+
+const buildTemplateFieldMappings = (templateFields, sourceHeaders, currentMappings = {}) => (
+    templateFields.reduce((acc, field) => {
+        const existing = currentMappings[field];
+        acc[field] = existing || {
+            sourceType: 'header',
+            sourceValue: findBestHeaderMatch(field, sourceHeaders),
+        };
+        return acc;
+    }, {})
+);
+
+const createCustomMappingEntry = () => ({
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    targetKey: '',
+    sourceType: 'header',
+    sourceValue: '',
+});
+
+const resolveMappedValue = (row, mapping, fallbackKey = '') => {
+    if (!mapping) {
+        return fallbackKey ? row?.[fallbackKey] : '';
+    }
+
+    if (mapping.sourceType === 'manual') {
+        return mapping.sourceValue ?? '';
+    }
+
+    const sourceKey = String(mapping.sourceValue || '').trim();
+    if (sourceKey) {
+        return row?.[sourceKey];
+    }
+
+    return fallbackKey ? row?.[fallbackKey] : '';
+};
+
+const buildMappedDataset = (sourceHeaders, sourceRows, templateFieldMappings, customFieldMappings) => {
+    const safeHeaders = dedupeStrings(sourceHeaders);
+    const safeRows = Array.isArray(sourceRows) ? sourceRows : [];
+    const effectiveCustomMappings = (Array.isArray(customFieldMappings) ? customFieldMappings : [])
+        .map(entry => ({
+            ...entry,
+            targetKey: String(entry?.targetKey || '').trim(),
+            sourceValue: entry?.sourceValue ?? '',
+            sourceType: entry?.sourceType === 'manual' ? 'manual' : 'header',
+        }))
+        .filter(entry => entry.targetKey);
+
+    const mappedRows = safeRows.map(row => {
+        const nextRow = { ...row };
+
+        Object.entries(templateFieldMappings || {}).forEach(([targetKey, mapping]) => {
+            nextRow[targetKey] = resolveMappedValue(row, mapping, targetKey);
+        });
+
+        effectiveCustomMappings.forEach(mapping => {
+            nextRow[mapping.targetKey] = resolveMappedValue(row, mapping);
+        });
+
+        return nextRow;
+    });
+
+    const mappedKeys = dedupeStrings([
+        ...Object.keys(templateFieldMappings || {}),
+        ...effectiveCustomMappings.map(entry => entry.targetKey),
+    ]);
+
+    return {
+        headers: dedupeStrings([...safeHeaders, ...mappedKeys]),
+        rows: mappedRows,
+    };
+};
+
+function ColumnMappingModal({
+    isOpen,
+    isLoading,
+    sourceHeaders,
+    fileName,
+    templateNames,
+    templateFields,
+    templateFieldMappings,
+    customFieldMappings,
+    errorMessage,
+    onTemplateFieldChange,
+    onAddCustomField,
+    onCustomFieldChange,
+    onRemoveCustomField,
+    onClose,
+    onApply,
+}) {
+    if (!isOpen) return null;
+
+    const hasTemplateFields = templateFields.length > 0;
+    const hasSourceHeaders = sourceHeaders.length > 0;
+
+    const renderMappingEditor = (mapping, onChange) => (
+        <div className="grid gap-2 md:grid-cols-[140px,minmax(0,1fr)]">
+            <select
+                value={mapping?.sourceType || 'header'}
+                onChange={e => onChange({
+                    sourceType: e.target.value,
+                    sourceValue: e.target.value === 'manual' ? (mapping?.sourceType === 'manual' ? mapping?.sourceValue || '' : '') : '',
+                })}
+                className="w-full rounded-2xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white outline-none focus:border-emerald-400"
+            >
+                <option value="header">Columna del archivo</option>
+                <option value="manual">Valor fijo</option>
+            </select>
+
+            {mapping?.sourceType === 'manual' ? (
+                <input
+                    type="text"
+                    value={mapping?.sourceValue || ''}
+                    onChange={e => onChange({ sourceValue: e.target.value })}
+                    placeholder="Escribe un valor fijo"
+                    className="w-full rounded-2xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white outline-none placeholder:text-neutral-500 focus:border-emerald-400"
+                />
+            ) : (
+                <select
+                    value={mapping?.sourceValue || ''}
+                    onChange={e => onChange({ sourceValue: e.target.value })}
+                    className="w-full rounded-2xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white outline-none focus:border-emerald-400"
+                >
+                    <option value="">-- Seleccionar columna --</option>
+                    {sourceHeaders.map(header => (
+                        <option key={header} value={header}>{header}</option>
+                    ))}
+                </select>
+            )}
+        </div>
+    );
+
+    return (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-neutral-950/80 px-4 py-6 backdrop-blur-sm">
+            <div className="w-full max-w-5xl overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.16),transparent_42%),linear-gradient(180deg,rgba(24,24,27,0.98),rgba(10,10,10,0.98))] shadow-[0_40px_120px_rgba(0,0,0,0.55)]">
+                <div className="border-b border-white/10 px-6 py-5">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="space-y-2">
+                            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-emerald-200">
+                                <Layers size={12} />
+                                Mapeo de columnas
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-semibold text-white">Conecta tu base de datos con la plantilla</h3>
+                                <p className="mt-1 text-sm text-neutral-300">
+                                    Relaciona las columnas del archivo con los c&oacute;digos Jinja detectados y crea campos extra si necesitas valores fijos.
+                                </p>
+                            </div>
+                            {fileName && (
+                                <p className="text-[11px] font-mono text-neutral-400">
+                                    Archivo: <span className="text-neutral-200">{fileName}</span>
+                                </p>
+                            )}
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                            <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3">
+                                <div className="text-[10px] uppercase tracking-[0.18em] text-neutral-500">Plantillas activas</div>
+                                <div className="mt-1 text-lg font-semibold text-white">{templateNames.length}</div>
+                            </div>
+                            <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3">
+                                <div className="text-[10px] uppercase tracking-[0.18em] text-neutral-500">Columnas origen</div>
+                                <div className="mt-1 text-lg font-semibold text-white">{sourceHeaders.length}</div>
+                            </div>
+                            <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3">
+                                <div className="text-[10px] uppercase tracking-[0.18em] text-neutral-500">Campos Jinja</div>
+                                <div className="mt-1 text-lg font-semibold text-white">{templateFields.length}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {templateNames.length > 0 && (
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            {templateNames.map(name => (
+                                <span
+                                    key={name}
+                                    className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-neutral-200"
+                                >
+                                    {name}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <div className="max-h-[68vh] overflow-y-auto px-6 py-5">
+                    {isLoading ? (
+                        <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 text-center">
+                            <div className="h-14 w-14 animate-spin rounded-full border-2 border-emerald-400/20 border-t-emerald-400" />
+                            <div>
+                                <p className="text-sm font-medium text-white">Analizando columnas y plantilla...</p>
+                                <p className="mt-1 text-xs text-neutral-400">Esto suele tardar solo unos segundos.</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="space-y-6">
+                            {errorMessage && (
+                                <div className="rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-xs text-amber-100">
+                                    {errorMessage}
+                                </div>
+                            )}
+
+                            {!hasSourceHeaders && (
+                                <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 px-4 py-5 text-sm text-neutral-300">
+                                    No se detectaron columnas en el archivo cargado.
+                                </div>
+                            )}
+
+                            <section className="space-y-3">
+                                <div className="flex items-center justify-between gap-3">
+                                    <div>
+                                        <h4 className="text-sm font-semibold text-white">Campos detectados en la plantilla</h4>
+                                        <p className="text-xs text-neutral-400">
+                                            Cada c&oacute;digo Jinja puede apuntar a una columna del archivo o a un valor fijo.
+                                        </p>
+                                    </div>
+                                    {hasTemplateFields && (
+                                        <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-200">
+                                            {templateFields.length} campos
+                                        </span>
+                                    )}
+                                </div>
+
+                                {hasTemplateFields ? (
+                                    <div className="grid gap-3 lg:grid-cols-2">
+                                        {templateFields.map(field => {
+                                            const mapping = templateFieldMappings[field] || { sourceType: 'header', sourceValue: '' };
+                                            const isReady = mapping.sourceType === 'manual'
+                                                ? String(mapping.sourceValue || '').trim().length > 0
+                                                : String(mapping.sourceValue || '').trim().length > 0;
+
+                                            return (
+                                                <div
+                                                    key={field}
+                                                    className="rounded-3xl border border-white/10 bg-black/20 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
+                                                >
+                                                    <div className="mb-3 flex items-start justify-between gap-3">
+                                                        <div className="min-w-0">
+                                                            <div className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">Jinja</div>
+                                                            <div className="mt-1 rounded-2xl border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs text-emerald-200 break-all">
+                                                                {`{{ data.get('${field}', '-') }}`}
+                                                            </div>
+                                                        </div>
+                                                        {isReady
+                                                            ? <CheckCircle size={16} className="mt-1 shrink-0 text-emerald-400" />
+                                                            : <AlertCircle size={16} className="mt-1 shrink-0 text-amber-300" />
+                                                        }
+                                                    </div>
+
+                                                    {renderMappingEditor(mapping, patch => onTemplateFieldChange(field, patch))}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div className="rounded-3xl border border-dashed border-white/10 bg-black/15 px-5 py-6 text-sm text-neutral-300">
+                                        No se encontraron c&oacute;digos Jinja en las plantillas activas. Puedes continuar con los datos originales o crear columnas personalizadas abajo.
+                                    </div>
+                                )}
+                            </section>
+
+                            <section className="space-y-3">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <h4 className="text-sm font-semibold text-white">Columnas personalizadas</h4>
+                                        <p className="text-xs text-neutral-400">
+                                            Agrega nuevos campos para generar alias o inyectar textos fijos dentro del dataset.
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={onAddCustomField}
+                                        className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-2 text-xs font-semibold text-emerald-100 transition-colors hover:border-emerald-300/50 hover:bg-emerald-400/15"
+                                    >
+                                        <Plus size={14} />
+                                        Agregar columna personalizada
+                                    </button>
+                                </div>
+
+                                {customFieldMappings.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {customFieldMappings.map(entry => (
+                                            <div
+                                                key={entry.id}
+                                                className="rounded-3xl border border-white/10 bg-black/20 p-4"
+                                            >
+                                                <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-center">
+                                                    <input
+                                                        type="text"
+                                                        value={entry.targetKey}
+                                                        onChange={e => onCustomFieldChange(entry.id, { targetKey: e.target.value })}
+                                                        placeholder="Nombre de la columna nueva"
+                                                        className="w-full rounded-2xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white outline-none placeholder:text-neutral-500 focus:border-emerald-400"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => onRemoveCustomField(entry.id)}
+                                                        className="inline-flex items-center justify-center gap-2 rounded-2xl border border-red-400/20 bg-red-400/10 px-3 py-2 text-xs font-medium text-red-100 transition-colors hover:border-red-300/40 hover:bg-red-400/15"
+                                                    >
+                                                        <Trash2 size={13} />
+                                                        Quitar
+                                                    </button>
+                                                </div>
+
+                                                {renderMappingEditor(entry, patch => onCustomFieldChange(entry.id, patch))}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="rounded-3xl border border-dashed border-white/10 bg-black/15 px-5 py-5 text-sm text-neutral-400">
+                                        A&uacute;n no agregaste columnas personalizadas.
+                                    </div>
+                                )}
+                            </section>
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex flex-col gap-3 border-t border-white/10 bg-black/20 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-xs text-neutral-400">
+                        Puedes cargar el archivo sin tocar nada y remapearlo despu&eacute;s si cambias de plantilla.
+                    </p>
+                    <div className="flex flex-col gap-2 sm:flex-row">
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium text-neutral-200 transition-colors hover:bg-white/10"
+                        >
+                            Usar datos originales
+                        </button>
+                        <button
+                            type="button"
+                            onClick={onApply}
+                            disabled={isLoading}
+                            className="rounded-2xl border border-emerald-400/30 bg-emerald-400/15 px-4 py-2 text-xs font-semibold text-emerald-100 transition-colors hover:bg-emerald-400/20 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                            Aplicar mapeo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Subcomponentes de preview
 // ─────────────────────────────────────────────────────────────────────────────
@@ -590,6 +983,16 @@ export default function MultiSheetReportApp() {
     const [headers, setHeaders] = useState([]);
     const [idColumn, setIdColumn] = useState('');
     const [isDraggingData, setIsDraggingData] = useState(false);
+    const [sourceData, setSourceData] = useState([]);
+    const [sourceHeaders, setSourceHeaders] = useState([]);
+    const [loadedDataFileName, setLoadedDataFileName] = useState('');
+    const [isColumnMappingOpen, setIsColumnMappingOpen] = useState(false);
+    const [isColumnMappingLoading, setIsColumnMappingLoading] = useState(false);
+    const [columnMappingError, setColumnMappingError] = useState('');
+    const [mappingTemplateNames, setMappingTemplateNames] = useState([]);
+    const [mappingTemplateFields, setMappingTemplateFields] = useState([]);
+    const [templateFieldMappings, setTemplateFieldMappings] = useState({});
+    const [customFieldMappings, setCustomFieldMappings] = useState([]);
 
     // ── Mini-encabezado alternativo ───────────────────────────────────────────
     const [altHeaderConfig, setAltHeaderConfig] = useState({
@@ -629,10 +1032,12 @@ export default function MultiSheetReportApp() {
                 const res = await fetch(`${API_BASE}/templates`);
                 if (!res.ok) throw new Error('Error al obtener plantillas');
                 const json = await res.json();
+                console.log('[MultiSheet] Templates response:', json);
                 const templates = Array.isArray(json.templates)
                     ? Array.from(new Set(json.templates.map(t => String(t || '').trim()).filter(Boolean)))
                     : [];
                 const sections = normalizeTemplateSections(json.sections);
+                console.log('[MultiSheet] Normalized sections:', sections);
                 const sectionTemplates = sections.flatMap(section => section.templates);
                 const finalTemplates = templates.length > 0
                     ? templates
@@ -652,6 +1057,168 @@ export default function MultiSheetReportApp() {
         };
         load();
         return () => { cancelled = true; };
+    }, []);
+
+    const fetchTemplateMappingFields = useCallback(async (templateNames) => {
+        const uniqueTemplateNames = dedupeStrings(templateNames);
+        if (uniqueTemplateNames.length === 0) {
+            return { templateFields: [], errors: [] };
+        }
+
+        const responses = await Promise.all(uniqueTemplateNames.map(async (templateName) => {
+            if (templateName === GRID_TEMPLATE_NAME) {
+                return { templateName, fields: [], error: '' };
+            }
+
+            try {
+                const encoded = encodeURIComponent(templateName);
+                const res = await fetch(`${API_BASE}/templates/${encoded}/mapping-fields`);
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const json = await res.json();
+                const fields = Array.isArray(json.fields)
+                    ? dedupeStrings(json.fields)
+                    : [];
+                return { templateName, fields, error: '' };
+            } catch (err) {
+                console.error(`[MultiSheet] Error cargando campos de mapeo para "${templateName}":`, err);
+                const fallbackFields = templateName === VOLANTEO_TEMPLATE_NAME
+                    ? [...VOLANTEO_TEMPLATE_FIELDS]
+                    : [];
+                return {
+                    templateName,
+                    fields: fallbackFields,
+                    error: fallbackFields.length > 0 ? '' : templateName,
+                };
+            }
+        }));
+
+        return {
+            templateFields: dedupeStrings(responses.flatMap(item => item.fields)),
+            errors: responses
+                .map(item => item.error)
+                .filter(Boolean),
+        };
+    }, []);
+
+    const commitLoadedData = useCallback((nextHeaders, nextRows, successMessage) => {
+        const normalizedHeaders = dedupeStrings(nextHeaders);
+        const normalizedRows = Array.isArray(nextRows) ? nextRows : [];
+
+        setHeaders(normalizedHeaders);
+        setData(normalizedRows);
+        setSelectedIndex('');
+        setExportScope('single');
+        setSearchOrder('');
+        setIdColumn(prev => normalizedHeaders.includes(prev) ? prev : '');
+        setAltHeaderConfig(prev => ({
+            ...prev,
+            idField: normalizedHeaders.includes(prev.idField) ? prev.idField : '',
+            dateField: normalizedHeaders.includes(prev.dateField) ? prev.dateField : '',
+        }));
+        setIsColumnMappingOpen(false);
+        toast.success(successMessage || `${normalizedRows.length} registros cargados`);
+    }, []);
+
+    const openColumnMappingModal = useCallback(async (
+        nextSourceHeaders,
+        nextSourceData,
+        options = {},
+    ) => {
+        const {
+            fileName = loadedDataFileName,
+            preserveExisting = false,
+            preserveCustom = false,
+        } = options;
+
+        const safeHeaders = dedupeStrings(nextSourceHeaders);
+        const safeRows = Array.isArray(nextSourceData) ? nextSourceData : [];
+        const activeTemplateNames = dedupeStrings(
+            sheets
+                .map(sheet => sheet?.templateName)
+                .filter(Boolean)
+        );
+
+        setSourceHeaders(safeHeaders);
+        setSourceData(safeRows);
+        setLoadedDataFileName(fileName || '');
+        setMappingTemplateNames(activeTemplateNames);
+        setIsColumnMappingOpen(true);
+        setIsColumnMappingLoading(true);
+        setColumnMappingError('');
+
+        try {
+            const { templateFields, errors } = await fetchTemplateMappingFields(activeTemplateNames);
+
+            setMappingTemplateFields(templateFields);
+            setTemplateFieldMappings(prev => buildTemplateFieldMappings(
+                templateFields,
+                safeHeaders,
+                preserveExisting ? prev : {},
+            ));
+            setCustomFieldMappings(prev => preserveCustom ? prev : []);
+
+            if (activeTemplateNames.length === 0) {
+                setColumnMappingError('No hay plantillas activas en el Step 1. Puedes usar los datos originales o crear columnas personalizadas.');
+            } else if (errors.length > 0) {
+                setColumnMappingError(`No se pudo leer el mapeo de: ${errors.join(', ')}. Puedes completar el resto manualmente.`);
+            }
+        } catch (err) {
+            console.error('[MultiSheet] Error preparando modal de mapeo:', err);
+            setMappingTemplateFields([]);
+            setTemplateFieldMappings({});
+            if (!preserveCustom) {
+                setCustomFieldMappings([]);
+            }
+            setColumnMappingError('No se pudo preparar el mapeo automatico. Puedes continuar con los datos originales.');
+        } finally {
+            setIsColumnMappingLoading(false);
+        }
+    }, [fetchTemplateMappingFields, loadedDataFileName, sheets]);
+
+    const applyColumnMapping = useCallback(() => {
+        const { headers: mappedHeaders, rows: mappedRows } = buildMappedDataset(
+            sourceHeaders,
+            sourceData,
+            templateFieldMappings,
+            customFieldMappings,
+        );
+        commitLoadedData(mappedHeaders, mappedRows, `${mappedRows.length} registros cargados con mapeo`);
+    }, [sourceHeaders, sourceData, templateFieldMappings, customFieldMappings, commitLoadedData]);
+
+    const useOriginalLoadedData = useCallback(() => {
+        commitLoadedData(sourceHeaders, sourceData, `${sourceData.length} registros cargados`);
+    }, [sourceHeaders, sourceData, commitLoadedData]);
+
+    const updateTemplateFieldMapping = useCallback((field, patch) => {
+        setTemplateFieldMappings(prev => ({
+            ...prev,
+            [field]: {
+                sourceType: 'header',
+                sourceValue: '',
+                ...(prev[field] || {}),
+                ...patch,
+            },
+        }));
+    }, []);
+
+    const addCustomFieldMapping = useCallback(() => {
+        setCustomFieldMappings(prev => [...prev, createCustomMappingEntry()]);
+    }, []);
+
+    const updateCustomFieldMapping = useCallback((id, patch) => {
+        setCustomFieldMappings(prev => prev.map(entry => (
+            entry.id === id
+                ? {
+                    ...entry,
+                    ...patch,
+                    sourceType: (patch.sourceType || entry.sourceType || 'header') === 'manual' ? 'manual' : 'header',
+                }
+                : entry
+        )));
+    }, []);
+
+    const removeCustomFieldMapping = useCallback((id) => {
+        setCustomFieldMappings(prev => prev.filter(entry => entry.id !== id));
     }, []);
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -678,34 +1245,52 @@ export default function MultiSheetReportApp() {
     // ─────────────────────────────────────────────────────────────────────────
     // Handlers: Excel/CSV
     // ─────────────────────────────────────────────────────────────────────────
-    const processExcelFile = useCallback((file) => {
-        const reader = new FileReader();
-        reader.onload = (evt) => {
-            const bstr = evt.target.result;
-            const wb = XLSX.read(bstr, { type: 'binary', cellDates: false, cellNF: true });
+    const processExcelFile = useCallback(async (file) => {
+        try {
+            const buffer = await file.arrayBuffer();
+            const wb = XLSX.read(buffer, { type: 'array', cellDates: false, cellNF: true });
             const ws = wb.Sheets[wb.SheetNames[0]];
             const jsonData = XLSX.utils.sheet_to_json(ws, { header: 1, raw: true });
 
-            if (jsonData.length > 0) {
-                const _headers = jsonData[0];
-                const _data = jsonData.slice(1).map(row => {
-                    const obj = {};
-                    _headers.forEach((h, i) => {
-                        let val = row[i];
-                        if (isDateColumn(h) && typeof val === 'number' && val > 1000 && val < 100000) {
-                            val = excelSerialToDate(val);
-                        }
-                        obj[h] = val;
-                    });
-                    return obj;
-                });
-                setHeaders(_headers);
-                setData(_data);
-                toast.success(`${_data.length} registros cargados`);
+            if (!Array.isArray(jsonData) || jsonData.length === 0) {
+                toast.error('El archivo no contiene datos legibles.');
+                return;
             }
-        };
-        reader.readAsBinaryString(file);
-    }, []);
+
+            const parsedHeaders = (jsonData[0] || []).map((header, index) => {
+                const label = String(header ?? '').trim();
+                return label || `Columna ${index + 1}`;
+            });
+
+            const parsedRows = jsonData
+                .slice(1)
+                .filter(row => Array.isArray(row) && row.some(value => (
+                    value !== undefined &&
+                    value !== null &&
+                    String(value).trim() !== ''
+                )))
+                .map(row => {
+                    const nextRow = {};
+                    parsedHeaders.forEach((header, index) => {
+                        let value = row[index];
+                        if (isDateColumn(header) && typeof value === 'number' && value > 1000 && value < 100000) {
+                            value = excelSerialToDate(value);
+                        }
+                        nextRow[header] = value;
+                    });
+                    return nextRow;
+                });
+
+            await openColumnMappingModal(parsedHeaders, parsedRows, {
+                fileName: file.name,
+                preserveExisting: false,
+                preserveCustom: false,
+            });
+        } catch (err) {
+            console.error('[MultiSheet] Error procesando archivo de datos:', err);
+            toast.error('No se pudo leer el archivo seleccionado.');
+        }
+    }, [openColumnMappingModal]);
 
     const handleDataDrop = useCallback((e) => {
         e.preventDefault();
@@ -1355,6 +1940,30 @@ export default function MultiSheetReportApp() {
                                     <input type="file" hidden accept=".csv,.xlsx,.xls" onChange={handleDataInput} />
                                 </label>
 
+                                {sourceData.length > 0 && (
+                                    <div className="rounded-2xl border border-emerald-500/15 bg-emerald-500/5 px-3 py-2.5">
+                                        <div className="flex items-center justify-between gap-3">
+                                            <div>
+                                                <div className="text-[10px] uppercase tracking-[0.16em] text-emerald-200/80">Mapeo activo</div>
+                                                <div className="mt-1 text-[11px] text-neutral-300">
+                                                    {mappingTemplateFields.length} campos Jinja y {customFieldMappings.length} columnas personalizadas configuradas.
+                                                </div>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => openColumnMappingModal(sourceHeaders, sourceData, {
+                                                    fileName: loadedDataFileName,
+                                                    preserveExisting: true,
+                                                    preserveCustom: true,
+                                                })}
+                                                className="rounded-xl border border-emerald-400/20 bg-emerald-400/10 px-3 py-1.5 text-[10px] font-semibold text-emerald-100 transition-colors hover:bg-emerald-400/15"
+                                            >
+                                                Reabrir mapeo
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Columna ID */}
                                 {headers.length > 0 && (
                                     <div>
@@ -1683,6 +2292,24 @@ export default function MultiSheetReportApp() {
                 </main>
 
             </div>
+
+            <ColumnMappingModal
+                isOpen={isColumnMappingOpen}
+                isLoading={isColumnMappingLoading}
+                sourceHeaders={sourceHeaders}
+                fileName={loadedDataFileName}
+                templateNames={mappingTemplateNames}
+                templateFields={mappingTemplateFields}
+                templateFieldMappings={templateFieldMappings}
+                customFieldMappings={customFieldMappings}
+                errorMessage={columnMappingError}
+                onTemplateFieldChange={updateTemplateFieldMapping}
+                onAddCustomField={addCustomFieldMapping}
+                onCustomFieldChange={updateCustomFieldMapping}
+                onRemoveCustomField={removeCustomFieldMapping}
+                onClose={useOriginalLoadedData}
+                onApply={applyColumnMapping}
+            />
 
             {/* Loading modal */}
             {isPdfLoading && (

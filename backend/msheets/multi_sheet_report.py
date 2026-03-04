@@ -27,7 +27,10 @@ from typing import Any, Optional
 from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile  # pyre-ignore
 from fastapi.responses import StreamingResponse, HTMLResponse  # pyre-ignore
 
-from template_editor.service import get_all_published_templates  # type: ignore
+from template_editor.service import (  # type: ignore
+    get_all_published_templates,
+    get_published_template_by_name,
+)
 
 # ── Router ────────────────────────────────────────────────────────────────────
 router = APIRouter(tags=["multi-sheet-report"])
@@ -571,6 +574,20 @@ _GRID_TEMPLATE_NAME = "Grilla de Imágenes"
 _VOLANTEO_TEMPLATE_NAME = "Panel Fotográfico Volanteo"
 _BUILTIN_LAYOUTS: list[str] = [_GRID_TEMPLATE_NAME, _VOLANTEO_TEMPLATE_NAME]
 _LOCAL_TEMPLATE_DIR_CANDIDATES: tuple[str, ...] = ("multi_sheet_templates", "mtemplates")
+_VOLANTEO_TEMPLATE_FIELDS: tuple[str, ...] = (
+    "CENTRO",
+    "NIS",
+    "SECTOR",
+    "FECHA CORTE",
+    "DIRECCIONES AFECTADAS",
+    "DISTRITO",
+    "CODIGO COMPONENTE",
+    "ESTADO",
+)
+_TEMPLATE_DATA_GET_PATTERN = re.compile(
+    r"(?:report\.)?data\.get\(\s*(['\"])([^'\"]+)\1",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True)
@@ -611,6 +628,46 @@ def _list_independent_template_names() -> list[str]:
 
     independent_names = _dedupe_preserve_order(names)
     return [name for name in independent_names if name not in _BUILTIN_LAYOUTS]
+
+
+def _extract_template_fields_from_source(template_source: str) -> list[str]:
+    if not template_source:
+        return []
+
+    matches = [
+        match.group(2).strip()
+        for match in _TEMPLATE_DATA_GET_PATTERN.finditer(template_source)
+        if match.group(2).strip()
+    ]
+    return _dedupe_preserve_order(matches)
+
+
+def _resolve_template_mapping_fields(template_name: str) -> tuple[list[str], str]:
+    normalized = str(template_name or "").strip()
+    if not normalized:
+        return [], "unknown"
+
+    if normalized == _GRID_TEMPLATE_NAME:
+        return [], "builtin"
+
+    if normalized == _VOLANTEO_TEMPLATE_NAME:
+        return list(_VOLANTEO_TEMPLATE_FIELDS), "builtin"
+
+    record = _find_local_template(normalized)
+    if record is not None:
+        with open(record.file_path, "r", encoding="utf-8") as fh:
+            return _extract_template_fields_from_source(fh.read()), "local"
+
+    try:
+        compiled_html = get_published_template_by_name(normalized)
+    except Exception as exc:
+        print(f"[MultiSheet] Error reading published template '{normalized}': {exc}")
+        compiled_html = None
+
+    if compiled_html:
+        return _extract_template_fields_from_source(compiled_html), "independent"
+
+    return [], "unknown"
 
 
 def _local_template_directories() -> list[str]:
@@ -715,6 +772,18 @@ async def list_templates() -> dict:
     return {
         "templates": _dedupe_preserve_order(flattened),
         "sections": sections,
+    }
+
+
+@router.get("/templates/{template_name}/mapping-fields")
+async def get_template_mapping_fields(template_name: str) -> dict:
+    """Return detected Jinja data keys for the requested template name."""
+    fields, source = _resolve_template_mapping_fields(template_name)
+    return {
+        "templateName": template_name,
+        "fields": fields,
+        "count": len(fields),
+        "source": source,
     }
 
 

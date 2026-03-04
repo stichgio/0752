@@ -211,6 +211,56 @@ def test_list_templates_includes_local_section(client):
     assert "Volanteo Local" in sections["local"]["templates"]
 
 
+def test_get_template_mapping_fields_for_builtin_volanteo(client):
+    response = client.get(
+        "/api/multi-sheet/templates/Panel%20Fotogr%C3%A1fico%20Volanteo/mapping-fields"
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["source"] == "builtin"
+    assert payload["fields"] == [
+        "CENTRO",
+        "NIS",
+        "SECTOR",
+        "FECHA CORTE",
+        "DIRECCIONES AFECTADAS",
+        "DISTRITO",
+        "CODIGO COMPONENTE",
+        "ESTADO",
+    ]
+
+
+def test_get_template_mapping_fields_for_local_template(client):
+    response = client.get("/api/multi-sheet/templates/Volanteo%20Local/mapping-fields")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["source"] == "local"
+    assert "CENTRO" in payload["fields"]
+    assert "NIS" in payload["fields"]
+    assert "CODIGO COMPONENTE" in payload["fields"]
+
+
+def test_get_template_mapping_fields_for_published_template(client, monkeypatch):
+    monkeypatch.setattr(
+        multi_sheet_report,
+        "get_published_template_by_name",
+        lambda _name: (
+            "<div>{{ report.data.get('CLIENTE', '-') }}</div>"
+            "<div>{{ data.get(\"CODIGO\", '-') }}</div>"
+            "<div>{{ report.data.get('CLIENTE', '-') }}</div>"
+        ),
+    )
+
+    response = client.get("/api/multi-sheet/templates/Plantilla%20Mapeo/mapping-fields")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["source"] == "independent"
+    assert payload["fields"] == ["CLIENTE", "CODIGO"]
+
+
 def test_get_local_template_html_returns_content(client):
     """GET /templates/{name}/html returns the HTML file content."""
     response = client.get("/api/multi-sheet/templates/Volanteo%20Local/html")
