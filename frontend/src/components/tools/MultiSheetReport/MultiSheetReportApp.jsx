@@ -13,7 +13,7 @@
  *   (routers/multi_sheet_report.py → _build_alt_header_html).
  */
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import {
     FileSpreadsheet,
@@ -123,9 +123,9 @@ function renderLocalTemplate(html, rowData, logoLeft, logoRight, images) {
 
     // Image loop: {% for img in images[:N] %}...{% endfor %}
     html = html.replace(
-        /\{%\s*for\s+img\s+in\s+images\[:\d+\]\s*%\}([\s\S]*?)\{%\s*endfor\s*%\}/g,
-        (_, loopContent) =>
-            images.slice(0, 4).map((img, i) => {
+        /\{%\s*for\s+img\s+in\s+images\[:(\d+)\]\s*%\}([\s\S]*?)\{%\s*endfor\s*%\}/g,
+        (_, countStr, loopContent) =>
+            images.slice(0, parseInt(countStr, 10)).map((img, i) => {
                 let item = loopContent;
                 item = item.replaceAll('{{ img.path }}', img.url || '');
                 item = item.replaceAll('{{ img.name }}', img.name || '');
@@ -425,23 +425,18 @@ function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, lo
     const hasTemplate = Boolean(sheet.templateName);
 
     // Obtener imágenes para esta fila si hay datos
-    const getImagesForRow = () => {
+    const rowImages = useMemo(() => {
         if (!rowData || !allImages || allImages.length === 0) return [];
         const recordId = idColumn ? rowData[idColumn] : (rowData.ID_UNICO || rowData.id || rowData.ID);
         if (!recordId) return [];
-
         const filtered = allImages.filter(img => matchesRecordId(img.name, recordId));
-
-        // Aplicar paginación si viene de la vista dividida
         if (sheet.pageNum && sheet.totalPages) {
             const p = sheet.pageNum - 1;
             const size = sheet.imagesPerPage || 4;
             return filtered.slice(p * size, (p + 1) * size);
         }
         return filtered;
-    };
-
-    const rowImages = getImagesForRow();
+    }, [rowData, allImages, idColumn, sheet.pageNum, sheet.totalPages, sheet.imagesPerPage]);
     const isLocalTemplate = sheet.templateName != null && localTemplateNames.has(sheet.templateName);
     const [localRenderedHtml, setLocalRenderedHtml] = useState(null);
 
