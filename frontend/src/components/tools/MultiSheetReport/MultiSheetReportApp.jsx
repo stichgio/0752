@@ -832,6 +832,14 @@ function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, lo
 
     // Obtener imágenes para esta fila si hay datos
     const rowImages = useMemo(() => {
+        if (sheet.providedImages) {
+            if (sheet.pageNum && sheet.totalPages) {
+                const p = sheet.pageNum - 1;
+                const size = sheet.imagesPerPage || 4;
+                return sheet.providedImages.slice(p * size, (p + 1) * size);
+            }
+            return sheet.providedImages;
+        }
         if (!rowData || !allImages || allImages.length === 0) return [];
         const recordId = idColumn ? rowData[idColumn] : (rowData.ID_UNICO || rowData.id || rowData.ID);
         if (!recordId) return [];
@@ -842,7 +850,7 @@ function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, lo
             return filtered.slice(p * size, (p + 1) * size);
         }
         return filtered;
-    }, [rowData, allImages, idColumn, sheet.pageNum, sheet.totalPages, sheet.imagesPerPage]);
+    }, [rowData, allImages, idColumn, sheet.pageNum, sheet.totalPages, sheet.imagesPerPage, sheet.providedImages]);
     const isLocalTemplate = sheet.templateName != null && localTemplateNames.has(sheet.templateName);
     const [localRenderedHtml, setLocalRenderedHtml] = useState(null);
 
@@ -1480,73 +1488,49 @@ export default function MultiSheetReportApp() {
         const activeSheets = orderSheetsForFirstPage(
             sheets.map((s, sheetIdx) => ({ ...s, _sheetIdx: sheetIdx }))
         );
-        const firstPageSheet = activeSheets.find(sheet => sheet.firstPageOnly);
-        const regularSheets = activeSheets.filter(sheet => !sheet.firstPageOnly);
 
         let globalOrder = 0;
         const sheetsConfig = [];
         const allImages = new Set();
 
-        const resolveSheetImages = (sheet, rowImages) => {
-            const hasManualSelection = sheet.selectedImageIndices && sheet.selectedImageIndices.length > 0;
-            if (hasManualSelection) {
-                return sheet.selectedImageIndices.map(idx => images[idx]).filter(Boolean);
-            }
-            if (sheet.templateName === VOLANTEO_TEMPLATE_NAME) {
-                return rowImages.slice(0, 4);
-            }
-            return rowImages;
-        };
+        rowIndices.forEach(rowIdx => {
+            const row = data[rowIdx];
+            if (!row) return;
+            const rowData = { ...row };
 
-        const pushSheetConfigEntries = ({
-            sheet,
-            rowData,
-            rowImages,
-            forceSinglePage = false,
-        }) => {
-            const photosPerPage = sheet.imagesPerPage || 4;
-            const sheetImages = resolveSheetImages(sheet, rowImages);
+            let rowImagesForThisRecord = getImagesForRow(row);
 
-            sheetImages.forEach(img => allImages.add(img));
-
-            if (forceSinglePage) {
-                const singlePageImages = sheet.templateName === GRID_TEMPLATE_NAME
-                    ? sheetImages.slice(0, photosPerPage)
-                    : sheetImages;
-
-                sheetsConfig.push({
-                    order: globalOrder++,
-                    title: sheet.title,
-                    templateName: sheet.templateName,
-                    useAltHeader: sheet.useAltHeader,
-                    imagesPerPage: photosPerPage,
-                    rowData,
-                    imageFilenames: singlePageImages.map(img => img.name),
-                    pageNum: 1,
-                    totalPages: 1,
-                });
-                return;
-            }
-
-            if (sheetImages.length === 0) {
-                sheetsConfig.push({
-                    order: globalOrder++,
-                    title: sheet.title,
-                    templateName: sheet.templateName,
-                    useAltHeader: sheet.useAltHeader,
-                    imagesPerPage: photosPerPage,
-                    rowData,
-                    imageFilenames: [],
-                    pageNum: 1,
-                    totalPages: 1,
-                });
-                return;
-            }
-
-            if (sheet.templateName === GRID_TEMPLATE_NAME && sheetImages.length > photosPerPage) {
-                const totalPages = Math.ceil(sheetImages.length / photosPerPage);
-                for (let p = 0; p < totalPages; p++) {
-                    const chunk = sheetImages.slice(p * photosPerPage, (p + 1) * photosPerPage);
+            activeSheets.forEach((sheet) => {
+                const photosPerPage = sheet.templateName === VOLANTEO_TEMPLATE_NAME ? 4 : (sheet.imagesPerPage || 4);
+                
+                let sheetImages = [];
+                const hasManualSelection = sheet.selectedImageIndices && sheet.selectedImageIndices.length > 0;
+                
+                if (hasManualSelection) {
+                    sheetImages = sheet.selectedImageIndices.map(idx => images[idx]).filter(Boolean);
+                } else {
+                    sheetImages = [...rowImagesForThisRecord];
+                }
+                
+                sheetImages.forEach(img => allImages.add(img));
+                
+                if (sheetImages.length === 0) {
+                    sheetsConfig.push({
+                        order: globalOrder++,
+                        title: sheet.title,
+                        templateName: sheet.templateName,
+                        useAltHeader: sheet.useAltHeader,
+                        imagesPerPage: photosPerPage,
+                        rowData,
+                        imageFilenames: [],
+                        pageNum: 1,
+                        totalPages: 1,
+                    });
+                    return;
+                }
+                
+                if (sheet.firstPageOnly) {
+                    const chunk = sheetImages.slice(0, photosPerPage);
                     sheetsConfig.push({
                         order: globalOrder++,
                         title: sheet.title,
@@ -1555,52 +1539,34 @@ export default function MultiSheetReportApp() {
                         imagesPerPage: photosPerPage,
                         rowData,
                         imageFilenames: chunk.map(img => img.name),
-                        pageNum: p + 1,
-                        totalPages,
+                        pageNum: 1,
+                        totalPages: 1,
                     });
+                    
+                    if (!hasManualSelection) {
+                        rowImagesForThisRecord = rowImagesForThisRecord.slice(photosPerPage);
+                    }
+                } else {
+                    const totalPages = Math.ceil(sheetImages.length / photosPerPage);
+                    for (let p = 0; p < totalPages; p++) {
+                        const chunk = sheetImages.slice(p * photosPerPage, (p + 1) * photosPerPage);
+                        sheetsConfig.push({
+                            order: globalOrder++,
+                            title: sheet.title,
+                            templateName: sheet.templateName,
+                            useAltHeader: sheet.useAltHeader,
+                            imagesPerPage: photosPerPage,
+                            rowData,
+                            imageFilenames: chunk.map(img => img.name),
+                            pageNum: p + 1,
+                            totalPages,
+                        });
+                    }
+                    
+                    if (!hasManualSelection) {
+                        rowImagesForThisRecord = [];
+                    }
                 }
-                return;
-            }
-
-            sheetsConfig.push({
-                order: globalOrder++,
-                title: sheet.title,
-                templateName: sheet.templateName,
-                useAltHeader: sheet.useAltHeader,
-                imagesPerPage: photosPerPage,
-                rowData,
-                imageFilenames: sheetImages.map(img => img.name),
-                pageNum: 1,
-                totalPages: 1,
-            });
-        };
-
-        if (firstPageSheet && rowIndices.length > 0) {
-            const firstRow = data[rowIndices[0]];
-            if (firstRow) {
-                const firstRowData = { ...firstRow };
-                const firstRowImages = getImagesForRow(firstRow);
-                pushSheetConfigEntries({
-                    sheet: firstPageSheet,
-                    rowData: firstRowData,
-                    rowImages: firstRowImages,
-                    forceSinglePage: true,
-                });
-            }
-        }
-
-        rowIndices.forEach(rowIdx => {
-            const row = data[rowIdx];
-            if (!row) return;
-            const rowData = { ...row };  // pasar toda la fila sin transformación
-
-            const rowImages = getImagesForRow(row);
-            regularSheets.forEach(sheet => {
-                pushSheetConfigEntries({
-                    sheet,
-                    rowData,
-                    rowImages,
-                });
             });
         });
 
@@ -2302,26 +2268,37 @@ export default function MultiSheetReportApp() {
                                 const previewCards = [];
                                 let globalIdx = 0;
                                 const orderedPreviewSheets = orderSheetsForFirstPage(sheets);
+                                
+                                const recordId = idColumn ? selectedRow?.[idColumn] : null;
+                                const initialRowImages = (recordId && images)
+                                    ? images.filter(img => matchesRecordId(img.name, String(recordId)))
+                                    : [];
+                                
+                                let unassignedImagesForPreview = [...initialRowImages];
 
                                 orderedPreviewSheets.forEach((sheet) => {
-                                    const recordId = idColumn ? selectedRow?.[idColumn] : null;
-                                    const rowImages = (recordId && images)
-                                        ? images.filter(img => matchesRecordId(img.name, String(recordId)))
-                                        : [];
+                                    const photosPerPage = sheet.templateName === VOLANTEO_TEMPLATE_NAME ? 4 : (sheet.imagesPerPage || 4);
+                                    
+                                    let sheetImages = [];
+                                    const hasManualSelection = sheet.selectedImageIndices && sheet.selectedImageIndices.length > 0;
+                                    
+                                    if (hasManualSelection) {
+                                        sheetImages = sheet.selectedImageIndices.map(idx => images[idx]).filter(Boolean);
+                                    } else {
+                                        sheetImages = [...unassignedImagesForPreview];
+                                    }
 
-                                    const photosPerPage = sheet.imagesPerPage || 4;
-                                    const isGrid = sheet.templateName === GRID_TEMPLATE_NAME;
-                                    const shouldPaginateGrid = isGrid && !sheet.firstPageOnly;
+                                    const shouldPaginate = !sheet.firstPageOnly;
 
-                                    if (shouldPaginateGrid && rowImages.length > photosPerPage) {
-                                        const totalPages = Math.ceil(rowImages.length / photosPerPage);
+                                    if (shouldPaginate && sheetImages.length > photosPerPage) {
+                                        const totalPages = Math.ceil(sheetImages.length / photosPerPage);
                                         for (let p = 0; p < totalPages; p++) {
                                             previewCards.push(
                                                 <div key={`${sheet.id}-p${p}`}>
                                                     <SheetPreviewCard
-                                                        sheet={{ ...sheet, pageNum: p + 1, totalPages }}
+                                                        sheet={{ ...sheet, pageNum: p + 1, totalPages, providedImages: sheetImages }}
                                                         index={globalIdx++}
-                                                        total={999} // se recalcula después o se omite
+                                                        total={999}
                                                         headerTitle={headerTitle}
                                                         headerSubtitle={headerSubtitle}
                                                         logoLeft={logoLeft}
@@ -2341,11 +2318,13 @@ export default function MultiSheetReportApp() {
                                                 </div>
                                             );
                                         }
+                                        if (!hasManualSelection) unassignedImagesForPreview = [];
                                     } else {
+                                        // First page (1°) o menos imágenes que photosPerPage
                                         previewCards.push(
                                             <div key={sheet.id}>
                                                 <SheetPreviewCard
-                                                    sheet={sheet}
+                                                    sheet={{ ...sheet, providedImages: sheetImages }}
                                                     index={globalIdx++}
                                                     total={999}
                                                     headerTitle={headerTitle}
@@ -2366,6 +2345,11 @@ export default function MultiSheetReportApp() {
                                                 </div>
                                             </div>
                                         );
+                                        if (!hasManualSelection && sheet.firstPageOnly) {
+                                            unassignedImagesForPreview = unassignedImagesForPreview.slice(photosPerPage);
+                                        } else if (!hasManualSelection) {
+                                            unassignedImagesForPreview = [];
+                                        }
                                     }
                                 });
                                 return previewCards;
