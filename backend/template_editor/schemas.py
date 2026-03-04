@@ -14,7 +14,6 @@ class CreateTemplatePayload(BaseModel):
 
 
 class UpdateTemplatePayload(BaseModel):
-    role: UserRole = "editor"
     author: str = Field(default="system", min_length=1, max_length=120)
     templateJson: TemplateJson
 
@@ -42,4 +41,3 @@ class RollbackTemplatePayload(BaseModel):
 class UpdateTemplateResponse(BaseModel):
     template: TemplateEditorRecord
     validation: ValidationResult
-

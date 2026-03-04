@@ -10,6 +10,8 @@ from .models import TemplateJson, UserRole, ValidationIssue, ValidationResult  #
 
 VARIABLE_RE = re.compile(r"{{\s*([a-zA-Z_][a-zA-Z0-9_]*)(\|[a-zA-Z_][a-zA-Z0-9_]*)?\s*}}")
 RAW_JINJA_RE = re.compile(r"{{\s*([^{}]+?)\s*}}")
+JINJA_BLOCK_RE = re.compile(r"{%\s*[\s\S]*?\s*%}")
+JINJA_COMMENT_RE = re.compile(r"{#\s*[\s\S]*?\s*#}")
 
 ALLOWED_TAGS = [
     "div", "section", "p", "span", "strong", "em", "table", "thead", "tbody", "tr", "td", "th",
@@ -47,6 +49,8 @@ def sanitizeHtml(template_html: str) -> str:
     cleaned = re.sub(r"\son[a-zA-Z]+\s*=\s*\"[^\"]*\"", "", cleaned)
     cleaned = re.sub(r"\son[a-zA-Z]+\s*=\s*'[^']*'", "", cleaned)
     cleaned = re.sub(r"<\s*(script|iframe)[^>]*>.*?<\s*/\s*\1\s*>", "", cleaned, flags=re.IGNORECASE | re.DOTALL)
+    cleaned = JINJA_BLOCK_RE.sub("", cleaned)
+    cleaned = JINJA_COMMENT_RE.sub("", cleaned)
 
     if bleach is None:
         # Sanitización adicional en modo fallback.
@@ -85,10 +89,20 @@ def validateVariables(template_json: TemplateJson, allowed_variables: Dict[str, 
 
     for s_idx, section in enumerate(template_json.sections):
         for b_idx, block in enumerate(section.blocks):
+            path = f"sections[{s_idx}].blocks[{b_idx}].content"
+            content = block.content or ""
+            if JINJA_BLOCK_RE.search(content) or JINJA_COMMENT_RE.search(content):
+                issues.append(
+                    ValidationIssue(
+                        level="error",
+                        code="JINJA_CONTROL_NOT_ALLOWED",
+                        message="Control-flow Jinja blocks are not allowed in editable block content",
+                        path=path,
+                    )
+                )
             for raw in RAW_JINJA_RE.findall(block.content or ""):
                 token = "{{" + raw + "}}"
                 match = VARIABLE_RE.fullmatch(token)
-                path = f"sections[{s_idx}].blocks[{b_idx}].content"
                 if not match:
                     issues.append(ValidationIssue(level="error", code="VAR_SYNTAX", message=f"Invalid variable syntax '{token}'", path=path))
                     continue

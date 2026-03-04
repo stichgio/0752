@@ -1,6 +1,7 @@
 """SPA / static file serving for Hugging Face Spaces / Docker deployment."""
 
 import os
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException  # pyre-ignore
 from fastapi.responses import FileResponse  # type: ignore
@@ -11,6 +12,7 @@ def mount_static(app: FastAPI) -> None:
     """Mount static assets and SPA catch-all routes if the static folder exists."""
     if not os.path.exists("static"):
         return
+    static_root = Path("static").resolve()
 
     app.mount("/assets", StaticFiles(directory="static/assets"), name="assets")
 
@@ -26,9 +28,13 @@ def mount_static(app: FastAPI) -> None:
              raise HTTPException(status_code=404, detail="Not Found")
 
         # Check if file exists in static (e.g. favicon.ico, public assets)
-        path = os.path.join("static", full_path)
-        if os.path.exists(path) and os.path.isfile(path):
-            return FileResponse(path)
+        candidate = (static_root / full_path).resolve()
+        try:
+            candidate.relative_to(static_root)
+        except ValueError:
+            raise HTTPException(status_code=404, detail="Not Found")
+        if candidate.exists() and candidate.is_file():
+            return FileResponse(str(candidate))
 
         # Fallback to index.html for React Router
         return FileResponse("static/index.html")

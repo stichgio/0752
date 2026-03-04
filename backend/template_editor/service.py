@@ -125,6 +125,16 @@ def run_validations(template_json: TemplateJson, role: UserRole) -> ValidationRe
     return ValidationResult(valid=not any(i.level == "error" for i in issues), issues=issues)
 
 
+def _raise_if_invalid_template(template_json: TemplateJson, role: UserRole) -> ValidationResult:
+    validation = run_validations(template_json, role)
+    if validation.valid:
+        return validation
+
+    error_messages = [issue.message for issue in validation.issues if issue.level == "error"]
+    detail = "; ".join(error_messages[:3]) or "Template validation failed"
+    raise ValueError(f"Validacion de plantilla fallida: {detail}")
+
+
 def _sanitize_and_compile(template_json: TemplateJson) -> Tuple[TemplateJson, str]:
     sanitized = template_json.model_copy(deep=True) if hasattr(template_json, "model_copy") else template_json.copy(deep=True)
     for section in sanitized.sections:
@@ -432,6 +442,7 @@ class SupabaseTemplateStore:
         feature_flag: bool = False,
     ) -> TemplateEditorRecord:
         _ = feature_flag
+        _raise_if_invalid_template(template_json, role="editor")
         sanitized, compiled = _sanitize_and_compile(template_json)
         report_type_db = _canonical_report_type_db(report_type or sanitized.reportType)
         created_row = self.client.create_template(
@@ -474,7 +485,7 @@ class SupabaseTemplateStore:
         if not row:
             raise ValueError("Plantilla no encontrada")
 
-        validation = run_validations(template_json, role)
+        validation = _raise_if_invalid_template(template_json, role)
         sanitized, compiled = _sanitize_and_compile(template_json)
         current_version = int(row.get("current_version") or 0)
 

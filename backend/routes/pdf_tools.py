@@ -11,7 +11,7 @@ from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, Uploa
 from fastapi.responses import FileResponse  # type: ignore
 
 from pdf_tools import merge_pdfs_interleaved, merge_pdfs_sequential, split_pdf, split_pdf_by_ranges, organize_pdf  # type: ignore
-from utils.file_utils import save_upload  # type: ignore
+from utils.file_utils import build_safe_upload_path, save_upload, sanitize_upload_filename  # type: ignore
 
 router = APIRouter(prefix="/api", tags=["pdf-tools"])
 
@@ -63,8 +63,8 @@ async def tool_merge_pdfs(
             input_paths = []
             for idx, file in enumerate(files):
                 # Avoid collisions when users upload files with the same name.
-                safe_filename = f"{idx:04d}_{file.filename}"
-                file_path = os.path.join(temp_dir, safe_filename)
+                safe_filename = sanitize_upload_filename(file.filename or "", default_name="document.pdf")
+                file_path = build_safe_upload_path(temp_dir, safe_filename, prefix=f"{idx:04d}_", default_name="document.pdf")
                 await save_upload(file, file_path)
                 input_paths.append(file_path)
 
@@ -106,8 +106,8 @@ async def tool_merge_pdfs_normal(
         with tempfile.TemporaryDirectory() as temp_dir:
             input_paths = []
             for idx, file in enumerate(files):
-                safe_filename = f"{idx:04d}_{file.filename}"
-                file_path = os.path.join(temp_dir, safe_filename)
+                safe_filename = sanitize_upload_filename(file.filename or "", default_name="document.pdf")
+                file_path = build_safe_upload_path(temp_dir, safe_filename, prefix=f"{idx:04d}_", default_name="document.pdf")
                 file_size = await save_upload(file, file_path)
                 input_paths.append(file_path)
                 print(f"  Saved file {idx}: {file.filename} -> {safe_filename} ({file_size} bytes)")
@@ -146,7 +146,8 @@ async def tool_split_pdf(
 
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
-            input_path = os.path.join(temp_dir, file.filename)
+            safe_input_name = sanitize_upload_filename(file.filename or "", default_name="document.pdf")
+            input_path = build_safe_upload_path(temp_dir, safe_input_name, prefix="input_", default_name="document.pdf")
             await save_upload(file, input_path)
 
             output_dir = os.path.join(temp_dir, "split_output")
@@ -218,7 +219,8 @@ async def tool_organize_pdf(
 
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
-            input_path = os.path.join(temp_dir, file.filename)
+            safe_input_name = sanitize_upload_filename(file.filename or "", default_name="document.pdf")
+            input_path = build_safe_upload_path(temp_dir, safe_input_name, prefix="input_", default_name="document.pdf")
             await save_upload(file, input_path)
 
             if mode == "organize-split" and cuts:

@@ -1,4 +1,5 @@
 import asyncio
+import html
 import os
 import re
 from typing import Any, Dict
@@ -35,7 +36,31 @@ router = APIRouter(prefix="/api/template-editor", tags=["template-editor"])
 
 
 def _feature_enabled() -> bool:
-    return settings.feature_template_editor
+    raw = os.getenv("FEATURE_TEMPLATE_EDITOR")
+    if raw is None:
+        return settings.feature_template_editor
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _is_development_env() -> bool:
+    raw = os.getenv("ENVIRONMENT") or os.getenv("APP_ENV")
+    if raw is None:
+        return settings.is_development
+    return raw.strip().lower() in {"dev", "development", "local"}
+
+
+def _ensure_feature_enabled() -> None:
+    if not _feature_enabled():
+        raise HTTPException(status_code=403, detail="Funcionalidad del editor de plantillas deshabilitada")
+
+
+def _mutation_role() -> str:
+    # Never trust a client-supplied role for write operations.
+    return "admin" if _is_development_env() else "editor"
+
+
+def _value_error_status(exc: ValueError) -> int:
+    return 404 if "no encontrada" in str(exc).lower() else 400
 
 
 def _model_dump(model: Any) -> Dict[str, Any]:
@@ -46,11 +71,13 @@ def _model_dump(model: Any) -> Dict[str, Any]:
 
 @router.get("/variables/catalog")
 async def variable_catalog(report_type: str):
+    _ensure_feature_enabled()
     return {"reportType": report_type, "variables": get_variable_catalog(report_type)}
 
 
 @router.get("/published")
 async def list_published_templates():
+    _ensure_feature_enabled()
     try:
         templates = get_all_published_templates()
     except (SupabaseNotConfiguredError, SupabaseOperationError) as exc:
@@ -61,6 +88,7 @@ async def list_published_templates():
 
 @router.get("/templates")
 async def list_templates_endpoint():
+    _ensure_feature_enabled()
     try:
         templates = get_all_editor_templates()
     except (SupabaseNotConfiguredError, SupabaseOperationError) as exc:
@@ -71,11 +99,12 @@ async def list_templates_endpoint():
 
 @router.post("/templates")
 async def create_template_endpoint(payload: CreateTemplatePayload):
+    _ensure_feature_enabled()
     report_type = payload.reportType or payload.templateJson.reportType
     try:
         created = create_template(payload.name, report_type, payload.templateJson, payload.author, feature_flag=payload.featureFlag)
     except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
+        raise HTTPException(status_code=_value_error_status(exc), detail=str(exc))
     except (SupabaseNotConfiguredError, SupabaseOperationError) as exc:
         print(f"[TemplateEditor] Supabase error creating template: {exc}")
         raise HTTPException(status_code=502, detail=f"Error del backend de almacenamiento: {exc}")
@@ -87,6 +116,7 @@ async def create_template_endpoint(payload: CreateTemplatePayload):
 
 @router.get("/templates/{template_id}")
 async def get_template_endpoint(template_id: str):
+    _ensure_feature_enabled()
     record = get_template(template_id)
     if not record:
         raise HTTPException(status_code=404, detail="Plantilla no encontrada")
@@ -95,10 +125,11 @@ async def get_template_endpoint(template_id: str):
 
 @router.put("/templates/{template_id}", response_model=UpdateTemplateResponse)
 async def update_template_endpoint(template_id: str, payload: UpdateTemplatePayload):
+    _ensure_feature_enabled()
     try:
-        updated, validation = update_template(template_id, payload.templateJson, payload.author, payload.role)
+        updated, validation = update_template(template_id, payload.templateJson, payload.author, _mutation_role())
     except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc))
+        raise HTTPException(status_code=_value_error_status(exc), detail=str(exc))
     except (SupabaseNotConfiguredError, SupabaseOperationError) as exc:
         print(f"[TemplateEditor] Supabase error updating template: {exc}")
         raise HTTPException(status_code=502, detail=f"Error del backend de almacenamiento: {exc}")
@@ -110,6 +141,7 @@ async def update_template_endpoint(template_id: str, payload: UpdateTemplatePayl
 
 @router.post("/templates/{template_id}/validate")
 async def validate_template_endpoint(template_id: str, payload: ValidateTemplatePayload):
+    _ensure_feature_enabled()
     _ = template_id
     result = run_validations(payload.templateJson, payload.role)
     return _model_dump(result)
@@ -120,7 +152,7 @@ def _render_preview_html(compiled_html: str, sample_data: Dict[str, Any]) -> str
     rendered = compiled_html
     for key, value in sample_data.items():
         pattern = re.compile(r"{{\s*" + re.escape(str(key)) + r"(?:\|[a-zA-Z_][a-zA-Z0-9_]*)?\s*}}")
-        rendered = pattern.sub(str(value), rendered)
+        rendered = pattern.sub(html.escape(str(value), quote=True), rendered)
     return rendered
 
 
@@ -136,8 +168,6 @@ def _render_compiled_html(
     blocks and ``{{ variable }}`` expressions.  Falls back to regex substitution
     if Jinja2 rendering fails.
     """
-    from jinja2 import Template as J2Template  # pyre-ignore[21]
-
     # Build a report context matching the PDF pipeline structure
     report_entry: Dict[str, Any] = {
         "data": sample_data,
@@ -164,7 +194,9 @@ def _render_compiled_html(
     }
 
     try:
-        template = J2Template(compiled_html)
+        from jinja2.sandbox import SandboxedEnvironment  # pyre-ignore[21]
+
+        template = SandboxedEnvironment(autoescape=True).from_string(compiled_html)
         return template.render(**context)
     except Exception:
         # Fallback to regex substitution for simple {{ var }} patterns
@@ -178,6 +210,7 @@ def _render_compiled_html(
 
 @router.post("/templates/{template_id}/preview")
 async def preview_template_endpoint(template_id: str, payload: PreviewTemplatePayload, request: Request):
+    _ensure_feature_enabled()
     if not rate_limiter.check(f"preview:{request.client.host if request.client else 'local'}"):
         raise HTTPException(status_code=429, detail="Límite de tasa de vista previa excedido")
 
@@ -214,6 +247,7 @@ async def render_template_endpoint(template_id: str, payload: PreviewTemplatePay
     Accepts ``logo_left`` and ``logo_right`` (URL or base64 data URI) to
     resolve logo elements whose ``variableName`` references these variables.
     """
+    _ensure_feature_enabled()
     if not rate_limiter.check(f"render:{request.client.host if request.client else 'local'}"):
         raise HTTPException(status_code=429, detail="Límite de tasa de renderizado excedido")
 
@@ -237,8 +271,7 @@ async def render_template_endpoint(template_id: str, payload: PreviewTemplatePay
 
 @router.post("/templates/{template_id}/publish")
 async def publish_template_endpoint(template_id: str, payload: PublishTemplatePayload):
-    if not _feature_enabled():
-        raise HTTPException(status_code=403, detail="Funcionalidad del editor de plantillas deshabilitada")
+    _ensure_feature_enabled()
     try:
         published = publish_template(template_id, payload.author)
     except ValueError as exc:
@@ -251,6 +284,7 @@ async def publish_template_endpoint(template_id: str, payload: PublishTemplatePa
 
 @router.post("/templates/{template_id}/rollback")
 async def rollback_template_endpoint(template_id: str, payload: RollbackTemplatePayload):
+    _ensure_feature_enabled()
     try:
         restored = rollback_template(template_id, payload.targetVersion, payload.author)
     except ValueError as exc:
@@ -263,6 +297,7 @@ async def rollback_template_endpoint(template_id: str, payload: RollbackTemplate
 
 @router.delete("/templates/{template_id}")
 async def delete_template_endpoint(template_id: str, author: str = "system"):
+    _ensure_feature_enabled()
     try:
         deleted = delete_template(template_id, author)
     except ValueError as exc:

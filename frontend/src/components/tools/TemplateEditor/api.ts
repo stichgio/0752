@@ -264,7 +264,6 @@ async function createDraft(input: UpsertDraftInput): Promise<string> {
 async function updateDraft(templateId: string, input: UpsertDraftInput): Promise<void> {
   const payload = {
     name: input.name.trim() || 'Plantilla sin nombre',
-    role: input.role || 'editor',
     author: input.author || 'editor',
     reportType: input.reportType || 'technical-report',
     templateJson: canvasDocumentToTemplateJson(input.doc, input.reportType || 'technical-report'),
@@ -372,7 +371,6 @@ export const templateEditorApi = {
       ...input,
       name: templateName || 'Plantilla sin nombre',
       author: input.author || 'editor',
-      role: input.role || 'editor',
       reportType: input.reportType || 'technical-report',
       featureFlag: input.featureFlag ?? true,
     };

@@ -6,7 +6,11 @@ data URIs so WeasyPrint can render them without HTTP context.
 """
 
 import base64
+import ipaddress
 import logging
+import socket
+from typing import Optional, Tuple
+from urllib.parse import urljoin, urlparse
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +20,73 @@ PLACEHOLDER_BASE64 = (
     "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJ"
     "AAAADUlEQVR42mO88f/BfwAJhAPk5fHLzAAAAABJRU5ErkJggg=="
 )
+
+_PRIVATE_HOSTS = {"localhost", "localhost.localdomain"}
+
+
+def _is_public_address(value: str) -> bool:
+    try:
+        ip = ipaddress.ip_address(value)
+    except ValueError:
+        return False
+    return ip.is_global
+
+
+def _is_safe_remote_url(url: str) -> bool:
+    try:
+        parsed = urlparse(url.strip())
+    except Exception:
+        return False
+
+    if parsed.scheme not in {"http", "https"}:
+        return False
+
+    hostname = (parsed.hostname or "").strip().lower()
+    if not hostname or hostname in _PRIVATE_HOSTS:
+        return False
+
+    if _is_public_address(hostname):
+        return True
+
+    try:
+        infos = socket.getaddrinfo(hostname, parsed.port or (443 if parsed.scheme == "https" else 80), type=socket.SOCK_STREAM)
+    except socket.gaierror:
+        return False
+
+    addresses = [info[4][0] for info in infos if info and len(info) >= 5 and info[4]]
+    return bool(addresses) and all(_is_public_address(address) for address in addresses)
+
+
+def fetch_remote_binary(url: str, timeout: float = 10.0, max_redirects: int = 3) -> Optional[Tuple[bytes, str]]:
+    """
+    Fetch a remote binary while blocking obvious SSRF targets and re-validating redirects.
+    """
+    if not _is_safe_remote_url(url):
+        return None
+
+    try:
+        import httpx  # pyre-ignore
+
+        current = url.strip()
+        for _ in range(max_redirects + 1):
+            response = httpx.get(current, timeout=timeout, follow_redirects=False)
+
+            if 300 <= response.status_code < 400:
+                location = (response.headers.get("location") or "").strip()
+                if not location:
+                    return None
+                next_url = urljoin(current, location)
+                if not _is_safe_remote_url(next_url):
+                    return None
+                current = next_url
+                continue
+
+            response.raise_for_status()
+            return response.content, response.headers.get("content-type", "image/jpeg")
+    except Exception as exc:
+        logger.warning("Failed to fetch remote asset %s: %s", url, exc)
+
+    return None
 
 
 def url_to_base64(url: str) -> str:
@@ -41,12 +112,12 @@ def url_to_base64(url: str) -> str:
         return url
 
     try:
-        import httpx  # pyre-ignore
-
-        resp = httpx.get(url, timeout=10, follow_redirects=True)
-        resp.raise_for_status()
-        mime = resp.headers.get("content-type", "image/jpeg").split(";")[0].strip()
-        data = base64.b64encode(resp.content).decode("ascii")
+        fetched = fetch_remote_binary(url, timeout=10.0)
+        if not fetched:
+            return PLACEHOLDER_BASE64
+        payload, content_type = fetched
+        mime = content_type.split(";")[0].strip() or "image/jpeg"
+        data = base64.b64encode(payload).decode("ascii")
         return f"data:{mime};base64,{data}"
     except Exception as exc:
         logger.warning("Failed to fetch image %s: %s", url, exc)

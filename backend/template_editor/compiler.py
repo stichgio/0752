@@ -13,7 +13,7 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
 from .models import EditorBlock, TemplateJson  # pyre-ignore[21]
-from .utils import url_to_base64  # pyre-ignore[21]
+from .utils import fetch_remote_binary, url_to_base64  # pyre-ignore[21]
 
 # ─── CSS that matches the existing hand-crafted templates ───
 
@@ -1786,13 +1786,13 @@ def _photo_grid_src_to_base64(src: str) -> Optional[str]:
     if source.startswith(("http://", "https://")):
         if _is_supabase_storage_url(source):
             try:
-                import httpx  # pyre-ignore[21]
-
-                response = httpx.get(source, timeout=15, follow_redirects=True)
-                response.raise_for_status()
+                fetched = fetch_remote_binary(source, timeout=15.0)
+                if not fetched:
+                    return None
+                payload, content_type = fetched
                 return _bytes_to_data_uri(
-                    response.content,
-                    response.headers.get("content-type", "image/jpeg"),
+                    payload,
+                    content_type,
                 )
             except Exception:
                 return None
@@ -2133,9 +2133,9 @@ def compile_canvas_to_html(canvas_doc: dict, variables: Optional[dict] = None) -
 
     # Procesar plantillas dinamicas de Jinja si las variables estan present
     if variables:
-        from jinja2 import Template as J2Template  # pyre-ignore[21]
+        from jinja2.sandbox import SandboxedEnvironment  # pyre-ignore[21]
         try:
-            html = J2Template(html).render(**variables)
+            html = SandboxedEnvironment(autoescape=True).from_string(html).render(**variables)
         except Exception:
             pass
 

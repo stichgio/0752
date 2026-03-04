@@ -244,6 +244,17 @@ def test_create_template_payload_validation_rejects_missing_name(client):
     assert res.status_code == 422
 
 
+def test_create_template_rejects_control_flow_jinja_in_editable_blocks(client, monkeypatch):
+    monkeypatch.setenv("FEATURE_TEMPLATE_EDITOR", "true")
+    payload = _template_payload(name="unsafe-template")
+    payload["templateJson"]["sections"][0]["blocks"][0]["content"] = "{% if cs %}<p>{{cs}}</p>{% endif %}"
+
+    res = client.post("/api/template-editor/templates", json=payload)
+
+    assert res.status_code == 400
+    assert "Validacion de plantilla fallida" in res.json()["detail"]
+
+
 def test_legacy_published_and_render_endpoints_support_status_workflow(client, monkeypatch):
     monkeypatch.setenv("FEATURE_TEMPLATE_EDITOR", "true")
 

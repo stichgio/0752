@@ -6,6 +6,7 @@ except (UnicodeDecodeError, ValueError):
     os.environ.setdefault('PYTHONPATH', './backend')
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, Form, BackgroundTasks, HTTPException, APIRouter, Request  # type: ignore
 from fastapi.exceptions import RequestValidationError  # type: ignore
 from fastapi.staticfiles import StaticFiles  # type: ignore
@@ -39,7 +40,7 @@ from template_editor.service import (  # type: ignore
     publish_template,
     set_template_status,
 )
-from utils.file_utils import save_upload  # type: ignore
+from utils.file_utils import build_safe_upload_path, save_upload, sanitize_upload_filename  # type: ignore
 
 # ── Increase multipart form-field size limit ──────────────────────────────────
 # Starlette/python-multipart defaults to 1 MB per text part, which is too small
@@ -449,10 +450,11 @@ async def generate_single_pdf(
             file_map = {}  # type: ignore
 
             # Save uploaded images to temp dir
-            for file in files:
-                file_path = os.path.join(temp_dir, file.filename)
+            for index, file in enumerate(files):
+                original_name = file.filename or f"upload_{index:04d}"
+                file_path = build_safe_upload_path(temp_dir, original_name, prefix=f"{index:04d}_", default_name="image")
                 await save_upload(file, file_path)
-                file_map[file.filename] = {"name": file.filename, "path": file_path}
+                file_map[original_name] = {"name": original_name, "path": file_path}
 
             # Use singleton ReportService
             service = request.app.state.report_service
@@ -714,8 +716,8 @@ async def tool_merge_pdfs(
             for idx, file in enumerate(files):
                 # Avoid collisions when users upload files with the same name
                 # (common when coming from different folders/devices).
-                safe_filename = f"{idx:04d}_{file.filename}"
-                file_path = os.path.join(temp_dir, safe_filename)
+                safe_filename = sanitize_upload_filename(file.filename or "", default_name="document.pdf")
+                file_path = build_safe_upload_path(temp_dir, safe_filename, prefix=f"{idx:04d}_", default_name="document.pdf")
                 await save_upload(file, file_path)
                 input_paths.append(file_path)
 
@@ -760,8 +762,8 @@ async def tool_merge_pdfs_normal(
             input_paths = []
             # Save uploaded files with unique names to avoid collisions (streaming)
             for idx, file in enumerate(files):
-                safe_filename = f"{idx:04d}_{file.filename}"
-                file_path = os.path.join(temp_dir, safe_filename)
+                safe_filename = sanitize_upload_filename(file.filename or "", default_name="document.pdf")
+                file_path = build_safe_upload_path(temp_dir, safe_filename, prefix=f"{idx:04d}_", default_name="document.pdf")
                 file_size = await save_upload(file, file_path)
                 input_paths.append(file_path)
                 print(f"  Saved file {idx}: {file.filename} -> {safe_filename} ({file_size} bytes)")
@@ -803,7 +805,8 @@ async def tool_split_pdf(
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
             # Save input file (streaming)
-            input_path = os.path.join(temp_dir, file.filename)
+            safe_input_name = sanitize_upload_filename(file.filename or "", default_name="document.pdf")
+            input_path = build_safe_upload_path(temp_dir, safe_input_name, prefix="input_", default_name="document.pdf")
             await save_upload(file, input_path)
 
             output_dir = os.path.join(temp_dir, "split_output")
@@ -892,7 +895,8 @@ async def tool_organize_pdf(
 
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
-            input_path = os.path.join(temp_dir, file.filename)
+            safe_input_name = sanitize_upload_filename(file.filename or "", default_name="document.pdf")
+            input_path = build_safe_upload_path(temp_dir, safe_input_name, prefix="input_", default_name="document.pdf")
             await save_upload(file, input_path)
 
             if mode == "organize-split" and cuts:
@@ -946,6 +950,7 @@ app.include_router(api_router)
 # SERVING FRONTEND (React) - For Hugging Face Spaces / Docker
 # If 'static' folder exists (created by Dockerfile), serve it.
 if os.path.exists("static"):
+    static_root = Path("static").resolve()
     app.mount("/assets", StaticFiles(directory="static/assets"), name="assets")
 
     @app.get("/technical-reports")
@@ -960,9 +965,13 @@ if os.path.exists("static"):
              raise HTTPException(status_code=404, detail="No encontrado")
 
         # Check if file exists in static (e.g. favicon.ico, public assets)
-        path = os.path.join("static", full_path)
-        if os.path.exists(path) and os.path.isfile(path):
-            return FileResponse(path)
+        candidate = (static_root / full_path).resolve()
+        try:
+            candidate.relative_to(static_root)
+        except ValueError:
+            raise HTTPException(status_code=404, detail="No encontrado")
+        if candidate.exists() and candidate.is_file():
+            return FileResponse(str(candidate))
 
         # Fallback to index.html for React Router
         return FileResponse("static/index.html")

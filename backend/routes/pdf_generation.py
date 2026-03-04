@@ -16,7 +16,7 @@ from fastapi.responses import FileResponse, StreamingResponse  # type: ignore
 from progress import format_sse_event  # type: ignore
 from technical_reports.models import TechnicalReport  # type: ignore
 from template_editor.service import get_published_template_by_name  # type: ignore
-from utils.file_utils import save_upload  # type: ignore
+from utils.file_utils import build_safe_upload_path, save_upload  # type: ignore
 
 router = APIRouter(prefix="/api", tags=["pdf-generation"])
 
@@ -196,10 +196,11 @@ async def generate_single_pdf(
 
         with tempfile.TemporaryDirectory() as temp_dir:
             file_map: Dict = {}
-            for file in files:
-                file_path = os.path.join(temp_dir, file.filename)
+            for index, file in enumerate(files):
+                original_name = file.filename or f"upload_{index:04d}"
+                file_path = build_safe_upload_path(temp_dir, original_name, prefix=f"{index:04d}_", default_name="image")
                 await save_upload(file, file_path)
-                file_map[file.filename] = {"name": file.filename, "path": file_path}
+                file_map[original_name] = {"name": original_name, "path": file_path}
 
             service = request.app.state.report_service
             reports_payload = _build_reports_payload(row_data, file_map)
