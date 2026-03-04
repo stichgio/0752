@@ -17,6 +17,7 @@ from html import escape
 import json
 import math
 import os
+import re
 import shutil
 import tempfile
 import traceback
@@ -46,6 +47,24 @@ def _grid_cols(images_per_page: int) -> int:
     """Columnas óptimas para N imágenes en A4 portrait."""
     mapping = {1: 1, 2: 2, 3: 2, 4: 2, 5: 3, 6: 3, 7: 3, 8: 4, 9: 3}
     return mapping.get(images_per_page, 3)
+
+
+def _sort_image_filenames_by_seq(filenames: list[str]) -> list[str]:
+    """Ordena imágenes por su sufijo secuencial de 3 dígitos (ID_001 < ID_010 < ID_100).
+
+    Formato normalizado esperado: {COLUMNA_ID}_{NNN}.ext
+    Ejemplo: NIS_001.jpg, NIS_010.jpg, NIS_100.jpg
+    Imágenes sin sufijo secuencial se ordenan primero, por nombre.
+    """
+    _SEQ_RE = re.compile(r'^(.+?)_(\d{3})\.[^.]+$', re.IGNORECASE)
+
+    def _key(name: str) -> tuple[str, int, str]:
+        m = _SEQ_RE.match(name)
+        if m:
+            return (m.group(1).lower(), int(m.group(2)), name.lower())
+        return ("", 0, name.lower())
+
+    return sorted(filenames, key=_key)
 
 
 # ── Constructores de bloques HTML de encabezado ───────────────────────────────
