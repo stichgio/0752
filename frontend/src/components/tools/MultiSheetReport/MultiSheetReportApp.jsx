@@ -1125,12 +1125,6 @@ export default function MultiSheetReportApp() {
                         <Step number="1" title="Hojas del Informe" icon={<Layers size={16} />}>
                             <div className="space-y-2">
                                 {/* Lista de hojas */}
-                                {sheets.length === 0 && (
-                                    <div className="text-center text-neutral-600 text-xs py-3 border border-dashed border-neutral-800 rounded">
-                                        Selecciona una plantilla para agregar hoja
-                                    </div>
-                                )}
-
                                 {sheets.map((sheet, index) => (
                                     <div key={sheet.id} className="bg-neutral-900 border border-neutral-800 rounded-lg p-2 space-y-2">
                                         {/* Fila superior: número, título, toggle, controles */}
