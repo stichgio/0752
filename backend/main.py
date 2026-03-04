@@ -30,9 +30,8 @@ from image_optimizer.router import router as image_optimizer_router  # type: ign
 from compressor.router import router as compressor_router  # type: ignore
 from ocr_tools.router import router as ocr_tools_router  # type: ignore
 from template_editor.router import router as template_editor_router  # type: ignore
-# Multi-Sheet Report corre en servidor independiente (puerto 7861).
-# Arrancar con: cd backend && uvicorn msheets.main_msheets:app --port 7861
-# El frontend proxy en vite.config.js enruta /api/multi-sheet/ → 7861.
+from msheets.multi_sheet_report import router as msheets_router      # type: ignore
+# Multi-Sheet Report router imported and added below for production compatibility.
 from config import settings  # type: ignore
 from template_editor.service import (  # type: ignore
     get_all_published_templates,
@@ -238,6 +237,9 @@ def _extract_error_message(detail: Any) -> str:
         return detail
     if isinstance(detail, dict):
         if isinstance(detail.get("message"), str):
+            reason = detail.get("reason")
+            if reason:
+                return f"{detail['message']}: {reason}"
             return detail["message"]
         return json.dumps(detail, ensure_ascii=False)
     if isinstance(detail, list):
@@ -307,6 +309,7 @@ app.include_router(image_optimizer_router)
 app.include_router(compressor_router)
 app.include_router(ocr_tools_router)
 app.include_router(template_editor_router)
+app.include_router(msheets_router, prefix="/api/multi-sheet")
 
 @api_router.get("/templates")
 async def list_templates():
@@ -517,6 +520,8 @@ async def generate_single_pdf(
 
     except json.JSONDecodeError as e:
         raise HTTPException(status_code=400, detail=f"Formato JSON inválido en el campo 'data': {str(e)}")
+    except HTTPException:
+        raise
     except Exception as e:
         error_trace = traceback.format_exc()
         print(f"PDF Generation Error:\n{error_trace}")
