@@ -175,11 +175,14 @@ export default function TechnicalReports() {
         });
     };
 
-    const isFocusMode = useFocusMode();
-
     const currentIndex = reports.findIndex(r => r.id === selectedReportId);
     const canPrev = currentIndex > 0;
     const canNext = currentIndex < reports.length - 1;
+
+    const isFocusMode = useFocusMode({
+        onPrev: () => canPrev && handleReportSelect(reports[currentIndex - 1].id),
+        onNext: () => canNext && handleReportSelect(reports[currentIndex + 1].id),
+    });
 
     return (
         <div className="min-h-screen bg-[#0d0d0d] text-[#eee] technical-theme">

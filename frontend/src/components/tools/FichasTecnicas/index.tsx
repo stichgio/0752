@@ -166,11 +166,14 @@ export default function FichasTecnicas() {
         );
     };
 
-    const isFocusMode = useFocusMode();
-
     const currentIndex = fichas.findIndex(f => f.id === selectedFichaId);
     const canPrev = currentIndex > 0;
     const canNext = currentIndex < fichas.length - 1;
+
+    const isFocusMode = useFocusMode({
+        onPrev: () => canPrev && handleFichaSelect(fichas[currentIndex - 1].id),
+        onNext: () => canNext && handleFichaSelect(fichas[currentIndex + 1].id),
+    });
 
     return (
         <div className="min-h-screen bg-[#0d0d0d] text-[#eee] technical-theme">

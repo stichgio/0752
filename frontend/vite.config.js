@@ -9,12 +9,12 @@ export default defineConfig({
         rollupOptions: {
             input: {
                 main: resolve(__dirname, 'index.html'),
-                technical: resolve(__dirname, 'technical-reports.html'),
+                technical: resolve(__dirname, 'reportes-tecnicos.html'),
                 fichas: resolve(__dirname, 'fichas-tecnicas.html'),
                 imageOptimizer: resolve(__dirname, 'image-optimizer.html'),
                 compressor: resolve(__dirname, 'compressor.html'),
                 templateEditor: resolve(__dirname, 'template-editor.html'),
-                multiSheetReport: resolve(__dirname, 'multi-sheet-report.html'),
+                multiSheetReport: resolve(__dirname, 'msheets.html'),
                 ocr: resolve(__dirname, 'ocr.html')
             }
         }

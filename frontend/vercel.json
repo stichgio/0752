@@ -7,8 +7,8 @@
             "destination": "https://shengio-stich-0752.hf.space/api/:path*"
         },
         {
-            "source": "/technical-reports",
-            "destination": "/technical-reports.html"
+            "source": "/reportes-tecnicos",
+            "destination": "/reportes-tecnicos.html"
         },
         {
             "source": "/fichas-tecnicas",
@@ -25,6 +25,14 @@
         {
             "source": "/template-editor",
             "destination": "/template-editor.html"
+        },
+        {
+            "source": "/msheets",
+            "destination": "/msheets.html"
+        },
+        {
+            "source": "/ocr",
+            "destination": "/ocr.html"
         },
         {
             "source": "/(.*)",

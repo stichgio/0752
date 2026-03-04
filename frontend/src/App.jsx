@@ -98,8 +98,18 @@ export default function App() {
     const [pdfLoadingMessage, setPdfLoadingMessage] = useState('');
     const sseProgress = useSSEProgress();
 
+    // Navigation helpers for Focus Mode (defined before hook so callbacks are always fresh)
+    const canPrevRow = selectedIndex !== '' && parseInt(selectedIndex) > 0;
+    const canNextRow = selectedIndex !== '' && parseInt(selectedIndex) < data.length - 1;
+    const goToPrevRow = () => {
+        if (canPrevRow) setSelectedIndex(String(parseInt(selectedIndex) - 1));
+    };
+    const goToNextRow = () => {
+        if (canNextRow) setSelectedIndex(String(parseInt(selectedIndex) + 1));
+    };
+
     // Focus Mode
-    const isFocusMode = useFocusMode();
+    const isFocusMode = useFocusMode({ onPrev: goToPrevRow, onNext: goToNextRow });
 
     // Save custom columns to localStorage whenever they change
     useEffect(() => {
@@ -172,16 +182,6 @@ export default function App() {
             cancelled = true;
         };
     }, []);
-
-    // Navigation helpers for Focus Mode
-    const canPrevRow = selectedIndex !== '' && parseInt(selectedIndex) > 0;
-    const canNextRow = selectedIndex !== '' && parseInt(selectedIndex) < data.length - 1;
-    const goToPrevRow = () => {
-        if (canPrevRow) setSelectedIndex(String(parseInt(selectedIndex) - 1));
-    };
-    const goToNextRow = () => {
-        if (canNextRow) setSelectedIndex(String(parseInt(selectedIndex) + 1));
-    };
 
     // Logo Upload Handler
     const handleLogoUpload = (e, side) => {

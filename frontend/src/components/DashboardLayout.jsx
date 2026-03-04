@@ -30,8 +30,8 @@ const DashboardLayout = ({ children }) => {
         {
             icon: <ClipboardList size={20} />,
             label: "Informes Técnicos",
-            href: "/technical-reports.html",
-            active: window.location.pathname.includes('technical-reports')
+            href: "/reportes-tecnicos.html",
+            active: window.location.pathname.includes('reportes-tecnicos')
         },
         {
             icon: <FileText size={20} />,
@@ -78,8 +78,8 @@ const DashboardLayout = ({ children }) => {
         {
             icon: <BookOpen size={20} />,
             label: "Informe Multi-Hoja",
-            href: "/multi-sheet-report.html",
-            active: window.location.pathname.includes('multi-sheet-report')
+            href: "/msheets.html",
+            active: window.location.pathname.includes('msheets')
         },
     ];
 
