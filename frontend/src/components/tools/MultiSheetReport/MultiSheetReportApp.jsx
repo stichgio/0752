@@ -79,6 +79,77 @@ const getRowTextValue = (rowData, key) => {
     return text || '-';
 };
 
+/**
+ * Client-side Jinja2 substitution for local multi-sheet templates.
+ * Handles the subset of Jinja2 used in multi_sheet_templates/*.html
+ */
+function renderLocalTemplate(html, rowData, logoLeft, logoRight, images) {
+    const emptyPixel = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E";
+
+    // Logo if/else conditionals
+    html = html.replace(
+        /\{%\s*if\s+logo_left\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g,
+        (_, ifPart, elsePart) => (logoLeft ? ifPart : elsePart)
+    );
+    html = html.replace(
+        /\{%\s*if\s+logo_right\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g,
+        (_, ifPart, elsePart) => (logoRight ? ifPart : elsePart)
+    );
+    html = html.replace(
+        /\{%\s*if\s+logo_left\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g,
+        (_, content) => (logoLeft ? content : '')
+    );
+    html = html.replace(
+        /\{%\s*if\s+logo_right\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g,
+        (_, content) => (logoRight ? content : '')
+    );
+
+    // Logo variable substitution
+    html = html.replaceAll('{{ logo_left }}', logoLeft || emptyPixel);
+    html = html.replaceAll('{{ logo_right }}', logoRight || emptyPixel);
+
+    // Image presence conditional
+    const imgCount = images.length;
+    html = html.replace(
+        /\{%\s*if\s+images\s+and\s+images\|length\s*>\s*0\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g,
+        (_, ifPart, elsePart) => (imgCount > 0 ? ifPart : elsePart)
+    );
+
+    // Row data: {{ data.get('KEY', 'default') }}
+    html = html.replace(
+        /\{\{\s*data\.get\('([^']+)',\s*'([^']*)'\)\s*\}\}/g,
+        (_, key, def) => (rowData?.[key] != null ? String(rowData[key]) : def || '-')
+    );
+
+    // Image loop: {% for img in images[:N] %}...{% endfor %}
+    html = html.replace(
+        /\{%\s*for\s+img\s+in\s+images\[:\d+\]\s*%\}([\s\S]*?)\{%\s*endfor\s*%\}/g,
+        (_, loopContent) =>
+            images.slice(0, 4).map((img, i) => {
+                let item = loopContent;
+                item = item.replaceAll('{{ img.path }}', img.url || '');
+                item = item.replaceAll('{{ img.name }}', img.name || '');
+                item = item.replaceAll('{{ loop.index }}', String(i + 1));
+                return item;
+            }).join('')
+    );
+
+    // Placeholder fill: {% for i in range(images|length, N) %}...{% endfor %}
+    html = html.replace(
+        /\{%\s*for\s+i\s+in\s+range\(images\|length,\s*(\d+)\)\s*%\}([\s\S]*?)\{%\s*endfor\s*%\}/g,
+        (_, maxStr, content) => {
+            const remaining = parseInt(maxStr, 10) - imgCount;
+            return remaining > 0 ? content.repeat(remaining) : '';
+        }
+    );
+
+    // Strip any remaining Jinja2 tags
+    html = html.replace(/\{%[\s\S]*?%\}/g, '');
+    html = html.replace(/\{\{[\s\S]*?\}\}/g, '-');
+
+    return html;
+}
+
 const normalizeTemplateSections = (rawSections) => {
     if (!Array.isArray(rawSections)) return [];
 
@@ -304,8 +375,53 @@ function VolanteoTemplatePreview({ rowData, images, logoLeft, logoRight }) {
     );
 }
 
+const A4_WIDTH_PX = 794;   // 210mm @ 96 dpi
+const A4_HEIGHT_PX = 1123; // 297mm @ 96 dpi
+
+/** Scales a full A4 iframe to fit a thumbnail container using ResizeObserver. */
+function LocalTemplateIframePreview({ renderedHtml }) {
+    const containerRef = useRef(null);
+    const [scale, setScale] = useState(0.38);
+
+    useEffect(() => {
+        if (!containerRef.current) return;
+        const updateScale = () => {
+            const w = containerRef.current?.offsetWidth || 300;
+            setScale(w / A4_WIDTH_PX);
+        };
+        updateScale();
+        const ro = new ResizeObserver(updateScale);
+        ro.observe(containerRef.current);
+        return () => ro.disconnect();
+    }, []);
+
+    const scaledHeight = A4_HEIGHT_PX * scale;
+
+    return (
+        <div
+            ref={containerRef}
+            className="mt-2 rounded overflow-hidden border border-neutral-200"
+            style={{ width: '100%', height: scaledHeight }}
+        >
+            <iframe
+                srcDoc={renderedHtml}
+                sandbox="allow-same-origin"
+                title="Local Template Preview"
+                style={{
+                    width: A4_WIDTH_PX,
+                    height: A4_HEIGHT_PX,
+                    border: 'none',
+                    display: 'block',
+                    transform: `scale(${scale})`,
+                    transformOrigin: 'top left',
+                }}
+            />
+        </div>
+    );
+}
+
 /** Tarjeta de preview de una hoja individual */
-function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, logoLeft, logoRight, altHeaderConfig, rowData, allImages, idColumn }) {
+function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, logoLeft, logoRight, altHeaderConfig, rowData, allImages, idColumn, localTemplateNames, fetchLocalTemplateHtml }) {
     const hasTemplate = Boolean(sheet.templateName);
 
     // Obtener imágenes para esta fila si hay datos
@@ -326,6 +442,28 @@ function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, lo
     };
 
     const rowImages = getImagesForRow();
+    const isLocalTemplate = sheet.templateName != null && localTemplateNames.has(sheet.templateName);
+    const [localRenderedHtml, setLocalRenderedHtml] = useState(null);
+
+    useEffect(() => {
+        if (!isLocalTemplate || !sheet.templateName) {
+            setLocalRenderedHtml(null);
+            return;
+        }
+        let cancelled = false;
+        fetchLocalTemplateHtml(sheet.templateName)
+            .then(rawHtml => {
+                if (!cancelled) {
+                    const rendered = renderLocalTemplate(
+                        rawHtml, rowData, logoLeft, logoRight, rowImages
+                    );
+                    setLocalRenderedHtml(rendered);
+                }
+            })
+            .catch(err => console.error('[MultiSheet] Preview fetch error:', err));
+        return () => { cancelled = true; };
+    }, [isLocalTemplate, sheet.templateName, rowData, logoLeft, logoRight, rowImages, fetchLocalTemplateHtml]);
+
     const isGridTemplate = sheet.templateName === GRID_TEMPLATE_NAME;
     const isVolanteoTemplate = sheet.templateName === VOLANTEO_TEMPLATE_NAME;
     const showStandardHeaderPreview = !isVolanteoTemplate;
@@ -389,6 +527,12 @@ function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, lo
                                     <span className="text-[9px] font-bold text-emerald-700 underline underline-offset-2">4 fotos</span>
                                 </div>
                             )}
+                            {isLocalTemplate && (
+                                <div className="bg-white/50 px-1.5 py-0.5 rounded border border-emerald-100 flex items-center gap-1">
+                                    <FileText size={10} className="text-emerald-600" />
+                                    <span className="text-[9px] font-bold text-emerald-700">Plantilla local</span>
+                                </div>
+                            )}
                         </div>
 
                         {/* Preview específico de Grilla */}
@@ -402,6 +546,9 @@ function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, lo
                                 logoLeft={logoLeft}
                                 logoRight={logoRight}
                             />
+                        )}
+                        {isLocalTemplate && localRenderedHtml && (
+                            <LocalTemplateIframePreview renderedHtml={localRenderedHtml} />
                         )}
                     </div>
                 ) : (
@@ -464,6 +611,8 @@ export default function MultiSheetReportApp() {
     // ── Plantillas disponibles (del backend) ──────────────────────────────────
     const [availableTemplates, setAvailableTemplates] = useState([]);
     const [templateSections, setTemplateSections] = useState([]);
+    const [localTemplateNames, setLocalTemplateNames] = useState(new Set());
+    const localTemplateHtmlCache = useRef({});
 
     // ── Selección y exportación ───────────────────────────────────────────────
     const [selectedIndex, setSelectedIndex] = useState('');
@@ -497,6 +646,10 @@ export default function MultiSheetReportApp() {
                 if (!cancelled) {
                     setAvailableTemplates(finalTemplates);
                     setTemplateSections(sections);
+                    const localSection = sections.find(s => s.id === 'local');
+                    if (localSection) {
+                        setLocalTemplateNames(new Set(localSection.templates));
+                    }
                 }
             } catch (err) {
                 console.error('[MultiSheet] Error cargando plantillas:', err);
@@ -657,6 +810,18 @@ export default function MultiSheetReportApp() {
             return true;
         });
     }, [images, idColumn]);
+
+    const fetchLocalTemplateHtml = useCallback(async (templateName) => {
+        if (localTemplateHtmlCache.current[templateName]) {
+            return localTemplateHtmlCache.current[templateName];
+        }
+        const encoded = encodeURIComponent(templateName);
+        const res = await fetch(`${API_BASE}/templates/${encoded}/html`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const html = await res.text();
+        localTemplateHtmlCache.current[templateName] = html;
+        return html;
+    }, []);
 
     // ─────────────────────────────────────────────────────────────────────────
     // Construir FormData para el backend
@@ -1347,6 +1512,8 @@ export default function MultiSheetReportApp() {
                                                         rowData={selectedRow}
                                                         allImages={images}
                                                         idColumn={idColumn}
+                                                        localTemplateNames={localTemplateNames}
+                                                        fetchLocalTemplateHtml={fetchLocalTemplateHtml}
                                                     />
                                                     <div className="flex items-center gap-2 my-2">
                                                         <div className="flex-1 border-b border-neutral-600 border-dashed" />
@@ -1371,6 +1538,8 @@ export default function MultiSheetReportApp() {
                                                     rowData={selectedRow}
                                                     allImages={images}
                                                     idColumn={idColumn}
+                                                    localTemplateNames={localTemplateNames}
+                                                    fetchLocalTemplateHtml={fetchLocalTemplateHtml}
                                                 />
                                                 <div className="flex items-center gap-2 my-2">
                                                     <div className="flex-1 border-b border-neutral-600 border-dashed" />
