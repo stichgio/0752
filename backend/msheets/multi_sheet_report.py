@@ -174,7 +174,8 @@ def _build_image_grid_html(image_data_uris: list[str], images_per_page: int) -> 
     cols = _grid_cols(images_per_page)
     rows = math.ceil(n / cols)
     cell_width_pct = 100.0 / cols
-    usable_height_mm = 247.0  # A4 297 - márgenes 20 - header 20 - título 10
+    # Altura segura para evitar recorte cuando el encabezado/título ocupan más espacio.
+    usable_height_mm = 235.0
     row_height_mm = min(usable_height_mm / rows, 140.0)
 
     table_rows = []
@@ -233,7 +234,7 @@ html, body {{
     margin: 0;
     padding: 0;
     font-family: Arial, sans-serif;
-    width: 210mm;
+    width: 100%;
 }}
 .page-container {{
     width: 100%;
@@ -311,12 +312,10 @@ def _build_volanteo_page_html(
     return f"""<!DOCTYPE html>
 <html lang="es"><head><meta charset="UTF-8"><style>
 * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-@page {{ size: A4; margin: 0; }}
+@page {{ size: A4 portrait; margin: 10mm 12mm 10mm 12mm; }}
 html, body {{
     margin: 0;
     padding: 0;
-    width: 210mm;
-    height: 297mm;
     font-family: Arial, Helvetica, sans-serif;
     font-size: 10px;
     line-height: 1.3;
@@ -324,15 +323,16 @@ html, body {{
     background: #fff;
 }}
 .page {{
-    width: 210mm;
-    height: 297mm;
-    max-height: 297mm;
+    width: 100%;
+    min-height: 277mm;
     margin: 0;
     padding: 8mm;
     background: #fff;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    page-break-after: always;
+    page-break-inside: avoid;
+    box-sizing: border-box;
 }}
 .header {{
     display: flex;
@@ -413,7 +413,6 @@ html, body {{
     display: flex;
     flex-direction: column;
     min-height: 0;
-    overflow: hidden;
 }}
 .photo-grid {{
     display: grid;
@@ -422,9 +421,9 @@ html, body {{
     gap: 2mm;
     flex: 1;
     min-height: 0;
+    height: auto;
     border: 1px solid #0066cc;
     padding: 2mm;
-    overflow: hidden;
 }}
 .photo-cell {{
     position: relative;
