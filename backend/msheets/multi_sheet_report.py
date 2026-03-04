@@ -614,11 +614,23 @@ def _list_independent_template_names() -> list[str]:
 
 
 def _local_template_directories() -> list[str]:
-    base_dir = os.path.dirname(__file__)
-    dirs = [
-        os.path.realpath(os.path.join(base_dir, candidate))
-        for candidate in _LOCAL_TEMPLATE_DIR_CANDIDATES
-    ]
+    """Return list of existing local template directories."""
+    # Get the directory where this file (multi_sheet_report.py) is located
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    dirs = []
+    for candidate in _LOCAL_TEMPLATE_DIR_CANDIDATES:
+        candidate_path = os.path.realpath(os.path.join(base_dir, candidate))
+        dirs.append(candidate_path)
+        # Debug logging
+        print(f"[MultiSheet] Checking template directory: {candidate_path}")
+        print(f"[MultiSheet]   Exists: {os.path.isdir(candidate_path)}")
+        if os.path.isdir(candidate_path):
+            try:
+                files = os.listdir(candidate_path)
+                html_files = [f for f in files if f.lower().endswith('.html')]
+                print(f"[MultiSheet]   HTML files found: {html_files}")
+            except Exception as e:
+                print(f"[MultiSheet]   Error listing: {e}")
     return [path for path in dirs if os.path.isdir(path)]
 
 
