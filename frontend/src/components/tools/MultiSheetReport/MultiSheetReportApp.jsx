@@ -364,213 +364,213 @@ function ColumnMappingModal({
     return (
         <div className="fixed inset-0 z-[70] flex items-start justify-center bg-neutral-950/84 p-2 backdrop-blur-sm sm:p-3">
             <div className="grid h-[calc(100dvh-0.75rem)] w-full max-w-[860px] min-h-[420px] grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-[22px] border border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.16),transparent_42%),linear-gradient(180deg,rgba(24,24,27,0.985),rgba(10,10,10,0.985))] shadow-[0_32px_90px_rgba(0,0,0,0.52)] sm:h-[calc(100dvh-1.5rem)]">
-                    <div className="border-b border-white/10 px-4 py-2.5 sm:px-5 sm:py-3">
-                        <div className="grid gap-2.5 xl:grid-cols-[minmax(0,1fr)_280px] xl:items-start">
-                            <div className="min-w-0 space-y-1.5">
-                                <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.22em] text-emerald-200">
-                                    <Layers size={12} />
-                                    Mapeo de columnas
-                                </div>
-                                <div>
-                                    <h3 className="text-base font-semibold leading-tight text-white sm:text-xl">Conecta tu base de datos con la plantilla</h3>
-                                    <p className="mt-1 max-w-2xl text-[11px] leading-5 text-neutral-300 sm:text-xs sm:leading-5">
-                                        Relaciona las columnas del archivo con los c&oacute;digos Jinja detectados y crea campos extra si necesitas valores fijos.
-                                    </p>
-                                </div>
-                                {fileName && (
-                                    <p className="text-[10px] font-mono text-neutral-400 sm:text-[11px]">
-                                        Archivo: <span className="text-neutral-200">{fileName}</span>
-                                    </p>
-                                )}
+                <div className="border-b border-white/10 px-4 py-2.5 sm:px-5 sm:py-3">
+                    <div className="grid gap-2.5 xl:grid-cols-[minmax(0,1fr)_280px] xl:items-start">
+                        <div className="min-w-0 space-y-1.5">
+                            <div className="inline-flex items-center gap-1.5 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.22em] text-emerald-200">
+                                <Layers size={12} />
+                                Mapeo de columnas
                             </div>
-
-                            <div className="grid grid-cols-3 gap-1.5 xl:w-[292px] xl:shrink-0">
-                                <div className="min-w-0 rounded-xl border border-white/10 bg-black/25 px-2.5 py-2.5 sm:px-3">
-                                    <div className="truncate text-[9px] uppercase tracking-[0.16em] text-neutral-500">Activas</div>
-                                    <div className="mt-1 text-sm font-semibold text-white sm:text-base">{templateNames.length}</div>
-                                </div>
-                                <div className="min-w-0 rounded-xl border border-white/10 bg-black/25 px-2.5 py-2.5 sm:px-3">
-                                    <div className="truncate text-[9px] uppercase tracking-[0.16em] text-neutral-500">Origen</div>
-                                    <div className="mt-1 text-sm font-semibold text-white sm:text-base">{sourceHeaders.length}</div>
-                                </div>
-                                <div className="min-w-0 rounded-xl border border-white/10 bg-black/25 px-2.5 py-2.5 sm:px-3">
-                                    <div className="truncate text-[9px] uppercase tracking-[0.16em] text-neutral-500">Jinja</div>
-                                    <div className="mt-1 text-sm font-semibold text-white sm:text-base">{templateFields.length}</div>
-                                </div>
+                            <div>
+                                <h3 className="text-base font-semibold leading-tight text-white sm:text-xl">Conecta tu base de datos con la plantilla</h3>
+                                <p className="mt-1 max-w-2xl text-[11px] leading-5 text-neutral-300 sm:text-xs sm:leading-5">
+                                    Relaciona las columnas del archivo con los c&oacute;digos Jinja detectados y crea campos extra si necesitas valores fijos.
+                                </p>
                             </div>
+                            {fileName && (
+                                <p className="text-[10px] font-mono text-neutral-400 sm:text-[11px]">
+                                    Archivo: <span className="text-neutral-200">{fileName}</span>
+                                </p>
+                            )}
                         </div>
 
-                            {templateNames.length > 0 && (
-                            <div className="mt-2 flex gap-1.5 overflow-x-auto pb-0.5 pr-1">
-                                {templateNames.map(name => (
-                                    <span
-                                        key={name}
-                                        className="shrink-0 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] text-neutral-200"
-                                    >
-                                        {name}
-                                    </span>
-                                ))}
+                        <div className="grid grid-cols-3 gap-1.5 xl:w-[292px] xl:shrink-0">
+                            <div className="min-w-0 rounded-xl border border-white/10 bg-black/25 px-2.5 py-2.5 sm:px-3">
+                                <div className="truncate text-[9px] uppercase tracking-[0.16em] text-neutral-500">Activas</div>
+                                <div className="mt-1 text-sm font-semibold text-white sm:text-base">{templateNames.length}</div>
                             </div>
-                        )}
+                            <div className="min-w-0 rounded-xl border border-white/10 bg-black/25 px-2.5 py-2.5 sm:px-3">
+                                <div className="truncate text-[9px] uppercase tracking-[0.16em] text-neutral-500">Origen</div>
+                                <div className="mt-1 text-sm font-semibold text-white sm:text-base">{sourceHeaders.length}</div>
+                            </div>
+                            <div className="min-w-0 rounded-xl border border-white/10 bg-black/25 px-2.5 py-2.5 sm:px-3">
+                                <div className="truncate text-[9px] uppercase tracking-[0.16em] text-neutral-500">Jinja</div>
+                                <div className="mt-1 text-sm font-semibold text-white sm:text-base">{templateFields.length}</div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="min-h-0 overflow-y-auto overscroll-contain px-4 py-3 sm:px-5 sm:py-3">
-                        {isLoading ? (
-                            <div className="flex min-h-[260px] flex-col items-center justify-center gap-3 text-center">
-                                <div className="h-12 w-12 animate-spin rounded-full border-2 border-emerald-400/20 border-t-emerald-400" />
-                                <div>
-                                    <p className="text-sm font-medium text-white">Analizando columnas y plantilla...</p>
-                                    <p className="mt-1 text-xs text-neutral-400">Esto suele tardar solo unos segundos.</p>
-                                </div>
+                    {templateNames.length > 0 && (
+                        <div className="mt-2 flex gap-1.5 overflow-x-auto pb-0.5 pr-1">
+                            {templateNames.map(name => (
+                                <span
+                                    key={name}
+                                    className="shrink-0 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-[10px] text-neutral-200"
+                                >
+                                    {name}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                <div className="min-h-0 overflow-y-auto overscroll-contain px-4 py-3 sm:px-5 sm:py-3">
+                    {isLoading ? (
+                        <div className="flex min-h-[260px] flex-col items-center justify-center gap-3 text-center">
+                            <div className="h-12 w-12 animate-spin rounded-full border-2 border-emerald-400/20 border-t-emerald-400" />
+                            <div>
+                                <p className="text-sm font-medium text-white">Analizando columnas y plantilla...</p>
+                                <p className="mt-1 text-xs text-neutral-400">Esto suele tardar solo unos segundos.</p>
                             </div>
-                        ) : (
-                            <div className="space-y-4">
-                                {errorMessage && (
-                                    <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2.5 text-xs text-amber-100">
-                                        {errorMessage}
+                        </div>
+                    ) : (
+                        <div className="space-y-4">
+                            {errorMessage && (
+                                <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 px-3 py-2.5 text-xs text-amber-100">
+                                    {errorMessage}
+                                </div>
+                            )}
+
+                            {!hasSourceHeaders && (
+                                <div className="rounded-xl border border-dashed border-white/10 bg-black/20 px-4 py-4 text-sm text-neutral-300">
+                                    No se detectaron columnas en el archivo cargado.
+                                </div>
+                            )}
+
+                            <section className="space-y-2.5">
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <h4 className="text-sm font-semibold text-white">Campos detectados en la plantilla</h4>
+                                        <p className="text-[11px] text-neutral-400 sm:text-xs">
+                                            Cada c&oacute;digo Jinja puede apuntar a una columna del archivo o a un valor fijo.
+                                        </p>
                                     </div>
-                                )}
-
-                                {!hasSourceHeaders && (
-                                    <div className="rounded-xl border border-dashed border-white/10 bg-black/20 px-4 py-4 text-sm text-neutral-300">
-                                        No se detectaron columnas en el archivo cargado.
-                                    </div>
-                                )}
-
-                                <section className="space-y-2.5">
-                                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                        <div>
-                                            <h4 className="text-sm font-semibold text-white">Campos detectados en la plantilla</h4>
-                                            <p className="text-[11px] text-neutral-400 sm:text-xs">
-                                                Cada c&oacute;digo Jinja puede apuntar a una columna del archivo o a un valor fijo.
-                                            </p>
-                                        </div>
-                                        {hasTemplateFields && (
-                                            <span className="self-start rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-emerald-200 sm:self-auto">
-                                                {templateFields.length} campos
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    {hasTemplateFields ? (
-                                        <div className="grid gap-2 lg:grid-cols-2">
-                                            {templateFields.map(field => {
-                                                const mapping = templateFieldMappings[field] || { sourceType: 'header', sourceValue: '' };
-                                                const isReady = mapping.sourceType === 'manual'
-                                                    ? String(mapping.sourceValue || '').trim().length > 0
-                                                    : String(mapping.sourceValue || '').trim().length > 0;
-
-                                                return (
-                                                    <div
-                                                        key={field}
-                                                        className="rounded-2xl border border-white/10 bg-black/20 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
-                                                    >
-                                                        <div className="mb-2 flex items-start justify-between gap-2">
-                                                            <div className="min-w-0">
-                                                                <div className="text-[9px] uppercase tracking-[0.18em] text-neutral-500">Jinja</div>
-                                                                <div className="mt-1 rounded-xl border border-white/10 bg-black/30 px-2.5 py-1.5 font-mono text-[11px] text-emerald-200 break-all">
-                                                                    {`{{ data.get('${field}', '-') }}`}
-                                                                </div>
-                                                            </div>
-                                                            {isReady
-                                                                ? <CheckCircle size={14} className="mt-1 shrink-0 text-emerald-400" />
-                                                                : <AlertCircle size={14} className="mt-1 shrink-0 text-amber-300" />
-                                                            }
-                                                        </div>
-
-                                                        {renderMappingEditor(mapping, patch => onTemplateFieldChange(field, patch))}
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    ) : (
-                                        <div className="rounded-2xl border border-dashed border-white/10 bg-black/15 px-4 py-4 text-sm text-neutral-300">
-                                            No se encontraron c&oacute;digos Jinja en las plantillas activas. Puedes continuar con los datos originales o crear columnas personalizadas abajo.
-                                        </div>
+                                    {hasTemplateFields && (
+                                        <span className="self-start rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.18em] text-emerald-200 sm:self-auto">
+                                            {templateFields.length} campos
+                                        </span>
                                     )}
-                                </section>
+                                </div>
 
-                                <section className="space-y-2.5">
-                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                        <div>
-                                            <h4 className="text-sm font-semibold text-white">Columnas personalizadas</h4>
-                                            <p className="text-[11px] text-neutral-400 sm:text-xs">
-                                                Agrega nuevos campos para generar alias o inyectar textos fijos dentro del dataset.
-                                            </p>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={onAddCustomField}
-                                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-3.5 py-2 text-[11px] font-semibold text-emerald-100 transition-colors hover:border-emerald-300/50 hover:bg-emerald-400/15"
-                                        >
-                                            <Plus size={13} />
-                                            Agregar columna personalizada
-                                        </button>
-                                    </div>
+                                {hasTemplateFields ? (
+                                    <div className="grid gap-2 lg:grid-cols-2">
+                                        {templateFields.map(field => {
+                                            const mapping = templateFieldMappings[field] || { sourceType: 'header', sourceValue: '' };
+                                            const isReady = mapping.sourceType === 'manual'
+                                                ? String(mapping.sourceValue || '').trim().length > 0
+                                                : String(mapping.sourceValue || '').trim().length > 0;
 
-                                    {customFieldMappings.length > 0 ? (
-                                        <div className="space-y-3">
-                                            {customFieldMappings.map(entry => (
+                                            return (
                                                 <div
-                                                    key={entry.id}
-                                                    className="rounded-2xl border border-white/10 bg-black/20 p-3"
+                                                    key={field}
+                                                    className="rounded-2xl border border-white/10 bg-black/20 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
                                                 >
-                                                    <div className="mb-2 flex flex-col gap-2.5 lg:flex-row lg:items-center">
-                                                        <input
-                                                            type="text"
-                                                            value={entry.targetKey}
-                                                            onChange={e => onCustomFieldChange(entry.id, { targetKey: e.target.value })}
-                                                            placeholder="Nombre de la columna nueva"
-                                                            className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-[11px] text-white outline-none placeholder:text-neutral-500 focus:border-emerald-400"
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => onRemoveCustomField(entry.id)}
-                                                            className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-400/20 bg-red-400/10 px-3 py-2 text-[11px] font-medium text-red-100 transition-colors hover:border-red-300/40 hover:bg-red-400/15"
-                                                        >
-                                                            <Trash2 size={13} />
-                                                            Quitar
-                                                        </button>
+                                                    <div className="mb-2 flex items-start justify-between gap-2">
+                                                        <div className="min-w-0">
+                                                            <div className="text-[9px] uppercase tracking-[0.18em] text-neutral-500">Jinja</div>
+                                                            <div className="mt-1 rounded-xl border border-white/10 bg-black/30 px-2.5 py-1.5 font-mono text-[11px] text-emerald-200 break-all">
+                                                                {`{{ data.get('${field}', '-') }}`}
+                                                            </div>
+                                                        </div>
+                                                        {isReady
+                                                            ? <CheckCircle size={14} className="mt-1 shrink-0 text-emerald-400" />
+                                                            : <AlertCircle size={14} className="mt-1 shrink-0 text-amber-300" />
+                                                        }
                                                     </div>
 
-                                                    {renderMappingEditor(entry, patch => onCustomFieldChange(entry.id, patch))}
+                                                    {renderMappingEditor(mapping, patch => onTemplateFieldChange(field, patch))}
                                                 </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="rounded-2xl border border-dashed border-white/10 bg-black/15 px-4 py-4 text-sm text-neutral-400">
-                                            A&uacute;n no agregaste columnas personalizadas.
-                                        </div>
-                                    )}
-                                </section>
-                            </div>
-                        )}
-                    </div>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div className="rounded-2xl border border-dashed border-white/10 bg-black/15 px-4 py-4 text-sm text-neutral-300">
+                                        No se encontraron c&oacute;digos Jinja en las plantillas activas. Puedes continuar con los datos originales o crear columnas personalizadas abajo.
+                                    </div>
+                                )}
+                            </section>
 
-                    <div className="border-t border-white/10 bg-black/20 px-4 py-2.5 sm:px-5 sm:py-3">
-                        <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
-                            <p className="text-[11px] text-neutral-400">
-                                Puedes remapear el archivo cuando cambies de plantilla.
-                            </p>
-                            <div className="flex flex-col gap-2 sm:flex-row">
-                                <button
-                                    type="button"
-                                    onClick={onClose}
-                                    className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-[11px] font-medium text-neutral-200 transition-colors hover:bg-white/10"
-                                >
-                                    {closeLabel || 'Cerrar'}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={onApply}
-                                    disabled={isLoading}
-                                    className="rounded-xl border border-emerald-400/30 bg-emerald-400/15 px-4 py-2 text-[11px] font-semibold text-emerald-100 transition-colors hover:bg-emerald-400/20 disabled:cursor-not-allowed disabled:opacity-60"
-                                >
-                                    Aplicar mapeo
-                                </button>
-                            </div>
+                            <section className="space-y-2.5">
+                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                    <div>
+                                        <h4 className="text-sm font-semibold text-white">Columnas personalizadas</h4>
+                                        <p className="text-[11px] text-neutral-400 sm:text-xs">
+                                            Agrega nuevos campos para generar alias o inyectar textos fijos dentro del dataset.
+                                        </p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={onAddCustomField}
+                                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-400/30 bg-emerald-400/10 px-3.5 py-2 text-[11px] font-semibold text-emerald-100 transition-colors hover:border-emerald-300/50 hover:bg-emerald-400/15"
+                                    >
+                                        <Plus size={13} />
+                                        Agregar columna personalizada
+                                    </button>
+                                </div>
+
+                                {customFieldMappings.length > 0 ? (
+                                    <div className="space-y-3">
+                                        {customFieldMappings.map(entry => (
+                                            <div
+                                                key={entry.id}
+                                                className="rounded-2xl border border-white/10 bg-black/20 p-3"
+                                            >
+                                                <div className="mb-2 flex flex-col gap-2.5 lg:flex-row lg:items-center">
+                                                    <input
+                                                        type="text"
+                                                        value={entry.targetKey}
+                                                        onChange={e => onCustomFieldChange(entry.id, { targetKey: e.target.value })}
+                                                        placeholder="Nombre de la columna nueva"
+                                                        className="w-full rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-[11px] text-white outline-none placeholder:text-neutral-500 focus:border-emerald-400"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => onRemoveCustomField(entry.id)}
+                                                        className="inline-flex items-center justify-center gap-2 rounded-xl border border-red-400/20 bg-red-400/10 px-3 py-2 text-[11px] font-medium text-red-100 transition-colors hover:border-red-300/40 hover:bg-red-400/15"
+                                                    >
+                                                        <Trash2 size={13} />
+                                                        Quitar
+                                                    </button>
+                                                </div>
+
+                                                {renderMappingEditor(entry, patch => onCustomFieldChange(entry.id, patch))}
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="rounded-2xl border border-dashed border-white/10 bg-black/15 px-4 py-4 text-sm text-neutral-400">
+                                        A&uacute;n no agregaste columnas personalizadas.
+                                    </div>
+                                )}
+                            </section>
+                        </div>
+                    )}
+                </div>
+
+                <div className="border-t border-white/10 bg-black/20 px-4 py-2.5 sm:px-5 sm:py-3">
+                    <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="text-[11px] text-neutral-400">
+                            Puedes remapear el archivo cuando cambies de plantilla.
+                        </p>
+                        <div className="flex flex-col gap-2 sm:flex-row">
+                            <button
+                                type="button"
+                                onClick={onClose}
+                                className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-[11px] font-medium text-neutral-200 transition-colors hover:bg-white/10"
+                            >
+                                {closeLabel || 'Cerrar'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={onApply}
+                                disabled={isLoading}
+                                className="rounded-xl border border-emerald-400/30 bg-emerald-400/15 px-4 py-2 text-[11px] font-semibold text-emerald-100 transition-colors hover:bg-emerald-400/20 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                                Aplicar mapeo
+                            </button>
                         </div>
                     </div>
+                </div>
             </div>
         </div>
     );
@@ -875,7 +875,7 @@ function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, lo
 
     const isGridTemplate = sheet.templateName === GRID_TEMPLATE_NAME;
     const isVolanteoTemplate = sheet.templateName === VOLANTEO_TEMPLATE_NAME;
-    const showStandardHeaderPreview = !isVolanteoTemplate;
+    const showStandardHeaderPreview = !isVolanteoTemplate && !isLocalTemplate;
     const pageIndicator = sheet.totalPages && sheet.totalPages > 1
         ? ` (Pág ${sheet.pageNum}/${sheet.totalPages})`
         : '';
@@ -898,10 +898,11 @@ function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, lo
                             1° HOJA
                         </span>
                     )}
-                    {sheet.useAltHeader
-                        ? <span className="text-[9px] bg-blue-500/20 text-blue-300 border border-blue-500/30 px-1.5 py-0.5 rounded font-mono">MINI-HEADER</span>
-                        : <span className="text-[9px] bg-neutral-700 text-neutral-300 border border-neutral-600 px-1.5 py-0.5 rounded font-mono">HEADER PRINCIPAL</span>
-                    }
+                    {showStandardHeaderPreview && (
+                        sheet.useAltHeader
+                            ? <span className="text-[9px] bg-blue-500/20 text-blue-300 border border-blue-500/30 px-1.5 py-0.5 rounded font-mono">MINI-HEADER</span>
+                            : <span className="text-[9px] bg-neutral-700 text-neutral-300 border border-neutral-600 px-1.5 py-0.5 rounded font-mono">HEADER PRINCIPAL</span>
+                    )}
                     {hasTemplate
                         ? <CheckCircle size={12} className="text-emerald-400" />
                         : <AlertCircle size={12} className="text-neutral-500" />
@@ -1502,18 +1503,18 @@ export default function MultiSheetReportApp() {
 
             activeSheets.forEach((sheet) => {
                 const photosPerPage = sheet.templateName === VOLANTEO_TEMPLATE_NAME ? 4 : (sheet.imagesPerPage || 4);
-                
+
                 let sheetImages = [];
                 const hasManualSelection = sheet.selectedImageIndices && sheet.selectedImageIndices.length > 0;
-                
+
                 if (hasManualSelection) {
                     sheetImages = sheet.selectedImageIndices.map(idx => images[idx]).filter(Boolean);
                 } else {
                     sheetImages = [...rowImagesForThisRecord];
                 }
-                
+
                 sheetImages.forEach(img => allImages.add(img));
-                
+
                 if (sheetImages.length === 0) {
                     sheetsConfig.push({
                         order: globalOrder++,
@@ -1528,7 +1529,7 @@ export default function MultiSheetReportApp() {
                     });
                     return;
                 }
-                
+
                 if (sheet.firstPageOnly) {
                     const chunk = sheetImages.slice(0, photosPerPage);
                     sheetsConfig.push({
@@ -1542,7 +1543,7 @@ export default function MultiSheetReportApp() {
                         pageNum: 1,
                         totalPages: 1,
                     });
-                    
+
                     if (!hasManualSelection) {
                         rowImagesForThisRecord = rowImagesForThisRecord.slice(photosPerPage);
                     }
@@ -1562,7 +1563,7 @@ export default function MultiSheetReportApp() {
                             totalPages,
                         });
                     }
-                    
+
                     if (!hasManualSelection) {
                         rowImagesForThisRecord = [];
                     }
@@ -2268,20 +2269,20 @@ export default function MultiSheetReportApp() {
                                 const previewCards = [];
                                 let globalIdx = 0;
                                 const orderedPreviewSheets = orderSheetsForFirstPage(sheets);
-                                
+
                                 const recordId = idColumn ? selectedRow?.[idColumn] : null;
                                 const initialRowImages = (recordId && images)
                                     ? images.filter(img => matchesRecordId(img.name, String(recordId)))
                                     : [];
-                                
+
                                 let unassignedImagesForPreview = [...initialRowImages];
 
                                 orderedPreviewSheets.forEach((sheet) => {
                                     const photosPerPage = sheet.templateName === VOLANTEO_TEMPLATE_NAME ? 4 : (sheet.imagesPerPage || 4);
-                                    
+
                                     let sheetImages = [];
                                     const hasManualSelection = sheet.selectedImageIndices && sheet.selectedImageIndices.length > 0;
-                                    
+
                                     if (hasManualSelection) {
                                         sheetImages = sheet.selectedImageIndices.map(idx => images[idx]).filter(Boolean);
                                     } else {

@@ -408,7 +408,7 @@ html, body {{
 .loc-row {{ display: flex; margin-bottom: 4px; }}
 .loc-row.full {{ display: block; }}
 .loc-field {{ display: flex; align-items: baseline; margin-right: 30px; }}
-.loc-field.full {{ width: 100%; margin-right: 0; }}
+.loc-field.full {{ width: 100%; margin-right: 0; min-width: 0; }}
 .loc-label {{
     font-size: 9pt;
     font-weight: bold;
@@ -418,6 +418,13 @@ html, body {{
     white-space: nowrap;
 }}
 .loc-value {{ font-size: 9pt; color: #000; }}
+.loc-row.full .loc-value {{
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}}
 .panel-fotografico {{
     flex: 1;
     display: flex;
@@ -426,14 +433,16 @@ html, body {{
 }}
 .photo-grid {{
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    grid-template-rows: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
     gap: 2mm;
-    flex: 1;
+    flex: 1 1 auto;
     min-height: 0;
-    height: auto;
+    height: 100%;
+    max-height: 160mm;
     border: 1px solid #0066cc;
     padding: 2mm;
+    page-break-inside: avoid;
 }}
 .photo-cell {{
     position: relative;
@@ -447,8 +456,8 @@ html, body {{
     justify-content: center;
 }}
 .photo-cell img {{
-    max-width: 100%;
-    max-height: 100%;
+    width: 100%;
+    height: 100%;
     object-fit: contain;
     object-position: center;
     display: block;
@@ -464,11 +473,12 @@ html, body {{
     font-style: italic;
 }}
 .no-photos {{
-    flex: 1;
+    flex: 1 1 auto;
     display: flex;
     align-items: center;
     justify-content: center;
     min-height: 0;
+    max-height: 160mm;
     color: #999;
     font-style: italic;
     border: 1px solid #0066cc;
