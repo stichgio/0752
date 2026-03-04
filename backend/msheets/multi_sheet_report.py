@@ -163,7 +163,7 @@ def _build_alt_header_html(
 # ── Generador de página HTML con grilla de imágenes ──────────────────────────
 
 def _build_image_grid_html(image_data_uris: list[str], images_per_page: int) -> str:
-    """Grilla de imágenes usando tabla HTML (máxima compatibilidad WeasyPrint)."""
+    """Grilla HTML para WeasyPrint; images_per_page define el tamaño visual."""
     n = len(image_data_uris)
     if n == 0:
         return (
@@ -174,8 +174,8 @@ def _build_image_grid_html(image_data_uris: list[str], images_per_page: int) -> 
     cols = _grid_cols(images_per_page)
     rows = math.ceil(n / cols)
     cell_width_pct = 100.0 / cols
-    # A4 usable ≈ 273mm, header ≈ 30mm, title ≈ 12mm → grid ≈ 225mm
-    row_height_mm = min(225.0 / rows, 130.0)
+    usable_height_mm = 247.0  # A4 297 - márgenes 20 - header 20 - título 10
+    row_height_mm = min(usable_height_mm / rows, 140.0)
 
     table_rows = []
     for r in range(rows):
@@ -195,12 +195,11 @@ def _build_image_grid_html(image_data_uris: list[str], images_per_page: int) -> 
                 cells.append(f'<td style="width:{cell_width_pct:.1f}%;"></td>')
         table_rows.append(f'<tr>{"".join(cells)}</tr>')
 
-    return (
-        '<table style="width:100%;border-collapse:separate;border-spacing:3px;'
-        'table-layout:fixed;">'
-        f'{"".join(table_rows)}'
-        '</table>'
-    )
+    table_open = (
+        '<table style="width:100%;height:{:.1f}mm;border-collapse:separate;'
+        'border-spacing:3px;table-layout:fixed;">'
+    ).format(usable_height_mm)
+    return table_open + "".join(table_rows) + "</table>"
 
 
 def _build_page_html(
@@ -228,18 +227,26 @@ def _build_page_html(
 <style>
 @page {{
     size: A4 portrait;
-    margin: 12mm 15mm 10mm 15mm;
+    margin: 10mm 12mm 10mm 12mm;
 }}
 html, body {{
     margin: 0;
     padding: 0;
     font-family: Arial, sans-serif;
+    width: 210mm;
+}}
+.page-container {{
+    width: 100%;
+    page-break-after: always;
+    page-break-inside: avoid;
 }}
 </style>
 </head><body>
+<div class="page-container">
 {header_html}
 {title_html}
 {grid_html}
+</div>
 </body></html>"""
 
 
@@ -902,14 +909,36 @@ async def generate_multi_sheet_pdf(
                 detail="pypdf no está instalado. Ejecuta: pip install pypdf",
             ) from exc
 
-        sorted_sheets = sorted(sheets, key=lambda s: s.get("order", 0))
-        local_names = _list_local_template_names()
+        def _sheet_order_value(sheet_data: Any, fallback: int = 0) -> int:
+            try:
+                return int(sheet_data.get("order", fallback))
+            except (TypeError, ValueError, AttributeError):
+                return fallback
+
+        sorted_sheets = sorted(sheets, key=lambda s: _sheet_order_value(s, 0))
+        local_name_set = set(_list_local_template_names())
+        first_sheet_idx = next(
+            (
+                idx
+                for idx, sheet in enumerate(sorted_sheets)
+                if bool(sheet.get("isFirstSheet", False))
+            ),
+            0,
+        )
         temp_pdf_paths: list[str] = []
 
         for sheet_idx, sheet in enumerate(sorted_sheets):
             row_data: dict[str, Any] = sheet.get("rowData") or {}
             image_filenames: list[str] = sheet.get("imageFilenames") or []
-            template_name: str = str(sheet.get("templateName") or _GRID_TEMPLATE_NAME)
+            is_first_sheet = sheet_idx == first_sheet_idx
+            first_sheet_template = str(sheet.get("firstSheetTemplate") or "").strip()
+            resolved_template = sheet.get("templateName")
+            if is_first_sheet and first_sheet_template:
+                resolved_template = first_sheet_template
+
+            template_name: str = str(resolved_template or _GRID_TEMPLATE_NAME).strip()
+            if not template_name:
+                template_name = _GRID_TEMPLATE_NAME
             use_alt_header: bool = bool(sheet.get("useAltHeader", False))
             title: str = sheet.get("title") or ""
             images_per_page: int = int(sheet.get("imagesPerPage", 4))
@@ -919,8 +948,8 @@ async def generate_multi_sheet_pdf(
             configured_total_pages: int = int(sheet.get("totalPages", 1))
 
             logger.info(
-                "[Sheet %d/%d] template=%s, title=%r, images=%d, imagesPerPage=%d",
-                sheet_idx + 1, len(sorted_sheets), template_name, title,
+                "[Sheet %d/%d] first=%s template=%s, title=%r, images=%d, imagesPerPage=%d",
+                sheet_idx + 1, len(sorted_sheets), is_first_sheet, template_name, title,
                 len(image_filenames), images_per_page,
             )
 
@@ -958,7 +987,21 @@ async def generate_multi_sheet_pdf(
                             images_b64.append(data_uri)
 
                 # Construir HTML de la página
-                if template_name in local_names:
+                if is_first_sheet and template_name in local_name_set:
+                    page_html = _render_local_template(
+                        template_name=template_name,
+                        header=header,
+                        row_data=row_data,
+                        images_b64=images_b64,
+                        image_filenames=page_filenames,
+                    )
+                elif is_first_sheet and template_name == _VOLANTEO_TEMPLATE_NAME:
+                    page_html = _build_volanteo_page_html(
+                        header_config=header,
+                        row_data=row_data,
+                        image_data_uris=images_b64,
+                    )
+                elif template_name in local_name_set:
                     page_html = _render_local_template(
                         template_name=template_name,
                         header=header,
