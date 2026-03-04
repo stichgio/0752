@@ -30,10 +30,9 @@ from image_optimizer.router import router as image_optimizer_router  # type: ign
 from compressor.router import router as compressor_router  # type: ignore
 from ocr_tools.router import router as ocr_tools_router  # type: ignore
 from template_editor.router import router as template_editor_router  # type: ignore
-try:
-    from msheets.multi_sheet_report import router as multi_sheet_router  # type: ignore
-except Exception:
-    from routers.multi_sheet_report import router as multi_sheet_router  # type: ignore
+# Multi-Sheet Report corre en servidor independiente (puerto 7861).
+# Arrancar con: cd backend && uvicorn msheets.main_msheets:app --port 7861
+# El frontend proxy en vite.config.js enruta /api/multi-sheet/ → 7861.
 from config import settings  # type: ignore
 from template_editor.service import (  # type: ignore
     get_all_published_templates,
@@ -308,7 +307,6 @@ app.include_router(image_optimizer_router)
 app.include_router(compressor_router)
 app.include_router(ocr_tools_router)
 app.include_router(template_editor_router)
-app.include_router(multi_sheet_router, prefix="/api/multi-sheet", tags=["multi-sheet-report"])
 
 @api_router.get("/templates")
 async def list_templates():

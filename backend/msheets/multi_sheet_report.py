@@ -16,6 +16,7 @@ import base64
 from dataclasses import dataclass
 from html import escape
 import json
+import logging
 import math
 import os
 import re
@@ -24,13 +25,25 @@ import tempfile
 import traceback
 from typing import Any, Optional
 
+logger = logging.getLogger("multi_sheet_report")
+
 from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile  # pyre-ignore
 from fastapi.responses import StreamingResponse, HTMLResponse  # pyre-ignore
 
-from template_editor.service import (  # type: ignore
-    get_all_published_templates,
-    get_published_template_by_name,
-)
+try:
+    from template_editor.service import (  # type: ignore
+        get_all_published_templates,
+        get_published_template_by_name,
+    )
+    _TEMPLATE_EDITOR_AVAILABLE = True
+except ImportError:
+    _TEMPLATE_EDITOR_AVAILABLE = False
+
+    def get_all_published_templates():  # type: ignore
+        return []
+
+    def get_published_template_by_name(name):  # type: ignore
+        return None
 
 # ── Router ────────────────────────────────────────────────────────────────────
 router = APIRouter(tags=["multi-sheet-report"])
@@ -519,6 +532,15 @@ def _render_local_template(
 
 # ── Motor PDF ─────────────────────────────────────────────────────────────────
 
+import asyncio
+import functools
+from concurrent.futures import ThreadPoolExecutor
+
+# Executor dedicado con 1 worker: serializa llamadas a WeasyPrint para evitar
+# interleaving entre requests concurrentes, sin bloquear el event loop.
+_pdf_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="weasyprint")
+
+
 def _render_html_to_pdf(html_string: str, base_url: str, output_path: str) -> None:
     try:
         from weasyprint import HTML  # type: ignore
@@ -527,6 +549,15 @@ def _render_html_to_pdf(html_string: str, base_url: str, output_path: str) -> No
             "WeasyPrint no está instalado. Ejecuta: pip install weasyprint"
         ) from exc
     HTML(string=html_string, base_url=base_url).write_pdf(output_path)
+
+
+async def _render_html_to_pdf_async(html_string: str, base_url: str, output_path: str) -> None:
+    """Non-blocking wrapper: runs WeasyPrint in a dedicated single-thread executor."""
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(
+        _pdf_executor,
+        functools.partial(_render_html_to_pdf, html_string, base_url, output_path),  # pyre-ignore
+    )
 
 
 # ── Utilidades ────────────────────────────────────────────────────────────────
@@ -852,21 +883,30 @@ async def generate_multi_sheet_pdf(
     output_path: Optional[str] = None
 
     try:
-        # Guardar imágenes adjuntas
+        # Guardar imágenes adjuntas — usar basename para evitar path traversal
         for upload_file in files:
             if upload_file.filename:
-                dest = os.path.join(tmp_dir, upload_file.filename)
+                safe_name = os.path.basename(upload_file.filename)
+                if not safe_name:
+                    continue
+                dest = os.path.join(tmp_dir, safe_name)
                 content = await upload_file.read()
                 with open(dest, "wb") as fout:
                     fout.write(content)
 
-        from pypdf import PdfWriter  # type: ignore
+        try:
+            from pypdf import PdfWriter  # type: ignore
+        except ImportError as exc:
+            raise HTTPException(
+                status_code=500,
+                detail="pypdf no está instalado. Ejecuta: pip install pypdf",
+            ) from exc
 
         sorted_sheets = sorted(sheets, key=lambda s: s.get("order", 0))
         local_names = _list_local_template_names()
         temp_pdf_paths: list[str] = []
 
-        for sheet in sorted_sheets:
+        for sheet_idx, sheet in enumerate(sorted_sheets):
             row_data: dict[str, Any] = sheet.get("rowData") or {}
             image_filenames: list[str] = sheet.get("imageFilenames") or []
             template_name: str = str(sheet.get("templateName") or _GRID_TEMPLATE_NAME)
@@ -878,13 +918,19 @@ async def generate_multi_sheet_pdf(
             configured_page_num: int = int(sheet.get("pageNum", 1))
             configured_total_pages: int = int(sheet.get("totalPages", 1))
 
+            logger.info(
+                "[Sheet %d/%d] template=%s, title=%r, images=%d, imagesPerPage=%d",
+                sheet_idx + 1, len(sorted_sheets), template_name, title,
+                len(image_filenames), images_per_page,
+            )
+
             # Ordenar por sufijo secuencial 3 dígitos: COLUMNA_ID_001, _010, _100...
             image_filenames = _sort_image_filenames_by_seq(image_filenames)
 
             # Dividir en grupos de images_per_page → N páginas con los mismos datos de fila
             if image_filenames:
                 image_groups: list[list[str]] = [
-                    image_filenames[i : i + images_per_page]
+                    image_filenames[i : i + images_per_page]  # pyre-ignore
                     for i in range(0, len(image_filenames), images_per_page)
                 ]
             else:
@@ -901,10 +947,11 @@ async def generate_multi_sheet_pdf(
                 ]
 
             for page_num, total_pages, page_filenames in page_ranges:
-                # Resolver imágenes a data URIs
+                # Resolver imágenes a data URIs (basename para consistencia con upload)
                 images_b64: list[str] = []
                 for fname in page_filenames:
-                    img_path = os.path.join(tmp_dir, fname)
+                    safe_fname = os.path.basename(fname)
+                    img_path = os.path.join(tmp_dir, safe_fname)
                     if os.path.exists(img_path):
                         data_uri = _image_to_b64(img_path)
                         if data_uri:
@@ -940,14 +987,14 @@ async def generate_multi_sheet_pdf(
                         total_pages=total_pages,
                     )
 
-                # Renderizar a PDF
+                # Renderizar a PDF (async — no bloquea el event loop)
                 try:
                     tmp_pdf_file = tempfile.NamedTemporaryFile(
                         delete=False, suffix=".pdf", dir=tmp_dir
                     )
                     tmp_pdf_path = tmp_pdf_file.name
                     tmp_pdf_file.close()
-                    _render_html_to_pdf(page_html, tmp_dir, tmp_pdf_path)
+                    await _render_html_to_pdf_async(page_html, tmp_dir, tmp_pdf_path)
                     temp_pdf_paths.append(tmp_pdf_path)
                 except Exception as exc:
                     raise HTTPException(

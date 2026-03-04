@@ -27,6 +27,10 @@ export default defineConfig({
     },
     server: {
         proxy: {
+            '/api/multi-sheet': {
+                target: 'http://localhost:7861',
+                changeOrigin: true,
+            },
             '/api': {
                 target: 'http://localhost:7860',
                 changeOrigin: true
