@@ -6,10 +6,10 @@ import gc
 import tempfile
 import hashlib
 import logging
-from jinja2 import Environment, FileSystemLoader  # pyre-ignore[21]
-import jinja2  # pyre-ignore[21]
-from fastapi import HTTPException  # type: ignore
-from config import settings  # type: ignore
+from jinja2 import Environment, FileSystemLoader
+import jinja2
+from fastapi import HTTPException
+from config import settings
 
 
 def _configure_windows_gtk_runtime() -> None:
@@ -33,7 +33,7 @@ def _configure_windows_gtk_runtime() -> None:
 _configure_windows_gtk_runtime()
 
 try:
-    from weasyprint import HTML  # pyre-ignore[21]
+    from weasyprint import HTML
     WEASYPRINT_AVAILABLE = True
 except (OSError, ImportError) as e:
     print(f"WARNING: WeasyPrint not available: {e}")
@@ -60,10 +60,10 @@ PDF_ENGINE_AVAILABLE = WEASYPRINT_AVAILABLE or (CHROME_PATH is not None)
 
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
-import piexif  # pyre-ignore[21]
-from PIL import Image  # pyre-ignore[21]
+import piexif
+from PIL import Image
 import asyncio
-import httpx  # pyre-ignore[21]
+import httpx
 
 
 class BoundedCache:
@@ -111,8 +111,8 @@ PDF_BATCH_SIZE = 5  # Número de PDFs a generar en paralelo por lote
 HTML_PREFETCH_SIZE = 10  # Número de HTMLs a pre-renderizar adelante
 
 # ✅ GHOSTSCRIPT COMPRESSION: Reducir tamaño del PDF final
-GHOSTSCRIPT_ENABLED = settings.ghostscript_enabled   # Habilitar compresión post-proceso
-GHOSTSCRIPT_QUALITY = settings.ghostscript_quality   # Opciones: screen (72dpi), ebook (150dpi), printer (300dpi), prepress (300dpi+)
+GHOSTSCRIPT_ENABLED = settings.ghostscript_enabled
+GHOSTSCRIPT_QUALITY = settings.ghostscript_quality
 
 TEMP_DIR = tempfile.gettempdir()
 
@@ -123,7 +123,6 @@ TEMP_DIR = tempfile.gettempdir()
 def _check_ghostscript_available():
     """Verifica si Ghostscript está disponible en el sistema"""
     import shutil
-    # Buscar gs (Linux/Mac) o gswin64c (Windows)
     gs_commands = ['gs', 'gswin64c', 'gswin32c']
     for cmd in gs_commands:
         if shutil.which(cmd):
@@ -154,7 +153,6 @@ def _compress_pdf_with_ghostscript(input_path, output_path=None, quality="printe
         print("[GS] Ghostscript no disponible, omitiendo compresión")
         return False, input_path, {"error": "Ghostscript not available"}
 
-    # Si no se especifica output, usar archivo temporal
     if output_path is None:
         tmp_output = tempfile.NamedTemporaryFile(delete=False, suffix='_compressed.pdf')
         output_path = tmp_output.name
@@ -163,10 +161,8 @@ def _compress_pdf_with_ghostscript(input_path, output_path=None, quality="printe
     else:
         replace_original = False
 
-    # Obtener tamaño original
     original_size = os.path.getsize(input_path)
 
-    # Comando Ghostscript optimizado para calidad/tamaño
     gs_args = [
         gs_cmd,
         '-sDEVICE=pdfwrite',
@@ -175,11 +171,9 @@ def _compress_pdf_with_ghostscript(input_path, output_path=None, quality="printe
         '-dNOPAUSE',
         '-dQUIET',
         '-dBATCH',
-        # Optimizaciones adicionales sin afectar calidad visible
         '-dDetectDuplicateImages=true',
         '-dCompressFonts=true',
         '-dSubsetFonts=true',
-        # Mantener calidad de imágenes
         '-dColorImageDownsampleType=/Bicubic',
         '-dGrayImageDownsampleType=/Bicubic',
         '-dMonoImageDownsampleType=/Bicubic',
@@ -194,17 +188,15 @@ def _compress_pdf_with_ghostscript(input_path, output_path=None, quality="printe
             gs_args,
             capture_output=True,
             text=True,
-            timeout=300  # 5 minutos máximo
+            timeout=300
         )
 
         if result.returncode != 0:
             print(f"[GS] Error: {result.stderr}")
-            # Si falla, retornar el original
             if replace_original and os.path.exists(output_path):
                 os.remove(output_path)
             return False, input_path, {"error": result.stderr}
 
-        # Verificar que el archivo comprimido existe y es válido
         if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
             print("[GS] Error: Archivo comprimido inválido")
             return False, input_path, {"error": "Invalid output file"}
@@ -215,23 +207,20 @@ def _compress_pdf_with_ghostscript(input_path, output_path=None, quality="printe
         stats = {
             "original_size": original_size,
             "compressed_size": compressed_size,
-            "reduction_percent": round(reduction, 1),  # pyre-ignore[6]
+            "reduction_percent": round(reduction, 1),
             "quality": quality
         }
 
-        # Solo usar versión comprimida si realmente es menor
         if compressed_size < original_size:
             if replace_original:
-                # Reemplazar original con comprimido
                 os.remove(input_path)
-                shutil.move(output_path, input_path)  # pyre-ignore[6]
+                shutil.move(output_path, input_path)
                 print(f"[GS] ✅ Comprimido: {original_size/1024/1024:.1f}MB → {compressed_size/1024/1024:.1f}MB ({reduction:.1f}% reducción)")
                 return True, input_path, stats
             else:
                 print(f"[GS] ✅ Comprimido: {original_size/1024/1024:.1f}MB → {compressed_size/1024/1024:.1f}MB ({reduction:.1f}% reducción)")
                 return True, output_path, stats
         else:
-            # El comprimido es mayor o igual, usar original
             if os.path.exists(output_path):
                 os.remove(output_path)
             print(f"[GS] ℹ️ Sin mejora de compresión, usando original ({original_size/1024/1024:.1f}MB)")
@@ -257,7 +246,6 @@ class ReportService:
         if templates_dir is None:
             templates_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
 
-        # ✅ OPTIMIZACIÓN SEGURA: Bytecode Cache
         cache_dir = os.path.join(TEMP_DIR, 'jinja2_cache')
         os.makedirs(cache_dir, exist_ok=True)
 
@@ -268,21 +256,16 @@ class ReportService:
             bytecode_cache=jinja2.FileSystemBytecodeCache(cache_dir)
         )
 
-        # Pre-cargar templates más usados
         self.template = self.env.get_template("report.html")
         try:
-            _ = self.template.module  # Forzar compilación
+            _ = self.template.module
         except Exception as e:
             logging.warning("Pre-compilación de report.html falló: %s", e)
 
-        # Cache de templates adicionales
         self._template_cache = {}
-
-        # ✅ OPTIMIZACIÓN SEGURA: Cache de imágenes (LRU bounded)
         self._image_cache = BoundedCache(maxsize=100)
         self._logo_cache = {}
 
-        # ✅ OPTIMIZACIÓN SEGURA: Cliente HTTP persistente
         self._http_client = httpx.AsyncClient(
             timeout=30.0,
             limits=httpx.Limits(
@@ -304,8 +287,7 @@ class ReportService:
                 return loaded_template
             except Exception as e:
                 print(f"Error loading template {template_name}: {e}")
-                logging.warning("# FIX: BUG-006 template '%s' not found in strict mode", template_name)
-                # FIX: BUG-006 allow strict mode to fail fast when template does not exist
+                logging.warning("template '%s' not found in strict mode", template_name)
                 raise HTTPException(status_code=404, detail=f"Template '{template_name}' not found")
 
         if template_name not in self._template_cache:
@@ -313,8 +295,7 @@ class ReportService:
                 self._template_cache[template_name] = self.env.get_template(template_name)
             except Exception as e:
                 print(f"Error loading template {template_name}: {e}")
-                logging.warning("# FIX: BUG-006 template '%s' not found, using default fallback", template_name)
-                # Fallback a template por defecto
+                logging.warning("template '%s' not found, using default fallback", template_name)
                 self._template_cache[template_name] = self.template
 
         return self._template_cache[template_name]
@@ -414,17 +395,15 @@ class ReportService:
             return None
 
         logo_hash = hashlib.sha256(str(logo_data).encode("utf-8") if not isinstance(logo_data, bytes) else logo_data).hexdigest()
-        cache_key = f"logo_{side}_{logo_hash}"  # FIX: BUG-001 avoid cross-request/logo-content cache collisions
+        cache_key = f"logo_{side}_{logo_hash}"
         if cache_key in self._logo_cache:
             return self._logo_cache[cache_key]
 
         try:
-            # If already a data URI, return as-is
             if isinstance(logo_data, str) and logo_data.startswith("data:"):
                 self._logo_cache[cache_key] = logo_data
                 return logo_data
 
-            # Convert bytes to data URI
             if isinstance(logo_data, bytes):
                 logo_bytes = logo_data
             elif isinstance(logo_data, str):
@@ -432,7 +411,6 @@ class ReportService:
             else:
                 return logo_data
 
-            # Detect mime type (assume PNG for logos)
             data_uri = self._convert_to_base64_uri(logo_bytes, "image/png")
             self._logo_cache[cache_key] = data_uri
             return data_uri
@@ -469,7 +447,6 @@ class ReportService:
                         f_path = getattr(file_obj, 'path', '')
                         f_name = getattr(file_obj, 'filename', '')
 
-                    # Acquire Content
                     if f_path.startswith("http"):
                         try:
                             resp = await self._http_client.get(f_path)
@@ -482,14 +459,13 @@ class ReportService:
                         def read_file():
                             with open(f_path, "rb") as f:
                                 return f.read()
-                        content = await loop.run_in_executor(None, read_file)  # pyre-ignore[6]
+                        content = await loop.run_in_executor(None, read_file)
                     else:
                         return None
 
                     if not content:
                         return None
 
-                    # Cache key: use (path, mtime, size) for local files, MD5 for HTTP/bytes
                     if f_path and os.path.exists(f_path):
                         stat = os.stat(f_path)
                         cache_key = f"local:{f_path}:{stat.st_mtime}:{stat.st_size}"
@@ -503,7 +479,6 @@ class ReportService:
                         cached_result['data']['order'] = file_obj.get("order", idx) if isinstance(file_obj, dict) else idx
                         return cached_result
 
-                    # Extract Metadata
                     metadata = {"date": "N/A", "coords": "N/A"}
                     width, height, is_landscape = 0, 0, True
 
@@ -514,7 +489,6 @@ class ReportService:
                         except Exception:
                             pass
 
-                    # Optimize Image
                     optimized_bytes = await loop.run_in_executor(
                         None,
                         self.optimize_image_for_pdf,
@@ -536,7 +510,6 @@ class ReportService:
                         except Exception:
                             is_landscape = True
 
-                    # Convert to base64 data URI (no temp files needed)
                     image_data_uri = self._convert_to_base64_uri(optimized_bytes, "image/jpeg")
 
                     del optimized_bytes
@@ -570,13 +543,12 @@ class ReportService:
 
         for res in results:
             if res:
-                processed_images.append(res["data"])  # pyre-ignore[16]
-                orientations.append(res["orientation"])  # pyre-ignore[16]
+                processed_images.append(res["data"])
+                orientations.append(res["orientation"])
 
         processed_images.sort(key=lambda x: x["order"])
 
         img_count = len(processed_images)
-        majority_landscape = sum(orientations) > len(orientations) / 2 if orientations else True
 
         if img_count == 1:
             layout_mode = "1"
@@ -604,7 +576,7 @@ class ReportService:
         - Genera PDFs en lotes paralelos (PDF_BATCH_SIZE)
         - Merge incremental para liberar memoria
         """
-        from pypdf import PdfWriter  # pyre-ignore[21]
+        from pypdf import PdfWriter
         from concurrent.futures import ThreadPoolExecutor, as_completed
         import time
 
@@ -620,18 +592,17 @@ class ReportService:
 
         # Template Selection con manejo de errores
         if custom_template_str:
-            from jinja2 import Template  # pyre-ignore[21]
+            from jinja2 import Template
             template = Template(custom_template_str)
         elif template_name:
-            # Check if it's in the technical reports templates
             tech_tpl_path = os.path.join(os.path.dirname(__file__), "technical_reports", "templates", template_name)
             if os.path.exists(tech_tpl_path):
-                 tech_env = Environment(loader=FileSystemLoader(os.path.dirname(tech_tpl_path)))
-                 template = tech_env.get_template(os.path.basename(tech_tpl_path))
+                tech_env = Environment(loader=FileSystemLoader(os.path.dirname(tech_tpl_path)))
+                template = tech_env.get_template(os.path.basename(tech_tpl_path))
             else:
-                 try:
+                try:
                     template = self.get_template(template_name)
-                 except Exception:
+                except Exception:
                     print(f"Template {template_name} not found, falling back to default")
                     template = self.template
         else:
@@ -646,14 +617,12 @@ class ReportService:
                 row_data = report.get("data", {})
                 files = report.get("files", [])
 
-                # Procesar imágenes
-                images, layout_mode, img_count = await self._process_files_serial(  # pyre-ignore[6, 16]
+                images, layout_mode, img_count = await self._process_files_serial(
                     files,
                     max_size=MAX_IMAGE_SIZE,
                     quality=JPEG_QUALITY
                 )
 
-                # Renderizar HTML
                 single_report_context = [{
                     "data": row_data,
                     "images": images,
@@ -677,7 +646,6 @@ class ReportService:
                 traceback.print_exc()
                 return None
 
-        # Preparar HTMLs en lotes para mejor control de memoria
         all_html_items = []
         html_batch_size = HTML_PREFETCH_SIZE
 
@@ -685,14 +653,12 @@ class ReportService:
             batch_end = min(batch_start + html_batch_size, total_reports)
             batch_reports = reports_list[batch_start:batch_end]
 
-            # Procesar lote de HTMLs en paralelo
             tasks = [
                 prepare_single_html(batch_start + idx, report)
                 for idx, report in enumerate(batch_reports)
             ]
             batch_results = await asyncio.gather(*tasks)
 
-            # Filtrar resultados válidos
             valid_results = [r for r in batch_results if r is not None]
             all_html_items.extend(valid_results)
 
@@ -700,14 +666,12 @@ class ReportService:
             if on_progress:
                 await on_progress("preparing", len(all_html_items), total_reports, "")
 
-            # GC después de cada lote de HTMLs
             if batch_end % GC_INTERVAL == 0:
                 gc.collect()
 
         if not all_html_items:
             raise RuntimeError("No se preparó ningún HTML exitosamente")
 
-        # Ordenar por índice original
         all_html_items.sort(key=lambda x: x['index'])
 
         # =====================================================================
@@ -717,22 +681,17 @@ class ReportService:
 
         loop = asyncio.get_running_loop()
         all_pdf_paths = []
-        final_writer = None
 
-        # Procesar en lotes de PDF_BATCH_SIZE
         for batch_start in range(0, len(all_html_items), PDF_BATCH_SIZE):
             batch_end = min(batch_start + PDF_BATCH_SIZE, len(all_html_items))
-            batch_items = all_html_items[batch_start:batch_end]  # pyre-ignore[16]
+            batch_items = all_html_items[batch_start:batch_end]
 
-            # Generar lote de PDFs en paralelo usando ThreadPoolExecutor
             with ThreadPoolExecutor(max_workers=PDF_BATCH_SIZE) as executor:
-                # Enviar todos los trabajos del lote simultáneamente
                 future_to_index = {
-                    executor.submit(_render_pdf_to_file_safe, item['html']): item['index']  # pyre-ignore[6]
+                    executor.submit(_render_pdf_to_file_safe, item['html']): item['index']
                     for item in batch_items
                 }
 
-                # Recoger resultados a medida que completan
                 batch_results = []
                 for future in as_completed(future_to_index):
                     original_index = future_to_index[future]
@@ -743,11 +702,9 @@ class ReportService:
                     except Exception as e:
                         print(f"[PDF] Error generating PDF {original_index}: {e}")
 
-                # Ordenar por índice y agregar a lista final
                 batch_results.sort(key=lambda x: x[0])
                 all_pdf_paths.extend([path for _, path in batch_results])
 
-            # Liberar memoria de HTMLs procesados
             for item in batch_items:
                 item['html'] = None
 
@@ -758,66 +715,61 @@ class ReportService:
             if on_progress:
                 await on_progress("rendering", processed_count, len(all_html_items), "")
 
-            # GC después de cada lote
             gc.collect()
 
         if not all_pdf_paths:
-            raise RuntimeError("No se generó ningún PDF exitosamente")
+            raise RuntimeError("No se generó ningún PDF exitosamente. WeasyPrint puede no estar disponible en el servidor.")
 
+        # =====================================================================
+        # FASE 3: Merge con STREAMING - Escribe directamente a disco
+        # =====================================================================
+
+        # CRITICAL FIX: inicializar final_writer ANTES del bloque try para que
+        # el bloque finally siempre pueda referenciarlo sin UnboundLocalError
         final_writer = None
+        final_output_path = None
+        compression_stats = None
+
         try:
-            # =====================================================================
-            # FASE 3: Merge con STREAMING - Escribe directamente a disco
-            # =====================================================================
             print(f"[PDF] Streaming merge of {len(all_pdf_paths)} PDFs...")
             if on_progress:
                 await on_progress("merging", 0, len(all_pdf_paths), "")
             merge_start = time.time()
 
-            # Determinar archivo de salida
             if output_path:
                 final_output_path = output_path
             else:
-                # Crear archivo temporal para el resultado
                 tmp_final = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
                 final_output_path = tmp_final.name
                 tmp_final.close()
 
-            # ✅ STREAMING MERGE: Usar PdfWriter con escritura incremental
-            # Esto reduce significativamente el uso de memoria para PDFs grandes
             final_writer = PdfWriter()
 
-            # Configurar para menor uso de memoria
-            merge_batch_size = 10  # Procesar en lotes pequeños para liberar memoria
+            merge_batch_size = 10
 
             for batch_idx in range(0, len(all_pdf_paths), merge_batch_size):
-                batch_paths = all_pdf_paths[batch_idx:batch_idx + merge_batch_size]  # pyre-ignore[16]
+                batch_paths = all_pdf_paths[batch_idx:batch_idx + merge_batch_size]
 
                 for pdf_path in batch_paths:
                     try:
-                        # Usar append que es más eficiente en memoria que add_page
                         final_writer.append(pdf_path)
-                        # Eliminar archivo temporal inmediatamente
                         os.remove(pdf_path)
                     except Exception as e:
                         print(f"[PDF] Error merging {pdf_path}: {e}")
-                        # Intentar limpiar el archivo si falló
                         try:
                             if os.path.exists(pdf_path):
                                 os.remove(pdf_path)
                         except OSError:
                             pass
 
-                # GC después de cada lote de merge
                 if batch_idx > 0 and batch_idx % (merge_batch_size * 2) == 0:
                     gc.collect()
 
-            # Escribir resultado final a disco
             with open(final_output_path, "wb") as f:
                 final_writer.write(f)
 
             final_writer.close()
-            del final_writer
+            final_writer = None
             gc.collect()
 
             merge_time = time.time() - merge_start
@@ -825,8 +777,7 @@ class ReportService:
             # =====================================================================
             # FASE 4: Compresión Ghostscript (opcional)
             # =====================================================================
-            compression_stats = None
-            if GHOSTSCRIPT_ENABLED and total_reports > 1:  # Solo comprimir si hay múltiples reportes
+            if GHOSTSCRIPT_ENABLED and total_reports > 1:
                 print(f"[PDF] Applying Ghostscript compression (quality={GHOSTSCRIPT_QUALITY})...")
                 if on_progress:
                     await on_progress("compressing", 0, 1, "")
@@ -840,17 +791,13 @@ class ReportService:
                 compress_time = time.time() - compress_start
                 print(f"[PDF]    - Compression time: {compress_time:.1f}s")
 
-            # Preparar resultado
             if output_path:
                 result = output_path
             else:
-                # Si no se especificó output_path, leer el archivo y retornar bytes
-                # (para compatibilidad con código existente)
                 with open(final_output_path, 'rb') as f:
                     result = f.read()
                 os.remove(final_output_path)
 
-            # Estadísticas finales
             total_time = time.time() - start_time
             gen_time = total_time - merge_time
             print(f"[PDF] ✅ Complete! {total_reports} reports in {total_time:.1f}s ({total_reports/total_time:.1f} reports/sec)")
@@ -860,20 +807,21 @@ class ReportService:
                 print(f"[PDF]    - Compression: {compression_stats['reduction_percent']}% size reduction")
 
             return result
+
         finally:
-            # FIX: BUG-002 ensure temporary PDFs are cleaned even when merge/compression fails
+            # Limpiar archivos temporales de PDFs individuales
             for pdf_path in all_pdf_paths:
                 try:
                     if os.path.exists(pdf_path):
-                        os.remove(pdf_path)  # pyre-ignore[6]
+                        os.remove(pdf_path)
                 except OSError:
                     pass
+            # Cerrar PdfWriter si quedó abierto por una excepción
             if final_writer is not None:
                 try:
                     final_writer.close()
                 except Exception:
                     pass
-            # FIX: BUG-010 always clear logo cache, even on exceptions
             self._logo_cache.clear()
             self._image_cache.clear()
             gc.collect()
@@ -895,14 +843,12 @@ def _render_pdf_to_file_safe(html_string):
         try:
             temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
 
-            # ✅ CONFIGURACIÓN SEGURA: Sin optimizaciones arriesgadas
             if HTML is None:
-                # FIX: BUG-004 avoid assert removed by -O in production
                 raise RuntimeError("WeasyPrint HTML class not available")
-            HTML(string=html_string, base_url=os.getcwd()).write_pdf(  # pyre-ignore[16]
+            HTML(string=html_string, base_url=os.getcwd()).write_pdf(
                 temp_pdf.name,
-                optimize_images=False,  # Ya optimizadas
-                uncompressed_pdf=False  # Comprimir
+                optimize_images=False,
+                uncompressed_pdf=False
             )
 
             temp_pdf.close()
@@ -967,7 +913,6 @@ def _render_pdf_with_chrome(html_string):
             return pdf_path
 
         print(f"[ERROR] Chrome PDF generation produced empty file. stderr: {result.stderr}")
-        # FIX: BUG-003 cleanup orphaned PDF temp file when Chrome output is empty/invalid
         if pdf_path and os.path.exists(pdf_path):
             os.unlink(pdf_path)
         return None
@@ -976,7 +921,6 @@ def _render_pdf_with_chrome(html_string):
         print(f"[ERROR] Chrome PDF rendering failed: {e}")
         import traceback
         traceback.print_exc()
-        # FIX: BUG-003 cleanup temp artifacts on fallback exceptions
         if html_path and os.path.exists(html_path):
             try:
                 os.unlink(html_path)
