@@ -456,6 +456,40 @@ html, body {{
 </body></html>"""
 
 
+# ── Local template renderer ────────────────────────────────────────────────────
+
+def _render_local_template(
+    template_name: str,
+    header: dict[str, Any],
+    row_data: dict[str, Any],
+    images_b64: list[str],
+    image_filenames: list[str],
+) -> str:
+    """Render a local HTML template (Jinja2) with row data and images."""
+    try:
+        from jinja2 import Environment, FileSystemLoader, select_autoescape  # type: ignore
+    except ImportError as exc:
+        raise RuntimeError("Jinja2 no está instalado.") from exc
+
+    env = Environment(
+        loader=FileSystemLoader(_LOCAL_TEMPLATES_DIR),
+        autoescape=select_autoescape(["html"]),
+    )
+    tmpl = env.get_template(f"{template_name}.html")
+
+    images_list = [
+        {"path": uri, "name": fname}
+        for uri, fname in zip(images_b64, image_filenames)
+    ]
+
+    return tmpl.render(
+        logo_left=header.get("logoLeft") or "",
+        logo_right=header.get("logoRight") or "",
+        data=row_data,
+        images=images_list,
+    )
+
+
 # ── Motor PDF ─────────────────────────────────────────────────────────────────
 
 def _render_html_to_pdf(html_string: str, base_url: str, output_path: str) -> None:
@@ -717,7 +751,16 @@ async def generate_multi_sheet_pdf(
                         images_b64.append(data_uri)
 
             # Construir HTML de la página
-            if template_name == _VOLANTEO_TEMPLATE_NAME:
+            local_names = _list_local_template_names()
+            if template_name in local_names:
+                page_html = _render_local_template(
+                    template_name=template_name,
+                    header=header,
+                    row_data=row_data,
+                    images_b64=images_b64,
+                    image_filenames=image_filenames,
+                )
+            elif template_name == _VOLANTEO_TEMPLATE_NAME:
                 page_html = _build_volanteo_page_html(
                     header_config=header,
                     row_data=row_data,
