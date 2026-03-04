@@ -38,6 +38,7 @@ def test_list_templates_returns_grouped_sections(client, monkeypatch):
     assert payload["templates"] == [
         "Grilla de Imágenes",
         "Panel Fotográfico Volanteo",
+        "Volanteo Local",
         "Plantilla Independiente A",
         "Plantilla Independiente B",
     ]
@@ -190,3 +191,28 @@ def test_generate_multi_sheet_pdf_uses_uploaded_logo_files(client, monkeypatch):
     assert len(response.content) > 0
     assert captured_html
     assert expected_logo_data_uri in captured_html[0]
+
+
+def test_list_templates_includes_local_section(client):
+    """Local templates folder adds a 'local' section to /templates."""
+    response = client.get("/api/multi-sheet/templates")
+    assert response.status_code == 200
+    payload = response.json()
+    sections = {s["id"]: s for s in payload["sections"]}
+    assert "local" in sections
+    assert "Volanteo Local" in sections["local"]["templates"]
+
+
+def test_get_local_template_html_returns_content(client):
+    """GET /templates/{name}/html returns the HTML file content."""
+    response = client.get("/api/multi-sheet/templates/Volanteo%20Local/html")
+    assert response.status_code == 200
+    content = response.text
+    assert "Panel Fotográfico Volanteo" in content
+    assert "{{ data.get(" in content
+
+
+def test_get_local_template_html_404_for_unknown(client):
+    """GET /templates/{name}/html returns 404 for non-existent template."""
+    response = client.get("/api/multi-sheet/templates/DoesNotExist/html")
+    assert response.status_code == 404

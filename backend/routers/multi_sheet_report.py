@@ -547,13 +547,38 @@ def _list_independent_template_names() -> list[str]:
     return [name for name in independent_names if name not in _BUILTIN_LAYOUTS]
 
 
+# ── Local templates (backend/routers/multi_sheet_templates/) ──────────────────
+_LOCAL_TEMPLATES_DIR: str = os.path.join(os.path.dirname(__file__), "multi_sheet_templates")
+
+
+def _list_local_template_names() -> list[str]:
+    """Return display names (filename without .html) of local HTML templates."""
+    try:
+        if not os.path.isdir(_LOCAL_TEMPLATES_DIR):
+            return []
+        return [
+            os.path.splitext(f)[0]
+            for f in sorted(os.listdir(_LOCAL_TEMPLATES_DIR))
+            if f.lower().endswith(".html")
+        ]
+    except Exception as exc:
+        print(f"[MultiSheet] Error listing local templates: {exc}")
+        return []
+
+
 def _build_template_sections() -> list[dict[str, Any]]:
     independent = _list_independent_template_names()
+    local = _list_local_template_names()
     return [
         {
             "id": "builtin",
             "label": "Plantillas base",
             "templates": list(_BUILTIN_LAYOUTS),
+        },
+        {
+            "id": "local",
+            "label": "Plantillas locales",
+            "templates": local,
         },
         {
             "id": "independent",
@@ -582,6 +607,26 @@ async def list_templates() -> dict:
         "templates": _dedupe_preserve_order(flattened),
         "sections": sections,
     }
+
+
+@router.get("/templates/{template_name}/html")
+async def get_local_template_html(template_name: str) -> str:
+    """Return the raw HTML of a local template file (for client-side preview)."""
+    file_path = os.path.join(_LOCAL_TEMPLATES_DIR, f"{template_name}.html")
+    try:
+        resolved = os.path.realpath(file_path)
+        expected_prefix = os.path.realpath(_LOCAL_TEMPLATES_DIR)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid template name")
+
+    if not resolved.startswith(expected_prefix + os.sep) and resolved != expected_prefix:
+        raise HTTPException(status_code=400, detail="Invalid template name")
+
+    if not os.path.isfile(resolved):
+        raise HTTPException(status_code=404, detail=f"Template '{template_name}' not found")
+
+    with open(resolved, "r", encoding="utf-8") as fh:
+        return fh.read()
 
 
 @router.post("/generate-pdf")
