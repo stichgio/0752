@@ -362,11 +362,12 @@ function ColumnMappingModal({
     );
 
     return (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-neutral-950/80 px-4 py-6 backdrop-blur-sm">
-            <div className="w-full max-w-5xl overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.16),transparent_42%),linear-gradient(180deg,rgba(24,24,27,0.98),rgba(10,10,10,0.98))] shadow-[0_40px_120px_rgba(0,0,0,0.55)]">
-                <div className="border-b border-white/10 px-6 py-5">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                        <div className="space-y-2">
+        <div className="fixed inset-0 z-[70] overflow-y-auto bg-neutral-950/80 px-3 py-3 backdrop-blur-sm sm:px-4 sm:py-5">
+            <div className="flex min-h-full items-start justify-center">
+                <div className="my-auto flex w-full max-w-5xl max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden rounded-[28px] border border-white/10 bg-[radial-gradient(circle_at_top_right,rgba(16,185,129,0.16),transparent_42%),linear-gradient(180deg,rgba(24,24,27,0.98),rgba(10,10,10,0.98))] shadow-[0_40px_120px_rgba(0,0,0,0.55)] sm:max-h-[calc(100vh-2.5rem)]">
+                    <div className="shrink-0 border-b border-white/10 px-5 py-4 sm:px-6 sm:py-5">
+                        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+                            <div className="min-w-0 flex-1 space-y-2">
                             <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-emerald-200">
                                 <Layers size={12} />
                                 Mapeo de columnas
@@ -382,191 +383,194 @@ function ColumnMappingModal({
                                     Archivo: <span className="text-neutral-200">{fileName}</span>
                                 </p>
                             )}
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-2 xl:w-[360px] xl:shrink-0">
+                                <div className="min-w-0 rounded-2xl border border-white/10 bg-black/25 px-3 py-3 sm:px-4">
+                                    <div className="truncate text-[10px] uppercase tracking-[0.18em] text-neutral-500">Activas</div>
+                                    <div className="mt-1 text-base font-semibold text-white sm:text-lg">{templateNames.length}</div>
+                                </div>
+                                <div className="min-w-0 rounded-2xl border border-white/10 bg-black/25 px-3 py-3 sm:px-4">
+                                    <div className="truncate text-[10px] uppercase tracking-[0.18em] text-neutral-500">Origen</div>
+                                    <div className="mt-1 text-base font-semibold text-white sm:text-lg">{sourceHeaders.length}</div>
+                                </div>
+                                <div className="min-w-0 rounded-2xl border border-white/10 bg-black/25 px-3 py-3 sm:px-4">
+                                    <div className="truncate text-[10px] uppercase tracking-[0.18em] text-neutral-500">Jinja</div>
+                                    <div className="mt-1 text-base font-semibold text-white sm:text-lg">{templateFields.length}</div>
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-                            <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3">
-                                <div className="text-[10px] uppercase tracking-[0.18em] text-neutral-500">Plantillas activas</div>
-                                <div className="mt-1 text-lg font-semibold text-white">{templateNames.length}</div>
+                        {templateNames.length > 0 && (
+                            <div className="mt-4 flex max-h-20 flex-wrap gap-2 overflow-y-auto pr-1">
+                                {templateNames.map(name => (
+                                    <span
+                                        key={name}
+                                        className="max-w-full rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-neutral-200"
+                                    >
+                                        <span className="block max-w-full truncate">{name}</span>
+                                    </span>
+                                ))}
                             </div>
-                            <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3">
-                                <div className="text-[10px] uppercase tracking-[0.18em] text-neutral-500">Columnas origen</div>
-                                <div className="mt-1 text-lg font-semibold text-white">{sourceHeaders.length}</div>
-                            </div>
-                            <div className="rounded-2xl border border-white/10 bg-black/25 px-4 py-3">
-                                <div className="text-[10px] uppercase tracking-[0.18em] text-neutral-500">Campos Jinja</div>
-                                <div className="mt-1 text-lg font-semibold text-white">{templateFields.length}</div>
-                            </div>
-                        </div>
+                        )}
                     </div>
 
-                    {templateNames.length > 0 && (
-                        <div className="mt-4 flex flex-wrap gap-2">
-                            {templateNames.map(name => (
-                                <span
-                                    key={name}
-                                    className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] text-neutral-200"
-                                >
-                                    {name}
-                                </span>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                <div className="max-h-[68vh] overflow-y-auto px-6 py-5">
-                    {isLoading ? (
-                        <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 text-center">
-                            <div className="h-14 w-14 animate-spin rounded-full border-2 border-emerald-400/20 border-t-emerald-400" />
-                            <div>
-                                <p className="text-sm font-medium text-white">Analizando columnas y plantilla...</p>
-                                <p className="mt-1 text-xs text-neutral-400">Esto suele tardar solo unos segundos.</p>
+                    <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 sm:px-6 sm:py-5">
+                        {isLoading ? (
+                            <div className="flex min-h-[320px] flex-col items-center justify-center gap-4 text-center">
+                                <div className="h-14 w-14 animate-spin rounded-full border-2 border-emerald-400/20 border-t-emerald-400" />
+                                <div>
+                                    <p className="text-sm font-medium text-white">Analizando columnas y plantilla...</p>
+                                    <p className="mt-1 text-xs text-neutral-400">Esto suele tardar solo unos segundos.</p>
+                                </div>
                             </div>
-                        </div>
-                    ) : (
-                        <div className="space-y-6">
-                            {errorMessage && (
-                                <div className="rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-xs text-amber-100">
-                                    {errorMessage}
-                                </div>
-                            )}
-
-                            {!hasSourceHeaders && (
-                                <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 px-4 py-5 text-sm text-neutral-300">
-                                    No se detectaron columnas en el archivo cargado.
-                                </div>
-                            )}
-
-                            <section className="space-y-3">
-                                <div className="flex items-center justify-between gap-3">
-                                    <div>
-                                        <h4 className="text-sm font-semibold text-white">Campos detectados en la plantilla</h4>
-                                        <p className="text-xs text-neutral-400">
-                                            Cada c&oacute;digo Jinja puede apuntar a una columna del archivo o a un valor fijo.
-                                        </p>
+                        ) : (
+                            <div className="space-y-6">
+                                {errorMessage && (
+                                    <div className="rounded-2xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-xs text-amber-100">
+                                        {errorMessage}
                                     </div>
-                                    {hasTemplateFields && (
-                                        <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-200">
-                                            {templateFields.length} campos
-                                        </span>
-                                    )}
-                                </div>
+                                )}
 
-                                {hasTemplateFields ? (
-                                    <div className="grid gap-3 lg:grid-cols-2">
-                                        {templateFields.map(field => {
-                                            const mapping = templateFieldMappings[field] || { sourceType: 'header', sourceValue: '' };
-                                            const isReady = mapping.sourceType === 'manual'
-                                                ? String(mapping.sourceValue || '').trim().length > 0
-                                                : String(mapping.sourceValue || '').trim().length > 0;
+                                {!hasSourceHeaders && (
+                                    <div className="rounded-2xl border border-dashed border-white/10 bg-black/20 px-4 py-5 text-sm text-neutral-300">
+                                        No se detectaron columnas en el archivo cargado.
+                                    </div>
+                                )}
 
-                                            return (
-                                                <div
-                                                    key={field}
-                                                    className="rounded-3xl border border-white/10 bg-black/20 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
-                                                >
-                                                    <div className="mb-3 flex items-start justify-between gap-3">
-                                                        <div className="min-w-0">
-                                                            <div className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">Jinja</div>
-                                                            <div className="mt-1 rounded-2xl border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs text-emerald-200 break-all">
-                                                                {`{{ data.get('${field}', '-') }}`}
+                                <section className="space-y-3">
+                                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                                        <div>
+                                            <h4 className="text-sm font-semibold text-white">Campos detectados en la plantilla</h4>
+                                            <p className="text-xs text-neutral-400">
+                                                Cada c&oacute;digo Jinja puede apuntar a una columna del archivo o a un valor fijo.
+                                            </p>
+                                        </div>
+                                        {hasTemplateFields && (
+                                            <span className="self-start rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-200 sm:self-auto">
+                                                {templateFields.length} campos
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {hasTemplateFields ? (
+                                        <div className="grid gap-3 lg:grid-cols-2">
+                                            {templateFields.map(field => {
+                                                const mapping = templateFieldMappings[field] || { sourceType: 'header', sourceValue: '' };
+                                                const isReady = mapping.sourceType === 'manual'
+                                                    ? String(mapping.sourceValue || '').trim().length > 0
+                                                    : String(mapping.sourceValue || '').trim().length > 0;
+
+                                                return (
+                                                    <div
+                                                        key={field}
+                                                        className="rounded-3xl border border-white/10 bg-black/20 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]"
+                                                    >
+                                                        <div className="mb-3 flex items-start justify-between gap-3">
+                                                            <div className="min-w-0">
+                                                                <div className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">Jinja</div>
+                                                                <div className="mt-1 rounded-2xl border border-white/10 bg-black/30 px-3 py-2 font-mono text-xs text-emerald-200 break-all">
+                                                                    {`{{ data.get('${field}', '-') }}`}
+                                                                </div>
                                                             </div>
+                                                            {isReady
+                                                                ? <CheckCircle size={16} className="mt-1 shrink-0 text-emerald-400" />
+                                                                : <AlertCircle size={16} className="mt-1 shrink-0 text-amber-300" />
+                                                            }
                                                         </div>
-                                                        {isReady
-                                                            ? <CheckCircle size={16} className="mt-1 shrink-0 text-emerald-400" />
-                                                            : <AlertCircle size={16} className="mt-1 shrink-0 text-amber-300" />
-                                                        }
+
+                                                        {renderMappingEditor(mapping, patch => onTemplateFieldChange(field, patch))}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <div className="rounded-3xl border border-dashed border-white/10 bg-black/15 px-5 py-6 text-sm text-neutral-300">
+                                            No se encontraron c&oacute;digos Jinja en las plantillas activas. Puedes continuar con los datos originales o crear columnas personalizadas abajo.
+                                        </div>
+                                    )}
+                                </section>
+
+                                <section className="space-y-3">
+                                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                        <div>
+                                            <h4 className="text-sm font-semibold text-white">Columnas personalizadas</h4>
+                                            <p className="text-xs text-neutral-400">
+                                                Agrega nuevos campos para generar alias o inyectar textos fijos dentro del dataset.
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={onAddCustomField}
+                                            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-2 text-xs font-semibold text-emerald-100 transition-colors hover:border-emerald-300/50 hover:bg-emerald-400/15"
+                                        >
+                                            <Plus size={14} />
+                                            Agregar columna personalizada
+                                        </button>
+                                    </div>
+
+                                    {customFieldMappings.length > 0 ? (
+                                        <div className="space-y-3">
+                                            {customFieldMappings.map(entry => (
+                                                <div
+                                                    key={entry.id}
+                                                    className="rounded-3xl border border-white/10 bg-black/20 p-4"
+                                                >
+                                                    <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-center">
+                                                        <input
+                                                            type="text"
+                                                            value={entry.targetKey}
+                                                            onChange={e => onCustomFieldChange(entry.id, { targetKey: e.target.value })}
+                                                            placeholder="Nombre de la columna nueva"
+                                                            className="w-full rounded-2xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white outline-none placeholder:text-neutral-500 focus:border-emerald-400"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => onRemoveCustomField(entry.id)}
+                                                            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-red-400/20 bg-red-400/10 px-3 py-2 text-xs font-medium text-red-100 transition-colors hover:border-red-300/40 hover:bg-red-400/15"
+                                                        >
+                                                            <Trash2 size={13} />
+                                                            Quitar
+                                                        </button>
                                                     </div>
 
-                                                    {renderMappingEditor(mapping, patch => onTemplateFieldChange(field, patch))}
+                                                    {renderMappingEditor(entry, patch => onCustomFieldChange(entry.id, patch))}
                                                 </div>
-                                            );
-                                        })}
-                                    </div>
-                                ) : (
-                                    <div className="rounded-3xl border border-dashed border-white/10 bg-black/15 px-5 py-6 text-sm text-neutral-300">
-                                        No se encontraron c&oacute;digos Jinja en las plantillas activas. Puedes continuar con los datos originales o crear columnas personalizadas abajo.
-                                    </div>
-                                )}
-                            </section>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <div className="rounded-3xl border border-dashed border-white/10 bg-black/15 px-5 py-5 text-sm text-neutral-400">
+                                            A&uacute;n no agregaste columnas personalizadas.
+                                        </div>
+                                    )}
+                                </section>
+                            </div>
+                        )}
+                    </div>
 
-                            <section className="space-y-3">
-                                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                    <div>
-                                        <h4 className="text-sm font-semibold text-white">Columnas personalizadas</h4>
-                                        <p className="text-xs text-neutral-400">
-                                            Agrega nuevos campos para generar alias o inyectar textos fijos dentro del dataset.
-                                        </p>
-                                    </div>
-                                    <button
-                                        type="button"
-                                        onClick={onAddCustomField}
-                                        className="inline-flex items-center justify-center gap-2 rounded-2xl border border-emerald-400/30 bg-emerald-400/10 px-4 py-2 text-xs font-semibold text-emerald-100 transition-colors hover:border-emerald-300/50 hover:bg-emerald-400/15"
-                                    >
-                                        <Plus size={14} />
-                                        Agregar columna personalizada
-                                    </button>
-                                </div>
-
-                                {customFieldMappings.length > 0 ? (
-                                    <div className="space-y-3">
-                                        {customFieldMappings.map(entry => (
-                                            <div
-                                                key={entry.id}
-                                                className="rounded-3xl border border-white/10 bg-black/20 p-4"
-                                            >
-                                                <div className="mb-3 flex flex-col gap-3 lg:flex-row lg:items-center">
-                                                    <input
-                                                        type="text"
-                                                        value={entry.targetKey}
-                                                        onChange={e => onCustomFieldChange(entry.id, { targetKey: e.target.value })}
-                                                        placeholder="Nombre de la columna nueva"
-                                                        className="w-full rounded-2xl border border-white/10 bg-black/30 px-3 py-2 text-xs text-white outline-none placeholder:text-neutral-500 focus:border-emerald-400"
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => onRemoveCustomField(entry.id)}
-                                                        className="inline-flex items-center justify-center gap-2 rounded-2xl border border-red-400/20 bg-red-400/10 px-3 py-2 text-xs font-medium text-red-100 transition-colors hover:border-red-300/40 hover:bg-red-400/15"
-                                                    >
-                                                        <Trash2 size={13} />
-                                                        Quitar
-                                                    </button>
-                                                </div>
-
-                                                {renderMappingEditor(entry, patch => onCustomFieldChange(entry.id, patch))}
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="rounded-3xl border border-dashed border-white/10 bg-black/15 px-5 py-5 text-sm text-neutral-400">
-                                        A&uacute;n no agregaste columnas personalizadas.
-                                    </div>
-                                )}
-                            </section>
+                    <div className="shrink-0 border-t border-white/10 bg-black/20 px-5 py-4 sm:px-6">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                            <p className="text-xs text-neutral-400">
+                                Puedes cargar el archivo sin tocar nada y remapearlo despu&eacute;s si cambias de plantilla.
+                            </p>
+                            <div className="flex flex-col gap-2 sm:flex-row">
+                                <button
+                                    type="button"
+                                    onClick={onClose}
+                                    className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium text-neutral-200 transition-colors hover:bg-white/10"
+                                >
+                                    {closeLabel || 'Cerrar'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={onApply}
+                                    disabled={isLoading}
+                                    className="rounded-2xl border border-emerald-400/30 bg-emerald-400/15 px-4 py-2 text-xs font-semibold text-emerald-100 transition-colors hover:bg-emerald-400/20 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                    Aplicar mapeo
+                                </button>
+                            </div>
                         </div>
-                    )}
-                </div>
-
-                <div className="flex flex-col gap-3 border-t border-white/10 bg-black/20 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-xs text-neutral-400">
-                        Puedes cargar el archivo sin tocar nada y remapearlo despu&eacute;s si cambias de plantilla.
-                    </p>
-                    <div className="flex flex-col gap-2 sm:flex-row">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-xs font-medium text-neutral-200 transition-colors hover:bg-white/10"
-                        >
-                            {closeLabel || 'Cerrar'}
-                        </button>
-                        <button
-                            type="button"
-                            onClick={onApply}
-                            disabled={isLoading}
-                            className="rounded-2xl border border-emerald-400/30 bg-emerald-400/15 px-4 py-2 text-xs font-semibold text-emerald-100 transition-colors hover:bg-emerald-400/20 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                            Aplicar mapeo
-                        </button>
                     </div>
                 </div>
             </div>
@@ -883,6 +887,11 @@ function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, lo
                     </span>
                 </div>
                 <div className="flex items-center gap-1.5">
+                    {sheet.firstPageOnly && (
+                        <span className="text-[9px] bg-amber-500/20 text-amber-200 border border-amber-400/40 px-1.5 py-0.5 rounded font-mono">
+                            1° HOJA
+                        </span>
+                    )}
                     {sheet.useAltHeader
                         ? <span className="text-[9px] bg-blue-500/20 text-blue-300 border border-blue-500/30 px-1.5 py-0.5 rounded font-mono">MINI-HEADER</span>
                         : <span className="text-[9px] bg-neutral-700 text-neutral-300 border border-neutral-600 px-1.5 py-0.5 rounded font-mono">HEADER PRINCIPAL</span>
@@ -1368,6 +1377,7 @@ export default function MultiSheetReportApp() {
             title: `Hoja ${prev.length + 1}`,
             templateName: defaultTemplate,
             useAltHeader: false,
+            firstPageOnly: false,
             imagesPerPage: 4,
             // For Grilla de Imágenes: store selected image indices from global pool
             selectedImageIndices: defaultTemplate === GRID_TEMPLATE_NAME ? [] : undefined,
@@ -1388,6 +1398,23 @@ export default function MultiSheetReportApp() {
 
     const updateSheet = useCallback((id, patch) => {
         setSheets(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s));
+    }, []);
+
+    const toggleFirstPageSheet = useCallback((id) => {
+        setSheets(prev => {
+            const target = prev.find(sheet => sheet.id === id);
+            const nextValue = !target?.firstPageOnly;
+
+            return prev.map(sheet => {
+                if (sheet.id === id) {
+                    return { ...sheet, firstPageOnly: nextValue };
+                }
+                if (nextValue && sheet.firstPageOnly) {
+                    return { ...sheet, firstPageOnly: false };
+                }
+                return sheet;
+            });
+        });
     }, []);
 
     const moveSheet = useCallback((index, direction) => {
@@ -1461,12 +1488,117 @@ export default function MultiSheetReportApp() {
     const buildFormData = useCallback((rowIndices) => {
         const formData = new FormData();
 
-        const activeSheets = sheets
-            .map((s, sheetIdx) => ({ ...s, _sheetIdx: sheetIdx }));
+        const activeSheets = orderSheetsForFirstPage(
+            sheets.map((s, sheetIdx) => ({ ...s, _sheetIdx: sheetIdx }))
+        );
+        const firstPageSheet = activeSheets.find(sheet => sheet.firstPageOnly);
+        const regularSheets = activeSheets.filter(sheet => !sheet.firstPageOnly);
 
         let globalOrder = 0;
         const sheetsConfig = [];
         const allImages = new Set();
+
+        const resolveSheetImages = (sheet, rowImages) => {
+            const hasManualSelection = sheet.selectedImageIndices && sheet.selectedImageIndices.length > 0;
+            if (hasManualSelection) {
+                return sheet.selectedImageIndices.map(idx => images[idx]).filter(Boolean);
+            }
+            if (sheet.templateName === VOLANTEO_TEMPLATE_NAME) {
+                return rowImages.slice(0, 4);
+            }
+            return rowImages;
+        };
+
+        const pushSheetConfigEntries = ({
+            sheet,
+            rowData,
+            rowImages,
+            forceSinglePage = false,
+        }) => {
+            const photosPerPage = sheet.imagesPerPage || 4;
+            const sheetImages = resolveSheetImages(sheet, rowImages);
+
+            sheetImages.forEach(img => allImages.add(img));
+
+            if (forceSinglePage) {
+                const singlePageImages = sheet.templateName === GRID_TEMPLATE_NAME
+                    ? sheetImages.slice(0, photosPerPage)
+                    : sheetImages;
+
+                sheetsConfig.push({
+                    order: globalOrder++,
+                    title: sheet.title,
+                    templateName: sheet.templateName,
+                    useAltHeader: sheet.useAltHeader,
+                    imagesPerPage: photosPerPage,
+                    rowData,
+                    imageFilenames: singlePageImages.map(img => img.name),
+                    pageNum: 1,
+                    totalPages: 1,
+                });
+                return;
+            }
+
+            if (sheetImages.length === 0) {
+                sheetsConfig.push({
+                    order: globalOrder++,
+                    title: sheet.title,
+                    templateName: sheet.templateName,
+                    useAltHeader: sheet.useAltHeader,
+                    imagesPerPage: photosPerPage,
+                    rowData,
+                    imageFilenames: [],
+                    pageNum: 1,
+                    totalPages: 1,
+                });
+                return;
+            }
+
+            if (sheet.templateName === GRID_TEMPLATE_NAME && sheetImages.length > photosPerPage) {
+                const totalPages = Math.ceil(sheetImages.length / photosPerPage);
+                for (let p = 0; p < totalPages; p++) {
+                    const chunk = sheetImages.slice(p * photosPerPage, (p + 1) * photosPerPage);
+                    sheetsConfig.push({
+                        order: globalOrder++,
+                        title: sheet.title,
+                        templateName: sheet.templateName,
+                        useAltHeader: sheet.useAltHeader,
+                        imagesPerPage: photosPerPage,
+                        rowData,
+                        imageFilenames: chunk.map(img => img.name),
+                        pageNum: p + 1,
+                        totalPages,
+                    });
+                }
+                return;
+            }
+
+            sheetsConfig.push({
+                order: globalOrder++,
+                title: sheet.title,
+                templateName: sheet.templateName,
+                useAltHeader: sheet.useAltHeader,
+                imagesPerPage: photosPerPage,
+                rowData,
+                imageFilenames: sheetImages.map(img => img.name),
+                pageNum: 1,
+                totalPages: 1,
+            });
+        };
+
+        if (firstPageSheet && rowIndices.length > 0) {
+            const firstRow = data[rowIndices[0]];
+            if (firstRow) {
+                const firstRowData = { ...firstRow };
+                const firstRowImages = getImagesForRow(firstRow);
+                pushSheetConfigEntries({
+                    sheet: firstPageSheet,
+                    rowData: firstRowData,
+                    rowImages: firstRowImages,
+                    forceSinglePage: true,
+                });
+            }
+        }
 
         rowIndices.forEach(rowIdx => {
             const row = data[rowIdx];
@@ -1474,74 +1606,12 @@ export default function MultiSheetReportApp() {
             const rowData = { ...row };  // pasar toda la fila sin transformación
 
             const rowImages = getImagesForRow(row);
-            rowImages.forEach(img => allImages.add(img));
-            const imageFilenames = rowImages.map(img => img.name);
-
-            activeSheets.forEach(s => {
-                const photosPerPage = s.imagesPerPage || 4;
-
-                // Determinar las imágenes a usar: primero las seleccionadas manualmente, luego las de la fila
-                let sheetImages;
-                const hasManualSelection = s.selectedImageIndices && s.selectedImageIndices.length > 0;
-
-                if (hasManualSelection) {
-                    // Usar imágenes seleccionadas manualmente del pool global de imágenes
-                    sheetImages = s.selectedImageIndices.map(idx => images[idx]).filter(Boolean);
-                } else if (s.templateName === VOLANTEO_TEMPLATE_NAME) {
-                    // Volanteo usa solo las primeras 4 imágenes de la fila
-                    sheetImages = rowImages.slice(0, 4);
-                } else {
-                    // Para otras plantillas, usar todas las imágenes de la fila
-                    sheetImages = rowImages;
-                }
-
-                // Si no hay imágenes, crear una página vacía para mantener la estructura
-                if (sheetImages.length === 0) {
-                    sheetsConfig.push({
-                        order: globalOrder++,
-                        title: s.title,
-                        templateName: s.templateName,
-                        useAltHeader: s.useAltHeader,
-                        imagesPerPage: photosPerPage,
-                        rowData,
-                        imageFilenames: [],
-                        pageNum: 1,
-                        totalPages: 1
-                    });
-                    return;
-                }
-
-                // Si es plantilla de grilla, dividimos por páginas si hay muchas fotos
-                if (sheetImages.length > 0 && s.templateName === GRID_TEMPLATE_NAME && sheetImages.length > photosPerPage) {
-                    const totalPages = Math.ceil(sheetImages.length / photosPerPage);
-                    for (let p = 0; p < totalPages; p++) {
-                        const chunk = sheetImages.slice(p * photosPerPage, (p + 1) * photosPerPage);
-                        sheetsConfig.push({
-                            order: globalOrder++,
-                            title: s.title,
-                            templateName: s.templateName,
-                            useAltHeader: s.useAltHeader,
-                            imagesPerPage: photosPerPage,
-                            rowData,
-                            imageFilenames: chunk.map(img => img.name),
-                            pageNum: p + 1,
-                            totalPages: totalPages
-                        });
-                    }
-                } else {
-                    // Una sola página para plantillas que no son grilla o si el total cabe en una
-                    sheetsConfig.push({
-                        order: globalOrder++,
-                        title: s.title,
-                        templateName: s.templateName,
-                        useAltHeader: s.useAltHeader,
-                        imagesPerPage: photosPerPage,
-                        rowData,
-                        imageFilenames: sheetImages.map(img => img.name),
-                        pageNum: 1,
-                        totalPages: 1
-                    });
-                }
+            regularSheets.forEach(sheet => {
+                pushSheetConfigEntries({
+                    sheet,
+                    rowData,
+                    rowImages,
+                });
             });
         });
 
@@ -1558,8 +1628,8 @@ export default function MultiSheetReportApp() {
         if (logoLeftFile) formData.append('logoLeftFile', logoLeftFile);
         if (logoRightFile) formData.append('logoRightFile', logoRightFile);
 
-        return { formData, count: rowIndices.length * activeSheets.length };
-    }, [sheets, data, getImagesForRow, headerTitle, headerSubtitle, logoLeft, logoRight, altHeaderConfig, logoLeftFile, logoRightFile]);
+        return { formData, count: sheetsConfig.length };
+    }, [sheets, data, getImagesForRow, images, headerTitle, headerSubtitle, logoLeft, logoRight, altHeaderConfig, logoLeftFile, logoRightFile]);
 
     // ─────────────────────────────────────────────────────────────────────────
     // Exportar PDF
@@ -1753,6 +1823,17 @@ export default function MultiSheetReportApp() {
                                             >
                                                 {sheet.useAltHeader ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
                                             </button>
+                                            {/* Marcar como primera hoja */}
+                                            <button
+                                                onClick={() => toggleFirstPageSheet(sheet.id)}
+                                                title={sheet.firstPageOnly ? 'Quitar como 1° hoja' : 'Usar como 1° hoja'}
+                                                className={`shrink-0 px-1.5 py-0.5 rounded border text-[10px] font-bold transition-colors
+                                                    ${sheet.firstPageOnly
+                                                        ? 'border-amber-400/60 text-amber-300 bg-amber-500/10'
+                                                        : 'border-neutral-700 text-neutral-500 hover:text-neutral-300 hover:border-neutral-500'}`}
+                                            >
+                                                1°
+                                            </button>
                                             {/* Mover arriba */}
                                             <button
                                                 onClick={() => moveSheet(index, -1)}
@@ -1904,6 +1985,11 @@ export default function MultiSheetReportApp() {
                                             {sheet.useAltHeader && (
                                                 <span className="text-[9px] text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded px-1.5 py-0.5 font-mono">
                                                     Mini-header
+                                                </span>
+                                            )}
+                                            {sheet.firstPageOnly && (
+                                                <span className="text-[9px] text-amber-300 bg-amber-500/10 border border-amber-400/30 rounded px-1.5 py-0.5 font-mono">
+                                                    1° hoja
                                                 </span>
                                             )}
                                         </div>
@@ -2226,8 +2312,9 @@ export default function MultiSheetReportApp() {
                             {(() => {
                                 const previewCards = [];
                                 let globalIdx = 0;
+                                const orderedPreviewSheets = orderSheetsForFirstPage(sheets);
 
-                                sheets.forEach((sheet) => {
+                                orderedPreviewSheets.forEach((sheet) => {
                                     const recordId = idColumn ? selectedRow?.[idColumn] : null;
                                     const rowImages = (recordId && images)
                                         ? images.filter(img => matchesRecordId(img.name, String(recordId)))
@@ -2235,8 +2322,9 @@ export default function MultiSheetReportApp() {
 
                                     const photosPerPage = sheet.imagesPerPage || 4;
                                     const isGrid = sheet.templateName === GRID_TEMPLATE_NAME;
+                                    const shouldPaginateGrid = isGrid && !sheet.firstPageOnly;
 
-                                    if (isGrid && rowImages.length > photosPerPage) {
+                                    if (shouldPaginateGrid && rowImages.length > photosPerPage) {
                                         const totalPages = Math.ceil(rowImages.length / photosPerPage);
                                         for (let p = 0; p < totalPages; p++) {
                                             previewCards.push(
