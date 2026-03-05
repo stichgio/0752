@@ -489,7 +489,7 @@ html, body {{
     <div class="info-bar">
         <div class="info-item"><div class="info-label">Centro de Servicios:</div><div class="info-value">{centro}</div></div>
         <div class="info-item"><div class="info-label">NIS:</div><div class="info-value">{nis}</div></div>
-        <div class="info-item"><div class="info-label">Sector:</div><div class="info-value">{sector}</div></div>
+        <div class="info-item"><div class="info-label">Cod. Sunass:</div><div class="info-value">{cod_sunass}</div></div>
         <div class="info-item"><div class="info-label">Fecha de Corte:</div><div class="info-value">{fecha_corte}</div></div>
     </div>
     <section class="localizacion">
