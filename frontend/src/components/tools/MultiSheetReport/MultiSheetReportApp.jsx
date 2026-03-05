@@ -1685,7 +1685,7 @@ export default function MultiSheetReportApp() {
                                                 </div>
                                             }
                                         </div>
-                                        <input id="msr-logo-left" type="file" hidden accept="image/*" onChange={e => handleLogoInput(e, 'left')} />
+                                        <input id="msr-logo-left" type="file" style={{ display: 'none' }} accept="image/*" onClick={(e) => { e.target.value = null; }} onChange={e => handleLogoInput(e, 'left')} />
                                         {logoLeft && (
                                             <button onClick={() => { setLogoLeft(null); setLogoLeftFile(null); }}
                                                 className="mt-1 text-[10px] text-red-400 hover:text-red-300 w-full text-center">
@@ -1721,7 +1721,7 @@ export default function MultiSheetReportApp() {
                                                 </div>
                                             }
                                         </div>
-                                        <input id="msr-logo-right" type="file" hidden accept="image/*" onChange={e => handleLogoInput(e, 'right')} />
+                                        <input id="msr-logo-right" type="file" style={{ display: 'none' }} accept="image/*" onClick={(e) => { e.target.value = null; }} onChange={e => handleLogoInput(e, 'right')} />
                                         {logoRight && (
                                             <button onClick={() => { setLogoRight(null); setLogoRightFile(null); }}
                                                 className="mt-1 text-[10px] text-red-400 hover:text-red-300 w-full text-center">
@@ -2002,7 +2002,7 @@ export default function MultiSheetReportApp() {
                                                 : 'Seleccionar Excel / CSV'}
                                         </div>
                                     </div>
-                                    <input type="file" hidden accept=".csv,.xlsx,.xls" onChange={handleDataInput} />
+                                    <input type="file" style={{ display: 'none' }} accept=".csv,.xlsx,.xls" onClick={(e) => { e.target.value = null; }} onChange={handleDataInput} />
                                 </label>
 
                                 {sourceData.length > 0 && (
@@ -2061,7 +2061,7 @@ export default function MultiSheetReportApp() {
                                             }
                                         </div>
                                     </div>
-                                    <input type="file" hidden multiple accept="image/*" onChange={handleImageInput} />
+                                    <input type="file" style={{ display: 'none' }} multiple accept="image/*" onClick={(e) => { e.target.value = null; }} onChange={handleImageInput} />
                                 </label>
                                 {images.length > 0 && (
                                     <button onClick={() => { images.forEach(img => URL.revokeObjectURL(img.url)); setImages([]); }}
