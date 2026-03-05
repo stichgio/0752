@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Tools — Glitch</title>
+    <link rel="icon" href="https://res.cloudinary.com/dzhp64paw/image/upload/v1769010837/1_btdbv9.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500;600;700&family=DotGothic16&display=swap"
+        rel="stylesheet">
+
+    <!-- PDF.js (CDN to avoid bundling ~1.5MB) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+            'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+</head>
+
+<body class="bg-neutral-950 text-neutral-200 min-h-screen">
+    <div id="root"></div>
+    <script type="module" src="/src/pdf-tools-main.jsx"></script>
+</body>
+
+</html>

@@ -35,6 +35,10 @@
             "destination": "/ocr.html"
         },
         {
+            "source": "/pdf-tools",
+            "destination": "/pdf-tools.html"
+        },
+        {
             "source": "/(.*)",
             "destination": "/index.html"
         }

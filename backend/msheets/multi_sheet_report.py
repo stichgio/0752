@@ -288,7 +288,7 @@ def _build_volanteo_page_html(
 
     centro = _safe_text(row_data.get("CENTRO"))
     nis = _safe_text(row_data.get("NIS"))
-    sector = _safe_text(row_data.get("SECTOR"))
+    cod_sunass = _safe_text(row_data.get("COD SUNASS", row_data.get("SECTOR")))
     fecha_corte = _safe_text(row_data.get("FECHA CORTE"))
     direcciones_afectadas = _safe_text(row_data.get("DIRECCIONES AFECTADAS"))
     distrito = _safe_text(row_data.get("DISTRITO"))
@@ -662,6 +662,19 @@ def _dedupe_preserve_order(values: list[str]) -> list[str]:
     return out
 
 
+def _normalize_template_name(template_name: str) -> str:
+    normalized = str(template_name or "").strip()
+    if not normalized:
+        return ""
+
+    try:
+        repaired = normalized.encode("latin-1").decode("utf-8").strip()
+    except (UnicodeEncodeError, UnicodeDecodeError):
+        return normalized
+
+    return repaired or normalized
+
+
 def _list_independent_template_names() -> list[str]:
     """Collect independent templates published via template-editor backend."""
     try:
@@ -680,7 +693,12 @@ def _list_independent_template_names() -> list[str]:
             names.append(name)
 
     independent_names = _dedupe_preserve_order(names)
-    return [name for name in independent_names if name not in _BUILTIN_LAYOUTS]
+    builtin_normalized = {_normalize_template_name(name) for name in _BUILTIN_LAYOUTS}
+    return [
+        name
+        for name in independent_names
+        if _normalize_template_name(name) not in builtin_normalized
+    ]
 
 
 def _extract_template_fields_from_source(template_source: str) -> list[str]:
@@ -696,14 +714,14 @@ def _extract_template_fields_from_source(template_source: str) -> list[str]:
 
 
 def _resolve_template_mapping_fields(template_name: str) -> tuple[list[str], str]:
-    normalized = str(template_name or "").strip()
+    normalized = _normalize_template_name(template_name)
     if not normalized:
         return [], "unknown"
 
-    if normalized == _GRID_TEMPLATE_NAME:
+    if normalized == _normalize_template_name(_GRID_TEMPLATE_NAME):
         return [], "builtin"
 
-    if normalized == _VOLANTEO_TEMPLATE_NAME:
+    if normalized == _normalize_template_name(_VOLANTEO_TEMPLATE_NAME):
         return list(_VOLANTEO_TEMPLATE_FIELDS), "builtin"
 
     record = _find_local_template(normalized)
@@ -711,11 +729,19 @@ def _resolve_template_mapping_fields(template_name: str) -> tuple[list[str], str
         with open(record.file_path, "r", encoding="utf-8") as fh:
             return _extract_template_fields_from_source(fh.read()), "local"
 
+    compiled_html = None
     try:
         compiled_html = get_published_template_by_name(normalized)
     except Exception as exc:
         print(f"[MultiSheet] Error reading published template '{normalized}': {exc}")
-        compiled_html = None
+
+    if not compiled_html:
+        raw_name = str(template_name or "").strip()
+        if raw_name and raw_name != normalized:
+            try:
+                compiled_html = get_published_template_by_name(raw_name)
+            except Exception as exc:
+                print(f"[MultiSheet] Error reading published template '{raw_name}': {exc}")
 
     if compiled_html:
         return _extract_template_fields_from_source(compiled_html), "independent"
@@ -767,11 +793,11 @@ def _scan_local_templates() -> list[LocalTemplateRecord]:
 
 
 def _find_local_template(template_name: str) -> Optional[LocalTemplateRecord]:
-    normalized = str(template_name or "").strip()
+    normalized = _normalize_template_name(template_name)
     if not normalized:
         return None
     for record in _scan_local_templates():
-        if record.name == normalized:
+        if _normalize_template_name(record.name) == normalized:
             return record
     return None
 
@@ -931,7 +957,7 @@ async def generate_multi_sheet_pdf(
                 return fallback
 
         sorted_sheets = sorted(sheets, key=lambda s: _sheet_order_value(s, 0))
-        local_name_set = set(_list_local_template_names())
+        local_name_set = {_normalize_template_name(name) for name in _list_local_template_names()}
         first_sheet_idx = next(
             (
                 idx
@@ -951,9 +977,10 @@ async def generate_multi_sheet_pdf(
             if is_first_sheet and first_sheet_template:
                 resolved_template = first_sheet_template
 
-            template_name: str = str(resolved_template or _GRID_TEMPLATE_NAME).strip()
+            template_name_raw = str(resolved_template or _GRID_TEMPLATE_NAME).strip()
+            template_name: str = _normalize_template_name(template_name_raw)
             if not template_name:
-                template_name = _GRID_TEMPLATE_NAME
+                template_name = _normalize_template_name(_GRID_TEMPLATE_NAME)
             use_alt_header: bool = bool(sheet.get("useAltHeader", False))
             title: str = sheet.get("title") or ""
             images_per_page: int = int(sheet.get("imagesPerPage", 4))
@@ -1010,7 +1037,7 @@ async def generate_multi_sheet_pdf(
                         images_b64=images_b64,
                         image_filenames=page_filenames,
                     )
-                elif is_first_sheet and template_name == _VOLANTEO_TEMPLATE_NAME:
+                elif is_first_sheet and template_name == _normalize_template_name(_VOLANTEO_TEMPLATE_NAME):
                     page_html = _build_volanteo_page_html(
                         header_config=header,
                         row_data=row_data,
@@ -1024,7 +1051,7 @@ async def generate_multi_sheet_pdf(
                         images_b64=images_b64,
                         image_filenames=page_filenames,
                     )
-                elif template_name == _VOLANTEO_TEMPLATE_NAME:
+                elif template_name == _normalize_template_name(_VOLANTEO_TEMPLATE_NAME):
                     page_html = _build_volanteo_page_html(
                         header_config=header,
                         row_data=row_data,

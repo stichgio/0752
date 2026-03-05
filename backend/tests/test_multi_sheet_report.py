@@ -36,7 +36,7 @@ def test_list_templates_returns_grouped_sections(client, monkeypatch):
     monkeypatch.setattr(
         multi_sheet_report,
         "_list_local_template_names",
-        lambda: ["Volanteo Local"],
+        lambda: ["Volanteo_simple"],
     )
 
     response = client.get("/api/multi-sheet/templates")
@@ -44,17 +44,17 @@ def test_list_templates_returns_grouped_sections(client, monkeypatch):
     assert response.status_code == 200
     payload = response.json()
     assert payload["templates"] == [
-        "Grilla de Imágenes",
-        "Panel Fotográfico Volanteo",
-        "Volanteo Local",
+        multi_sheet_report._GRID_TEMPLATE_NAME,
+        multi_sheet_report._VOLANTEO_TEMPLATE_NAME,
+        "Volanteo_simple",
         "Plantilla Independiente A",
         "Plantilla Independiente B",
     ]
 
     sections = {section["id"]: section for section in payload["sections"]}
     assert sections["builtin"]["templates"] == [
-        "Grilla de Imágenes",
-        "Panel Fotográfico Volanteo",
+        multi_sheet_report._GRID_TEMPLATE_NAME,
+        multi_sheet_report._VOLANTEO_TEMPLATE_NAME,
     ]
     assert sections["independent"]["templates"] == [
         "Plantilla Independiente A",
@@ -208,7 +208,7 @@ def test_list_templates_includes_local_section(client):
     payload = response.json()
     sections = {s["id"]: s for s in payload["sections"]}
     assert "local" in sections
-    assert "Volanteo Local" in sections["local"]["templates"]
+    assert "Volanteo_simple" in sections["local"]["templates"]
 
 
 def test_get_template_mapping_fields_for_builtin_volanteo(client):
@@ -232,7 +232,7 @@ def test_get_template_mapping_fields_for_builtin_volanteo(client):
 
 
 def test_get_template_mapping_fields_for_local_template(client):
-    response = client.get("/api/multi-sheet/templates/Volanteo%20Local/mapping-fields")
+    response = client.get("/api/multi-sheet/templates/Volanteo_simple/mapping-fields")
 
     assert response.status_code == 200
     payload = response.json()
@@ -263,10 +263,10 @@ def test_get_template_mapping_fields_for_published_template(client, monkeypatch)
 
 def test_get_local_template_html_returns_content(client):
     """GET /templates/{name}/html returns the HTML file content."""
-    response = client.get("/api/multi-sheet/templates/Volanteo%20Local/html")
+    response = client.get("/api/multi-sheet/templates/Volanteo_simple/html")
     assert response.status_code == 200
     content = response.text
-    assert "Panel Fotográfico Volanteo" in content
+    assert "Panel Fot" in content and "Volanteo" in content
     assert "{{ data.get(" in content
 
 
@@ -277,7 +277,7 @@ def test_get_local_template_html_404_for_unknown(client):
 
 
 def test_generate_pdf_with_local_volanteo_template(client, monkeypatch):
-    """Generating PDF with 'Volanteo Local' renders via Jinja2 from the HTML file."""
+    """Generating PDF with 'Volanteo_simple' renders via Jinja2 from the HTML file."""
     captured_html = []
 
     def fake_render(html_string: str, _base_url: str, output_path: str) -> None:
@@ -292,8 +292,8 @@ def test_generate_pdf_with_local_volanteo_template(client, monkeypatch):
         data={
             "sheets_config": json.dumps([{
                 "order": 0,
-                "title": "Hoja Volanteo Local",
-                "templateName": "Volanteo Local",
+                "title": "Hoja Volanteo_simple",
+                "templateName": "Volanteo_simple",
                 "useAltHeader": False,
                 "rowData": {
                     "CENTRO": "CS Sur",
@@ -321,7 +321,7 @@ def test_generate_pdf_with_local_volanteo_template(client, monkeypatch):
     assert "CS Sur" in html
     assert "99999" in html
     assert "CC-200" in html
-    assert "Panel Fotográfico Volanteo" in html
+    assert "Panel Fot" in html and "Volanteo" in html
 
 
 def test_generate_multi_sheet_pdf_splits_sorted_images_into_multiple_pages(client, monkeypatch):

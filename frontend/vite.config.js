@@ -15,7 +15,8 @@ export default defineConfig({
                 compressor: resolve(__dirname, 'compressor.html'),
                 templateEditor: resolve(__dirname, 'template-editor.html'),
                 multiSheetReport: resolve(__dirname, 'msheets.html'),
-                ocr: resolve(__dirname, 'ocr.html')
+                ocr: resolve(__dirname, 'ocr.html'),
+                pdfTools: resolve(__dirname, 'pdf-tools.html')
             }
         }
     },

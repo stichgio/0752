@@ -10,6 +10,7 @@ import {
     Shrink,
     FileCode,
     BookOpen,
+    Scissors,
 } from 'lucide-react';
 import PomodoroTimer from './PomodoroTimer';
 
@@ -65,6 +66,12 @@ const DashboardLayout = ({ children }) => {
             label: "Informe Multi-Hoja",
             href: "/msheets.html",
             active: window.location.pathname.includes('msheets')
+        },
+        {
+            icon: <Scissors size={20} />,
+            label: "PDF Tools",
+            href: "/pdf-tools.html",
+            active: window.location.pathname.includes('pdf-tools')
         },
     ];
 

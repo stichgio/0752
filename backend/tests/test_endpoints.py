@@ -145,6 +145,51 @@ class TestSplitPDF:
         assert response.status_code == 200
 
 
+class TestOrganizeAndExtractPDF:
+    def test_split_rejects_non_pdf_payload(self):
+        response = client.post(
+            "/api/tools/split-pdf",
+            files=[("file", ("bad.txt", b"not-a-pdf", "text/plain"))],
+            data={"mode": "pages", "pages_per_file": "1"}
+        )
+        assert response.status_code == 400
+
+    def test_organize_rejects_non_pdf_payload(self):
+        response = client.post(
+            "/api/tools/organize-pdf",
+            files=[("file", ("bad.txt", b"not-a-pdf", "text/plain"))],
+            data={"operations": json.dumps({"pageOrder": [1], "rotations": [0], "cuts": []})}
+        )
+        assert response.status_code == 400
+
+    def test_extract_rejects_non_pdf_payload(self):
+        response = client.post(
+            "/api/tools/extract-pages",
+            files=[("file", ("bad.txt", b"not-a-pdf", "text/plain"))],
+            data={"pages": json.dumps([1])}
+        )
+        assert response.status_code == 400
+
+    def test_extract_rejects_invalid_page_type(self):
+        pdf = _make_blank_pdf(pages=2)
+        response = client.post(
+            "/api/tools/extract-pages",
+            files=[("file", ("ok.pdf", pdf, "application/pdf"))],
+            data={"pages": json.dumps(["A"])},
+        )
+        assert response.status_code == 400
+
+    def test_extract_accepts_numeric_string_pages(self):
+        pdf = _make_blank_pdf(pages=2)
+        response = client.post(
+            "/api/tools/extract-pages",
+            files=[("file", ("ok.pdf", pdf, "application/pdf"))],
+            data={"pages": json.dumps(["1", "2"])},
+        )
+        assert response.status_code == 200
+        assert "application/pdf" in response.headers.get("content-type", "")
+
+
 class TestOCRTool:
     class _DummyResult:
         def __init__(self, text: str):

@@ -21,7 +21,8 @@ import traceback
 import re
 from typing import Any, Dict, List, Literal, Optional, TypedDict
 from report_service import ReportService  # type: ignore
-from pdf_tools import merge_pdfs_interleaved, merge_pdfs_sequential, split_pdf, split_pdf_by_ranges, organize_pdf  # type: ignore
+from pdf_tools import merge_pdfs_interleaved, merge_pdfs_sequential, split_pdf, split_pdf_by_ranges, organize_pdf, extract_pages  # type: ignore
+from pdf_tools.utils import PDFValidationError  # type: ignore
 import zipfile
 from technical_reports.router import router as technical_reports_router  # type: ignore
 from technical_reports.models import TechnicalReport  # type: ignore
@@ -858,6 +859,8 @@ async def tool_split_pdf(
 
     except HTTPException:
         raise
+    except (PDFValidationError, ValueError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         print(f"Split Error: {e}")
         traceback.print_exc()
@@ -944,8 +947,69 @@ async def tool_organize_pdf(
 
     except HTTPException:
         raise
+    except (PDFValidationError, ValueError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         print(f"Organize Error: {e}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@api_router.post("/tools/extract-pages")
+async def tool_extract_pages(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    pages: str = Form(...),
+):
+    """
+    Extract specific pages from a PDF into a new single PDF.
+    pages: JSON array of 1-based page numbers, e.g. "[1,3,7]"
+    """
+    try:
+        raw_page_numbers = json.loads(pages)
+    except Exception:
+        raise HTTPException(status_code=400, detail="JSON de 'pages' invalido")
+
+    if not isinstance(raw_page_numbers, list) or not raw_page_numbers:
+        raise HTTPException(status_code=400, detail="Debe seleccionar al menos una pagina")
+
+    page_numbers: List[int] = []
+    for idx, value in enumerate(raw_page_numbers, start=1):
+        if isinstance(value, bool):
+            raise HTTPException(status_code=400, detail=f"Valor de pagina invalido en posicion {idx}: {value}")
+        if isinstance(value, int):
+            page_numbers.append(value)
+            continue
+        if isinstance(value, str) and value.strip().isdigit():
+            page_numbers.append(int(value.strip()))
+            continue
+        raise HTTPException(status_code=400, detail=f"Valor de pagina invalido en posicion {idx}: {value}")
+
+    try:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            safe_input_name = sanitize_upload_filename(file.filename or "", default_name="document.pdf")
+            input_path = build_safe_upload_path(temp_dir, safe_input_name, prefix="input_", default_name="document.pdf")
+            await save_upload(file, input_path)
+
+            pdf_bytes = extract_pages(input_path, page_numbers)
+
+            final_path = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf").name
+            with open(final_path, "wb") as f:
+                f.write(pdf_bytes)
+
+            background_tasks.add_task(_cleanup_file, final_path)
+            return FileResponse(
+                final_path,
+                media_type="application/pdf",
+                filename=f"extracted_{len(page_numbers)}pages.pdf",
+            )
+
+    except HTTPException:
+        raise
+    except (PDFValidationError, ValueError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        print(f"Extract Pages Error: {e}")
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -962,6 +1026,10 @@ if os.path.exists("static"):
     @app.get("/technical-reports")
     async def serve_page_technical():
         return FileResponse("static/technical-reports.html")
+
+    @app.get("/pdf-tools")
+    async def serve_page_pdf_tools():
+        return FileResponse("static/pdf-tools.html")
 
     # Catch-all for SPA (must be last)
     @app.get("/{full_path:path}")
@@ -985,3 +1053,4 @@ if os.path.exists("static"):
 if __name__ == "__main__":
     import uvicorn  # type: ignore
     uvicorn.run(app, host="0.0.0.0", port=7860)
+

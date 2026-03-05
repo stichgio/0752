@@ -10,12 +10,14 @@ Módulo para manipulación de archivos PDF con soporte para:
 from .pdf_merger import merge_pdfs_interleaved, merge_pdfs_sequential
 from .pdf_organizer import organize_pdf
 from .pdf_splitter import split_pdf, split_pdf_by_ranges
+from .pdf_extractor import extract_pages
 from .utils import validate_pdf_file
 
 __all__ = [
     "merge_pdfs_interleaved",
     "merge_pdfs_sequential",
     "organize_pdf",
+    "extract_pages",
     "split_pdf",
     "split_pdf_by_ranges",
     "validate_pdf_file",
