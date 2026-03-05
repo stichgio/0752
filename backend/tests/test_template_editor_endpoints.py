@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+import tempfile
 
 import pytest
 from fastapi.testclient import TestClient
@@ -235,6 +236,91 @@ def test_generate_pdf_falls_back_to_legacy_template_resolution_when_not_in_db(cl
     )
     assert res.status_code == 200
     assert "application/pdf" in res.headers.get("content-type", "")
+
+
+def test_generate_pdf_uses_template_alias_and_selected_id_for_download_name(client):
+    class DummyService:
+        async def generate_batch_pdf(self, reports_payload, output_path=None, logo_left=None, logo_right=None, custom_template_str=None, template_name=None):
+            with open(output_path, "wb") as f:
+                f.write(b"%PDF-1.4\n%mock\n")
+
+        async def close(self):
+            return None
+
+    app.state.report_service = DummyService()
+    payload = [{
+        "row_data": {"NIS": "2999999"},
+        "image_filenames": [],
+        "id_value": "2999999",
+    }]
+
+    res = client.post(
+        "/api/generate-pdf",
+        data={
+            "data": json.dumps(payload),
+            "templateName": "report_volanteo.html",
+            "idColumn": "NIS",
+            "exportScope": "single",
+        },
+    )
+
+    assert res.status_code == 200
+    assert res.headers.get("x-filename") == "volante_2999999.pdf"
+    assert 'filename="volante_2999999.pdf"' in res.headers.get("content-disposition", "")
+
+
+def test_generate_pdf_uses_consolidated_download_name_for_batch_exports(client):
+    class DummyService:
+        async def generate_batch_pdf(self, reports_payload, output_path=None, logo_left=None, logo_right=None, custom_template_str=None, template_name=None):
+            with open(output_path, "wb") as f:
+                f.write(b"%PDF-1.4\n%mock\n")
+
+        async def close(self):
+            return None
+
+    app.state.report_service = DummyService()
+    payload = [
+        {
+            "row_data": {"NIS": str(2999900 + idx)},
+            "image_filenames": [],
+            "id_value": str(2999900 + idx),
+        }
+        for idx in range(47)
+    ]
+
+    res = client.post(
+        "/api/generate-pdf",
+        data={
+            "data": json.dumps(payload),
+            "templateName": "report_volanteo.html",
+            "idColumn": "NIS",
+            "exportScope": "all",
+        },
+    )
+
+    assert res.status_code == 200
+    assert res.headers.get("x-filename") == "Consolidado_Volante_47.pdf"
+    assert 'filename="Consolidado_Volante_47.pdf"' in res.headers.get("content-disposition", "")
+
+
+def test_download_temp_uses_requested_download_name(client):
+    filename = "pdf_deadbeefcafe.pdf"
+    temp_path = os.path.join(tempfile.gettempdir(), filename)
+    with open(temp_path, "wb") as f:
+        f.write(b"%PDF-1.4\n%mock\n")
+
+    try:
+        res = client.get(
+            f"/api/download-temp/{filename}",
+            params={"download_name": "Consolidado_Volante_47.pdf"},
+        )
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+    assert res.status_code == 200
+    assert res.headers.get("x-filename") == "Consolidado_Volante_47.pdf"
+    assert 'filename="Consolidado_Volante_47.pdf"' in res.headers.get("content-disposition", "")
 
 
 def test_create_template_payload_validation_rejects_missing_name(client):

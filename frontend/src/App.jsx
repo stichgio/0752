@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import * as XLSX from 'xlsx';
 import html2canvas from 'html2canvas';
-import { downloadBlob } from './utils/downloadBlob';
+import { downloadBlob, getFilenameFromHeaders } from './utils/downloadBlob';
 import { FileSpreadsheet, Image as ImageIcon, Printer, Settings, FileCode, CheckCircle, AlertCircle, RotateCcw, ChevronLeft, ChevronRight, Search, Table2 } from 'lucide-react';
 import PreviewPanel from './components/PreviewPanel';
 import { Step, LoadingModal } from './components/common';
@@ -555,7 +555,7 @@ export default function App() {
             // For single mode, maintain legacy structure check or use list
             // Using list structure for uniformity since backend supports it
             const imgNames = rowImages.map(f => f.name);
-            payload.push({ row_data: rowData, image_filenames: imgNames });
+            payload.push({ row_data: rowData, image_filenames: imgNames, id_value: idColumn ? row[idColumn] ?? '' : '' });
 
             rowImages.forEach(img => allImages.add(img));
         } else {
@@ -570,13 +570,13 @@ export default function App() {
                     if (rowImages.length > 0) {
                         const rowData = formatRowData(row);
                         const imgNames = rowImages.map(f => f.name);
-                        payload.push({ row_data: rowData, image_filenames: imgNames });
+                        payload.push({ row_data: rowData, image_filenames: imgNames, id_value: idColumn ? row[idColumn] ?? '' : '' });
                         rowImages.forEach(img => allImages.add(img));
                     }
                 } else {
                     // No images required: include all rows
                     const rowData = formatRowData(row);
-                    payload.push({ row_data: rowData, image_filenames: [] });
+                    payload.push({ row_data: rowData, image_filenames: [], id_value: idColumn ? row[idColumn] ?? '' : '' });
                 }
             });
 
@@ -596,14 +596,16 @@ export default function App() {
 
         // Append custom template if exists
         if (customTemplate) {
-            if (customTemplate.isBackendTemplate) {
-                // Backend template: send only the name (avoids encoding issues with large HTML)
-                formData.append('templateName', customTemplate.name);
-            } else {
+            if (!customTemplate.isBackendTemplate && customTemplate.content) {
                 // User-uploaded template: send full content
                 formData.append('customTemplate', customTemplate.content);
             }
+            if (customTemplate.name) {
+                formData.append('templateName', customTemplate.name);
+            }
         }
+        if (idColumn) formData.append('idColumn', idColumn);
+        formData.append('exportScope', exportScope);
 
         const isBatch = exportScope === 'all' && payload.length > 1;
 
@@ -618,7 +620,9 @@ export default function App() {
                         const resp = await fetch(`${base}${downloadUrl}`);
                         if (!resp.ok) throw new Error(`Error en descarga: ${resp.status}`);
                         const blob = await resp.blob();
-                        downloadBlob(blob, `Paneles_Consolidado_${new Date().toISOString().split('T')[0]}.pdf`);
+                        const filename = getFilenameFromHeaders(resp.headers)
+                            || `Paneles_Consolidado_${new Date().toISOString().split('T')[0]}.pdf`;
+                        downloadBlob(blob, filename);
                     } catch (err) {
                         toast.error(`Error descargando PDF: ${err.message}`);
                     }
@@ -632,7 +636,9 @@ export default function App() {
                         const response = await fetch(`${API_BASE_URL}/generate-pdf`, { method: 'POST', body: formData });
                         if (!response.ok) throw new Error(`El servidor devolvió ${response.status}`);
                         const blob = await response.blob();
-                        downloadBlob(blob, `Paneles_Consolidado_${new Date().toISOString().split('T')[0]}.pdf`);
+                        const filename = getFilenameFromHeaders(response.headers)
+                            || `Paneles_Consolidado_${new Date().toISOString().split('T')[0]}.pdf`;
+                        downloadBlob(blob, filename);
                     } catch (fallbackErr) {
                         toast.error(`Error generando PDF: ${fallbackErr.message}`);
                     } finally {
@@ -658,7 +664,8 @@ export default function App() {
                 }
 
                 const blob = await response.blob();
-                const filename = `Reporte_${data[selectedIndex][idColumn] || 'Output'}.pdf`;
+                const filename = getFilenameFromHeaders(response.headers)
+                    || `Reporte_${data[selectedIndex][idColumn] || 'Output'}.pdf`;
                 downloadBlob(blob, filename);
 
             } catch (err) {

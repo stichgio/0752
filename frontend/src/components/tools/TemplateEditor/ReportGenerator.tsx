@@ -16,7 +16,7 @@ import {
     Loader2,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
-import { downloadBlob } from '@/utils/downloadBlob';
+import { downloadBlob, getFilenameFromHeaders } from '@/utils/downloadBlob';
 import { clearPersistedLogo, loadPersistedLogo, savePersistedLogo } from '@/utils/persistedLogos';
 import {
     normalizeEditorTemplate,
@@ -974,7 +974,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
             const row = data[Number(selectedIndex)];
             const rowData = formatRowData(row);
             const rowImages = requiresImages ? getFilteredImages() : [];
-            payload.push({ row_data: rowData, image_filenames: rowImages.map((f) => f.name) });
+            payload.push({ row_data: rowData, image_filenames: rowImages.map((f) => f.name), id_value: idColumn ? row[idColumn] ?? '' : '' });
             rowImages.forEach((img) => allImages.add(img));
         } else {
             data.forEach((row) => {
@@ -982,11 +982,11 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                 if (requiresImages) {
                     const rowImages = images.filter((img) => matchesRecordId(img.name, recordId));
                     if (rowImages.length > 0) {
-                        payload.push({ row_data: formatRowData(row), image_filenames: rowImages.map((f) => f.name) });
+                        payload.push({ row_data: formatRowData(row), image_filenames: rowImages.map((f) => f.name), id_value: idColumn ? row[idColumn] ?? '' : '' });
                         rowImages.forEach((img) => allImages.add(img));
                     }
                 } else {
-                    payload.push({ row_data: formatRowData(row), image_filenames: [] });
+                    payload.push({ row_data: formatRowData(row), image_filenames: [], id_value: idColumn ? row[idColumn] ?? '' : '' });
                 }
             });
         }
@@ -1002,6 +1002,8 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
             formData.append('customTemplate', selectedTemplate.content);
         }
         formData.append('templateName', selectedTemplate.name);
+        if (idColumn) formData.append('idColumn', idColumn);
+        formData.append('exportScope', exportScope);
 
         try {
             setIsPdfLoading(true);
@@ -1022,10 +1024,12 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
             }
 
             const blob = await response.blob();
-            const filename =
-                exportScope === 'single'
-                    ? `Reporte_${data[Number(selectedIndex)][idColumn] || 'Output'}.pdf`
-                    : `Paneles_Consolidado_${new Date().toISOString().split('T')[0]}.pdf`;
+            const filename = getFilenameFromHeaders(response.headers)
+                || (
+                    exportScope === 'single'
+                        ? `Reporte_${data[Number(selectedIndex)][idColumn] || 'Output'}.pdf`
+                        : `Paneles_Consolidado_${new Date().toISOString().split('T')[0]}.pdf`
+                );
             downloadBlob(blob, filename);
         } catch (err: any) {
             let errorMessage = 'Error al generar PDF: ';
