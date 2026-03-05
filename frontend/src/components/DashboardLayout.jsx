@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import {
     FileText,
     LayoutDashboard,
-    Calculator,
-    FileStack,
     ScanLine,
     ChevronLeft,
     ChevronRight,
@@ -17,7 +15,6 @@ import PomodoroTimer from './PomodoroTimer';
 
 const DashboardLayout = ({ children }) => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
-    const isPdfToolsPath = window.location.pathname.includes('pdf-tools');
     const isOcrPath = window.location.pathname.includes('ocr');
 
     const navItems = [
@@ -38,18 +35,6 @@ const DashboardLayout = ({ children }) => {
             label: "Fichas Técnicas",
             href: "/fichas-tecnicas.html",
             active: window.location.pathname.includes('fichas-tecnicas')
-        },
-        {
-            icon: <Calculator size={20} />,
-            label: "Calculadora",
-            href: "/calculator.html",
-            active: window.location.pathname.includes('calculator')
-        },
-        {
-            icon: <FileStack size={20} />,
-            label: "PDF Tools",
-            href: "/pdf-tools.html",
-            active: isPdfToolsPath
         },
         {
             icon: <ScanLine size={20} />,
