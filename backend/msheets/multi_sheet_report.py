@@ -31,7 +31,7 @@ from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, Uploa
 from fastapi.responses import StreamingResponse, HTMLResponse
 
 try:
-    from template_editor.service import (  # type: ignore
+    from template_editor.service import (  
         get_all_published_templates,
         get_published_template_by_name,
     )
@@ -39,10 +39,10 @@ try:
 except ImportError:
     _TEMPLATE_EDITOR_AVAILABLE = False
 
-    def get_all_published_templates():  # type: ignore
+    def get_all_published_templates():  
         return []
 
-    def get_published_template_by_name(name):  # type: ignore
+    def get_published_template_by_name(name):  
         return None
 
 # ── Router ────────────────────────────────────────────────────────────────────
@@ -525,7 +525,7 @@ def _render_local_template(
 ) -> str:
     """Render a local HTML template (Jinja2) with row data and images."""
     try:
-        from jinja2 import Environment, select_autoescape  # type: ignore
+        from jinja2 import Environment, select_autoescape  
     except ImportError as exc:
         raise RuntimeError("Jinja2 no está instalado.") from exc
 
@@ -565,7 +565,7 @@ _pdf_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="weasyprint
 
 def _render_html_to_pdf(html_string: str, base_url: str, output_path: str) -> None:
     try:
-        from weasyprint import HTML  # type: ignore
+        from weasyprint import HTML  
     except ImportError as exc:
         raise RuntimeError(
             "WeasyPrint no está instalado. Ejecuta: pip install weasyprint"
@@ -943,7 +943,7 @@ async def generate_multi_sheet_pdf(
                     fout.write(content)
 
         try:
-            from pypdf import PdfWriter  # type: ignore
+            from pypdf import PdfWriter  
         except ImportError as exc:
             raise HTTPException(
                 status_code=500,

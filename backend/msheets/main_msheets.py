@@ -9,7 +9,7 @@ Arrancar con:
 from __future__ import annotations
 
 # Load .env before anything else (same as main.py)
-from dotenv import load_dotenv  # type: ignore
+from dotenv import load_dotenv  
 try:
     load_dotenv(encoding='utf-8')
 except (UnicodeDecodeError, ValueError):
@@ -20,30 +20,30 @@ import logging
 import os
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Request  # type: ignore
-from fastapi.exceptions import RequestValidationError  # type: ignore
-from fastapi.middleware.cors import CORSMiddleware  # type: ignore
-from fastapi.responses import JSONResponse  # type: ignore
+from fastapi import FastAPI, HTTPException, Request  
+from fastapi.exceptions import RequestValidationError  
+from fastapi.middleware.cors import CORSMiddleware  
+from fastapi.responses import JSONResponse  
 
-from msheets.multi_sheet_report import router as multi_sheet_router  # type: ignore
+from msheets.multi_sheet_report import router as multi_sheet_router  
 
 # ── Increase multipart form-field size limit (same as main.py) ────────────────
 try:
-    from starlette.formparsers import MultiPartParser as _MultiPartParser  # type: ignore
+    from starlette.formparsers import MultiPartParser as _MultiPartParser  
 
     _orig_mp_init = _MultiPartParser.__init__
 
-    def _patched_mp_init(  # type: ignore
+    def _patched_mp_init(  
         self,
-        headers,  # type: ignore
-        stream,  # type: ignore
-        *args,  # type: ignore
-        **kwargs,  # type: ignore
+        headers,  
+        stream,  
+        *args,  
+        **kwargs,  
     ) -> None:
         kwargs.setdefault("max_part_size", 50 * 1024 * 1024)  # 50 MB
         _orig_mp_init(self, headers, stream, *args, **kwargs)
 
-    _MultiPartParser.__init__ = _patched_mp_init  # type: ignore
+    _MultiPartParser.__init__ = _patched_mp_init  
 except Exception:
     pass
 # ──────────────────────────────────────────────────────────────────────────────
@@ -141,5 +141,5 @@ async def health():
 
 
 if __name__ == "__main__":
-    import uvicorn  # type: ignore
+    import uvicorn  
     uvicorn.run(app, host="0.0.0.0", port=7861)

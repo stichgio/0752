@@ -5,6 +5,7 @@ interface ProgressInfo {
     phaseLabel: string;
     current?: number;
     total?: number;
+    detail?: string;
 }
 
 interface LoadingModalProps {
@@ -37,7 +38,7 @@ export default function LoadingModal({
                         {/* Progress bar */}
                         <div className="w-full bg-[#222] rounded-full h-3 overflow-hidden border border-[#333]">
                             <div
-                                className="h-full rounded-full transition-all duration-500 ease-out"
+                                className="h-full rounded-full transition-all duration-200 ease-out"
                                 style={{
                                     width: `${progress.percent}%`,
                                     backgroundColor: accentColor,
@@ -54,6 +55,12 @@ export default function LoadingModal({
                                 {progress.percent}%
                             </span>
                         </div>
+
+                        {progress.detail && (
+                            <p className="mt-1 text-[#777] text-[11px] font-mono text-center">
+                                {progress.detail}
+                            </p>
+                        )}
 
                         {/* Item counter */}
                         {progress.total != null && progress.total > 0 && (

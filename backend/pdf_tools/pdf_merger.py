@@ -155,7 +155,7 @@ def merge_pdfs_interleaved(
             for file_idx, reader in enumerate(readers):
                 page = reader.pages[page_idx]
                 writer.add_page(page)
-                total_pages_added += 1  # type: ignore
+                total_pages_added += 1  
                 
                 # Log de progreso cada 10 páginas
                 if total_pages_added % 10 == 0:
@@ -172,7 +172,7 @@ def merge_pdfs_interleaved(
             
             extra_pages = 0
             for file_idx, reader in enumerate(readers):
-                remaining = page_counts[file_idx] - min_pages  # type: ignore
+                remaining = page_counts[file_idx] - min_pages  
                 
                 if remaining > 0:
                     file_name = Path(input_paths[file_idx]).name
@@ -183,10 +183,10 @@ def merge_pdfs_interleaved(
                         f"{file_name}: {remaining} páginas añadidas al final"
                     )
                     
-                    for page_idx in range(min_pages, page_counts[file_idx]):  # type: ignore
+                    for page_idx in range(min_pages, page_counts[file_idx]):  
                         writer.add_page(reader.pages[page_idx])
-                        total_pages_added += 1  # type: ignore
-                        extra_pages += 1  # type: ignore
+                        total_pages_added += 1  
+                        extra_pages += 1  
             
             logger.info(f"  ✓ Páginas extra añadidas: {extra_pages}")
         

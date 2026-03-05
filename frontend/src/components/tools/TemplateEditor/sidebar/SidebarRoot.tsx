@@ -1,12 +1,19 @@
 import React, { useEffect, useState } from 'react';
-import { Layers, Grid, LayoutTemplate, Library, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Layers, Grid, LayoutTemplate, Library, ChevronLeft, ChevronRight, FileText, Image as ImageIcon } from 'lucide-react';
 import { ElementsPalette } from './ElementsPalette';
 import { LayersPanel } from './LayersPanel';
 import { TemplatesPanel } from './TemplatesPanel';
 import { PublishedTemplatesPanel } from './PublishedTemplatesPanel';
+import { DocumentPanel } from './DocumentPanel';
+import { AssetsPanel } from './AssetsPanel';
 import { ElementType, ElementPreset, BlockPreset } from '../canvasTypes';
-import type { TemplateElement, VariableDefinition } from '../canvasTypes';
-import type { CanvasDocument } from '../canvasTypes';
+import type {
+    AssetLibraryItem,
+    CanvasDocument,
+    DocumentTheme,
+    TemplateElement,
+    VariableDefinition,
+} from '../canvasTypes';
 
 interface SidebarRootProps {
     width?: number;
@@ -20,6 +27,13 @@ interface SidebarRootProps {
     elements: TemplateElement[];
     variables?: VariableDefinition[] | null;
     onVariablesChange?: (variables: VariableDefinition[]) => void;
+    documentTheme?: DocumentTheme;
+    onThemeChange?: (theme: DocumentTheme) => void;
+    dataSourceDefinition?: CanvasDocument['dataSourceDefinition'];
+    onDataSourceDefinitionChange?: (definition: NonNullable<CanvasDocument['dataSourceDefinition']>) => void;
+    assetLibrary?: AssetLibraryItem[];
+    onAssetLibraryChange?: (assets: AssetLibraryItem[]) => void;
+    onInsertAsset?: (asset: AssetLibraryItem) => void;
     selectedIds: string[];
     onSelect: (id: string, multi: boolean) => void;
     onToggleLock: (id: string) => void;
@@ -35,11 +49,13 @@ interface SidebarRootProps {
     onDeletePublishedTemplate?: (templateId: string) => Promise<void> | void;
 }
 
-type TabId = 'elements' | 'layers' | 'templates' | 'published';
+type TabId = 'elements' | 'assets' | 'layers' | 'document' | 'templates' | 'published';
 
 const TABS: { id: TabId; icon: React.ReactNode; label: string }[] = [
     { id: 'elements', icon: <Grid size={18} />, label: 'Elementos' },
+    { id: 'assets', icon: <ImageIcon size={18} />, label: 'Assets' },
     { id: 'layers', icon: <Layers size={18} />, label: 'Capas' },
+    { id: 'document', icon: <FileText size={18} />, label: 'Documento' },
     { id: 'templates', icon: <LayoutTemplate size={18} />, label: 'Plantillas' },
     { id: 'published', icon: <Library size={18} />, label: 'Plantillas publicadas' },
 ];
@@ -112,6 +128,13 @@ export function SidebarRoot(props: SidebarRootProps) {
                                 onAddBlock={props.onAddBlock ? (blockId) => props.onAddBlock!(blockId) : undefined}
                             />
                         )}
+                        {activeTab === 'assets' && (
+                            <AssetsPanel
+                                assets={props.assetLibrary || []}
+                                onChange={props.onAssetLibraryChange || (() => { })}
+                                onInsertAsset={props.onInsertAsset || (() => { })}
+                            />
+                        )}
                         {activeTab === 'layers' && (
                             <LayersPanel
                                 elements={props.elements}
@@ -120,6 +143,16 @@ export function SidebarRoot(props: SidebarRootProps) {
                                 onToggleLock={props.onToggleLock}
                                 onToggleVisible={props.onToggleVisible}
                                 onReorder={props.onReorder}
+                            />
+                        )}
+                        {activeTab === 'document' && (
+                            <DocumentPanel
+                                variables={props.variables || []}
+                                onVariablesChange={props.onVariablesChange || (() => { })}
+                                theme={props.documentTheme}
+                                onThemeChange={props.onThemeChange || (() => { })}
+                                dataSourceDefinition={props.dataSourceDefinition}
+                                onDataSourceDefinitionChange={props.onDataSourceDefinitionChange || (() => { })}
                             />
                         )}
                         {activeTab === 'templates' && (
@@ -154,3 +187,4 @@ export function SidebarRoot(props: SidebarRootProps) {
         </div>
     );
 }
+

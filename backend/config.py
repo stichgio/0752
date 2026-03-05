@@ -8,8 +8,8 @@ Todos los modulos del backend deben importar desde aqui:
 from pathlib import Path
 from typing import List
 
-from pydantic import AliasChoices, Field  # type: ignore
-from pydantic_settings import BaseSettings  # type: ignore
+from pydantic import AliasChoices, Field  
+from pydantic_settings import BaseSettings  
 
 
 class Settings(BaseSettings):

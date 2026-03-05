@@ -1,15 +1,18 @@
 import React from 'react';
-import { TemplateElement, ElementStyle } from '../canvasTypes';
+import { TemplateElement, ElementStyle, type DocumentTheme } from '../canvasTypes';
 import { Palette } from 'lucide-react';
 import { normalizeTableData, resizeTableData } from '../utils/elementDefaults';
 
 interface StylePanelProps {
     element: TemplateElement;
     onUpdate: (id: string, updates: Partial<TemplateElement>) => void;
+    theme?: DocumentTheme;
 }
 
-export function StylePanel({ element, onUpdate }: StylePanelProps) {
+export function StylePanel({ element, onUpdate, theme }: StylePanelProps) {
     const style = element.style;
+    const colorTokens = Array.isArray(theme?.colorTokens) ? theme.colorTokens : [];
+    const textStyles = Array.isArray(theme?.textStyles) ? theme.textStyles : [];
 
     const updateStyle = (updates: Partial<ElementStyle>) => {
         onUpdate(element.id, { style: { ...style, ...updates } });
@@ -55,6 +58,75 @@ export function StylePanel({ element, onUpdate }: StylePanelProps) {
                 )}
             </div>
 
+
+            {(colorTokens.length > 0 || (isTextType && textStyles.length > 0)) && (
+                <div className="space-y-2">
+                    {colorTokens.length > 0 && (
+                        <div>
+                            <span className="text-[10px] font-medium text-neutral-400 block mb-1">Brand kit: colores</span>
+                            <div className="space-y-1.5">
+                                {colorTokens.map((token) => (
+                                    <div key={token.id} className="flex items-center gap-2 rounded-md border border-neutral-200 bg-neutral-50 px-2 py-1.5">
+                                        <span
+                                            className="h-4 w-4 rounded-full border border-neutral-300"
+                                            style={{ backgroundColor: token.value }}
+                                        />
+                                        <span className="flex-1 truncate text-[10px] font-medium text-neutral-600" title={token.label}>
+                                            {token.label}
+                                        </span>
+                                        {isTextType && (
+                                            <button
+                                                type="button"
+                                                onClick={() => updateStyle({ color: token.value })}
+                                                className="rounded-md border border-neutral-200 bg-white px-2 py-1 text-[9px] font-semibold text-neutral-600 hover:bg-neutral-100"
+                                            >
+                                                Texto
+                                            </button>
+                                        )}
+                                        <button
+                                            type="button"
+                                            onClick={() => updateStyle({ backgroundColor: token.value })}
+                                            className="rounded-md border border-neutral-200 bg-white px-2 py-1 text-[9px] font-semibold text-neutral-600 hover:bg-neutral-100"
+                                        >
+                                            Fondo
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => updateStyle({ borderColor: token.value })}
+                                            className="rounded-md border border-neutral-200 bg-white px-2 py-1 text-[9px] font-semibold text-neutral-600 hover:bg-neutral-100"
+                                        >
+                                            Borde
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {isTextType && textStyles.length > 0 && (
+                        <div>
+                            <span className="text-[10px] font-medium text-neutral-400 block mb-1">Brand kit: texto</span>
+                            <div className="space-y-1.5">
+                                {textStyles.map((token) => (
+                                    <button
+                                        key={token.id}
+                                        type="button"
+                                        onClick={() => updateStyle({ ...token.style })}
+                                        className="flex w-full items-center justify-between rounded-md border border-neutral-200 bg-neutral-50 px-2 py-1.5 text-left hover:bg-neutral-100"
+                                    >
+                                        <span className="text-[10px] font-semibold text-neutral-700">
+                                            {token.label}
+                                        </span>
+                                        <span className="text-[9px] text-neutral-400">
+                                            {token.style.fontFamily || 'Arial'} · {token.style.fontSize || 12}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
             {/* Border */}
             <div>
                 <span className="text-[10px] font-medium text-neutral-400 block mb-1">Borde</span>
@@ -387,3 +459,4 @@ function ColorInput({
         </div>
     );
 }
+

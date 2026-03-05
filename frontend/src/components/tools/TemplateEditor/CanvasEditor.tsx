@@ -249,6 +249,34 @@ export default function CanvasEditor({
     onChange({ ...doc, variables: normalizeVariableRegistry(variables) });
   }, [doc, onChange]);
 
+  const handleThemeChange = useCallback((theme: CanvasDocument['theme']) => {
+    onChange({
+      ...doc,
+      theme: {
+        textStyles: Array.isArray(theme?.textStyles) ? theme.textStyles : [],
+        colorTokens: Array.isArray(theme?.colorTokens) ? theme.colorTokens : [],
+      },
+    });
+  }, [doc, onChange]);
+
+  const handleDataSourceDefinitionChange = useCallback((definition: NonNullable<CanvasDocument['dataSourceDefinition']>) => {
+    onChange({
+      ...doc,
+      dataSourceDefinition: {
+        schemaVersion: definition?.schemaVersion || '1.0',
+        fields: Array.isArray(definition?.fields) ? definition.fields : [],
+        ...(definition?.notes ? { notes: definition.notes } : {}),
+      },
+    });
+  }, [doc, onChange]);
+
+  const handleAssetLibraryChange = useCallback((assetLibrary: CanvasDocument['assetLibrary']) => {
+    onChange({
+      ...doc,
+      assetLibrary: Array.isArray(assetLibrary) ? assetLibrary : [],
+    });
+  }, [doc, onChange]);
+
   // Migration — run once
   useEffect(() => {
     if (hasMigrated.current) return;
@@ -426,6 +454,21 @@ export default function CanvasEditor({
     onChange({ ...doc, elements: [...doc.elements, ...newElements] });
     setSelectedIds(newElements.map((e) => e.id));
   }, [doc, onChange, pageSettings]);
+
+  const handleInsertAsset = useCallback((asset: NonNullable<CanvasDocument['assetLibrary']>[number]) => {
+    const isLogo = asset.type === 'logo';
+    handleAddElement(isLogo ? 'logo' : 'image', undefined, undefined, {
+      name: asset.name,
+      content: asset.name,
+      imageUrl: asset.url,
+      size: isLogo ? { width: 30, height: 30 } : { width: 50, height: 50 },
+      style: {
+        backgroundColor: 'transparent',
+        borderWidth: 0,
+        objectFit: isLogo ? 'contain' : 'cover',
+      },
+    });
+  }, [handleAddElement]);
 
   const handleDelete = useCallback(() => {
     if (!selectedIds.length) return;
@@ -829,6 +872,13 @@ export default function CanvasEditor({
               elements={doc.elements}
               variables={variableRegistry}
               onVariablesChange={handleUpdateVariables}
+              documentTheme={doc.theme}
+              onThemeChange={handleThemeChange}
+              dataSourceDefinition={doc.dataSourceDefinition}
+              onDataSourceDefinitionChange={handleDataSourceDefinitionChange}
+              assetLibrary={doc.assetLibrary || []}
+              onAssetLibraryChange={handleAssetLibraryChange}
+              onInsertAsset={handleInsertAsset}
               selectedIds={selectedIds}
               onSelect={(id: string, multi: boolean) => {
                 if (multi) setSelectedIds(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
@@ -924,6 +974,7 @@ export default function CanvasEditor({
               selectedIds={selectedIds}
               elements={doc.elements}
               onUpdateElement={handleUpdateElement}
+              theme={doc.theme}
               pageSettings={pageSettings}
               onPageSettingsChange={onPageSettingsChange}
             />
@@ -933,3 +984,4 @@ export default function CanvasEditor({
     </div>
   );
 }
+

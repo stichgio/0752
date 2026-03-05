@@ -26,6 +26,8 @@ import {
 } from 'lucide-react';
 import DashboardLayout from '../../DashboardLayout';
 
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
+
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const MAX_SIZE_MB = 25;
@@ -229,7 +231,7 @@ function OllamaConfigPanel({ config, onChange }) {
         try {
             const form = new FormData();
             form.append('ollama_url', config.url.trim());
-            const resp = await fetch('/api/tools/ocr-probe', { method: 'POST', body: form });
+            const resp = await fetch(`${API_BASE}/tools/ocr-probe`, { method: 'POST', body: form });
             const data = await resp.json();
             if (data.ok) {
                 setProbeState('ok');
@@ -466,11 +468,11 @@ export default function OCRTool() {
             let url;
             if (mode === 'text') {
                 form.append('output_format', outputFormat);
-                url = '/api/tools/ocr-extract';
+                url = `${API_BASE}/tools/ocr-extract`;
             } else {
                 form.append('schema_type', schemaType);
                 if (instructions.trim()) form.append('instructions', instructions.trim());
-                url = '/api/tools/ocr-extract-structured';
+                url = `${API_BASE}/tools/ocr-extract-structured`;
             }
 
             const resp = await fetch(url, { method: 'POST', body: form });

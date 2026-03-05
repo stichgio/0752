@@ -7,6 +7,7 @@ interface ProgressState {
     total: number;
     percent: number;
     phaseLabel: string;
+    detail: string;
 }
 
 interface SSEProgressOptions {
@@ -51,7 +52,7 @@ export function useSSEProgress() {
         const controller = new AbortController();
         abortRef.current = controller;
         setIsLoading(true);
-        setProgress({ phase: 'preparing', current: 0, total: 0, percent: 0, phaseLabel: 'Iniciando...' });
+        setProgress({ phase: 'preparing', current: 0, total: 0, percent: 0, phaseLabel: 'Iniciando...', detail: '' });
 
         try {
             const base = getApiBase();
@@ -114,6 +115,7 @@ export function useSSEProgress() {
                                 total,
                                 percent: calcPercent(phase, current, total),
                                 phaseLabel: PHASE_LABELS[phase] || phase,
+                                detail: data.detail || '',
                             });
                         } catch (parseErr) {
                             if (parseErr instanceof SyntaxError) {

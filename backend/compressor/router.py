@@ -17,8 +17,8 @@ import zipfile
 from typing import Any, Optional
 from urllib.parse import quote
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile  # type: ignore
-from fastapi.responses import Response  # type: ignore
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile  
+from fastapi.responses import Response  
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/compressor", tags=["compressor"])
@@ -106,7 +106,7 @@ def analyze_pdf_content(input_path: str) -> dict:
     Returns: { "has_images": bool, "page_count": int, "image_count": int, "type": "text"|"images"|"mixed" }
     """
     try:
-        from pypdf import PdfReader  # type: ignore
+        from pypdf import PdfReader  
 
         reader = PdfReader(input_path)
         page_count = len(reader.pages)
@@ -160,7 +160,7 @@ def _reduce_image_quality(page, quality: str) -> None:
     the rest of the page can still benefit from stream compression.
     """
     try:
-        from PIL import Image as PILImage  # type: ignore
+        from PIL import Image as PILImage  
     except ImportError:
         return  # Pillow not available — skip image reduction
 
@@ -205,7 +205,7 @@ def _reduce_image_quality(page, quality: str) -> None:
                 buf = _io.BytesIO()
                 img.save(buf, format="JPEG", quality=jpeg_quality, optimize=True)
                 obj._data = buf.getvalue()
-                from pypdf.generic import NameObject, NumberObject  # type: ignore
+                from pypdf.generic import NameObject, NumberObject  
                 obj[NameObject("/Filter")] = NameObject("/DCTDecode")
                 obj[NameObject("/Length")] = NumberObject(len(obj._data))
             except Exception:
@@ -222,7 +222,7 @@ def compress_pdf_pypdf(input_path: str, output_path: str, quality: str = "ebook"
     Returns True if output file was created successfully.
     """
     try:
-        from pypdf import PdfReader, PdfWriter  # type: ignore
+        from pypdf import PdfReader, PdfWriter  
 
         reader = PdfReader(input_path)
         writer = PdfWriter()
@@ -302,7 +302,7 @@ def create_compression_headers(
     }
 
     if original_size > 0:
-        reduction = round(float(original_size - compressed_size) / original_size * 100, 1)  # type: ignore
+        reduction = round(float(original_size - compressed_size) / original_size * 100, 1)  
         headers["X-Reduction-Percent"] = str(reduction)
     else:
         headers["X-Reduction-Percent"] = "0"
@@ -551,7 +551,7 @@ async def _process_single_pdf(
         "filename": filename,
         "original_size": original_size,
         "compressed_size": compressed_size,
-        "reduction_percent": round(float(reduction_percent), 1),  # type: ignore
+        "reduction_percent": round(float(reduction_percent), 1),  
         "success": success and compressed_size < original_size,
         "error": error_msg,
         "method": method,

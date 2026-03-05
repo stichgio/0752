@@ -1,8 +1,8 @@
 """
 Endpoints API REST para Fichas Técnicas de Evaluación de Actividades
 """
-from fastapi import APIRouter, UploadFile, File, HTTPException, Form, BackgroundTasks  # type: ignore
-from fastapi.responses import Response, FileResponse, StreamingResponse  # type: ignore
+from fastapi import APIRouter, UploadFile, File, HTTPException, Form, BackgroundTasks  
+from fastapi.responses import Response, FileResponse, StreamingResponse  
 from typing import Optional, List, Dict, Any
 import io
 import csv
@@ -14,14 +14,14 @@ from datetime import datetime
 
 # Para XLSX
 try:
-    import openpyxl  # type: ignore
+    import openpyxl  
     XLSX_SUPPORTED = True
 except ImportError:
     XLSX_SUPPORTED = False
     print("[FichasTecnicas] openpyxl not installed - XLSX support disabled")
 
-from .database import db  # type: ignore
-from .models import FichaTecnica  # type: ignore
+from .database import db  
+from .models import FichaTecnica  
 
 router = APIRouter(prefix="/api/fichas-tecnicas", tags=["fichas-tecnicas"])
 
@@ -85,7 +85,7 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
         workbook = openpyxl.load_workbook(io.BytesIO(content), data_only=True)
         sheet = workbook.active
         # Use values_only=False to access number_format
-        all_rows = list(sheet.iter_rows(values_only=False)) # type: ignore
+        all_rows = list(sheet.iter_rows(values_only=False)) 
 
         if not all_rows:
             return []
@@ -103,7 +103,7 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
 
         # Extraer datos
         parsed_rows = []
-        for row in all_rows[1:]:  # type: ignore
+        for row in all_rows[1:]:  
             # Check if row has any values
             if not any(c.value for c in row if c is not None):
                 continue
@@ -113,7 +113,7 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
 
             for col_idx, cell in enumerate(row):
                 if col_idx < len(headers):
-                    key = str(headers[col_idx])  # type: ignore
+                    key = str(headers[col_idx])  
                     cell_value = cell.value if cell else None
 
                     if cell_value is not None:
@@ -279,7 +279,7 @@ async def generate_consolidated_pdf(
     """
     import tempfile
     import base64
-    from jinja2 import Environment, FileSystemLoader  # type: ignore
+    from jinja2 import Environment, FileSystemLoader  
 
     try:
         all_fichas = db.get_all_fichas()
@@ -319,8 +319,8 @@ async def generate_consolidated_pdf(
         # =====================================================================
         # STREAMING OPTIMIZADO: Generar PDFs en lotes y merge incremental
         # =====================================================================
-        from weasyprint import HTML  # type: ignore
-        from pypdf import PdfWriter  # type: ignore
+        from weasyprint import HTML  
+        from pypdf import PdfWriter  
         from concurrent.futures import ThreadPoolExecutor
         import gc
 
@@ -355,7 +355,7 @@ async def generate_consolidated_pdf(
         # Generar PDFs en lotes paralelos
         for batch_start in range(0, len(all_fichas), PDF_BATCH_SIZE):
             batch_end = min(batch_start + PDF_BATCH_SIZE, len(all_fichas))
-            batch_fichas = all_fichas[batch_start:batch_end]  # type: ignore
+            batch_fichas = all_fichas[batch_start:batch_end]  
 
             with ThreadPoolExecutor(max_workers=PDF_BATCH_SIZE) as executor:
                 batch_dicts = [f.model_dump() for f in batch_fichas]
@@ -399,7 +399,7 @@ async def generate_consolidated_pdf(
         # =====================================================================
         # Compresión Ghostscript (opcional)
         # =====================================================================
-        from report_service import GHOSTSCRIPT_ENABLED, GHOSTSCRIPT_QUALITY, _compress_pdf_with_ghostscript  # type: ignore
+        from report_service import GHOSTSCRIPT_ENABLED, GHOSTSCRIPT_QUALITY, _compress_pdf_with_ghostscript  
 
         if GHOSTSCRIPT_ENABLED and len(all_fichas) > 1:
             print(f"[PDF Consolidado] Aplicando compresión Ghostscript...")
@@ -446,7 +446,7 @@ async def generate_consolidated_pdf_progress(
     import uuid
     import tempfile
     import base64
-    from progress import format_sse_event  # type: ignore
+    from progress import format_sse_event  
 
     # Read logos before streaming starts
     logo_left_bytes = await logoLeft.read() if logoLeft else None
@@ -462,11 +462,11 @@ async def generate_consolidated_pdf_progress(
 
         async def run_generation():
             try:
-                from jinja2 import Environment, FileSystemLoader  # type: ignore
-                from weasyprint import HTML  # type: ignore
-                from pypdf import PdfWriter  # type: ignore
-                from concurrent.futures import ThreadPoolExecutor
-                from report_service import GHOSTSCRIPT_ENABLED, GHOSTSCRIPT_QUALITY, _compress_pdf_with_ghostscript  # type: ignore
+                from jinja2 import Environment, FileSystemLoader  
+                from weasyprint import HTML  
+                from pypdf import PdfWriter  
+                from concurrent.futures import ThreadPoolExecutor, as_completed
+                from report_service import GHOSTSCRIPT_ENABLED, GHOSTSCRIPT_QUALITY, _compress_pdf_with_ghostscript  
                 import gc
 
                 all_fichas = db.get_all_fichas()
@@ -501,6 +501,7 @@ async def generate_consolidated_pdf_progress(
 
                 PDF_BATCH_SIZE = 5
                 temp_pdf_files = []
+                rendered_count = 0
 
                 def render_single_pdf(ficha_data):
                     try:
@@ -521,9 +522,29 @@ async def generate_consolidated_pdf_progress(
                     batch_end = min(batch_start + PDF_BATCH_SIZE, total)
                     batch_fichas = all_fichas[batch_start:batch_end]
                     with ThreadPoolExecutor(max_workers=PDF_BATCH_SIZE) as executor:
-                        results = list(executor.map(render_single_pdf, [f.model_dump() for f in batch_fichas]))
-                        temp_pdf_files.extend([p for p in results if p])
-                    await on_progress("rendering", min(batch_end, total), total, "")
+                        future_to_index = {
+                            executor.submit(render_single_pdf, ficha.model_dump()): batch_start + idx
+                            for idx, ficha in enumerate(batch_fichas)
+                        }
+                        batch_results = []
+                        for future in as_completed(future_to_index):
+                            original_index = future_to_index[future]
+                            try:
+                                pdf_path = future.result()
+                                if pdf_path:
+                                    batch_results.append((original_index, pdf_path))
+                            except Exception as e:
+                                print(f"[PDF Consolidado Fichas] Error renderizando: {e}")
+                            finally:
+                                rendered_count += 1
+                                await on_progress(
+                                    "rendering",
+                                    rendered_count,
+                                    total,
+                                    f"Ficha {rendered_count} de {total} generada",
+                                )
+                        batch_results.sort(key=lambda item: item[0])
+                        temp_pdf_files.extend([path for _, path in batch_results])
                     gc.collect()
 
                 if not temp_pdf_files:
@@ -535,6 +556,7 @@ async def generate_consolidated_pdf_progress(
                 output_path = os.path.join(tempfile.gettempdir(), filename)
 
                 pdf_writer = PdfWriter()
+                merged_count = 0
                 for pdf_path in temp_pdf_files:
                     try:
                         pdf_writer.append(pdf_path)
@@ -544,6 +566,14 @@ async def generate_consolidated_pdf_progress(
                             os.remove(pdf_path)
                         except OSError:
                             pass
+                    finally:
+                        merged_count += 1
+                        await on_progress(
+                            "merging",
+                            merged_count,
+                            len(temp_pdf_files),
+                            f"Documento {merged_count} de {len(temp_pdf_files)} unido",
+                        )
 
                 with open(output_path, 'wb') as f:
                     pdf_writer.write(f)
@@ -613,7 +643,7 @@ async def generate_pdf(
     Genera un PDF para una ficha técnica individual.
     """
     import base64
-    from jinja2 import Environment, FileSystemLoader  # type: ignore
+    from jinja2 import Environment, FileSystemLoader  
 
     try:
         ficha = db.get_ficha(fichaId)
@@ -644,7 +674,7 @@ async def generate_pdf(
             logo_right=logo_right_b64
         )
 
-        from weasyprint import HTML  # type: ignore
+        from weasyprint import HTML  
         pdf_bytes = HTML(
             string=html_content,
             base_url=templates_dir
@@ -679,7 +709,7 @@ async def generate_template_pdf(
     Genera un PDF con la plantilla en blanco de ficha técnica.
     """
     import base64
-    from jinja2 import Environment, FileSystemLoader  # type: ignore
+    from jinja2 import Environment, FileSystemLoader  
 
     try:
         async def process_logo(logo_file):
@@ -735,7 +765,7 @@ async def generate_template_pdf(
             logo_right=logo_right_b64
         )
 
-        from weasyprint import HTML  # type: ignore
+        from weasyprint import HTML  
         pdf_bytes = HTML(
             string=html_content,
             base_url=templates_dir

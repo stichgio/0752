@@ -1,4 +1,4 @@
-import React, { useRef, useCallback, useEffect, useState } from 'react';
+﻿import React, { useRef, useCallback, useEffect, useMemo, useState } from 'react';
 import {
     CanvasDocument,
     TemplateElement,
@@ -22,6 +22,7 @@ import {
     type SnapGuide,
 } from '../utils/snapUtils';
 import { Lock } from 'lucide-react';
+import { resolveDropPosition, shouldActivateDrag, type DropAnchor } from '../utils/dragDropUtils';
 
 interface CanvasAreaProps {
     document: CanvasDocument;
@@ -45,7 +46,7 @@ interface CanvasAreaProps {
 }
 
 interface InteractionState {
-    mode: 'idle' | 'drag' | 'resize' | 'rotate' | 'marquee';
+    mode: 'idle' | 'drag-pending' | 'drag' | 'resize' | 'rotate' | 'marquee';
     elementId: string | null;
     startClientX: number;
     startClientY: number;
@@ -98,6 +99,13 @@ interface PaletteDragPayload {
     type?: ElementType;
     presetId?: ElementPreset;
     overrides?: Partial<TemplateElement>;
+    dropSize?: TemplateElement['size'];
+    dropAnchor?: DropAnchor;
+}
+
+interface PaletteBlockPayload {
+    dropSize?: TemplateElement['size'];
+    dropAnchor?: DropAnchor;
 }
 
 interface DragResolution {
@@ -146,6 +154,21 @@ export function CanvasArea({
     });
     const [aspectLockIndicator, setAspectLockIndicator] = useState<{ x: number; y: number } | null>(null);
     const gridPatternIdRef = useRef(`canvas-grid-${Math.random().toString(36).slice(2, 9)}`);
+    const elementMap = useMemo(() => {
+        const next = new Map<string, TemplateElement>();
+        doc.elements.forEach((element) => {
+            next.set(element.id, element);
+        });
+        return next;
+    }, [doc.elements]);
+    const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
+    const sortedVisibleElements = useMemo(
+        () =>
+            [...doc.elements]
+                .filter((element) => element.visible !== false)
+                .sort((a, b) => (a.style.zIndex || 0) - (b.style.zIndex || 0)),
+        [doc.elements],
+    );
 
     const docRef = useRef(doc);
     const scaleRef = useRef(zoom / 100);
@@ -163,6 +186,7 @@ export function CanvasArea({
     const activeDragPointerIdRef = useRef<number | null>(null);
     const activeDragPointerTargetRef = useRef<HTMLElement | null>(null);
     const elementNodeMapRef = useRef<Map<string, HTMLDivElement>>(new Map());
+    const elementMapRef = useRef(elementMap);
     const verticalGuideRef = useRef<HTMLDivElement>(null);
     const horizontalGuideRef = useRef<HTMLDivElement>(null);
     const snapEnabledRef = useRef(snapEnabled);
@@ -172,6 +196,7 @@ export function CanvasArea({
     pageSettingsRef.current = pageSettings;
     selectedIdsRef.current = selectedIds;
     snapEnabledRef.current = snapEnabled;
+    elementMapRef.current = elementMap;
 
     const scale = zoom / 100;
     const mmToCanvasPx = (mm: number) => mmToPx(mm);
@@ -337,7 +362,7 @@ export function CanvasArea({
             if (!pointer) return null;
 
             const draggedIds = state.dragIds.length > 0 ? state.dragIds : [state.elementId];
-            const elementMap = new Map(docRef.current.elements.map((element) => [element.id, element]));
+            const elementMap = elementMapRef.current;
             const anchorInitial = state.dragInitialPositions[state.elementId] ?? state.initialPos;
 
             let deltaX = pointer.x - dragPointerOffsetRef.current.x - anchorInitial.x;
@@ -440,11 +465,65 @@ export function CanvasArea({
     }, [applyDragVisualAt]);
 
     const scheduleDragFrame = useCallback(() => {
-        if (dragRafRef.current !== null) {
-            window.cancelAnimationFrame(dragRafRef.current);
-        }
+        if (dragRafRef.current !== null) return;
         dragRafRef.current = window.requestAnimationFrame(flushPendingDragFrame);
     }, [flushPendingDragFrame]);
+
+    const activatePendingDrag = useCallback(
+        (point: PendingDragPoint) => {
+            const state = interactionRef.current;
+            if (state.mode !== 'drag-pending' || !state.elementId) return;
+
+            const dragIds = state.dragIds.length > 0 ? state.dragIds : [state.elementId];
+            refreshDocumentSnapLines();
+            activeSnapLinesRef.current = collectSnapLines(documentSnapLinesRef.current, dragIds);
+            pendingDragPointRef.current = point;
+            interactionRef.current = { ...state, mode: 'drag' };
+            setDragSession({
+                active: true,
+                primaryId: state.elementId,
+                dragIds,
+            });
+        },
+        [refreshDocumentSnapLines],
+    );
+
+    const cancelPendingDrag = useCallback(() => {
+        const state = interactionRef.current;
+        if (state.mode !== 'drag-pending') return;
+
+        if (dragRafRef.current !== null) {
+            window.cancelAnimationFrame(dragRafRef.current);
+            dragRafRef.current = null;
+        }
+
+        const draggedIds = state.dragIds.length > 0
+            ? state.dragIds
+            : (state.elementId ? [state.elementId] : []);
+        if (draggedIds.length > 0) {
+            clearDragVisual(draggedIds);
+        }
+        clearAlignmentGuideVisual();
+        dragPointerOffsetRef.current = { x: 0, y: 0 };
+
+        const pointerId = activeDragPointerIdRef.current;
+        const pointerTarget = activeDragPointerTargetRef.current;
+        if (
+            pointerId !== null &&
+            pointerTarget &&
+            pointerTarget.hasPointerCapture(pointerId)
+        ) {
+            pointerTarget.releasePointerCapture(pointerId);
+        }
+
+        activeDragPointerIdRef.current = null;
+        activeDragPointerTargetRef.current = null;
+        pendingDragPointRef.current = null;
+        lastResolvedDragRef.current = null;
+        activeSnapLinesRef.current = null;
+        setDragSession({ active: false, primaryId: null, dragIds: [] });
+        interactionRef.current = { ...defaultInteraction };
+    }, [clearAlignmentGuideVisual, clearDragVisual]);
 
     const commitDrag = useCallback(
         () => {
@@ -458,7 +537,7 @@ export function CanvasArea({
             const deltaX = resolved.deltaX;
             const deltaY = resolved.deltaY;
             const updates = new Map<string, Partial<TemplateElement>>();
-            const elementMap = new Map(docRef.current.elements.map((el) => [el.id, el]));
+            const elementMap = elementMapRef.current;
 
             draggedIds.forEach((dragId) => {
                 const initial = state.dragInitialPositions[dragId];
@@ -760,6 +839,11 @@ export function CanvasArea({
     const handleGlobalMouseUp = useCallback(() => {
         const state = interactionRef.current;
 
+        if (state.mode === 'drag-pending') {
+            cancelPendingDrag();
+            return;
+        }
+
         if (state.mode === 'drag') {
             const point = pendingDragPointRef.current ?? {
                 clientX: state.startClientX,
@@ -782,7 +866,7 @@ export function CanvasArea({
         clearAlignmentGuideVisual();
         setAspectLockIndicator(null);
         interactionRef.current = { ...defaultInteraction };
-    }, [clearAlignmentGuideVisual, finishDrag, refreshDocumentSnapLines]);
+    }, [cancelPendingDrag, clearAlignmentGuideVisual, finishDrag, refreshDocumentSnapLines]);
 
     useEffect(() => {
         window.addEventListener('mousemove', handleGlobalMouseMove);
@@ -806,25 +890,43 @@ export function CanvasArea({
     useEffect(() => {
         const handleWindowPointerMove = (e: PointerEvent) => {
             const state = interactionRef.current;
-            if (state.mode !== 'drag' || !state.elementId) return;
+            if (state.mode !== 'drag' && state.mode !== 'drag-pending') return;
+            if (!state.elementId) return;
 
             const activePointerId = activeDragPointerIdRef.current;
             if (activePointerId === null || e.pointerId !== activePointerId) return;
 
-            pendingDragPointRef.current = {
+            const point = {
                 clientX: e.clientX,
                 clientY: e.clientY,
                 bypassSnap: isSnapTemporarilyDisabled(e),
             };
-            scheduleDragFrame();
+            pendingDragPointRef.current = point;
+
+            if (state.mode === 'drag-pending') {
+                const deltaX = e.clientX - state.startClientX;
+                const deltaY = e.clientY - state.startClientY;
+                if (!shouldActivateDrag(deltaX, deltaY)) return;
+                activatePendingDrag(point);
+            }
+
+            if (interactionRef.current.mode === 'drag') {
+                scheduleDragFrame();
+            }
         };
 
         const handleWindowPointerUp = (e: PointerEvent) => {
             const state = interactionRef.current;
-            if (state.mode !== 'drag' || !state.elementId) return;
+            if (state.mode !== 'drag' && state.mode !== 'drag-pending') return;
+            if (!state.elementId) return;
 
             const activePointerId = activeDragPointerIdRef.current;
             if (activePointerId === null || e.pointerId !== activePointerId) return;
+
+            if (state.mode === 'drag-pending') {
+                cancelPendingDrag();
+                return;
+            }
 
             pendingDragPointRef.current = {
                 clientX: e.clientX,
@@ -840,10 +942,16 @@ export function CanvasArea({
 
         const handleWindowPointerCancel = (e: PointerEvent) => {
             const state = interactionRef.current;
-            if (state.mode !== 'drag' || !state.elementId) return;
+            if (state.mode !== 'drag' && state.mode !== 'drag-pending') return;
+            if (!state.elementId) return;
 
             const activePointerId = activeDragPointerIdRef.current;
             if (activePointerId === null || e.pointerId !== activePointerId) return;
+
+            if (state.mode === 'drag-pending') {
+                cancelPendingDrag();
+                return;
+            }
 
             finishDrag({
                 clientX: e.clientX,
@@ -854,6 +962,10 @@ export function CanvasArea({
 
         const handleWindowBlur = () => {
             const state = interactionRef.current;
+            if (state.mode === 'drag-pending') {
+                cancelPendingDrag();
+                return;
+            }
             if (state.mode !== 'drag' || !state.elementId) return;
             const point = pendingDragPointRef.current ?? {
                 clientX: state.startClientX,
@@ -873,7 +985,7 @@ export function CanvasArea({
             window.removeEventListener('pointercancel', handleWindowPointerCancel);
             window.removeEventListener('blur', handleWindowBlur);
         };
-    }, [finishDrag, scheduleDragFrame]);
+    }, [activatePendingDrag, cancelPendingDrag, finishDrag, scheduleDragFrame]);
 
     useEffect(() => {
         if (!dragSession.active) return;
@@ -891,7 +1003,7 @@ export function CanvasArea({
 
     useEffect(() => {
         const mode = interactionRef.current.mode;
-        if (mode === 'drag' || mode === 'resize') return;
+        if (mode === 'drag' || mode === 'drag-pending' || mode === 'resize') return;
         refreshDocumentSnapLines();
     }, [doc.elements, pageSettings, refreshDocumentSnapLines]);
 
@@ -911,14 +1023,15 @@ export function CanvasArea({
                 return;
             }
 
-            const element = docRef.current.elements.find((el) => el.id === id);
+            const elementMap = elementMapRef.current;
+            const element = elementMap.get(id);
             if (!element || element.locked) return;
 
             const selected = selectedIdsRef.current;
             const shouldDragSelection = selected.includes(id) && selected.length > 1 && !e.shiftKey;
             const candidateIds = shouldDragSelection ? selected : [id];
             const dragIds = candidateIds.filter((targetId) => {
-                const target = docRef.current.elements.find((item) => item.id === targetId);
+                const target = elementMap.get(targetId);
                 return !!target && !target.locked;
             });
 
@@ -931,7 +1044,7 @@ export function CanvasArea({
             let maxY = Number.NEGATIVE_INFINITY;
 
             dragIds.forEach((targetId) => {
-                const target = docRef.current.elements.find((item) => item.id === targetId);
+                const target = elementMap.get(targetId);
                 if (!target) return;
                 dragInitialPositions[targetId] = { ...target.position };
                 minX = Math.min(minX, target.position.x);
@@ -959,8 +1072,6 @@ export function CanvasArea({
             pointerTarget.setPointerCapture(e.pointerId);
             activeDragPointerIdRef.current = e.pointerId;
             activeDragPointerTargetRef.current = pointerTarget;
-            refreshDocumentSnapLines();
-            activeSnapLinesRef.current = collectSnapLines(documentSnapLinesRef.current, dragIds);
 
             if (dragRafRef.current !== null) {
                 window.cancelAnimationFrame(dragRafRef.current);
@@ -969,6 +1080,7 @@ export function CanvasArea({
 
             clearDragVisual(dragIds);
             clearAlignmentGuideVisual();
+            activeSnapLinesRef.current = null;
             dragOffsetRef.current = { x: 0, y: 0 };
             dragPointerOffsetRef.current = {
                 x: pointerInCanvas.x - primaryInitialPos.x,
@@ -989,7 +1101,7 @@ export function CanvasArea({
 
             interactionRef.current = {
                 ...defaultInteraction,
-                mode: 'drag',
+                mode: 'drag-pending',
                 elementId: id,
                 startClientX: e.clientX,
                 startClientY: e.clientY,
@@ -998,14 +1110,9 @@ export function CanvasArea({
                 dragInitialPositions,
                 dragBounds,
             };
-
-            setDragSession({
-                active: true,
-                primaryId: id,
-                dragIds,
-            });
+            setDragSession({ active: false, primaryId: null, dragIds: [] });
         },
-        [clearAlignmentGuideVisual, clearDragVisual, getCanvasPointFromClient, refreshDocumentSnapLines],
+        [clearAlignmentGuideVisual, clearDragVisual, getCanvasPointFromClient],
     );
 
     const handleResizeStart = useCallback((e: React.PointerEvent, element: TemplateElement, direction: string) => {
@@ -1128,17 +1235,33 @@ export function CanvasArea({
             const yMm = pxToMm((e.clientY - pageRect.top) / currentScale);
             const pageWidth = pageSettingsRef.current.width;
             const pageHeight = pageSettingsRef.current.height;
-            const dropPos = {
-                x: snapToGrid(Math.max(0, Math.min(pageWidth, xMm))),
-                y: snapToGrid(Math.max(0, Math.min(pageHeight, yMm))),
-            };
+            const dropSnap = isSnapTemporarilyDisabled(e) ? (value: number) => value : snapToGrid;
+            const modifierAnchor: DropAnchor | undefined = e.shiftKey ? 'center' : undefined;
+
+            let blockPayload: PaletteBlockPayload | null = null;
+            const blockPayloadRaw = e.dataTransfer.getData('application/template-editor-block-meta');
+            if (blockPayloadRaw) {
+                try {
+                    const parsed = JSON.parse(blockPayloadRaw) as PaletteBlockPayload;
+                    if (parsed && typeof parsed === 'object') blockPayload = parsed;
+                } catch {
+                    blockPayload = null;
+                }
+            }
 
             const blockId = (
                 e.dataTransfer.getData('application/template-editor-block') ||
                 e.dataTransfer.getData('blockType')
             ) as BlockPreset;
             if (blockId && onAddBlock) {
-                onAddBlock(blockId, dropPos);
+                const blockDropPos = resolveDropPosition({
+                    point: { x: xMm, y: yMm },
+                    pageSize: { width: pageWidth, height: pageHeight },
+                    elementSize: blockPayload?.dropSize,
+                    anchor: modifierAnchor || blockPayload?.dropAnchor || 'top-left',
+                    snap: dropSnap,
+                });
+                onAddBlock(blockId, blockDropPos);
                 return;
             }
 
@@ -1175,6 +1298,14 @@ export function CanvasArea({
                     }
                 }
             }
+
+            const dropPos = resolveDropPosition({
+                point: { x: xMm, y: yMm },
+                pageSize: { width: pageWidth, height: pageHeight },
+                elementSize: payload?.dropSize || overrides?.size,
+                anchor: modifierAnchor || payload?.dropAnchor || 'top-left',
+                snap: dropSnap,
+            });
 
             onAddElement(type, dropPos, presetId, overrides);
         },
@@ -1305,26 +1436,23 @@ export function CanvasArea({
                         }}
                     />
 
-                    {doc.elements
-                        .filter((el) => el.visible !== false)
-                        .sort((a, b) => (a.style.zIndex || 0) - (b.style.zIndex || 0))
-                        .map((el) => (
-                            <CanvasElement
-                                key={el.id}
-                                element={el}
-                                scale={scale}
-                                isSelected={selectedIds.includes(el.id)}
-                                onSelect={handleSelect}
-                                onUpdateElement={updateElement}
-                                onDragStart={handleDragStart}
-                                onResizeStart={handleResizeStart}
-                                onRotateStart={handleRotateStart}
-                                dataPreview={dataPreview}
-                                isDragging={dragSession.active && dragSession.dragIds.includes(el.id)}
-                                suppressPointerEvents={dragSession.active}
-                                onSetNodeRef={setElementNodeRef}
-                            />
-                        ))}
+                    {sortedVisibleElements.map((el) => (
+                        <CanvasElement
+                            key={el.id}
+                            element={el}
+                            scale={scale}
+                            isSelected={selectedIdSet.has(el.id)}
+                            onSelect={handleSelect}
+                            onUpdateElement={updateElement}
+                            onDragStart={handleDragStart}
+                            onResizeStart={handleResizeStart}
+                            onRotateStart={handleRotateStart}
+                            dataPreview={dataPreview}
+                            isDragging={dragSession.active && dragSession.dragIds.includes(el.id)}
+                            suppressPointerEvents={dragSession.active}
+                            onSetNodeRef={setElementNodeRef}
+                        />
+                    ))}
 
                     {marquee && (
                         <div
@@ -1371,3 +1499,11 @@ export function CanvasArea({
         </div>
     );
 }
+
+
+
+
+
+
+
+

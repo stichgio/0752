@@ -1,5 +1,5 @@
 import React from 'react';
-import { TemplateElement, PageSettings, PhotoGridCount, PhotoGridOddPosition } from '../canvasTypes';
+import { TemplateElement, PageSettings, PhotoGridCount, PhotoGridOddPosition, type DocumentTheme } from '../canvasTypes';
 import { TransformPanel } from './TransformPanel.tsx';
 import { StylePanel } from './StylePanel.tsx';
 import { PageSettingsPanel } from './PageSettingsPanel.tsx';
@@ -18,6 +18,7 @@ interface InspectorRootProps {
     selectedIds: string[];
     elements: TemplateElement[];
     onUpdateElement: (id: string, updates: Partial<TemplateElement>) => void;
+    theme?: DocumentTheme;
     pageSettings: PageSettings;
     onPageSettingsChange: (settings: PageSettings) => void;
 }
@@ -27,6 +28,7 @@ export function InspectorRoot({
     selectedIds,
     elements,
     onUpdateElement,
+    theme,
     pageSettings,
     onPageSettingsChange,
 }: InspectorRootProps) {
@@ -102,7 +104,7 @@ export function InspectorRoot({
             <TransformPanel element={primaryElement} onUpdate={onUpdateElement} />
 
             {/* Style */}
-            <StylePanel element={primaryElement} onUpdate={onUpdateElement} />
+            <StylePanel element={primaryElement} onUpdate={onUpdateElement} theme={theme} />
 
             {/* Variable - Jinja2 expression with backend presets */}
             {primaryElement.type === 'variable' && (
@@ -286,3 +288,4 @@ export function InspectorRoot({
         </div>
     );
 }
+

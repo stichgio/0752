@@ -7,7 +7,7 @@ import tempfile
 import threading
 from typing import Any, Dict, List, Optional, TypeVar, Generic
 
-from pydantic import BaseModel  # type: ignore
+from pydantic import BaseModel  
 
 T = TypeVar("T", bound=BaseModel)
 

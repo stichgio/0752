@@ -7,9 +7,9 @@ import json
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
-import httpx  # type: ignore
+import httpx  
 
-from config import settings  # type: ignore
+from config import settings  
 
 
 class OCRServiceError(RuntimeError):
@@ -36,7 +36,7 @@ class OCRStructuredResult:
 
 def _render_pdf_pages_to_png(pdf_bytes: bytes, *, dpi: int, max_pages: int) -> Tuple[List[bytes], int]:
     try:
-        import fitz  # type: ignore
+        import fitz  
     except Exception as exc:
         raise OCRConfigurationError(
             "OCR de PDF no disponible. Instala PyMuPDF para renderizar paginas escaneadas."
@@ -68,7 +68,7 @@ class StructuredPostProcessor:
         for line in text.splitlines():
             clean = line.strip()
             if clean:
-                return clean[:140]  # type: ignore
+                return clean[:140]  
         return ""
 
     def _structured_general(self, text: str) -> Dict[str, Any]:
@@ -80,15 +80,15 @@ class StructuredPostProcessor:
             k = key.strip()
             v = value.strip()
             if k and v:
-                key_values.append({"campo": k[:80], "valor": v[:200]})  # type: ignore
+                key_values.append({"campo": k[:80], "valor": v[:200]})  
             if len(key_values) >= 20:
                 break
 
-        entities = sorted({item["campo"] for item in key_values})[:15]  # type: ignore
-        summary = " ".join([ln.strip() for ln in text.splitlines() if ln.strip()][:8])[:800]  # type: ignore
+        entities = sorted({item["campo"] for item in key_values})[:15]  
+        summary = " ".join([ln.strip() for ln in text.splitlines() if ln.strip()][:8])[:800]  
 
         if not key_values and text.strip():
-            key_values.append({"campo": "texto_principal", "valor": text.strip()[:300]})  # type: ignore
+            key_values.append({"campo": "texto_principal", "valor": text.strip()[:300]})  
 
         return {
             "titulo": self._safe_line(text),
@@ -123,7 +123,7 @@ class StructuredPostProcessor:
 
         return {
             "proveedor": self._safe_line(text),
-            "cliente": (client_match.group(1).strip()[:160] if client_match else ""),  # type: ignore
+            "cliente": (client_match.group(1).strip()[:160] if client_match else ""),  
             "numero_documento": (invoice_match.group(1).strip() if invoice_match else ""),
             "fecha_emision": self._first_date(text),
             "moneda": currency,
@@ -142,12 +142,12 @@ class StructuredPostProcessor:
         return {
             "tipo_documento": "identidad",
             "numero_documento": (doc_match.group(0) if doc_match else ""),
-            "nombres": (name_match.group(1).strip()[:120] if name_match else ""),  # type: ignore
-            "apellidos": (surname_match.group(1).strip()[:120] if surname_match else ""),  # type: ignore
+            "nombres": (name_match.group(1).strip()[:120] if name_match else ""),  
+            "apellidos": (surname_match.group(1).strip()[:120] if surname_match else ""),  
             "fecha_nacimiento": "",
             "fecha_emision": self._first_date(text),
             "fecha_vencimiento": "",
-            "direccion": (address_match.group(1).strip()[:180] if address_match else ""),  # type: ignore
+            "direccion": (address_match.group(1).strip()[:180] if address_match else ""),  
         }
 
     def build_structured_data(self, *, schema_name: str, text: str) -> Dict[str, Any]:
@@ -173,7 +173,7 @@ class FreeOCRService(StructuredPostProcessor):
             return self._engine
 
         try:
-            from rapidocr_onnxruntime import RapidOCR  # type: ignore
+            from rapidocr_onnxruntime import RapidOCR  
         except Exception as exc:
             raise OCRConfigurationError(
                 "OCR local no disponible. Instala rapidocr-onnxruntime y sus dependencias."
@@ -197,8 +197,8 @@ class FreeOCRService(StructuredPostProcessor):
 
     def _ocr_image_bytes(self, image_bytes: bytes) -> str:
         try:
-            from PIL import Image  # type: ignore
-            import numpy as np  # type: ignore
+            from PIL import Image  
+            import numpy as np  
         except Exception as exc:
             raise OCRConfigurationError(
                 "OCR local no disponible. Instala Pillow y numpy para procesar imagenes."
@@ -379,7 +379,7 @@ class OllamaOCRService(StructuredPostProcessor):
 
         instruction = (prompt or "Extrae informacion estructurada").strip()
         schema_json = json.dumps(schema, ensure_ascii=True)
-        ocr_text = (text_result.text or "")[:25000]  # type: ignore
+        ocr_text = (text_result.text or "")[:25000]  
         model_prompt = (
             f"{instruction}\n\n"
             f"Schema name: {schema_name}\n"

@@ -10,9 +10,9 @@ from __future__ import annotations
 import logging
 from pathlib import Path
 
-from pypdf import PdfReader, PdfWriter  # type: ignore
+from pypdf import PdfReader, PdfWriter  
 
-from .utils import (  # type: ignore
+from .utils import (  
     PDFProcessingError,
     PDFValidationError,
     ensure_directory,

@@ -12,9 +12,9 @@ import os
 from pathlib import Path
 from typing import Any
 
-from pypdf import PdfReader, PdfWriter  # type: ignore
+from pypdf import PdfReader, PdfWriter  
 
-from .utils import (  # type: ignore
+from .utils import (  
     PDFProcessingError,
     PDFValidationError,
     ensure_directory,
@@ -122,7 +122,7 @@ def organize_pdf(
             # Construir los rangos de segmentos a partir de los cortes
             # cuts son 0-indexed sobre el array resultado
             # Ejemplo: pages=[A,B,C,D], cuts=[1,3] → segmentos: [A,B], [C,D], []
-            split_points = sorted(cuts[:])  # type: ignore
+            split_points = sorted(cuts[:])  
             segments: list[tuple[int, int]] = []
             prev = 0
             for cut in split_points:

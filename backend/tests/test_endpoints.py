@@ -6,7 +6,7 @@ import io
 import os
 import sys
 import pytest
-from docx import Document  # type: ignore
+from docx import Document  
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 

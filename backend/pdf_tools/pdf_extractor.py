@@ -6,9 +6,9 @@ from __future__ import annotations
 import logging
 from io import BytesIO
 
-from pypdf import PdfReader, PdfWriter  # type: ignore
+from pypdf import PdfReader, PdfWriter  
 
-from .utils import PDFProcessingError, PDFValidationError, validate_pdf_file  # type: ignore
+from .utils import PDFProcessingError, PDFValidationError, validate_pdf_file  
 
 logger = logging.getLogger(__name__)
 

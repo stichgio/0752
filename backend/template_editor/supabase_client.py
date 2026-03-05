@@ -18,7 +18,7 @@ class SupabaseSettings:
 
 
 def load_supabase_settings() -> Optional[SupabaseSettings]:
-    from config import settings  # type: ignore  # lazy to avoid circular import at module init
+    from config import settings    # lazy to avoid circular import at module init
     url = settings.supabase_url.strip()
     key = settings.effective_supabase_key.strip()
     bucket = settings.template_storage_bucket.strip() or "template-assets"
@@ -38,7 +38,7 @@ class SupabaseTemplateClient:
             raise SupabaseNotConfiguredError("Se requieren SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY")
 
         try:
-            from supabase import create_client  # type: ignore
+            from supabase import create_client  
         except Exception as exc:  # pragma: no cover - depends on runtime env
             raise SupabaseOperationError(
                 "El paquete supabase no está instalado. Agréguelo a requirements antes de habilitar la persistencia con Supabase."

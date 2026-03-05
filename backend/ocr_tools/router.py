@@ -6,12 +6,12 @@ import json
 from pathlib import Path
 from typing import Any, Dict, Literal, Tuple
 
-import httpx  # type: ignore
-from docx import Document  # type: ignore
-from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile  # type: ignore
-from fastapi.responses import FileResponse, JSONResponse  # type: ignore
+import httpx  
+from docx import Document  
+from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile  
+from fastapi.responses import FileResponse, JSONResponse  
 
-from config import settings  # type: ignore
+from config import settings  
 from .service import OCRConfigurationError, OCRServiceError, OllamaOCRService, create_ocr_service
 
 router = APIRouter(prefix="/api/tools", tags=["ocr-tools"])

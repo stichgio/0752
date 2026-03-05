@@ -1357,7 +1357,7 @@ async def generate_consolidated_pdf_progress(
     import uuid
     import tempfile
     import base64
-    from progress import format_sse_event  # type: ignore
+    from progress import format_sse_event  
 
     # Read logos before streaming starts
     logo_left_bytes = await logoLeft.read() if logoLeft else None
@@ -1376,7 +1376,7 @@ async def generate_consolidated_pdf_progress(
                 from jinja2 import Environment, FileSystemLoader
                 from weasyprint import HTML
                 from pypdf import PdfWriter
-                from concurrent.futures import ThreadPoolExecutor
+                from concurrent.futures import ThreadPoolExecutor, as_completed
                 from report_service import GHOSTSCRIPT_ENABLED, GHOSTSCRIPT_QUALITY, _compress_pdf_with_ghostscript
                 import gc
 
@@ -1411,6 +1411,7 @@ async def generate_consolidated_pdf_progress(
 
                 PDF_BATCH_SIZE = 5
                 temp_pdf_files = []
+                rendered_count = 0
 
                 def render_single_pdf(report_data):
                     try:
@@ -1427,9 +1428,29 @@ async def generate_consolidated_pdf_progress(
                     batch_end = min(batch_start + PDF_BATCH_SIZE, total)
                     batch_reports = all_reports[batch_start:batch_end]
                     with ThreadPoolExecutor(max_workers=PDF_BATCH_SIZE) as executor:
-                        results = list(executor.map(render_single_pdf, [r.model_dump() for r in batch_reports]))
-                        temp_pdf_files.extend([p for p in results if p])
-                    await on_progress("rendering", min(batch_end, total), total, "")
+                        future_to_index = {
+                            executor.submit(render_single_pdf, report.model_dump()): batch_start + idx
+                            for idx, report in enumerate(batch_reports)
+                        }
+                        batch_results = []
+                        for future in as_completed(future_to_index):
+                            original_index = future_to_index[future]
+                            try:
+                                pdf_path = future.result()
+                                if pdf_path:
+                                    batch_results.append((original_index, pdf_path))
+                            except Exception as e:
+                                print(f"[PDF Consolidado] Error renderizando: {e}")
+                            finally:
+                                rendered_count += 1
+                                await on_progress(
+                                    "rendering",
+                                    rendered_count,
+                                    total,
+                                    f"Informe {rendered_count} de {total} generado",
+                                )
+                        batch_results.sort(key=lambda item: item[0])
+                        temp_pdf_files.extend([path for _, path in batch_results])
                     gc.collect()
 
                 if not temp_pdf_files:
@@ -1441,6 +1462,7 @@ async def generate_consolidated_pdf_progress(
                 output_path = os.path.join(tempfile.gettempdir(), filename)
 
                 pdf_writer = PdfWriter()
+                merged_count = 0
                 for pdf_path in temp_pdf_files:
                     try:
                         pdf_writer.append(pdf_path)
@@ -1450,6 +1472,14 @@ async def generate_consolidated_pdf_progress(
                             os.remove(pdf_path)
                         except OSError:
                             pass
+                    finally:
+                        merged_count += 1
+                        await on_progress(
+                            "merging",
+                            merged_count,
+                            len(temp_pdf_files),
+                            f"Documento {merged_count} de {len(temp_pdf_files)} unido",
+                        )
 
                 with open(output_path, 'wb') as f:
                     pdf_writer.write(f)

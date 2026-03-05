@@ -61,7 +61,7 @@ PDF_ENGINE_AVAILABLE = WEASYPRINT_AVAILABLE or (CHROME_PATH is not None)
 from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 import piexif
-from PIL import Image
+from PIL import Image, ImageOps
 import asyncio
 import httpx
 
@@ -99,6 +99,67 @@ MAX_IMAGE_SIZE = (
     int((A4_WIDTH_MM / 25.4) * TARGET_DPI),
     int((A4_HEIGHT_MM / 25.4) * TARGET_DPI)
 )
+
+SLOT_RENDER_DPI = 180
+LOGO_RENDER_DPI = 300
+
+
+def _mm_to_px(mm, dpi):
+    return int(round((mm / 25.4) * dpi))
+
+
+def _size_from_mm(width_mm, height_mm, dpi=TARGET_DPI):
+    return (_mm_to_px(width_mm, dpi), _mm_to_px(height_mm, dpi))
+
+
+BACKEND_TEMPLATE_IMAGE_SLOTS_MM = {
+    "report.html": {1: (135, 180), 2: (94, 180), 3: (94, 88), 4: (94, 88), 5: (94, 58), 6: (94, 58), "default": (94, 70)},
+    "aniegos_ate.html": {1: (135, 180), 2: (94, 180), 3: (94, 88), 4: (94, 88), 5: (94, 58), 6: (94, 58), "default": (94, 70)},
+    "report_volanteo.html": {"default": (92, 78)},
+    "format_etapas.html": {"default": (92, 76)},
+    "format_reservorios.html": {"default": (60, 54)},
+    "format_reservorios_2.html": {"default": (60, 54)},
+}
+
+DEFAULT_LOGO_MAX_SIZE = _size_from_mm(70, 24, LOGO_RENDER_DPI)
+
+
+def resolve_backend_template_image_max_size(template_name, image_count):
+    normalized_name = os.path.basename(template_name).lower() if template_name else ""
+    slots = BACKEND_TEMPLATE_IMAGE_SLOTS_MM.get(normalized_name)
+    if not slots:
+        return MAX_IMAGE_SIZE
+
+    width_mm, height_mm = slots.get(image_count, slots.get("default", (A4_WIDTH_MM, A4_HEIGHT_MM)))
+    return _size_from_mm(width_mm, height_mm, SLOT_RENDER_DPI)
+
+
+def _decode_data_uri(data_uri):
+    if not isinstance(data_uri, str) or not data_uri.startswith("data:") or "," not in data_uri:
+        return None, None
+
+    header, payload = data_uri.split(",", 1)
+    mime_type = header[5:].split(";", 1)[0] or "application/octet-stream"
+
+    try:
+        return base64.b64decode(payload), mime_type
+    except Exception:
+        return None, None
+
+
+def _normalize_image_mime(image_format, fallback="image/png"):
+    normalized = (image_format or "").upper()
+    format_to_mime = {
+        "JPEG": "image/jpeg",
+        "JPG": "image/jpeg",
+        "PNG": "image/png",
+        "WEBP": "image/webp",
+        "GIF": "image/gif",
+        "BMP": "image/bmp",
+        "TIFF": "image/tiff",
+    }
+    return format_to_mime.get(normalized, fallback)
+
 
 JPEG_QUALITY = 90
 MAX_CONCURRENT = 5
@@ -264,7 +325,7 @@ class ReportService:
 
         self._template_cache = {}
         self._image_cache = BoundedCache(maxsize=100)
-        self._logo_cache = {}
+        self._logo_cache = BoundedCache(maxsize=20)
 
         self._http_client = httpx.AsyncClient(
             timeout=30.0,
@@ -340,43 +401,78 @@ class ReportService:
             elif not isinstance(image_content, bytes):
                 return None
 
-            img = Image.open(io.BytesIO(image_content))
-            del image_content
+            with Image.open(io.BytesIO(image_content)) as opened_img:
+                img = ImageOps.exif_transpose(opened_img)
 
-            if img.mode in ('RGBA', 'P', 'LA'):
-                background = Image.new('RGB', img.size, (255, 255, 255))
-                if img.mode == 'P':
-                    img = img.convert('RGBA')
-                if img.mode in ('RGBA', 'LA'):
-                    background.paste(img, mask=img.split()[-1])
-                else:
-                    background.paste(img)
-                img.close()
-                img = background
-            elif img.mode != 'RGB':
-                old_img = img
-                img = img.convert('RGB')
-                old_img.close()
+                if img.mode in ('RGBA', 'P', 'LA'):
+                    background = Image.new('RGB', img.size, (255, 255, 255))
+                    if img.mode == 'P':
+                        img = img.convert('RGBA')
+                    if img.mode in ('RGBA', 'LA'):
+                        background.paste(img, mask=img.split()[-1])
+                    else:
+                        background.paste(img)
+                    img = background
+                elif img.mode != 'RGB':
+                    img = img.convert('RGB')
 
-            if img.width <= max_size[0] and img.height <= max_size[1]:
-                effective_size = (img.width, img.height)
-            else:
-                effective_size = max_size
+                if img.width > max_size[0] or img.height > max_size[1]:
+                    img.thumbnail(max_size, Image.Resampling.LANCZOS)
 
-            img.thumbnail(effective_size, Image.Resampling.BILINEAR)
-
-            buffer = io.BytesIO()
-            img.save(buffer, format="JPEG", quality=quality)
-            img.close()
-
-            buffer.seek(0)
-            result = buffer.getvalue()
-            buffer.close()
-
-            return result
+                buffer = io.BytesIO()
+                img.save(
+                    buffer,
+                    format="JPEG",
+                    quality=quality,
+                    optimize=True,
+                    progressive=True,
+                )
+                return buffer.getvalue()
         except Exception as e:
             print(f"Error optimizing image: {e}")
             return None
+
+    @staticmethod
+    def optimize_logo_for_pdf(logo_content, max_size=DEFAULT_LOGO_MAX_SIZE, mime_type="image/png"):
+        """Reduce logos sobredimensionados sin afectar su calidad visible en plantilla."""
+        try:
+            if not isinstance(logo_content, bytes):
+                return None, mime_type
+
+            with Image.open(io.BytesIO(logo_content)) as opened_img:
+                img = ImageOps.exif_transpose(opened_img)
+                detected_mime = _normalize_image_mime(opened_img.format, mime_type)
+                needs_resize = img.width > max_size[0] or img.height > max_size[1]
+                if not needs_resize:
+                    return logo_content, detected_mime
+
+                preserve_png = detected_mime == "image/png" or img.mode in ('RGBA', 'LA', 'P')
+
+                if preserve_png:
+                    if img.mode == 'P':
+                        img = img.convert('RGBA')
+                    elif img.mode not in ('RGBA', 'LA', 'RGB'):
+                        img = img.convert('RGBA')
+                    img.thumbnail(max_size, Image.Resampling.LANCZOS)
+                    buffer = io.BytesIO()
+                    img.save(buffer, format="PNG", optimize=True)
+                    return buffer.getvalue(), "image/png"
+
+                if img.mode != 'RGB':
+                    img = img.convert('RGB')
+                img.thumbnail(max_size, Image.Resampling.LANCZOS)
+                buffer = io.BytesIO()
+                img.save(
+                    buffer,
+                    format="JPEG",
+                    quality=95,
+                    optimize=True,
+                    progressive=True,
+                )
+                return buffer.getvalue(), "image/jpeg"
+        except Exception as e:
+            print(f"Error optimizing logo: {e}")
+            return None, mime_type
 
     def _convert_to_degrees(self, value):
         d = float(value[0][0]) / float(value[0][1])
@@ -396,23 +492,39 @@ class ReportService:
 
         logo_hash = hashlib.sha256(str(logo_data).encode("utf-8") if not isinstance(logo_data, bytes) else logo_data).hexdigest()
         cache_key = f"logo_{side}_{logo_hash}"
-        if cache_key in self._logo_cache:
-            return self._logo_cache[cache_key]
+        cached_logo = self._logo_cache.get(cache_key)
+        if cached_logo is not None:
+            return cached_logo
 
         try:
-            if isinstance(logo_data, str) and logo_data.startswith("data:"):
-                self._logo_cache[cache_key] = logo_data
-                return logo_data
+            logo_bytes = None
+            logo_mime = "image/png"
 
-            if isinstance(logo_data, bytes):
+            if isinstance(logo_data, str) and logo_data.startswith("data:"):
+                decoded_bytes, decoded_mime = _decode_data_uri(logo_data)
+                if decoded_bytes is None:
+                    self._logo_cache.put(cache_key, logo_data)
+                    return logo_data
+                logo_bytes = decoded_bytes
+                logo_mime = decoded_mime or logo_mime
+            elif isinstance(logo_data, bytes):
                 logo_bytes = logo_data
             elif isinstance(logo_data, str):
-                logo_bytes = logo_data.encode()
+                self._logo_cache.put(cache_key, logo_data)
+                return logo_data
             else:
                 return logo_data
 
-            data_uri = self._convert_to_base64_uri(logo_bytes, "image/png")
-            self._logo_cache[cache_key] = data_uri
+            optimized_logo, optimized_mime = self.optimize_logo_for_pdf(
+                logo_bytes,
+                max_size=DEFAULT_LOGO_MAX_SIZE,
+                mime_type=logo_mime,
+            )
+            final_bytes = optimized_logo or logo_bytes
+            final_mime = optimized_mime or logo_mime
+
+            data_uri = self._convert_to_base64_uri(final_bytes, final_mime)
+            self._logo_cache.put(cache_key, data_uri)
             return data_uri
         except Exception as e:
             print(f"Error processing logo: {e}")
@@ -587,10 +699,12 @@ class ReportService:
         start_time = time.time()
         print(f"[PDF] Starting BATCHED generation: {total_reports} reports (batch_size={PDF_BATCH_SIZE})")
 
-        logo_left_uri = logo_left
-        logo_right_uri = logo_right
+        logo_left_uri = self._process_logo(logo_left, "left")
+        logo_right_uri = self._process_logo(logo_right, "right")
 
         # Template Selection con manejo de errores
+        use_single_pass_render = False
+        backend_template_name = None
         if custom_template_str:
             from jinja2 import Template
             template = Template(custom_template_str)
@@ -602,52 +716,66 @@ class ReportService:
             else:
                 try:
                     template = self.get_template(template_name)
+                    backend_template_name = os.path.basename(template_name)
+                    use_single_pass_render = True
                 except Exception:
                     print(f"Template {template_name} not found, falling back to default")
                     template = self.template
+                    backend_template_name = "report.html"
+                    use_single_pass_render = True
         else:
             template = self.template
+            backend_template_name = "report.html"
+            use_single_pass_render = True
 
         # =====================================================================
-        # FASE 1: Pre-procesar todos los HTMLs en paralelo (batched)
+        # FASE 1: Pre-procesar todos los reportes en paralelo (batched)
         # =====================================================================
-        async def prepare_single_html(i, report):
+        async def prepare_single_render_input(i, report):
             """Prepara un HTML individual con sus imágenes procesadas"""
             try:
                 row_data = report.get("data", {})
                 files = report.get("files", [])
 
                 # Procesar imágenes
+                image_max_size = resolve_backend_template_image_max_size(
+                    backend_template_name,
+                    len(files),
+                )
                 images, layout_mode, img_count = await self._process_files_serial(
                     files,
-                    max_size=MAX_IMAGE_SIZE,
+                    max_size=image_max_size,
                     quality=JPEG_QUALITY
                 )
 
-                single_report_context = [{
+                report_context = {
                     "data": row_data,
                     "images": images,
                     "layout_mode": layout_mode,
                     "img_count": img_count
-                }]
+                }
+
+                if use_single_pass_render:
+                    return {"report": report_context, "index": i}
 
                 html_out = template.render(
-                    reports=single_report_context,
+                    reports=[report_context],
                     report=row_data,
                     title="PANEL FOTOGRÁFICO",
                     logo_left=logo_left_uri or logo_left,
                     logo_right=logo_right_uri or logo_right
                 )
 
-                return {'html': html_out, 'index': i}
+                return {"html": html_out, "index": i}
 
             except Exception as e:
-                print(f"[PDF] Error preparing HTML {i}: {e}")
+                print(f"[PDF] Error preparing report {i}: {e}")
                 import traceback
                 traceback.print_exc()
                 return None
 
-        all_html_items = []
+        prepared_items = []
+        prepared_count = 0
         html_batch_size = HTML_PREFETCH_SIZE
 
         for batch_start in range(0, total_reports, html_batch_size):
@@ -655,25 +783,104 @@ class ReportService:
             batch_reports = reports_list[batch_start:batch_end]
 
             tasks = [
-                prepare_single_html(batch_start + idx, report)
+                prepare_single_render_input(batch_start + idx, report)
                 for idx, report in enumerate(batch_reports)
             ]
-            batch_results = await asyncio.gather(*tasks)
+            for completed_task in asyncio.as_completed(tasks):
+                result = await completed_task
+                prepared_count += 1
+                if result is not None:
+                    prepared_items.append(result)
+                if on_progress:
+                    await on_progress(
+                        "preparing",
+                        prepared_count,
+                        total_reports,
+                        f"Documento {prepared_count} de {total_reports} preparado",
+                    )
 
-            valid_results = [r for r in batch_results if r is not None]
-            all_html_items.extend(valid_results)
-
-            print(f"[PDF] HTMLs prepared: {len(all_html_items)}/{total_reports}")
-            if on_progress:
-                await on_progress("preparing", len(all_html_items), total_reports, "")
+            print(f"[PDF] Reports prepared: {prepared_count}/{total_reports}")
 
             if batch_end % GC_INTERVAL == 0:
                 gc.collect()
 
-        if not all_html_items:
-            raise RuntimeError("No se preparó ningún HTML exitosamente")
+        if not prepared_items:
+            raise RuntimeError("No se preparó ningún reporte exitosamente")
 
-        all_html_items.sort(key=lambda x: x['index'])
+        prepared_items.sort(key=lambda x: x["index"])
+
+        if use_single_pass_render:
+            single_pdf_path = None
+            final_output_path = None
+            compression_stats = None
+            merge_time = 0.0
+
+            try:
+                loop = asyncio.get_running_loop()
+                print(f"[PDF] Rendering combined HTML for {len(prepared_items)} reports...")
+                combined_reports = [item["report"] for item in prepared_items]
+                combined_html = template.render(
+                    reports=combined_reports,
+                    report=combined_reports[0]["data"] if combined_reports else {},
+                    title="PANEL FOTOGRÁFICO",
+                    logo_left=logo_left_uri or logo_left,
+                    logo_right=logo_right_uri or logo_right
+                )
+
+                single_pdf_path = await loop.run_in_executor(None, _render_pdf_to_file_safe, combined_html)
+                if not single_pdf_path:
+                    raise RuntimeError("No se generó el PDF consolidado. WeasyPrint puede no estar disponible en el servidor.")
+
+                if on_progress:
+                    await on_progress("rendering", total_reports, total_reports, "")
+                    await on_progress("merging", 1, 1, "")
+
+                if output_path:
+                    os.replace(single_pdf_path, output_path)
+                    final_output_path = output_path
+                    single_pdf_path = None
+                else:
+                    final_output_path = single_pdf_path
+                    single_pdf_path = None
+
+                if GHOSTSCRIPT_ENABLED and total_reports > 1:
+                    print(f"[PDF] Applying Ghostscript compression (quality={GHOSTSCRIPT_QUALITY})...")
+                    if on_progress:
+                        await on_progress("compressing", 0, 1, "")
+                    compress_start = time.time()
+
+                    success, final_output_path, compression_stats = _compress_pdf_with_ghostscript(
+                        final_output_path,
+                        quality=GHOSTSCRIPT_QUALITY
+                    )
+
+                    compress_time = time.time() - compress_start
+                    print(f"[PDF]    - Compression time: {compress_time:.1f}s")
+
+                if output_path:
+                    result = output_path
+                else:
+                    with open(final_output_path, "rb") as f:
+                        result = f.read()
+                    os.remove(final_output_path)
+
+                total_time = time.time() - start_time
+                gen_time = total_time - merge_time
+                print(f"[PDF] ✅ Complete! {total_reports} reports in {total_time:.1f}s ({total_reports/total_time:.1f} reports/sec)")
+                print(f"[PDF]    - Generation + HTML: {gen_time:.1f}s")
+                print("[PDF]    - Merge skipped: single-pass render")
+                if compression_stats and "reduction_percent" in compression_stats:
+                    print(f"[PDF]    - Compression: {compression_stats['reduction_percent']}% size reduction")
+
+                return result
+            finally:
+                if single_pdf_path is not None:
+                    try:
+                        if os.path.exists(single_pdf_path):
+                            os.remove(single_pdf_path)
+                    except OSError:
+                        pass
+                gc.collect()
 
         # =====================================================================
         # FASE 2: Generar PDFs en lotes paralelos
@@ -682,10 +889,11 @@ class ReportService:
 
         loop = asyncio.get_running_loop()
         all_pdf_paths = []
+        rendered_count = 0
 
-        for batch_start in range(0, len(all_html_items), PDF_BATCH_SIZE):
-            batch_end = min(batch_start + PDF_BATCH_SIZE, len(all_html_items))
-            batch_items = all_html_items[batch_start:batch_end]
+        for batch_start in range(0, len(prepared_items), PDF_BATCH_SIZE):
+            batch_end = min(batch_start + PDF_BATCH_SIZE, len(prepared_items))
+            batch_items = prepared_items[batch_start:batch_end]
 
             with ThreadPoolExecutor(max_workers=PDF_BATCH_SIZE) as executor:
                 future_to_index = {
@@ -702,6 +910,15 @@ class ReportService:
                             batch_results.append((original_index, pdf_path))
                     except Exception as e:
                         print(f"[PDF] Error generating PDF {original_index}: {e}")
+                    finally:
+                        rendered_count += 1
+                        if on_progress:
+                            await on_progress(
+                                "rendering",
+                                rendered_count,
+                                len(prepared_items),
+                                f"PDF {rendered_count} de {len(prepared_items)} renderizado",
+                            )
 
                 batch_results.sort(key=lambda x: x[0])
                 all_pdf_paths.extend([path for _, path in batch_results])
@@ -709,12 +926,10 @@ class ReportService:
             for item in batch_items:
                 item['html'] = None
 
-            processed_count = min(batch_end, len(all_html_items))
+            processed_count = rendered_count
             elapsed = time.time() - start_time
             rate = processed_count / elapsed if elapsed > 0 else 0
-            print(f"[PDF] Generated: {processed_count}/{len(all_html_items)} PDFs ({rate:.1f} PDFs/sec)")
-            if on_progress:
-                await on_progress("rendering", processed_count, len(all_html_items), "")
+            print(f"[PDF] Generated: {processed_count}/{len(prepared_items)} PDFs ({rate:.1f} PDFs/sec)")
 
             gc.collect()
 
@@ -736,6 +951,7 @@ class ReportService:
             if on_progress:
                 await on_progress("merging", 0, len(all_pdf_paths), "")
             merge_start = time.time()
+            merged_count = 0
 
             if output_path:
                 final_output_path = output_path
@@ -762,6 +978,15 @@ class ReportService:
                                 os.remove(pdf_path)
                         except OSError:
                             pass
+                    finally:
+                        merged_count += 1
+                        if on_progress:
+                            await on_progress(
+                                "merging",
+                                merged_count,
+                                len(all_pdf_paths),
+                                f"Documento {merged_count} de {len(all_pdf_paths)} unido",
+                            )
 
                 if batch_idx > 0 and batch_idx % (merge_batch_size * 2) == 0:
                     gc.collect()
@@ -772,7 +997,6 @@ class ReportService:
             final_writer.close()
             final_writer = None
             gc.collect()
-
             merge_time = time.time() - merge_start
 
             # =====================================================================
@@ -823,8 +1047,6 @@ class ReportService:
                     final_writer.close()
                 except Exception:
                     pass
-            self._logo_cache.clear()
-            self._image_cache.clear()
             gc.collect()
 
 

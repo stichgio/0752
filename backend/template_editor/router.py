@@ -30,7 +30,7 @@ from .service import (
     update_template,
 )
 from .supabase_client import SupabaseNotConfiguredError, SupabaseOperationError
-from config import settings  # type: ignore
+from config import settings  
 
 router = APIRouter(prefix="/api/template-editor", tags=["template-editor"])
 

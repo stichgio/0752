@@ -1,4 +1,4 @@
-from dotenv import load_dotenv  # type: ignore
+from dotenv import load_dotenv  
 try:
     load_dotenv(encoding='utf-8')
 except (UnicodeDecodeError, ValueError):
@@ -7,34 +7,36 @@ except (UnicodeDecodeError, ValueError):
 
 from contextlib import asynccontextmanager
 from pathlib import Path
-from fastapi import FastAPI, UploadFile, File, Form, BackgroundTasks, HTTPException, APIRouter, Request  # type: ignore
-from fastapi.exceptions import RequestValidationError  # type: ignore
-from fastapi.staticfiles import StaticFiles  # type: ignore
+from fastapi import FastAPI, UploadFile, File, Form, BackgroundTasks, HTTPException, APIRouter, Request, Query  
+from fastapi.exceptions import RequestValidationError  
+from fastapi.staticfiles import StaticFiles  
 import base64
-from fastapi.middleware.cors import CORSMiddleware  # type: ignore
-from fastapi.responses import FileResponse, JSONResponse  # type: ignore
-from pydantic import BaseModel, Field  # type: ignore
+from fastapi.middleware.cors import CORSMiddleware  
+from fastapi.responses import FileResponse, JSONResponse  
+from pydantic import BaseModel, Field  
 import os
 import json
 import tempfile
 import traceback
 import re
+import unicodedata
 from typing import Any, Dict, List, Literal, Optional, TypedDict
-from report_service import ReportService  # type: ignore
-from pdf_tools import merge_pdfs_interleaved, merge_pdfs_sequential, split_pdf, split_pdf_by_ranges, organize_pdf, extract_pages  # type: ignore
-from pdf_tools.utils import PDFValidationError  # type: ignore
+from urllib.parse import quote
+from report_service import ReportService  
+from pdf_tools import merge_pdfs_interleaved, merge_pdfs_sequential, split_pdf, split_pdf_by_ranges, organize_pdf, extract_pages  
+from pdf_tools.utils import PDFValidationError  
 import zipfile
-from technical_reports.router import router as technical_reports_router  # type: ignore
-from technical_reports.models import TechnicalReport  # type: ignore
-from fichas_tecnicas.router import router as fichas_tecnicas_router  # type: ignore
-from image_optimizer.router import router as image_optimizer_router  # type: ignore
-from compressor.router import router as compressor_router  # type: ignore
-from ocr_tools.router import router as ocr_tools_router  # type: ignore
-from template_editor.router import router as template_editor_router  # type: ignore
-from msheets.multi_sheet_report import router as msheets_router      # type: ignore
+from technical_reports.router import router as technical_reports_router  
+from technical_reports.models import TechnicalReport  
+from fichas_tecnicas.router import router as fichas_tecnicas_router  
+from image_optimizer.router import router as image_optimizer_router  
+from compressor.router import router as compressor_router  
+from ocr_tools.router import router as ocr_tools_router  
+from template_editor.router import router as template_editor_router  
+from msheets.multi_sheet_report import router as msheets_router      
 # Multi-Sheet Report router imported and added below for production compatibility.
-from config import settings  # type: ignore
-from template_editor.service import (  # type: ignore
+from config import settings  
+from template_editor.service import (  
     get_all_published_templates,
     get_preview_html,
     get_published_template_by_name,
@@ -42,30 +44,30 @@ from template_editor.service import (  # type: ignore
     publish_template,
     set_template_status,
 )
-from utils.file_utils import build_safe_upload_path, save_upload, sanitize_upload_filename  # type: ignore
+from utils.file_utils import build_safe_upload_path, save_upload, sanitize_upload_filename  
 
 # ── Increase multipart form-field size limit ──────────────────────────────────
 # Starlette/python-multipart defaults to 1 MB per text part, which is too small
 # for large customTemplate HTML payloads and batch `data` JSON fields.
 # Patch the default so all Form() endpoints accept up to 50 MB per field.
 try:
-    from starlette.formparsers import MultiPartParser as _MultiPartParser  # type: ignore
+    from starlette.formparsers import MultiPartParser as _MultiPartParser  
 
     _orig_mp_init = _MultiPartParser.__init__
 
-    def _patched_mp_init(  # type: ignore
+    def _patched_mp_init(  
         self,
-        headers,  # type: ignore
-        stream,  # type: ignore
-        *args,  # type: ignore
-        **kwargs,  # type: ignore
+        headers,  
+        stream,  
+        *args,  
+        **kwargs,  
     ) -> None:
         # Preserve Starlette's evolving parser kwargs (for example `max_files`)
         # while still raising the default text-part limit globally.
         kwargs.setdefault("max_part_size", 50 * 1024 * 1024)  # 50 MB (was 1 MB)
         _orig_mp_init(self, headers, stream, *args, **kwargs)
 
-    _MultiPartParser.__init__ = _patched_mp_init  # type: ignore
+    _MultiPartParser.__init__ = _patched_mp_init  
 except Exception:
     pass  # Skip silently if starlette internals change in a future version
 # ─────────────────────────────────────────────────────────────────────────────
@@ -95,6 +97,114 @@ def _cleanup_file(path: str):
             os.remove(path)
     except Exception as e:
         print(f"Error removing temp file {path}: {e}")
+
+
+_TEMPLATE_FILENAME_ALIASES = {
+    "report_volanteo": "Volante",
+    "reporta_volanteo": "Volante",
+    "report": "Reporte",
+}
+
+_TEMPLATE_ACRONYMS = {"ate", "id", "nis", "ot", "pdf"}
+
+
+def _slugify_filename_part(value: Any, lowercase: bool = False) -> str:
+    normalized = unicodedata.normalize("NFKD", str(value or "")).encode("ascii", "ignore").decode("ascii")
+    sanitized = re.sub(r"[^A-Za-z0-9._-]+", "_", normalized)
+    sanitized = re.sub(r"_+", "_", sanitized).strip("._-")
+    if lowercase:
+        sanitized = sanitized.lower()
+    return sanitized
+
+
+def _template_filename_label(template_name: Optional[str]) -> str:
+    base_name = os.path.splitext(os.path.basename(str(template_name or "")))[0].strip()
+    if not base_name:
+        return "Reporte"
+
+    alias = _TEMPLATE_FILENAME_ALIASES.get(base_name.lower())
+    if alias:
+        return alias
+
+    cleaned_name = re.sub(r"^(reporta?|format)[_-]*", "", base_name, flags=re.IGNORECASE).strip("_- ")
+    if not cleaned_name:
+        return "Reporte"
+
+    words: List[str] = []
+    for token in re.split(r"[_\-\s]+", cleaned_name):
+        if not token:
+            continue
+        lower_token = token.lower()
+        if token.isdigit():
+            words.append(token)
+        elif lower_token in _TEMPLATE_ACRONYMS:
+            words.append(lower_token.upper())
+        else:
+            words.append(lower_token.capitalize())
+
+    return "_".join(words) or "Reporte"
+
+
+def _extract_report_id_value(payload_data: Any, id_column: Optional[str]) -> Optional[Any]:
+    candidate_rows: List[Dict[str, Any]] = []
+
+    if isinstance(payload_data, list) and payload_data:
+        first_item = payload_data[0] if isinstance(payload_data[0], dict) else {}
+        if isinstance(first_item, dict):
+            direct_value = first_item.get("id_value")
+            if direct_value not in (None, "", "-"):
+                return direct_value
+            row_data = first_item.get("row_data")
+            if isinstance(row_data, dict):
+                candidate_rows.append(row_data)
+    elif isinstance(payload_data, dict):
+        candidate_rows.append(payload_data)
+
+    if not candidate_rows:
+        return None
+
+    candidate_keys: List[str] = []
+    if id_column:
+        id_column_text = str(id_column).strip()
+        if id_column_text:
+            candidate_keys.extend([id_column_text, id_column_text.upper(), id_column_text.lower()])
+
+    candidate_keys.extend(["NIS", "nis", "ID", "id", "ID_UNICO", "id_unico", "Nro OT", "OT", "ot"])
+
+    for row in candidate_rows:
+        for key in candidate_keys:
+            value = row.get(key)
+            if value not in (None, "", "-"):
+                return value
+
+    return None
+
+
+def _build_pdf_download_filename(
+    template_name: Optional[str],
+    payload_data: Any,
+    export_scope: Optional[str],
+    id_column: Optional[str],
+) -> str:
+    template_label = _template_filename_label(template_name)
+    reports_count = len(payload_data) if isinstance(payload_data, list) else 1
+    is_consolidated = export_scope == "all" or reports_count > 1
+
+    if is_consolidated:
+        consolidated_label = _slugify_filename_part(template_label) or "Reporte"
+        return f"Consolidado_{consolidated_label}_{max(reports_count, 0)}.pdf"
+
+    report_id = _extract_report_id_value(payload_data, id_column)
+    safe_template = _slugify_filename_part(template_label, lowercase=True) or "reporte"
+    safe_id = _slugify_filename_part(report_id, lowercase=True) or "sin_id"
+    return f"{safe_template}_{safe_id}.pdf"
+
+
+def _normalize_download_filename(filename: Optional[str], default_name: str = "report_consolidado.pdf") -> str:
+    base_name = os.path.basename(str(filename or "").strip()) or default_name
+    stem, _ = os.path.splitext(base_name)
+    safe_stem = _slugify_filename_part(stem) or os.path.splitext(default_name)[0]
+    return f"{safe_stem}.pdf"
 
 
 def _normalize_photo_grid_template_compat(template_html: Optional[str]) -> Optional[str]:
@@ -292,6 +402,9 @@ app.add_middleware(
         "X-Filename",
         "X-Error",
         "Content-Disposition",
+        "X-OCR-Model",
+        "X-OCR-Pages",
+        "X-OCR-Schema",
     ],
 )
 
@@ -408,12 +521,15 @@ async def generate_single_pdf(
     logoLeft: Optional[UploadFile] = File(None),
     logoRight: Optional[UploadFile] = File(None),
     customTemplate: Optional[str] = Form(None),
-    templateName: Optional[str] = Form(None)
+    templateName: Optional[str] = Form(None),
+    idColumn: Optional[str] = Form(None),
+    exportScope: Optional[str] = Form(None),
 ):
     print(f"Received request: data len={len(data)}, files={len(files)}, customTemplate={'yes' if customTemplate else 'no'}, templateName={templateName}")
     try:
         # Parse JSON data
         row_data = json.loads(data)
+        download_filename = _build_pdf_download_filename(templateName, row_data, exportScope, idColumn)
 
         # Compatibility bridge: optionally resolve published visual template without changing API contract.
         resolved_custom_template = customTemplate
@@ -452,7 +568,7 @@ async def generate_single_pdf(
 
         # Create temp directory for images
         with tempfile.TemporaryDirectory() as temp_dir:
-            file_map = {}  # type: ignore
+            file_map = {}  
 
             # Save uploaded images to temp dir
             for index, file in enumerate(files):
@@ -479,7 +595,7 @@ async def generate_single_pdf(
                             if mapped_file is None:
                                 # FIX: BUG-005 avoid silent KeyError with explicit client-facing 400
                                 raise HTTPException(status_code=400, detail=f"Image filename '{name}' not found in uploaded files")
-                            r_files.append(mapped_file)  # type: ignore
+                            r_files.append(mapped_file)  
 
                     reports_payload.append({"data": r_data, "files": r_files})
             else:
@@ -516,7 +632,8 @@ async def generate_single_pdf(
             return FileResponse(
                 output_path,
                 media_type="application/pdf",
-                filename="report_consolidado.pdf"
+                filename=download_filename,
+                headers={"X-Filename": download_filename},
             )
 
     except json.JSONDecodeError as e:
@@ -546,8 +663,8 @@ async def generate_single_pdf(
 
 # --- SSE Progress Endpoints ---
 
-from fastapi.responses import StreamingResponse  # type: ignore
-from progress import format_sse_event, ProgressCallback  # type: ignore
+from fastapi.responses import StreamingResponse  
+from progress import format_sse_event, ProgressCallback  
 
 
 @api_router.post("/generate-pdf-progress")
@@ -558,7 +675,9 @@ async def generate_pdf_with_progress(
     logoLeft: Optional[UploadFile] = File(None),
     logoRight: Optional[UploadFile] = File(None),
     customTemplate: Optional[str] = Form(None),
-    templateName: Optional[str] = Form(None)
+    templateName: Optional[str] = Form(None),
+    idColumn: Optional[str] = Form(None),
+    exportScope: Optional[str] = Form(None),
 ):
     """SSE version of /generate-pdf with real-time progress events."""
     import asyncio
@@ -566,6 +685,7 @@ async def generate_pdf_with_progress(
 
     # --- Same data preparation as generate_single_pdf ---
     row_data = json.loads(data)
+    download_filename = _build_pdf_download_filename(templateName, row_data, exportScope, idColumn)
 
     resolved_custom_template = customTemplate
     resolved_template_name = templateName
@@ -649,7 +769,7 @@ async def generate_pdf_with_progress(
                     template_name=resolved_template_name,
                     on_progress=on_progress
                 )
-                await progress_queue.put({"phase": "done", "download_url": f"/api/download-temp/{filename}"})
+                await progress_queue.put({"phase": "done", "download_url": f"/api/download-temp/{filename}?download_name={quote(download_filename, safe='')}"})
             except Exception as e:
                 try:
                     await progress_queue.put({"phase": "error", "detail": str(e)})
@@ -694,16 +814,25 @@ async def generate_pdf_with_progress(
 
 
 @api_router.get("/download-temp/{filename}")
-async def download_temp_file(filename: str, background_tasks: BackgroundTasks):
+async def download_temp_file(
+    filename: str,
+    background_tasks: BackgroundTasks,
+    download_name: Optional[str] = Query(None),
+):
     """Download a temporary PDF file and schedule cleanup."""
     if not re.match(r'^pdf_[a-f0-9]{12}\.pdf$', filename):
-        raise HTTPException(status_code=400, detail="Nombre de archivo inválido")
+        raise HTTPException(status_code=400, detail="Nombre de archivo invalido")
     path = os.path.join(tempfile.gettempdir(), filename)
     if not os.path.exists(path):
         raise HTTPException(status_code=404, detail="Archivo no encontrado o expirado")
     background_tasks.add_task(_cleanup_file, path)
-    return FileResponse(path, media_type="application/pdf", filename="report_consolidado.pdf")
-
+    normalized_download_name = _normalize_download_filename(download_name)
+    return FileResponse(
+        path,
+        media_type="application/pdf",
+        filename=normalized_download_name,
+        headers={"X-Filename": normalized_download_name},
+    )
 
 # --- PDF Tools Endpoints ---
 
@@ -1051,6 +1180,7 @@ if os.path.exists("static"):
         return FileResponse("static/index.html")
 
 if __name__ == "__main__":
-    import uvicorn  # type: ignore
+    import uvicorn  
     uvicorn.run(app, host="0.0.0.0", port=7860)
+
 
