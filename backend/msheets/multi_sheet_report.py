@@ -418,13 +418,7 @@ html, body {{
     white-space: nowrap;
 }}
 .loc-value {{ font-size: 9pt; color: #000; }}
-.loc-row.full .loc-value {{
-    flex: 1;
-    min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}}
+
 .panel-fotografico {{
     flex: 1;
     display: flex;

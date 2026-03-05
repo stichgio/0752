@@ -728,26 +728,26 @@ function VolanteoTemplatePreview({ rowData, images, logoLeft, logoRight }) {
             <div className="grid grid-cols-4 border border-neutral-300 divide-x divide-neutral-300 text-[8px] shrink-0">
                 <div className="px-1.5 py-1">
                     <div className="font-bold uppercase text-neutral-500">Centro de Servicios</div>
-                    <div className="font-semibold text-neutral-900 truncate">{centro}</div>
+                    <div className="font-semibold text-neutral-900">{centro}</div>
                 </div>
                 <div className="px-1.5 py-1">
                     <div className="font-bold uppercase text-neutral-500">NIS</div>
-                    <div className="font-semibold text-neutral-900 truncate">{nis}</div>
+                    <div className="font-semibold text-neutral-900">{nis}</div>
                 </div>
                 <div className="px-1.5 py-1">
                     <div className="font-bold uppercase text-neutral-500">Sector</div>
-                    <div className="font-semibold text-neutral-900 truncate">{sector}</div>
+                    <div className="font-semibold text-neutral-900">{sector}</div>
                 </div>
                 <div className="px-1.5 py-1">
                     <div className="font-bold uppercase text-neutral-500">Fecha de Corte</div>
-                    <div className="font-semibold text-neutral-900 truncate">{fechaCorte}</div>
+                    <div className="font-semibold text-neutral-900">{fechaCorte}</div>
                 </div>
             </div>
 
             <section className="mt-2 shrink-0">
                 <div className="text-[9px] font-bold uppercase text-blue-700 border-b border-blue-700 pb-1 mb-1">1.0 Localización</div>
                 <div className="text-[8px] text-neutral-800">
-                    <div className="mb-1 truncate"><span className="font-bold uppercase">Direcciones Afectadas:</span> {direcciones}</div>
+                    <div className="mb-1"><span className="font-bold uppercase">Direcciones Afectadas:</span> {direcciones}</div>
                     <div className="flex gap-3 flex-wrap">
                         <div><span className="font-bold uppercase">Distrito:</span> {distrito}</div>
                         <div><span className="font-bold uppercase">Código de Componente:</span> {codigoComponente}</div>
