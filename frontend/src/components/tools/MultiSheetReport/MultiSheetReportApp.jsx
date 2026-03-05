@@ -170,11 +170,21 @@ const normalizeTemplateSections = (rawSections) => {
         .filter(section => section.templates.length > 0);
 };
 
-const orderSheetsForFirstPage = (sheetList) => {
-    if (!Array.isArray(sheetList) || sheetList.length === 0) return [];
-    const firstPageSheets = sheetList.filter(sheet => Boolean(sheet?.firstPageOnly));
-    const regularSheets = sheetList.filter(sheet => !sheet?.firstPageOnly);
-    return [...firstPageSheets, ...regularSheets];
+/**
+ * Build a map: sheetId → hierarchy label ("1ª hoja", "2ª hoja", …)
+ * Only sheets with firstPageOnly=true get a label.
+ */
+const buildHierarchyLabels = (sheetList) => {
+    const labels = {};
+    let pos = 0;
+    const ordinals = ['1ª', '2ª', '3ª', '4ª', '5ª', '6ª', '7ª', '8ª', '9ª'];
+    sheetList.forEach(sheet => {
+        if (sheet?.firstPageOnly) {
+            labels[sheet.id] = `${ordinals[pos] || `${pos + 1}ª`} hoja`;
+            pos++;
+        }
+    });
+    return labels;
 };
 
 const VOLANTEO_TEMPLATE_FIELDS = [
@@ -893,9 +903,9 @@ function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, lo
                     </span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                    {sheet.firstPageOnly && (
-                        <span className="text-[9px] bg-amber-500/20 text-amber-200 border border-amber-400/40 px-1.5 py-0.5 rounded font-mono">
-                            1° HOJA
+                    {sheet.hierarchyLabel && (
+                        <span className="text-[9px] bg-amber-500/20 text-amber-200 border border-amber-400/40 px-1.5 py-0.5 rounded font-mono uppercase">
+                            {sheet.hierarchyLabel}
                         </span>
                     )}
                     {showStandardHeaderPreview && (
@@ -1399,20 +1409,9 @@ export default function MultiSheetReportApp() {
     }, []);
 
     const toggleFirstPageSheet = useCallback((id) => {
-        setSheets(prev => {
-            const target = prev.find(sheet => sheet.id === id);
-            const nextValue = !target?.firstPageOnly;
-
-            return prev.map(sheet => {
-                if (sheet.id === id) {
-                    return { ...sheet, firstPageOnly: nextValue };
-                }
-                if (nextValue && sheet.firstPageOnly) {
-                    return { ...sheet, firstPageOnly: false };
-                }
-                return sheet;
-            });
-        });
+        setSheets(prev => prev.map(sheet =>
+            sheet.id === id ? { ...sheet, firstPageOnly: !sheet.firstPageOnly } : sheet
+        ));
     }, []);
 
     const moveSheet = useCallback((index, direction) => {
@@ -1486,9 +1485,7 @@ export default function MultiSheetReportApp() {
     const buildFormData = useCallback((rowIndices) => {
         const formData = new FormData();
 
-        const activeSheets = orderSheetsForFirstPage(
-            sheets.map((s, sheetIdx) => ({ ...s, _sheetIdx: sheetIdx }))
-        );
+        const activeSheets = sheets.map((s, sheetIdx) => ({ ...s, _sheetIdx: sheetIdx }));
 
         let globalOrder = 0;
         const sheetsConfig = [];
@@ -1759,7 +1756,7 @@ export default function MultiSheetReportApp() {
                         <Step number="1" title="Hojas del Informe" icon={<Layers size={16} />}>
                             <div className="space-y-2">
                                 {/* Lista de hojas */}
-                                {sheets.map((sheet, index) => (
+                                {(() => { const _hl = buildHierarchyLabels(sheets); return sheets.map((sheet, index) => (
                                     <div key={sheet.id} className="bg-neutral-900 border border-neutral-800 rounded-lg p-2 space-y-2">
                                         {/* Fila superior: número, título, toggle, controles */}
                                         <div className="flex items-center gap-1.5">
@@ -1779,16 +1776,16 @@ export default function MultiSheetReportApp() {
                                             >
                                                 {sheet.useAltHeader ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
                                             </button>
-                                            {/* Marcar como primera hoja */}
+                                            {/* Marcar como hoja diferente (jerarquía) */}
                                             <button
                                                 onClick={() => toggleFirstPageSheet(sheet.id)}
-                                                title={sheet.firstPageOnly ? 'Quitar como 1° hoja' : 'Usar como 1° hoja'}
+                                                title={sheet.firstPageOnly ? `Quitar ${_hl[sheet.id]}` : 'Marcar como hoja diferente'}
                                                 className={`shrink-0 px-1.5 py-0.5 rounded border text-[10px] font-bold transition-colors
                                                     ${sheet.firstPageOnly
                                                         ? 'border-amber-400/60 text-amber-300 bg-amber-500/10'
                                                         : 'border-neutral-700 text-neutral-500 hover:text-neutral-300 hover:border-neutral-500'}`}
                                             >
-                                                1°
+                                                {sheet.firstPageOnly ? _hl[sheet.id] : '1°'}
                                             </button>
                                             {/* Mover arriba */}
                                             <button
@@ -1943,14 +1940,14 @@ export default function MultiSheetReportApp() {
                                                     Mini-header
                                                 </span>
                                             )}
-                                            {sheet.firstPageOnly && (
+                                            {sheet.firstPageOnly && _hl[sheet.id] && (
                                                 <span className="text-[9px] text-amber-300 bg-amber-500/10 border border-amber-400/30 rounded px-1.5 py-0.5 font-mono">
-                                                    1° hoja
+                                                    {_hl[sheet.id]}
                                                 </span>
                                             )}
                                         </div>
                                     </div>
-                                ))}
+                                )); })()}
 
                                 {/* Selector de plantilla para agregar nueva hoja */}
                                 <div className="mb-2">
@@ -2268,7 +2265,8 @@ export default function MultiSheetReportApp() {
                             {(() => {
                                 const previewCards = [];
                                 let globalIdx = 0;
-                                const orderedPreviewSheets = orderSheetsForFirstPage(sheets);
+                                const orderedPreviewSheets = sheets;
+                                const previewHierarchy = buildHierarchyLabels(sheets);
 
                                 const recordId = idColumn ? selectedRow?.[idColumn] : null;
                                 const initialRowImages = (recordId && images)
@@ -2297,7 +2295,7 @@ export default function MultiSheetReportApp() {
                                             previewCards.push(
                                                 <div key={`${sheet.id}-p${p}`}>
                                                     <SheetPreviewCard
-                                                        sheet={{ ...sheet, pageNum: p + 1, totalPages, providedImages: sheetImages }}
+                                                        sheet={{ ...sheet, pageNum: p + 1, totalPages, providedImages: sheetImages, hierarchyLabel: previewHierarchy[sheet.id] }}
                                                         index={globalIdx++}
                                                         total={999}
                                                         headerTitle={headerTitle}
@@ -2325,7 +2323,7 @@ export default function MultiSheetReportApp() {
                                         previewCards.push(
                                             <div key={sheet.id}>
                                                 <SheetPreviewCard
-                                                    sheet={{ ...sheet, providedImages: sheetImages }}
+                                                    sheet={{ ...sheet, providedImages: sheetImages, hierarchyLabel: previewHierarchy[sheet.id] }}
                                                     index={globalIdx++}
                                                     total={999}
                                                     headerTitle={headerTitle}
