@@ -756,23 +756,23 @@ function VolanteoTemplatePreview({ rowData, images, logoLeft, logoRight }) {
                 </div>
             </section>
 
-            <section className="mt-2 flex-1 min-h-0 flex flex-col">
+            <section className="mt-2 flex-1 min-h-0 flex flex-col h-full">
                 <div className="text-[9px] font-bold uppercase text-blue-700 border-b border-blue-700 pb-1 mb-1 shrink-0">2.0 Panel Fotográfico</div>
                 {hasPhotos ? (
-                    <div className="grid grid-cols-2 grid-rows-2 gap-1 border border-blue-700 p-1 flex-1 min-h-0">
+                    <div className="grid grid-cols-2 grid-rows-2 gap-1 border border-blue-700 p-1 flex-1 min-h-0 h-full w-full box-border">
                         {photos.map((img, idx) => (
-                            <div key={`${img.name}-${idx}`} className="border border-neutral-300 bg-neutral-100 overflow-hidden min-h-0">
-                                <img src={img.url} alt={img.name} className="w-full h-full object-contain" />
+                            <div key={`${img.name}-${idx}`} className="border border-neutral-300 bg-neutral-100 overflow-hidden min-h-0 w-full h-full flex items-center justify-center box-border">
+                                <img src={img.url} alt={img.name} className="max-w-full max-h-full object-contain" />
                             </div>
                         ))}
                         {Array.from({ length: Math.max(0, 4 - photos.length) }).map((_, idx) => (
-                            <div key={`placeholder-${idx}`} className="border border-dashed border-neutral-300 bg-neutral-50 text-neutral-400 text-[8px] italic flex items-center justify-center">
+                            <div key={`placeholder-${idx}`} className="border border-dashed border-neutral-300 bg-neutral-50 text-neutral-400 text-[8px] italic w-full h-full flex items-center justify-center box-border">
                                 Sin imagen
                             </div>
                         ))}
                     </div>
                 ) : (
-                    <div className="border border-blue-700 text-neutral-400 text-[9px] italic flex-1 min-h-0 flex items-center justify-center text-center px-2">
+                    <div className="border border-blue-700 text-neutral-400 text-[9px] italic flex-1 min-h-0 h-full w-full flex items-center justify-center text-center px-2">
                         No se encontraron imágenes asociadas a este registro.
                     </div>
                 )}

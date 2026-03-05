@@ -334,8 +334,8 @@ html, body {{
     width: 210mm;
     height: 297mm;
     max-height: 297mm;
-    margin: 0;
-    padding: 10mm 12mm;
+    margin: 0 auto;
+    padding: 8mm;
     background: #fff;
     display: flex;
     flex-direction: column;
@@ -432,6 +432,9 @@ html, body {{
     grid-template-rows: repeat(2, 1fr);
     gap: 2mm;
     flex: 1;
+    height: 100%;
+    width: 100%;
+    box-sizing: border-box;
     min-height: 0;
     border: 1px solid #0066cc;
     padding: 2mm;
@@ -442,15 +445,16 @@ html, body {{
     background: #f5f5f5;
     border: 1px solid #ddd;
     overflow: hidden;
-    min-height: 0;
-    min-width: 0;
+    width: 100%;
+    height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
+    box-sizing: border-box;
 }}
 .photo-cell img {{
-    width: 100%;
-    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
     object-fit: contain;
     object-position: center;
     display: block;
