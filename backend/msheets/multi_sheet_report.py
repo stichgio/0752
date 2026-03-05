@@ -424,19 +424,18 @@ html, body {{
     display: flex;
     flex-direction: column;
     min-height: 0;
+    overflow: hidden;
 }}
 .photo-grid {{
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-rows: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
     gap: 2mm;
-    flex: 1 1 auto;
+    flex: 1;
     min-height: 0;
-    height: 100%;
-    max-height: 160mm;
     border: 1px solid #0066cc;
     padding: 2mm;
-    page-break-inside: avoid;
+    overflow: hidden;
 }}
 .photo-cell {{
     position: relative;
@@ -467,12 +466,11 @@ html, body {{
     font-style: italic;
 }}
 .no-photos {{
-    flex: 1 1 auto;
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     min-height: 0;
-    max-height: 160mm;
     color: #999;
     font-style: italic;
     border: 1px solid #0066cc;
