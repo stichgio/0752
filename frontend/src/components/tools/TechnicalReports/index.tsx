@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, FileDown, Files } from 'lucide-react';
 import DatabasePanel from './DatabasePanel';
 import PreviewPanel from './PreviewPanel';
@@ -40,7 +41,7 @@ export default function TechnicalReports() {
     };
 
     const handleReportSelect = async (reportId: string) => {
-        if (hasUnsavedChanges && !window.confirm('¿Guardar cambios?')) return;
+        if (hasUnsavedChanges && !window.confirm('Â¿Guardar cambios?')) return;
         if (hasUnsavedChanges) await handleSaveChanges();
 
         try {
@@ -85,7 +86,7 @@ export default function TechnicalReports() {
     };
 
     const handleClearAllReports = async () => {
-        if (window.confirm('¿ESTÁ SEGURO? \n\nEsto eliminará TODOS los informes de la base de datos permanentemente.\nEsta acción no se puede deshacer.')) {
+        if (window.confirm('Â¿ESTÃ SEGURO? \n\nEsto eliminarÃ¡ TODOS los informes de la base de datos permanentemente.\nEsta acciÃ³n no se puede deshacer.')) {
             await run(async () => {
                 await technicalReportsApi.deleteAllReports();
                 await loadReports();
@@ -137,7 +138,7 @@ export default function TechnicalReports() {
         }
 
         const confirmed = window.confirm(
-            `¿Desea generar un PDF consolidado con los ${reports.length} informes?\n\nEsto puede tomar varios minutos dependiendo de la cantidad de informes.`
+            `Â¿Desea generar un PDF consolidado con los ${reports.length} informes?\n\nEsto puede tomar varios minutos dependiendo de la cantidad de informes.`
         );
         if (!confirmed) return;
 
@@ -189,11 +190,11 @@ export default function TechnicalReports() {
             <div className={`bg-[#0d0d0d] border-b border-[#333] px-6 py-4 transition-all duration-300 ${isFocusMode ? '-mt-[80px]' : ''}`}>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <a href="/" className="text-[#888] hover:text-[#eee] transition-colors">
+                        <Link to="/" className="text-[#888] hover:text-[#eee] transition-colors">
                             <ChevronLeft size={24} />
-                        </a>
+                        </Link>
                         <h1 className="text-2xl font-bold font-mono tracking-wide text-[#eee] uppercase">
-                            Generador de Informes Técnicos
+                            Generador de Informes TÃ©cnicos
                         </h1>
                     </div>
                     <div className="flex items-center gap-4">
@@ -289,3 +290,5 @@ export default function TechnicalReports() {
         </div>
     );
 }
+
+

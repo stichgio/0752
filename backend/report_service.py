@@ -1,6 +1,7 @@
 import os
 import base64
 import re
+import shutil
 import io
 import gc
 import tempfile
@@ -89,7 +90,7 @@ class BoundedCache:
         self._cache.clear()
 
 # ============================================================================
-# CONFIGURACIÓN OPTIMIZADA Y ESTABLE
+# CONFIGURACIÃ“N OPTIMIZADA Y ESTABLE
 # ============================================================================
 
 A4_WIDTH_MM, A4_HEIGHT_MM = 210, 297
@@ -167,11 +168,11 @@ MAX_PDF_WORKERS = 4
 PIPELINE_BUFFER_SIZE = 8
 GC_INTERVAL = 10
 
-# ✅ BATCHING OPTIMIZATION: Procesar múltiples reportes en paralelo
-PDF_BATCH_SIZE = 5  # Número de PDFs a generar en paralelo por lote
-HTML_PREFETCH_SIZE = 10  # Número de HTMLs a pre-renderizar adelante
+# âœ… BATCHING OPTIMIZATION: Procesar mÃºltiples reportes en paralelo
+PDF_BATCH_SIZE = 5  # NÃºmero de PDFs a generar en paralelo por lote
+HTML_PREFETCH_SIZE = 10  # NÃºmero de HTMLs a pre-renderizar adelante
 
-# ✅ GHOSTSCRIPT COMPRESSION: Reducir tamaño del PDF final
+# âœ… GHOSTSCRIPT COMPRESSION: Reducir tamaÃ±o del PDF final
 GHOSTSCRIPT_ENABLED = settings.ghostscript_enabled
 GHOSTSCRIPT_QUALITY = settings.ghostscript_quality
 
@@ -182,7 +183,7 @@ TEMP_DIR = tempfile.gettempdir()
 # ============================================================================
 
 def _check_ghostscript_available():
-    """Verifica si Ghostscript está disponible en el sistema"""
+    """Verifica si Ghostscript estÃ¡ disponible en el sistema"""
     import shutil
     gs_commands = ['gs', 'gswin64c', 'gswin32c']
     for cmd in gs_commands:
@@ -192,16 +193,16 @@ def _check_ghostscript_available():
 
 def _compress_pdf_with_ghostscript(input_path, output_path=None, quality="printer"):
     """
-    Comprime un PDF usando Ghostscript sin pérdida visible de calidad.
+    Comprime un PDF usando Ghostscript sin pÃ©rdida visible de calidad.
 
     Args:
         input_path: Ruta al PDF original
         output_path: Ruta de salida (si None, sobrescribe el original)
         quality: Nivel de calidad
-            - "screen": 72 dpi, menor calidad, máxima compresión
-            - "ebook": 150 dpi, buena calidad, buena compresión
-            - "printer": 300 dpi, alta calidad, compresión moderada (RECOMENDADO)
-            - "prepress": 300 dpi, máxima calidad, mínima compresión
+            - "screen": 72 dpi, menor calidad, mÃ¡xima compresiÃ³n
+            - "ebook": 150 dpi, buena calidad, buena compresiÃ³n
+            - "printer": 300 dpi, alta calidad, compresiÃ³n moderada (RECOMENDADO)
+            - "prepress": 300 dpi, mÃ¡xima calidad, mÃ­nima compresiÃ³n
 
     Returns:
         tuple: (success: bool, compressed_path: str, stats: dict)
@@ -211,7 +212,7 @@ def _compress_pdf_with_ghostscript(input_path, output_path=None, quality="printe
 
     gs_cmd = _check_ghostscript_available()
     if not gs_cmd:
-        print("[GS] Ghostscript no disponible, omitiendo compresión")
+        print("[GS] Ghostscript no disponible, omitiendo compresiÃ³n")
         return False, input_path, {"error": "Ghostscript not available"}
 
     if output_path is None:
@@ -259,7 +260,7 @@ def _compress_pdf_with_ghostscript(input_path, output_path=None, quality="printe
             return False, input_path, {"error": result.stderr}
 
         if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
-            print("[GS] Error: Archivo comprimido inválido")
+            print("[GS] Error: Archivo comprimido invÃ¡lido")
             return False, input_path, {"error": "Invalid output file"}
 
         compressed_size = os.path.getsize(output_path)
@@ -276,19 +277,19 @@ def _compress_pdf_with_ghostscript(input_path, output_path=None, quality="printe
             if replace_original:
                 os.remove(input_path)
                 shutil.move(output_path, input_path)
-                print(f"[GS] ✅ Comprimido: {original_size/1024/1024:.1f}MB → {compressed_size/1024/1024:.1f}MB ({reduction:.1f}% reducción)")
+                print(f"[GS] âœ… Comprimido: {original_size/1024/1024:.1f}MB â†’ {compressed_size/1024/1024:.1f}MB ({reduction:.1f}% reducciÃ³n)")
                 return True, input_path, stats
             else:
-                print(f"[GS] ✅ Comprimido: {original_size/1024/1024:.1f}MB → {compressed_size/1024/1024:.1f}MB ({reduction:.1f}% reducción)")
+                print(f"[GS] âœ… Comprimido: {original_size/1024/1024:.1f}MB â†’ {compressed_size/1024/1024:.1f}MB ({reduction:.1f}% reducciÃ³n)")
                 return True, output_path, stats
         else:
             if os.path.exists(output_path):
                 os.remove(output_path)
-            print(f"[GS] ℹ️ Sin mejora de compresión, usando original ({original_size/1024/1024:.1f}MB)")
+            print(f"[GS] â„¹ï¸ Sin mejora de compresiÃ³n, usando original ({original_size/1024/1024:.1f}MB)")
             return True, input_path, {"skipped": True, "reason": "No improvement"}
 
     except subprocess.TimeoutExpired:
-        print("[GS] Error: Timeout en compresión")
+        print("[GS] Error: Timeout en compresiÃ³n")
         if replace_original and os.path.exists(output_path):
             os.remove(output_path)
         return False, input_path, {"error": "Timeout"}
@@ -321,7 +322,7 @@ class ReportService:
         try:
             _ = self.template.module
         except Exception as e:
-            logging.warning("Pre-compilación de report.html falló: %s", e)
+            logging.warning("Pre-compilaciÃ³n de report.html fallÃ³: %s", e)
 
         self._template_cache = {}
         self._image_cache = BoundedCache(maxsize=100)
@@ -393,7 +394,7 @@ class ReportService:
 
     @staticmethod
     def optimize_image_for_pdf(image_content, max_size=MAX_IMAGE_SIZE, quality=JPEG_QUALITY):
-        """Optimización de imágenes con resolución adaptativa"""
+        """OptimizaciÃ³n de imÃ¡genes con resoluciÃ³n adaptativa"""
         try:
             if isinstance(image_content, str) and os.path.exists(image_content):
                 with open(image_content, "rb") as f:
@@ -531,7 +532,7 @@ class ReportService:
             return logo_data
 
     async def _process_files_serial(self, files, max_size=MAX_IMAGE_SIZE, quality=JPEG_QUALITY):
-        """Procesamiento de imágenes con base64 inline (sin archivos temporales)"""
+        """Procesamiento de imÃ¡genes con base64 inline (sin archivos temporales)"""
         processed_images = []
         orientations = []
 
@@ -681,10 +682,10 @@ class ReportService:
 
     async def generate_batch_pdf(self, reports_list, output_path=None, logo_left=None, logo_right=None, custom_template_str=None, template_name=None, on_progress=None):
         """
-        Pipeline optimizado con BATCHING para generación de PDFs
+        Pipeline optimizado con BATCHING para generaciÃ³n de PDFs
 
         Mejoras de rendimiento:
-        - Pre-renderiza múltiples HTMLs en paralelo (HTML_PREFETCH_SIZE)
+        - Pre-renderiza mÃºltiples HTMLs en paralelo (HTML_PREFETCH_SIZE)
         - Genera PDFs en lotes paralelos (PDF_BATCH_SIZE)
         - Merge incremental para liberar memoria
         """
@@ -728,16 +729,22 @@ class ReportService:
             backend_template_name = "report.html"
             use_single_pass_render = True
 
+        # Rendering all backend-template reports in a single HTML document is fragile
+        # when the batch contains multiple photo-heavy pages. Render per report and merge
+        # so consolidated exports remain complete and deterministic.
+        if total_reports > 1:
+            use_single_pass_render = False
+
         # =====================================================================
         # FASE 1: Pre-procesar todos los reportes en paralelo (batched)
         # =====================================================================
         async def prepare_single_render_input(i, report):
-            """Prepara un HTML individual con sus imágenes procesadas"""
+            """Prepara un HTML individual con sus imÃ¡genes procesadas"""
             try:
                 row_data = report.get("data", {})
                 files = report.get("files", [])
 
-                # Procesar imágenes
+                # Procesar imÃ¡genes
                 image_max_size = resolve_backend_template_image_max_size(
                     backend_template_name,
                     len(files),
@@ -761,7 +768,7 @@ class ReportService:
                 html_out = template.render(
                     reports=[report_context],
                     report=row_data,
-                    title="PANEL FOTOGRÁFICO",
+                    title="PANEL FOTOGRÃFICO",
                     logo_left=logo_left_uri or logo_left,
                     logo_right=logo_right_uri or logo_right
                 )
@@ -805,7 +812,7 @@ class ReportService:
                 gc.collect()
 
         if not prepared_items:
-            raise RuntimeError("No se preparó ningún reporte exitosamente")
+            raise RuntimeError("No se preparÃ³ ningÃºn reporte exitosamente")
 
         prepared_items.sort(key=lambda x: x["index"])
 
@@ -822,14 +829,14 @@ class ReportService:
                 combined_html = template.render(
                     reports=combined_reports,
                     report=combined_reports[0]["data"] if combined_reports else {},
-                    title="PANEL FOTOGRÁFICO",
+                    title="PANEL FOTOGRÃFICO",
                     logo_left=logo_left_uri or logo_left,
                     logo_right=logo_right_uri or logo_right
                 )
 
                 single_pdf_path = await loop.run_in_executor(None, _render_pdf_to_file_safe, combined_html)
                 if not single_pdf_path:
-                    raise RuntimeError("No se generó el PDF consolidado. WeasyPrint puede no estar disponible en el servidor.")
+                    raise RuntimeError("No se generÃ³ el PDF consolidado. WeasyPrint puede no estar disponible en el servidor.")
 
                 if on_progress:
                     await on_progress("rendering", total_reports, total_reports, "")
@@ -866,7 +873,7 @@ class ReportService:
 
                 total_time = time.time() - start_time
                 gen_time = total_time - merge_time
-                print(f"[PDF] ✅ Complete! {total_reports} reports in {total_time:.1f}s ({total_reports/total_time:.1f} reports/sec)")
+                print(f"[PDF] âœ… Complete! {total_reports} reports in {total_time:.1f}s ({total_reports/total_time:.1f} reports/sec)")
                 print(f"[PDF]    - Generation + HTML: {gen_time:.1f}s")
                 print("[PDF]    - Merge skipped: single-pass render")
                 if compression_stats and "reduction_percent" in compression_stats:
@@ -885,68 +892,79 @@ class ReportService:
         # =====================================================================
         # FASE 2: Generar PDFs en lotes paralelos
         # =====================================================================
-        print(f"[PDF] Starting PDF generation in batches of {PDF_BATCH_SIZE}...")
+        render_batch_size = 1 if (not WEASYPRINT_AVAILABLE and CHROME_PATH) else PDF_BATCH_SIZE
+        render_engine = "browser" if (not WEASYPRINT_AVAILABLE and CHROME_PATH) else "weasyprint"
+        print(f"[PDF] Starting PDF generation in batches of {render_batch_size} (engine={render_engine})...")
 
-        loop = asyncio.get_running_loop()
         all_pdf_paths = []
+        failed_pdf_indices = []
         rendered_count = 0
-
-        for batch_start in range(0, len(prepared_items), PDF_BATCH_SIZE):
-            batch_end = min(batch_start + PDF_BATCH_SIZE, len(prepared_items))
-            batch_items = prepared_items[batch_start:batch_end]
-
-            with ThreadPoolExecutor(max_workers=PDF_BATCH_SIZE) as executor:
-                future_to_index = {
-                    executor.submit(_render_pdf_to_file_safe, item['html']): item['index']
-                    for item in batch_items
-                }
-
-                batch_results = []
-                for future in as_completed(future_to_index):
-                    original_index = future_to_index[future]
-                    try:
-                        pdf_path = future.result()
-                        if pdf_path:
-                            batch_results.append((original_index, pdf_path))
-                    except Exception as e:
-                        print(f"[PDF] Error generating PDF {original_index}: {e}")
-                    finally:
-                        rendered_count += 1
-                        if on_progress:
-                            await on_progress(
-                                "rendering",
-                                rendered_count,
-                                len(prepared_items),
-                                f"PDF {rendered_count} de {len(prepared_items)} renderizado",
-                            )
-
-                batch_results.sort(key=lambda x: x[0])
-                all_pdf_paths.extend([path for _, path in batch_results])
-
-            for item in batch_items:
-                item['html'] = None
-
-            processed_count = rendered_count
-            elapsed = time.time() - start_time
-            rate = processed_count / elapsed if elapsed > 0 else 0
-            print(f"[PDF] Generated: {processed_count}/{len(prepared_items)} PDFs ({rate:.1f} PDFs/sec)")
-
-            gc.collect()
-
-        if not all_pdf_paths:
-            raise RuntimeError("No se generó ningún PDF exitosamente. WeasyPrint puede no estar disponible en el servidor.")
-
-        # =====================================================================
-        # FASE 3: Merge con STREAMING - Escribe directamente a disco
-        # =====================================================================
-
-        # CRITICAL FIX: inicializar final_writer ANTES del bloque try para que
-        # el bloque finally siempre pueda referenciarlo sin UnboundLocalError
         final_writer = None
         final_output_path = None
         compression_stats = None
+        completed = False
 
         try:
+            for batch_start in range(0, len(prepared_items), render_batch_size):
+                batch_end = min(batch_start + render_batch_size, len(prepared_items))
+                batch_items = prepared_items[batch_start:batch_end]
+                max_workers = max(1, min(render_batch_size, len(batch_items)))
+
+                with ThreadPoolExecutor(max_workers=max_workers) as executor:
+                    future_to_index = {
+                        executor.submit(_render_pdf_to_file_safe, item['html']): item['index']
+                        for item in batch_items
+                    }
+
+                    batch_results = []
+                    for future in as_completed(future_to_index):
+                        original_index = future_to_index[future]
+                        try:
+                            pdf_path = future.result()
+                            if pdf_path:
+                                batch_results.append((original_index, pdf_path))
+                            else:
+                                failed_pdf_indices.append(original_index)
+                                print(f"[PDF] Render returned no PDF for report {original_index}")
+                        except Exception as e:
+                            failed_pdf_indices.append(original_index)
+                            print(f"[PDF] Error generating PDF {original_index}: {e}")
+                        finally:
+                            rendered_count += 1
+                            if on_progress:
+                                await on_progress(
+                                    "rendering",
+                                    rendered_count,
+                                    len(prepared_items),
+                                    f"PDF {rendered_count} de {len(prepared_items)} renderizado",
+                                )
+
+                    batch_results.sort(key=lambda x: x[0])
+                    all_pdf_paths.extend([path for _, path in batch_results])
+
+                for item in batch_items:
+                    item['html'] = None
+
+                processed_count = rendered_count
+                elapsed = time.time() - start_time
+                rate = processed_count / elapsed if elapsed > 0 else 0
+                print(f"[PDF] Generated: {processed_count}/{len(prepared_items)} PDFs ({rate:.1f} PDFs/sec)")
+
+                gc.collect()
+
+            if failed_pdf_indices:
+                failed_pdf_indices.sort()
+                raise RuntimeError(
+                    f"Fallo la renderizacion de {len(failed_pdf_indices)} de {len(prepared_items)} PDF(s) del consolidado. "
+                    f"Indices fallidos: {failed_pdf_indices}"
+                )
+
+            if not all_pdf_paths:
+                raise RuntimeError("No se genero ningun PDF exitosamente. WeasyPrint puede no estar disponible en el servidor.")
+
+            # =====================================================================
+            # FASE 3: Merge con STREAMING - Escribe directamente a disco
+            # =====================================================================
             print(f"[PDF] Streaming merge of {len(all_pdf_paths)} PDFs...")
             if on_progress:
                 await on_progress("merging", 0, len(all_pdf_paths), "")
@@ -961,7 +979,6 @@ class ReportService:
                 tmp_final.close()
 
             final_writer = PdfWriter()
-
             merge_batch_size = 10
 
             for batch_idx in range(0, len(all_pdf_paths), merge_batch_size):
@@ -1000,7 +1017,7 @@ class ReportService:
             merge_time = time.time() - merge_start
 
             # =====================================================================
-            # FASE 4: Compresión Ghostscript (opcional)
+            # FASE 4: Compresion Ghostscript (opcional)
             # =====================================================================
             if GHOSTSCRIPT_ENABLED and total_reports > 1:
                 print(f"[PDF] Applying Ghostscript compression (quality={GHOSTSCRIPT_QUALITY})...")
@@ -1022,43 +1039,48 @@ class ReportService:
                 with open(final_output_path, 'rb') as f:
                     result = f.read()
                 os.remove(final_output_path)
+                final_output_path = None
 
             total_time = time.time() - start_time
             gen_time = total_time - merge_time
-            print(f"[PDF] ✅ Complete! {total_reports} reports in {total_time:.1f}s ({total_reports/total_time:.1f} reports/sec)")
+            print(f"[PDF] Complete! {total_reports} reports in {total_time:.1f}s ({total_reports/total_time:.1f} reports/sec)")
             print(f"[PDF]    - Generation + HTML: {gen_time:.1f}s")
             print(f"[PDF]    - Streaming merge: {merge_time:.1f}s")
             if compression_stats and "reduction_percent" in compression_stats:
                 print(f"[PDF]    - Compression: {compression_stats['reduction_percent']}% size reduction")
 
+            completed = True
             return result
 
         finally:
-            # Limpiar archivos temporales de PDFs individuales
             for pdf_path in all_pdf_paths:
                 try:
                     if os.path.exists(pdf_path):
                         os.remove(pdf_path)
                 except OSError:
                     pass
-            # Cerrar PdfWriter si quedó abierto por una excepción
             if final_writer is not None:
                 try:
                     final_writer.close()
                 except Exception:
                     pass
+            if not completed and final_output_path is not None:
+                try:
+                    if os.path.exists(final_output_path):
+                        os.remove(final_output_path)
+                except OSError:
+                    pass
             gc.collect()
 
 
-
 # ============================================================================
-# HELPER FUNCTIONS - VERSIÓN SEGURA
+# HELPER FUNCTIONS - VERSIÃ“N SEGURA
 # ============================================================================
 
 def _render_pdf_to_file_safe(html_string):
     """
     Renderizado seguro de PDF con manejo de errores robusto.
-    Usa WeasyPrint si está disponible, sino Chrome/Edge headless como fallback.
+    Usa WeasyPrint si estÃ¡ disponible, sino Chrome/Edge headless como fallback.
     """
     import tempfile
 
@@ -1095,11 +1117,16 @@ def _render_pdf_with_chrome(html_string):
     import tempfile
     import subprocess
 
+    browser_tmp_dir = tempfile.mkdtemp(prefix='report_service_browser_')
     html_path = None
     pdf_path = None
     try:
         html_file = tempfile.NamedTemporaryFile(
-            delete=False, suffix='.html', mode='w', encoding='utf-8'
+            delete=False,
+            suffix='.html',
+            dir=browser_tmp_dir,
+            mode='w',
+            encoding='utf-8'
         )
         html_file.write(html_string)
         html_file.close()
@@ -1109,14 +1136,24 @@ def _render_pdf_with_chrome(html_string):
         pdf_file.close()
         pdf_path = pdf_file.name
 
+        profile_dir = os.path.join(browser_tmp_dir, 'profile')
+        os.makedirs(profile_dir, exist_ok=True)
+
         chrome_args: list = [arg for arg in [
                 CHROME_PATH,
                 '--headless',
                 '--disable-gpu',
                 '--no-sandbox',
                 '--disable-software-rasterizer',
-                '--run-all-compositor-stages-before-draw',
-                f'--print-to-pdf={pdf_file.name}',
+                '--disable-crash-reporter',
+                '--disable-breakpad',
+                '--no-first-run',
+                '--no-default-browser-check',
+                '--disable-extensions',
+                '--allow-file-access-from-files',
+                f'--crash-dumps-dir={browser_tmp_dir}',
+                f'--user-data-dir={profile_dir}',
+                f'--print-to-pdf={pdf_path}',
                 '--print-to-pdf-no-header',
                 '--no-margins',
                 '--paper-width=8.27',
@@ -1127,15 +1164,16 @@ def _render_pdf_with_chrome(html_string):
             chrome_args,
             capture_output=True,
             text=True,
-            timeout=60,
+            timeout=90,
         )
 
-        os.unlink(html_path)
-
-        if os.path.getsize(pdf_path) > 0:
+        if result.returncode == 0 and os.path.exists(pdf_path) and os.path.getsize(pdf_path) > 0:
             return pdf_path
 
-        print(f"[ERROR] Chrome PDF generation produced empty file. stderr: {result.stderr}")
+        print(
+            f"[ERROR] Chrome PDF generation failed. rc={result.returncode}, "
+            f"stderr: {result.stderr}, stdout: {result.stdout}"
+        )
         if pdf_path and os.path.exists(pdf_path):
             os.unlink(pdf_path)
         return None
@@ -1144,14 +1182,16 @@ def _render_pdf_with_chrome(html_string):
         print(f"[ERROR] Chrome PDF rendering failed: {e}")
         import traceback
         traceback.print_exc()
-        if html_path and os.path.exists(html_path):
-            try:
-                os.unlink(html_path)
-            except OSError:
-                pass
         if pdf_path and os.path.exists(pdf_path):
             try:
                 os.unlink(pdf_path)
             except OSError:
                 pass
         return None
+    finally:
+        if html_path and os.path.exists(html_path):
+            try:
+                os.unlink(html_path)
+            except OSError:
+                pass
+        shutil.rmtree(browser_tmp_dir, ignore_errors=True)

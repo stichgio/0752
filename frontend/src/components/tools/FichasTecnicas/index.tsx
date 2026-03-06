@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, FileDown, Files } from 'lucide-react';
 import DatabasePanel from './DatabasePanel';
 import PreviewPanel from './PreviewPanel';
@@ -39,7 +40,7 @@ export default function FichasTecnicas() {
     };
 
     const handleFichaSelect = async (fichaId: string) => {
-        if (hasUnsavedChanges && !window.confirm('¿Guardar cambios?')) return;
+        if (hasUnsavedChanges && !window.confirm('Â¿Guardar cambios?')) return;
         if (hasUnsavedChanges) await handleSaveChanges();
 
         try {
@@ -87,7 +88,7 @@ export default function FichasTecnicas() {
     };
 
     const handleClearAllFichas = async () => {
-        if (window.confirm('¿ESTÁ SEGURO? \n\nEsto eliminará TODAS las fichas de la base de datos permanentemente.\nEsta acción no se puede deshacer.')) {
+        if (window.confirm('Â¿ESTÃ SEGURO? \n\nEsto eliminarÃ¡ TODAS las fichas de la base de datos permanentemente.\nEsta acciÃ³n no se puede deshacer.')) {
             await run(async () => {
                 await fichasTecnicasApi.deleteAllFichas();
                 await loadFichas();
@@ -104,7 +105,7 @@ export default function FichasTecnicas() {
             return;
         }
         const confirmed = window.confirm(
-            `¿Desea generar un PDF consolidado con las ${fichas.length} fichas?\n\nEsto puede tomar varios minutos dependiendo de la cantidad de fichas.`
+            `Â¿Desea generar un PDF consolidado con las ${fichas.length} fichas?\n\nEsto puede tomar varios minutos dependiendo de la cantidad de fichas.`
         );
         if (!confirmed) return;
 
@@ -180,11 +181,11 @@ export default function FichasTecnicas() {
             <div className={`bg-[#0d0d0d] border-b border-[#333] px-6 py-4 transition-all duration-300 ${isFocusMode ? '-mt-[80px]' : ''}`}>
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <a href="/" className="text-[#888] hover:text-[#eee] transition-colors">
+                        <Link to="/" className="text-[#888] hover:text-[#eee] transition-colors">
                             <ChevronLeft size={24} />
-                        </a>
+                        </Link>
                         <h1 className="text-2xl font-bold font-mono tracking-wide text-[#eee] uppercase">
-                            Fichas Técnicas de Evaluación
+                            Fichas TÃ©cnicas de EvaluaciÃ³n
                         </h1>
                     </div>
                     <div className="flex items-center gap-4">
@@ -285,3 +286,5 @@ export default function FichasTecnicas() {
         </div>
     );
 }
+
+

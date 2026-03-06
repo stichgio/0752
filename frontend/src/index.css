@@ -297,3 +297,117 @@ select * {
 
 
 
+
+/* ================================================
+   Multi-Sheet Preview Fixes
+   ================================================ */
+[data-msheets-page] .msheets-a4-grid-preview {
+  aspect-ratio: 210 / 297 !important;
+  grid-auto-rows: minmax(0, 1fr) !important;
+  align-content: stretch !important;
+  overflow: hidden !important;
+}
+
+[data-msheets-page] .msheets-a4-grid-preview > .msheets-grid-cell {
+  aspect-ratio: auto !important;
+  min-height: 0 !important;
+}
+
+[data-msheets-page] iframe[title="Local Template Preview"] {
+  overflow: hidden !important;
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+[data-msheets-page] iframe[title="Local Template Preview"]::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
+
+/* ================================================
+   Template Editor Route Shell
+   ================================================ */
+.template-editor-page-shell {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  overflow: auto;
+  color-scheme: light;
+  background: radial-gradient(circle at top, #f8faff 0%, #ecf0ff 46%, #eef2f7 100%);
+  color: #111827;
+}
+
+.template-editor-page-zoom {
+  width: 100%;
+  min-height: 100vh;
+  zoom: 1.2;
+}
+
+.template-editor-page-shell .template-editor-root {
+  min-height: 100vh;
+}
+
+.template-editor-boot-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, rgba(245, 248, 255, 0.95), rgba(237, 242, 255, 0.95));
+  transition: opacity 220ms ease, visibility 220ms ease;
+}
+
+.template-editor-page-shell.app-ready .template-editor-boot-loader {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.template-editor-boot-card {
+  width: min(440px, calc(100vw - 40px));
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 18px 48px rgba(15, 23, 42, 0.12);
+  padding: 20px 22px;
+}
+
+.template-editor-boot-title {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #111827;
+}
+
+.template-editor-boot-subtitle {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.template-editor-boot-track {
+  margin-top: 16px;
+  height: 8px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.template-editor-boot-bar {
+  height: 100%;
+  width: 36%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #4f46e5, #0ea5e9);
+  animation: template-editor-boot-progress 1.2s ease-in-out infinite;
+}
+
+@keyframes template-editor-boot-progress {
+  0% {
+    transform: translateX(-120%);
+  }
+
+  100% {
+    transform: translateX(320%);
+  }
+}

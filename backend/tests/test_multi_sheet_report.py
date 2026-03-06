@@ -413,3 +413,107 @@ def test_list_local_template_names_merges_candidate_directories(tmp_path, monkey
 
     names = multi_sheet_report._list_local_template_names()
     assert names == ["A Template", "B Template", "C Template"]
+
+
+
+def test_generate_multi_sheet_pdf_falls_back_to_browser_when_weasyprint_is_unavailable(client, monkeypatch):
+    browser_calls = []
+
+    def fake_browser_render(html_string: str, _base_url: str, output_path: str) -> None:
+        browser_calls.append(html_string)
+        with open(output_path, "wb") as fout:
+            fout.write(_make_blank_pdf())
+
+    monkeypatch.setattr(multi_sheet_report, "WEASYPRINT_AVAILABLE", False)
+    monkeypatch.setattr(multi_sheet_report, "WEASYPRINT_HTML", None)
+    monkeypatch.setattr(
+        multi_sheet_report,
+        "_WEASYPRINT_IMPORT_ERROR",
+        OSError("cannot load library 'libgobject-2.0-0'"),
+    )
+    monkeypatch.setattr(multi_sheet_report, "CHROME_PATH", "C:/Program Files/Google/Chrome/Application/chrome.exe")
+    monkeypatch.setattr(multi_sheet_report, "_render_html_to_pdf_with_browser", fake_browser_render)
+
+    response = client.post(
+        "/api/multi-sheet/generate-pdf",
+        data={
+            "sheets_config": json.dumps(
+                [
+                    {
+                        "order": 0,
+                        "title": "Hoja fallback",
+                        "useAltHeader": False,
+                        "rowData": {"NIS": "1001"},
+                        "imageFilenames": [],
+                        "imagesPerPage": 4,
+                        "pageNum": 1,
+                        "totalPages": 1,
+                    }
+                ]
+            ),
+            "header_config": json.dumps(
+                {
+                    "title": "Informe fallback",
+                    "subtitle": "",
+                    "logoLeft": None,
+                    "logoRight": None,
+                }
+            ),
+            "alt_header_config": json.dumps(
+                {"idField": "", "dateField": "", "extraText": "", "height": "compact"}
+            ),
+        },
+    )
+
+    assert response.status_code == 200
+    assert "application/pdf" in response.headers.get("content-type", "")
+    assert browser_calls
+
+
+
+def test_generate_multi_sheet_pdf_returns_actionable_error_when_no_pdf_engine_available(client, monkeypatch):
+    monkeypatch.setattr(multi_sheet_report, "WEASYPRINT_AVAILABLE", False)
+    monkeypatch.setattr(multi_sheet_report, "WEASYPRINT_HTML", None)
+    monkeypatch.setattr(
+        multi_sheet_report,
+        "_WEASYPRINT_IMPORT_ERROR",
+        OSError("cannot load library 'libgobject-2.0-0'"),
+    )
+    monkeypatch.setattr(multi_sheet_report, "CHROME_PATH", None)
+
+    response = client.post(
+        "/api/multi-sheet/generate-pdf",
+        data={
+            "sheets_config": json.dumps(
+                [
+                    {
+                        "order": 0,
+                        "title": "Hoja error",
+                        "useAltHeader": False,
+                        "rowData": {},
+                        "imageFilenames": [],
+                        "imagesPerPage": 4,
+                        "pageNum": 1,
+                        "totalPages": 1,
+                    }
+                ]
+            ),
+            "header_config": json.dumps(
+                {
+                    "title": "Informe error",
+                    "subtitle": "",
+                    "logoLeft": None,
+                    "logoRight": None,
+                }
+            ),
+            "alt_header_config": json.dumps(
+                {"idField": "", "dateField": "", "extraText": "", "height": "compact"}
+            ),
+        },
+    )
+
+    assert response.status_code == 500
+    detail = response.json()["detail"]
+    assert "libgobject-2.0-0" in detail
+    assert "GTK_RUNTIME_BIN" in detail
+    assert "Chrome/Edge" in detail

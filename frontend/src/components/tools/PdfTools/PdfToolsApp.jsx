@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Layers, Shuffle, Scissors, LayoutGrid, FileOutput } from 'lucide-react';
 import DashboardLayout from '../../DashboardLayout';
@@ -18,25 +19,47 @@ const TABS = [
 
 const WORKSPACE_WIDTH = 'w-full max-w-[1380px]';
 
-function getInitialTab() {
-    const params = new URLSearchParams(window.location.search);
-    const q = (params.get('tab') || '').toLowerCase();
-    const h = (window.location.hash || '').replace('#', '').toLowerCase();
-    const requested = q || h;
-    const match = TABS.find((t) => t.id === requested);
+function getRequestedTab(searchParams, hash) {
+    const queryTab = (searchParams.get('tab') || '').toLowerCase();
+    const hashTab = (hash || '').replace('#', '').toLowerCase();
+    const requested = queryTab || hashTab;
+    const match = TABS.find((tab) => tab.id === requested);
     return match ? match.id : TABS[0].id;
 }
 
 export default function PdfToolsApp() {
-    const [activeTab, setActiveTab] = useState(getInitialTab);
+    const location = useLocation();
+    const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const requestedTab = getRequestedTab(searchParams, location.hash);
+    const [activeTab, setActiveTab] = useState(requestedTab);
 
     useEffect(() => {
-        const url = new URL(window.location.href);
-        url.searchParams.set('tab', activeTab);
-        window.history.replaceState({}, '', url.toString());
-    }, [activeTab]);
+        if (requestedTab !== activeTab) {
+            setActiveTab(requestedTab);
+        }
+    }, [activeTab, requestedTab]);
 
-    const ActiveComponent = TABS.find((t) => t.id === activeTab)?.component;
+    useEffect(() => {
+        const currentQueryTab = (searchParams.get('tab') || '').toLowerCase();
+        if (currentQueryTab === activeTab) {
+            return;
+        }
+
+        const nextParams = new URLSearchParams(searchParams);
+        nextParams.set('tab', activeTab);
+
+        navigate(
+            {
+                pathname: location.pathname,
+                search: `?${nextParams.toString()}`,
+                hash: location.hash,
+            },
+            { replace: true },
+        );
+    }, [activeTab, location.hash, location.pathname, navigate, searchParams]);
+
+    const ActiveComponent = TABS.find((tab) => tab.id === activeTab)?.component;
 
     return (
         <DashboardLayout>
@@ -112,4 +135,3 @@ export default function PdfToolsApp() {
         </DashboardLayout>
     );
 }
-

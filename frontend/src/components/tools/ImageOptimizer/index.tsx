@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+﻿import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { ChevronLeft, Upload, Download, Trash2, Image as ImageIcon, FileDown, Loader2, CheckCircle, AlertCircle, X, Sliders, RotateCcw, Crop, Maximize2, Move, Check, RotateCw, Type } from 'lucide-react';
 import DashboardLayout from '../../DashboardLayout';
 import imageCompression from 'browser-image-compression';
@@ -795,9 +796,9 @@ export default function ImageOptimizer() {
                 {/* Header */}
                 <div className="p-4 border-b border-[#333]">
                     <div className="flex items-center gap-3">
-                        <a href="/" className="text-[#666] hover:text-[#eee] transition-colors">
+                        <Link to="/" className="text-[#666] hover:text-[#eee] transition-colors">
                             <ChevronLeft size={20} />
-                        </a>
+                        </Link>
                         <h1 className="text-sm font-bold font-mono tracking-wide text-[#eee] uppercase">
                             Optimizador de Imagenes
                         </h1>
@@ -1199,7 +1200,7 @@ export default function ImageOptimizer() {
                                             <p className="text-[9px] text-[#444] font-mono mb-1">
                                                 {img.originalWidth}x{img.originalHeight}
                                                 {img.finalWidth && img.finalHeight && img.status === 'completed' && (
-                                                    <span className="text-green-500/70"> → {img.finalWidth}x{img.finalHeight}</span>
+                                                    <span className="text-green-500/70"> â†’ {img.finalWidth}x{img.finalHeight}</span>
                                                 )}
                                             </p>
                                         )}
@@ -1260,3 +1261,5 @@ export default function ImageOptimizer() {
         </DashboardLayout>
     );
 }
+
+

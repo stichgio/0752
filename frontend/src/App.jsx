@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import html2canvas from 'html2canvas';
 import { downloadBlob, getFilenameFromHeaders } from './utils/downloadBlob';
@@ -448,6 +448,8 @@ export default function App() {
         });
     };
 
+    const filteredImages = useMemo(() => getFilteredImages(), [selectedIndex, data, idColumn, images]);
+
     const handleDownload = async () => {
         if (!panelRef.current) return;
 
@@ -781,7 +783,7 @@ export default function App() {
                                 {/* Error Message */}
                                 {templateStatus === 'invalid' && templateError && (
                                     <div className="text-[10px] text-red-400 px-1">
-                                        ⚠️ {templateError}
+                                        {'\u26A0\uFE0F'} {templateError}
                                     </div>
                                 )}
 
@@ -826,7 +828,7 @@ export default function App() {
                                 </div>
                                 {!requiresImages && (
                                     <div className="text-[9px] text-amber-400/80 px-1">
-                                        ⚠️ Esta plantilla no requiere imágenes (ej: certificados)
+                                        {'\u26A0\uFE0F'} Esta plantilla no requiere imágenes (ej: certificados)
                                     </div>
                                 )}
                             </div>
@@ -928,7 +930,7 @@ export default function App() {
                                                 className="text-red-400 hover:text-red-300 text-xs px-1 hover:bg-red-500/20 rounded transition-colors"
                                                 title="Eliminar columna personalizada"
                                             >
-                                                ✕
+                                                {'\u2715'}
                                             </button>
                                         </div>
                                     ))}
@@ -948,7 +950,7 @@ export default function App() {
                                 onClick={handleDownloadTemplate}
                                 className="w-full mt-3 border border-dashed border-neutral-700 hover:border-neutral-500 rounded p-2.5 text-center hover:bg-neutral-800 transition-all flex items-center justify-center gap-2 text-xs text-neutral-400 hover:text-white"
                             >
-                                <span>📥</span> Descargar Plantilla Excel
+                                <span>{'\uD83D\uDCE5'}</span> Descargar Plantilla Excel
                             </button>
                         </Step>
 
@@ -1121,7 +1123,7 @@ export default function App() {
                     <PreviewPanel
                         ref={panelRef}
                         data={data[selectedIndex]}
-                        images={getFilteredImages()}
+                        images={filteredImages}
                         mappings={mappings}
                         logoLeft={logoLeft}
                         logoRight={logoRight}

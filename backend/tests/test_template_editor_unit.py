@@ -309,3 +309,40 @@ def test_compat_css_covers_photo_media_img():
     html = '<div class="photo-cell-wrap"><div class="photo-media"><img></div></div>'
     result = _normalize_photo_grid_template_compat(html)
     assert ".photo-media > img" in result
+
+
+def test_compat_injects_chrome_page_fix_for_photo_page_templates():
+    html = (
+        '<html><head></head><body>'
+        '<div class="page">'
+        '<section class="panel-fotografico">'
+        '<div class="photo-grid-3x2"><div class="photo-cell"><img src="x.jpg"></div></div>'
+        '</section>'
+        '</div></body></html>'
+    )
+    result = _normalize_photo_grid_template_compat(html)
+    assert "chrome-page-compat-fix" in result
+    assert "grid-template-rows: repeat(2, minmax(0, 1fr))" in result
+    assert result.index("chrome-page-compat-fix") < result.index("</head>")
+
+
+def test_compat_injects_chrome_page_fix_for_canvas_photo_templates():
+    html = (
+        '<html><head></head><body>'
+        '<div class="template-container">'
+        '<div class="photo-section">'
+        '<table class="photo-grid-table"><tr><td><img src="x.jpg"></td></tr></table>'
+        '</div>'
+        '</div></body></html>'
+    )
+    result = _normalize_photo_grid_template_compat(html)
+    assert "chrome-page-compat-fix" in result
+    assert ".template-container" in result
+    assert ".photo-grid-table" in result
+    assert "width: 210mm !important" not in result
+
+
+def test_compat_skips_chrome_page_fix_for_plain_html():
+    html = '<html><head></head><body><div class="page">Hola</div></body></html>'
+    result = _normalize_photo_grid_template_compat(html)
+    assert "chrome-page-compat-fix" not in result

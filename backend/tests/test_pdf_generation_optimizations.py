@@ -205,7 +205,7 @@ def test_generate_pdf_progress_emits_incremental_preparing_updates(client, monke
     assert "event: done" in progress_text
 
 
-def test_report_service_uses_single_render_for_default_template(monkeypatch):
+def test_report_service_renders_default_template_per_report_for_batch_exports(monkeypatch):
     calls = []
 
     def fake_render_pdf_to_file(html_string: str):
@@ -233,9 +233,40 @@ def test_report_service_uses_single_render_for_default_template(monkeypatch):
         asyncio.run(service.close())
 
     assert isinstance(pdf_bytes, bytes)
+    assert len(calls) == 2
+    assert "CS Norte" in calls[0]
+    assert "CS Sur" in calls[1]
+
+
+def test_report_service_keeps_single_render_for_single_default_report(monkeypatch):
+    calls = []
+
+    def fake_render_pdf_to_file(html_string: str):
+        calls.append(html_string)
+        tmp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+        tmp_path.close()
+        with open(tmp_path.name, "wb") as fout:
+            fout.write(_make_blank_pdf())
+        return tmp_path.name
+
+    monkeypatch.setattr(report_service, "GHOSTSCRIPT_ENABLED", False)
+    monkeypatch.setattr(report_service, "_render_pdf_to_file_safe", fake_render_pdf_to_file)
+
+    service = report_service.ReportService()
+    try:
+        pdf_bytes = asyncio.run(
+            service.generate_batch_pdf(
+                [
+                    {"data": {"CENTRO": "CS Norte", "NIS": "1001"}, "files": []},
+                ]
+            )
+        )
+    finally:
+        asyncio.run(service.close())
+
+    assert isinstance(pdf_bytes, bytes)
     assert len(calls) == 1
     assert "CS Norte" in calls[0]
-    assert "CS Sur" in calls[0]
 
 
 def test_report_service_keeps_per_report_render_for_custom_templates(monkeypatch):
@@ -316,7 +347,7 @@ def test_report_service_emits_incremental_progress_for_custom_templates(monkeypa
     "template_name",
     sorted(path.name for path in Path(os.path.join(os.path.dirname(__file__), "..", "templates")).glob("*.html")),
 )
-def test_report_service_uses_single_render_for_all_backend_templates(monkeypatch, template_name):
+def test_report_service_renders_backend_templates_per_report_for_batch_exports(monkeypatch, template_name):
     calls = []
 
     def fake_render_pdf_to_file(html_string: str):
@@ -345,7 +376,77 @@ def test_report_service_uses_single_render_for_all_backend_templates(monkeypatch
         asyncio.run(service.close())
 
     assert isinstance(pdf_bytes, bytes)
-    assert len(calls) == 1
+    assert len(calls) == 2
+
+
+
+def test_report_service_rejects_partial_batch_pdf_generation(monkeypatch):
+    calls = {"count": 0}
+
+    def fake_render_pdf_to_file(_html_string: str):
+        calls["count"] += 1
+        if calls["count"] == 1:
+            tmp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+            tmp_path.close()
+            with open(tmp_path.name, "wb") as fout:
+                fout.write(_make_blank_pdf())
+            return tmp_path.name
+        return None
+
+    monkeypatch.setattr(report_service, "GHOSTSCRIPT_ENABLED", False)
+    monkeypatch.setattr(report_service, "_render_pdf_to_file_safe", fake_render_pdf_to_file)
+
+    service = report_service.ReportService()
+    try:
+        with pytest.raises(RuntimeError, match=r"Fallo la renderizacion de 1 de 2 PDF\(s\)"):
+            asyncio.run(
+                service.generate_batch_pdf(
+                    [
+                        {"data": {"CENTRO": "CS Norte", "NIS": "1001"}, "files": []},
+                        {"data": {"CENTRO": "CS Sur", "NIS": "1002"}, "files": []},
+                    ],
+                    template_name="report_volanteo.html",
+                )
+            )
+    finally:
+        asyncio.run(service.close())
+
+
+def test_report_service_cleans_up_partial_batch_temp_pdfs(monkeypatch):
+    calls = {"count": 0}
+    created_paths = []
+
+    def fake_render_pdf_to_file(_html_string: str):
+        calls["count"] += 1
+        if calls["count"] == 1:
+            tmp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+            tmp_path.close()
+            with open(tmp_path.name, "wb") as fout:
+                fout.write(_make_blank_pdf())
+            created_paths.append(tmp_path.name)
+            return tmp_path.name
+        return None
+
+    monkeypatch.setattr(report_service, "GHOSTSCRIPT_ENABLED", False)
+    monkeypatch.setattr(report_service, "_render_pdf_to_file_safe", fake_render_pdf_to_file)
+
+    service = report_service.ReportService()
+    try:
+        with pytest.raises(RuntimeError, match=r"Fallo la renderizacion de 1 de 2 PDF\(s\)"):
+            asyncio.run(
+                service.generate_batch_pdf(
+                    [
+                        {"data": {"CENTRO": "CS Norte", "NIS": "1001"}, "files": []},
+                        {"data": {"CENTRO": "CS Sur", "NIS": "1002"}, "files": []},
+                    ],
+                    template_name="report_volanteo.html",
+                )
+            )
+    finally:
+        asyncio.run(service.close())
+
+    assert created_paths
+    assert all(not os.path.exists(path) for path in created_paths)
 
 
 def test_multi_sheet_memoizes_template_scan_and_image_encoding(client, monkeypatch, tmp_path):
@@ -494,3 +595,4 @@ def test_report_service_uses_layout_specific_image_size_for_backend_template(mon
 
     assert isinstance(pdf_bytes, bytes)
     assert captured["max_size"] == report_service.resolve_backend_template_image_max_size("format_reservorios.html", 4)
+

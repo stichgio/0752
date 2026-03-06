@@ -1,42 +1,10 @@
-{
+﻿{
     "buildCommand": "npm run build",
     "outputDirectory": "dist",
     "rewrites": [
         {
             "source": "/api/:path*",
             "destination": "https://shengio-stich-0752.hf.space/api/:path*"
-        },
-        {
-            "source": "/reportes-tecnicos",
-            "destination": "/reportes-tecnicos.html"
-        },
-        {
-            "source": "/fichas-tecnicas",
-            "destination": "/fichas-tecnicas.html"
-        },
-        {
-            "source": "/image-optimizer",
-            "destination": "/image-optimizer.html"
-        },
-        {
-            "source": "/compressor",
-            "destination": "/compressor.html"
-        },
-        {
-            "source": "/template-editor",
-            "destination": "/template-editor.html"
-        },
-        {
-            "source": "/msheets",
-            "destination": "/msheets.html"
-        },
-        {
-            "source": "/ocr",
-            "destination": "/ocr.html"
-        },
-        {
-            "source": "/pdf-tools",
-            "destination": "/pdf-tools.html"
         },
         {
             "source": "/(.*)",

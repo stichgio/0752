@@ -21,6 +21,7 @@ import math
 import os
 import re
 import shutil
+import subprocess
 import tempfile
 import traceback
 from typing import Any, Optional
@@ -29,6 +30,7 @@ logger = logging.getLogger("multi_sheet_report")
 
 from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse, HTMLResponse
+from config import settings
 
 try:
     from template_editor.service import (  
@@ -47,6 +49,61 @@ except ImportError:
 
 # ── Router ────────────────────────────────────────────────────────────────────
 router = APIRouter(tags=["multi-sheet-report"])
+
+def _configure_windows_gtk_runtime() -> None:
+    """Optionally add GTK runtime directory on Windows for WeasyPrint."""
+    if os.name != "nt":
+        return
+
+    gtk_path = settings.gtk_runtime_bin.strip()
+    if not gtk_path or not os.path.isdir(gtk_path):
+        return
+
+    os.environ["PATH"] = gtk_path + os.pathsep + os.environ.get("PATH", "")
+    add_dll_directory = getattr(os, "add_dll_directory", None)
+    if callable(add_dll_directory):
+        try:
+            add_dll_directory(gtk_path)
+        except Exception:
+            logger.debug("No se pudo registrar GTK runtime en add_dll_directory", exc_info=True)
+
+
+def _detect_browser_pdf_path() -> Optional[str]:
+    windows_candidates = [
+        "C:/Program Files/Google/Chrome/Application/chrome.exe",
+        "C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
+        "C:/Program Files/Microsoft/Edge/Application/msedge.exe",
+        "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
+    ]
+    linux_candidates = [
+        "/usr/bin/google-chrome",
+        "/usr/bin/chromium-browser",
+        "/usr/bin/chromium",
+    ]
+    candidates = windows_candidates if os.name == "nt" else linux_candidates
+    for candidate in candidates:
+        if os.path.isfile(candidate):
+            return candidate
+    return None
+
+
+_configure_windows_gtk_runtime()
+
+_WEASYPRINT_IMPORT_ERROR: Optional[Exception] = None
+try:
+    from weasyprint import HTML as WEASYPRINT_HTML
+
+    WEASYPRINT_AVAILABLE = True
+except (ImportError, OSError) as exc:
+    WEASYPRINT_HTML = None
+    WEASYPRINT_AVAILABLE = False
+    _WEASYPRINT_IMPORT_ERROR = exc
+    logger.warning("WeasyPrint no disponible para multi-sheet: %s", exc)
+
+CHROME_PATH = _detect_browser_pdf_path()
+if CHROME_PATH and not WEASYPRINT_AVAILABLE:
+    logger.info("Usando navegador headless como fallback PDF para multi-sheet: %s", CHROME_PATH)
+
 
 # Tipos MIME para imágenes
 _MIME_MAP: dict[str, str] = {
@@ -522,6 +579,7 @@ def _render_local_template(
     row_data: dict[str, Any],
     images_b64: list[str],
     image_filenames: list[str],
+    template_record: Optional[LocalTemplateRecord] = None,
 ) -> str:
     """Render a local HTML template (Jinja2) with row data and images."""
     try:
@@ -529,7 +587,7 @@ def _render_local_template(
     except ImportError as exc:
         raise RuntimeError("Jinja2 no está instalado.") from exc
 
-    record = _find_local_template(template_name)
+    record = template_record or _find_local_template(template_name)
     if record is None:
         raise RuntimeError(f"Plantilla local no encontrada: {template_name}")
 
@@ -563,14 +621,96 @@ from concurrent.futures import ThreadPoolExecutor
 _pdf_executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="weasyprint")
 
 
-def _render_html_to_pdf(html_string: str, base_url: str, output_path: str) -> None:
+def _render_html_to_pdf_with_browser(html_string: str, base_url: str, output_path: str) -> None:
+    if not CHROME_PATH:
+        raise RuntimeError("No hay navegador disponible para el fallback PDF.")
+
+    browser_tmp_dir = tempfile.mkdtemp(prefix="multi_sheet_browser_")
+    html_path: Optional[str] = None
+    profile_dir = os.path.join(browser_tmp_dir, "profile")
+    os.makedirs(profile_dir, exist_ok=True)
+
     try:
-        from weasyprint import HTML  
-    except ImportError as exc:
+        html_dir = base_url if base_url and os.path.isdir(base_url) else browser_tmp_dir
+        html_file = tempfile.NamedTemporaryFile(
+            delete=False,
+            suffix=".html",
+            dir=html_dir,
+            mode="w",
+            encoding="utf-8",
+        )
+        html_file.write(html_string)
+        html_file.close()
+        html_path = html_file.name
+
+        browser_args = [
+            arg for arg in [
+                CHROME_PATH,
+                "--headless",
+                "--disable-gpu",
+                "--no-sandbox",
+                "--disable-software-rasterizer",
+                "--disable-crash-reporter",
+                "--disable-breakpad",
+                "--no-first-run",
+                "--no-default-browser-check",
+                "--disable-extensions",
+                "--allow-file-access-from-files",
+                f"--crash-dumps-dir={browser_tmp_dir}",
+                f"--user-data-dir={profile_dir}",
+                f"--print-to-pdf={output_path}",
+                "--print-to-pdf-no-header",
+                "--no-margins",
+                "--paper-width=8.27",
+                "--paper-height=11.69",
+                html_path,
+            ] if arg is not None
+        ]
+        result = subprocess.run(
+            browser_args,
+            capture_output=True,
+            text=True,
+            timeout=90,
+        )
+        if result.returncode != 0 or not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
+            error_output = (result.stderr or result.stdout or "").strip()
+            suffix = f": {error_output}" if error_output else "."
+            raise RuntimeError(f"Chrome/Edge headless no pudo generar el PDF{suffix}")
+    finally:
+        if html_path:
+            _safe_remove(html_path)
+        shutil.rmtree(browser_tmp_dir, ignore_errors=True)
+
+
+def _render_html_to_pdf(html_string: str, base_url: str, output_path: str) -> None:
+    errors: list[str] = []
+
+    if WEASYPRINT_AVAILABLE and WEASYPRINT_HTML is not None:
+        try:
+            WEASYPRINT_HTML(string=html_string, base_url=base_url).write_pdf(output_path)
+            return
+        except Exception as exc:
+            logger.warning("WeasyPrint fallo para multi-sheet; se intentara fallback de navegador", exc_info=True)
+            errors.append(f"WeasyPrint: {exc}")
+    elif _WEASYPRINT_IMPORT_ERROR is not None:
+        errors.append(f"WeasyPrint: {_WEASYPRINT_IMPORT_ERROR}")
+
+    if CHROME_PATH:
+        try:
+            _render_html_to_pdf_with_browser(html_string, base_url, output_path)
+            return
+        except Exception as exc:
+            logger.warning("Fallback de navegador fallo para multi-sheet", exc_info=True)
+            errors.append(f"Navegador: {exc}")
+
+    if errors:
         raise RuntimeError(
-            "WeasyPrint no está instalado. Ejecuta: pip install weasyprint"
-        ) from exc
-    HTML(string=html_string, base_url=base_url).write_pdf(output_path)
+            "No se pudo generar el PDF. "
+            + " | ".join(errors)
+            + " | En Windows configure GTK_RUNTIME_BIN o instale Chrome/Edge para el fallback."
+        )
+
+    raise RuntimeError("No hay un motor PDF disponible. Instale WeasyPrint o Chrome/Edge.")
 
 
 async def _render_html_to_pdf_async(html_string: str, base_url: str, output_path: str) -> None:
@@ -957,7 +1097,12 @@ async def generate_multi_sheet_pdf(
                 return fallback
 
         sorted_sheets = sorted(sheets, key=lambda s: _sheet_order_value(s, 0))
-        local_name_set = {_normalize_template_name(name) for name in _list_local_template_names()}
+        local_records = _scan_local_templates()
+        local_records_by_name = {
+            _normalize_template_name(record.name): record
+            for record in local_records
+        }
+        image_data_cache: dict[str, Optional[str]] = {}
         first_sheet_idx = next(
             (
                 idx
@@ -1024,18 +1169,24 @@ async def generate_multi_sheet_pdf(
                     safe_fname = os.path.basename(fname)
                     img_path = os.path.join(tmp_dir, safe_fname)
                     if os.path.exists(img_path):
-                        data_uri = _image_to_b64(img_path)
+                        cache_key = os.path.realpath(img_path)
+                        if cache_key not in image_data_cache:
+                            image_data_cache[cache_key] = _image_to_b64(img_path)
+                        data_uri = image_data_cache.get(cache_key)
                         if data_uri:
                             images_b64.append(data_uri)
 
                 # Construir HTML de la página
-                if is_first_sheet and template_name in local_name_set:
+                local_template_record = local_records_by_name.get(template_name)
+
+                if is_first_sheet and local_template_record is not None:
                     page_html = _render_local_template(
                         template_name=template_name,
                         header=header,
                         row_data=row_data,
                         images_b64=images_b64,
                         image_filenames=page_filenames,
+                        template_record=local_template_record,
                     )
                 elif is_first_sheet and template_name == _normalize_template_name(_VOLANTEO_TEMPLATE_NAME):
                     page_html = _build_volanteo_page_html(
@@ -1043,13 +1194,14 @@ async def generate_multi_sheet_pdf(
                         row_data=row_data,
                         image_data_uris=images_b64,
                     )
-                elif template_name in local_name_set:
+                elif local_template_record is not None:
                     page_html = _render_local_template(
                         template_name=template_name,
                         header=header,
                         row_data=row_data,
                         images_b64=images_b64,
                         image_filenames=page_filenames,
+                        template_record=local_template_record,
                     )
                 elif template_name == _normalize_template_name(_VOLANTEO_TEMPLATE_NAME):
                     page_html = _build_volanteo_page_html(
