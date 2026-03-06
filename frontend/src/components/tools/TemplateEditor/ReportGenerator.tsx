@@ -234,6 +234,9 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     const [isPdfLoading, setIsPdfLoading] = useState(false);
     const [pdfLoadingMessage, setPdfLoadingMessage] = useState('');
 
+    // Original Quality Mode
+    const [originalQuality, setOriginalQuality] = useState(false);
+
     // Rendered preview
     const [renderedHtml, setRenderedHtml] = useState('');
 
@@ -1004,6 +1007,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
         formData.append('templateName', selectedTemplate.name);
         if (idColumn) formData.append('idColumn', idColumn);
         formData.append('exportScope', exportScope);
+        if (originalQuality) formData.append('originalQuality', 'true');
 
         try {
             setIsPdfLoading(true);
@@ -1042,7 +1046,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
         } finally {
             setIsPdfLoading(false);
         }
-    }, [data, selectedIndex, exportScope, selectedTemplate, mappings, customColumns, idColumn, images, requiresImages, logoLeftFile, logoRightFile, matchesRecordId, getFilteredImages]);
+    }, [data, selectedIndex, exportScope, selectedTemplate, mappings, customColumns, idColumn, images, requiresImages, logoLeftFile, logoRightFile, matchesRecordId, getFilteredImages, originalQuality]);
 
     // ── Custom column handlers ─────────────────────────────────────
     const addCustomColumn = useCallback(() => {
@@ -1376,6 +1380,34 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                                     </div>
                                 )}
                             </div>
+
+                            {/* Original Quality Toggle */}
+                            <div className={`flex items-center justify-between py-2 px-3 border transition-colors mt-1 ${originalQuality
+                                    ? 'border-amber-500/30 bg-amber-500/5'
+                                    : 'border-[#1a1a1a] bg-[#050505]'
+                                }`}>
+                                <span className={`text-[10px] font-mono uppercase tracking-wider flex items-center gap-2 ${originalQuality ? 'text-amber-400' : 'text-[#666]'
+                                    }`}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <path d="M6 3h12l4 6-10 13L2 9z" />
+                                    </svg>
+                                    Calidad Original
+                                </span>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={originalQuality}
+                                        onChange={(e) => setOriginalQuality(e.target.checked)}
+                                        className="sr-only peer"
+                                    />
+                                    <div className="w-7 h-3.5 bg-[#222] peer-focus:outline-none rounded-none peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-none after:h-2.5 after:w-2.5 after:transition-all peer-checked:bg-amber-600" />
+                                </label>
+                            </div>
+                            {originalQuality && (
+                                <div className="text-[9px] font-mono text-amber-400/80 px-3 mt-1">
+                                    ⚠ Sin compresión. El archivo será más pesado.
+                                </div>
+                            )}
 
                             <button
                                 onClick={handleBackendDownload}

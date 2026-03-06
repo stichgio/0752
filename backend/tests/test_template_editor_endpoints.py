@@ -140,7 +140,7 @@ def test_generate_pdf_can_use_published_visual_template_without_contract_change(
     client.post(f"/api/template-editor/templates/{template_id}/publish", json={"author": "qa"})
 
     class DummyService:
-        async def generate_batch_pdf(self, reports_payload, output_path=None, logo_left=None, logo_right=None, custom_template_str=None, template_name=None):
+        async def generate_batch_pdf(self, reports_payload, output_path=None, logo_left=None, logo_right=None, custom_template_str=None, template_name=None, original_quality=False):
             with open(output_path, "wb") as f:
                 f.write(b"%PDF-1.4\n%mock\n")
             assert custom_template_str is not None
@@ -219,7 +219,7 @@ def test_saving_published_template_moves_it_back_to_draft_until_republished(clie
 
 def test_generate_pdf_falls_back_to_legacy_template_resolution_when_not_in_db(client):
     class DummyService:
-        async def generate_batch_pdf(self, reports_payload, output_path=None, logo_left=None, logo_right=None, custom_template_str=None, template_name=None):
+        async def generate_batch_pdf(self, reports_payload, output_path=None, logo_left=None, logo_right=None, custom_template_str=None, template_name=None, original_quality=False):
             with open(output_path, "wb") as f:
                 f.write(b"%PDF-1.4\n%mock\n")
             assert custom_template_str is None
@@ -240,7 +240,7 @@ def test_generate_pdf_falls_back_to_legacy_template_resolution_when_not_in_db(cl
 
 def test_generate_pdf_uses_template_alias_and_selected_id_for_download_name(client):
     class DummyService:
-        async def generate_batch_pdf(self, reports_payload, output_path=None, logo_left=None, logo_right=None, custom_template_str=None, template_name=None):
+        async def generate_batch_pdf(self, reports_payload, output_path=None, logo_left=None, logo_right=None, custom_template_str=None, template_name=None, original_quality=False):
             with open(output_path, "wb") as f:
                 f.write(b"%PDF-1.4\n%mock\n")
 
@@ -271,7 +271,7 @@ def test_generate_pdf_uses_template_alias_and_selected_id_for_download_name(clie
 
 def test_generate_pdf_uses_consolidated_download_name_for_batch_exports(client):
     class DummyService:
-        async def generate_batch_pdf(self, reports_payload, output_path=None, logo_left=None, logo_right=None, custom_template_str=None, template_name=None):
+        async def generate_batch_pdf(self, reports_payload, output_path=None, logo_left=None, logo_right=None, custom_template_str=None, template_name=None, original_quality=False):
             with open(output_path, "wb") as f:
                 f.write(b"%PDF-1.4\n%mock\n")
 

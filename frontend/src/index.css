@@ -25,12 +25,20 @@ body {
   background-color: #050505;
 }
 
+html.template-editor-page-html {
+  scrollbar-gutter: auto;
+}
+
+body.template-editor-page-body {
+  background: radial-gradient(circle at top, #f8faff 0%, #ecf0ff 46%, #eef2f7 100%);
+}
+
 #root {
   min-height: 100vh;
 }
 
 /* ================================================
-   View Transitions — Smooth MPA Navigation
+   View Transitions - Smooth MPA Navigation
    ================================================ */
 @view-transition {
   navigation: auto;
@@ -330,22 +338,26 @@ select * {
    ================================================ */
 .template-editor-page-shell {
   position: relative;
+  height: 100vh;
   min-height: 100vh;
   width: 100%;
-  overflow: auto;
+  overflow: hidden;
   color-scheme: light;
   background: radial-gradient(circle at top, #f8faff 0%, #ecf0ff 46%, #eef2f7 100%);
   color: #111827;
 }
 
 .template-editor-page-zoom {
-  width: 100%;
-  min-height: 100vh;
-  zoom: 1.2;
+  width: calc(100% / 1.2);
+  height: calc(100vh / 1.2);
+  min-height: calc(100vh / 1.2);
+  transform: scale(1.2);
+  transform-origin: top left;
 }
 
 .template-editor-page-shell .template-editor-root {
-  min-height: 100vh;
+  height: 100%;
+  min-height: 100%;
 }
 
 .template-editor-boot-loader {

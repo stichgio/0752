@@ -1052,6 +1052,9 @@ export default function MultiSheetReportApp() {
     const [pdfLoadingMessage, setPdfLoadingMessage] = useState('');
     const sseProgress = useSSEProgress();
 
+    // Original Quality Mode
+    const [originalQuality, setOriginalQuality] = useState(false);
+
     // ─────────────────────────────────────────────────────────────────────────
     // Carga de plantillas disponibles
     // ─────────────────────────────────────────────────────────────────────────
@@ -1580,9 +1583,10 @@ export default function MultiSheetReportApp() {
         allImages.forEach(img => formData.append('files', img.file));
         if (logoLeftFile) formData.append('logoLeftFile', logoLeftFile);
         if (logoRightFile) formData.append('logoRightFile', logoRightFile);
+        if (originalQuality) formData.append('originalQuality', 'true');
 
         return { formData, count: sheetsConfig.length };
-    }, [sheets, data, getImagesForRow, images, headerTitle, headerSubtitle, logoLeft, logoRight, altHeaderConfig, logoLeftFile, logoRightFile]);
+    }, [sheets, data, getImagesForRow, images, headerTitle, headerSubtitle, logoLeft, logoRight, altHeaderConfig, logoLeftFile, logoRightFile, originalQuality]);
 
     // ─────────────────────────────────────────────────────────────────────────
     // Exportar PDF
@@ -1756,198 +1760,200 @@ export default function MultiSheetReportApp() {
                         <Step number="1" title="Hojas del Informe" icon={<Layers size={16} />}>
                             <div className="space-y-2">
                                 {/* Lista de hojas */}
-                                {(() => { const _hl = buildHierarchyLabels(sheets); return sheets.map((sheet, index) => (
-                                    <div key={sheet.id} className="bg-neutral-900 border border-neutral-800 rounded-lg p-2 space-y-2">
-                                        {/* Fila superior: número, título, toggle, controles */}
-                                        <div className="flex items-center gap-1.5">
-                                            <span className="text-neutral-600 text-[10px] font-mono w-4 shrink-0">{index + 1}</span>
-                                            <input
-                                                type="text"
-                                                value={sheet.title}
-                                                onChange={e => updateSheet(sheet.id, { title: e.target.value })}
-                                                className="flex-1 min-w-0 bg-neutral-800 border border-neutral-700 rounded px-2 py-1 text-xs text-white focus:border-white outline-none"
-                                                placeholder="Título de hoja"
-                                            />
-                                            {/* Toggle mini-header */}
-                                            <button
-                                                onClick={() => updateSheet(sheet.id, { useAltHeader: !sheet.useAltHeader })}
-                                                title={sheet.useAltHeader ? 'Usar encabezado principal' : 'Usar mini-encabezado'}
-                                                className={`shrink-0 transition-colors ${sheet.useAltHeader ? 'text-blue-400' : 'text-neutral-600 hover:text-neutral-400'}`}
-                                            >
-                                                {sheet.useAltHeader ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
-                                            </button>
-                                            {/* Marcar como hoja diferente (jerarquía) */}
-                                            <button
-                                                onClick={() => toggleFirstPageSheet(sheet.id)}
-                                                title={sheet.firstPageOnly ? `Quitar ${_hl[sheet.id]}` : 'Marcar como hoja diferente'}
-                                                className={`shrink-0 px-1.5 py-0.5 rounded border text-[10px] font-bold transition-colors
+                                {(() => {
+                                    const _hl = buildHierarchyLabels(sheets); return sheets.map((sheet, index) => (
+                                        <div key={sheet.id} className="bg-neutral-900 border border-neutral-800 rounded-lg p-2 space-y-2">
+                                            {/* Fila superior: número, título, toggle, controles */}
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="text-neutral-600 text-[10px] font-mono w-4 shrink-0">{index + 1}</span>
+                                                <input
+                                                    type="text"
+                                                    value={sheet.title}
+                                                    onChange={e => updateSheet(sheet.id, { title: e.target.value })}
+                                                    className="flex-1 min-w-0 bg-neutral-800 border border-neutral-700 rounded px-2 py-1 text-xs text-white focus:border-white outline-none"
+                                                    placeholder="Título de hoja"
+                                                />
+                                                {/* Toggle mini-header */}
+                                                <button
+                                                    onClick={() => updateSheet(sheet.id, { useAltHeader: !sheet.useAltHeader })}
+                                                    title={sheet.useAltHeader ? 'Usar encabezado principal' : 'Usar mini-encabezado'}
+                                                    className={`shrink-0 transition-colors ${sheet.useAltHeader ? 'text-blue-400' : 'text-neutral-600 hover:text-neutral-400'}`}
+                                                >
+                                                    {sheet.useAltHeader ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
+                                                </button>
+                                                {/* Marcar como hoja diferente (jerarquía) */}
+                                                <button
+                                                    onClick={() => toggleFirstPageSheet(sheet.id)}
+                                                    title={sheet.firstPageOnly ? `Quitar ${_hl[sheet.id]}` : 'Marcar como hoja diferente'}
+                                                    className={`shrink-0 px-1.5 py-0.5 rounded border text-[10px] font-bold transition-colors
                                                     ${sheet.firstPageOnly
-                                                        ? 'border-amber-400/60 text-amber-300 bg-amber-500/10'
-                                                        : 'border-neutral-700 text-neutral-500 hover:text-neutral-300 hover:border-neutral-500'}`}
-                                            >
-                                                {sheet.firstPageOnly ? _hl[sheet.id] : '1°'}
-                                            </button>
-                                            {/* Mover arriba */}
-                                            <button
-                                                onClick={() => moveSheet(index, -1)}
-                                                disabled={index === 0}
-                                                className="shrink-0 text-neutral-600 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
-                                            >
-                                                <ArrowUp size={13} />
-                                            </button>
-                                            {/* Mover abajo */}
-                                            <button
-                                                onClick={() => moveSheet(index, 1)}
-                                                disabled={index === sheets.length - 1}
-                                                className="shrink-0 text-neutral-600 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
-                                            >
-                                                <ArrowDown size={13} />
-                                            </button>
-                                            {/* Eliminar */}
-                                            <button
-                                                onClick={() => removeSheet(sheet.id)}
-                                                className="shrink-0 text-red-500/60 hover:text-red-400 transition-colors"
-                                            >
-                                                <Trash2 size={13} />
-                                            </button>
-                                        </div>
+                                                            ? 'border-amber-400/60 text-amber-300 bg-amber-500/10'
+                                                            : 'border-neutral-700 text-neutral-500 hover:text-neutral-300 hover:border-neutral-500'}`}
+                                                >
+                                                    {sheet.firstPageOnly ? _hl[sheet.id] : '1°'}
+                                                </button>
+                                                {/* Mover arriba */}
+                                                <button
+                                                    onClick={() => moveSheet(index, -1)}
+                                                    disabled={index === 0}
+                                                    className="shrink-0 text-neutral-600 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                                                >
+                                                    <ArrowUp size={13} />
+                                                </button>
+                                                {/* Mover abajo */}
+                                                <button
+                                                    onClick={() => moveSheet(index, 1)}
+                                                    disabled={index === sheets.length - 1}
+                                                    className="shrink-0 text-neutral-600 hover:text-white disabled:opacity-20 disabled:cursor-not-allowed transition-colors"
+                                                >
+                                                    <ArrowDown size={13} />
+                                                </button>
+                                                {/* Eliminar */}
+                                                <button
+                                                    onClick={() => removeSheet(sheet.id)}
+                                                    className="shrink-0 text-red-500/60 hover:text-red-400 transition-colors"
+                                                >
+                                                    <Trash2 size={13} />
+                                                </button>
+                                            </div>
 
-                                        {/* Selector de plantilla: solo Grilla de Imágenes + plantillas locales (.mtemplates/) */}
-                                        <select
-                                            className={`w-full bg-neutral-800 border rounded px-2 py-1 text-xs text-white outline-none transition-colors
+                                            {/* Selector de plantilla: solo Grilla de Imágenes + plantillas locales (.mtemplates/) */}
+                                            <select
+                                                className={`w-full bg-neutral-800 border rounded px-2 py-1 text-xs text-white outline-none transition-colors
                                                 ${sheet.templateName ? 'border-emerald-600' : 'border-neutral-700'}`}
-                                            value={sheet.templateName || ''}
-                                            onChange={e => updateSheet(sheet.id, { templateName: e.target.value || null })}
-                                        >
-                                            <option value="">-- Asignar Plantilla --</option>
-                                            {/* Grilla de Imágenes siempre disponible */}
-                                            <optgroup label="Plantillas base">
-                                                <option value={GRID_TEMPLATE_NAME}>{GRID_TEMPLATE_NAME}</option>
-                                            </optgroup>
-                                            {/* Plantillas locales (.html en multi_sheet_templates/) */}
-                                            {(() => {
-                                                const localSection = templateSections.find(s => s.id === 'local');
-                                                if (!localSection || localSection.templates.length === 0) return null;
-                                                return (
-                                                    <optgroup label="Plantillas locales">
-                                                        {localSection.templates.map(t => (
-                                                            <option key={t} value={t}>{t}</option>
-                                                        ))}
-                                                    </optgroup>
-                                                );
-                                            })()}
-                                        </select>
+                                                value={sheet.templateName || ''}
+                                                onChange={e => updateSheet(sheet.id, { templateName: e.target.value || null })}
+                                            >
+                                                <option value="">-- Asignar Plantilla --</option>
+                                                {/* Grilla de Imágenes siempre disponible */}
+                                                <optgroup label="Plantillas base">
+                                                    <option value={GRID_TEMPLATE_NAME}>{GRID_TEMPLATE_NAME}</option>
+                                                </optgroup>
+                                                {/* Plantillas locales (.html en multi_sheet_templates/) */}
+                                                {(() => {
+                                                    const localSection = templateSections.find(s => s.id === 'local');
+                                                    if (!localSection || localSection.templates.length === 0) return null;
+                                                    return (
+                                                        <optgroup label="Plantillas locales">
+                                                            {localSection.templates.map(t => (
+                                                                <option key={t} value={t}>{t}</option>
+                                                            ))}
+                                                        </optgroup>
+                                                    );
+                                                })()}
+                                            </select>
 
-                                        {/* Selector de tamaño de grilla (solo si es "Grilla de Imágenes") */}
-                                        {sheet.templateName === GRID_TEMPLATE_NAME && (
-                                            <>
-                                                <div className="mt-1.5 flex flex-wrap gap-1 p-1.5 bg-neutral-900/50 rounded border border-neutral-700">
-                                                    <div className="w-full text-[9px] text-neutral-500 font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
-                                                        <Grid2X2 size={10} /> Fotos por página
-                                                    </div>
-                                                    {[2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-                                                        <button
-                                                            key={num}
-                                                            onClick={() => updateSheet(sheet.id, { imagesPerPage: num })}
-                                                            className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold transition-all
+                                            {/* Selector de tamaño de grilla (solo si es "Grilla de Imágenes") */}
+                                            {sheet.templateName === GRID_TEMPLATE_NAME && (
+                                                <>
+                                                    <div className="mt-1.5 flex flex-wrap gap-1 p-1.5 bg-neutral-900/50 rounded border border-neutral-700">
+                                                        <div className="w-full text-[9px] text-neutral-500 font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
+                                                            <Grid2X2 size={10} /> Fotos por página
+                                                        </div>
+                                                        {[2, 3, 4, 5, 6, 7, 8, 9].map(num => (
+                                                            <button
+                                                                key={num}
+                                                                onClick={() => updateSheet(sheet.id, { imagesPerPage: num })}
+                                                                className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold transition-all
                                                                 ${(sheet.imagesPerPage || 4) === num
-                                                                    ? 'bg-white text-black scale-110 shadow-lg'
-                                                                    : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'}`}
-                                                        >
-                                                            {num}
-                                                        </button>
-                                                    ))}
-                                                </div>
+                                                                        ? 'bg-white text-black scale-110 shadow-lg'
+                                                                        : 'bg-neutral-800 text-neutral-400 hover:bg-neutral-700'}`}
+                                                            >
+                                                                {num}
+                                                            </button>
+                                                        ))}
+                                                    </div>
 
-                                                {/* Selector de imágenes para la grilla */}
-                                                {images.length > 0 && (
-                                                    <div className="mt-1.5 p-1.5 bg-neutral-900/50 rounded border border-neutral-700 max-h-32 overflow-y-auto">
-                                                        <div className="text-[9px] text-neutral-500 font-bold uppercase tracking-wider mb-1 flex items-center gap-1 sticky top-0 bg-neutral-900/80">
-                                                            <ImageIcon size={10} /> Seleccionar imágenes ({sheet.selectedImageIndices?.length || 0}/{sheet.imagesPerPage || 4})
-                                                        </div>
-                                                        <div className="grid grid-cols-4 gap-1">
-                                                            {images.slice(0, 20).map((img, idx) => {
-                                                                const isSelected = sheet.selectedImageIndices?.includes(idx);
-                                                                const isDisabled = !isSelected && (sheet.selectedImageIndices?.length || 0) >= (sheet.imagesPerPage || 4);
-                                                                return (
-                                                                    <button
-                                                                        key={idx}
-                                                                        disabled={isDisabled && !isSelected}
-                                                                        onClick={() => {
-                                                                            const current = sheet.selectedImageIndices || [];
-                                                                            let updated;
-                                                                            if (isSelected) {
-                                                                                updated = current.filter(i => i !== idx);
-                                                                            } else if (current.length < (sheet.imagesPerPage || 4)) {
-                                                                                updated = [...current, idx];
-                                                                            } else {
-                                                                                return;
-                                                                            }
-                                                                            updateSheet(sheet.id, { selectedImageIndices: updated });
-                                                                        }}
-                                                                        className={`relative aspect-square rounded overflow-hidden border text-[8px] transition-all
-                                                                            ${isSelected
-                                                                                ? 'border-emerald-500 ring-1 ring-emerald-500/50'
-                                                                                : 'border-neutral-600 hover:border-neutral-400'}
-                                                                            ${isDisabled && !isSelected ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
-                                                                    >
-                                                                        <img src={img.url} alt={img.name} className="w-full h-full object-cover" />
-                                                                        {isSelected && (
-                                                                            <div className="absolute inset-0 bg-emerald-500/30 flex items-center justify-center">
-                                                                                <CheckCircle size={12} className="text-white" />
-                                                                            </div>
-                                                                        )}
-                                                                        <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white px-0.5 truncate text-[6px]">
-                                                                            {idx + 1}
-                                                                        </div>
-                                                                    </button>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                        {images.length > 20 && (
-                                                            <div className="text-[8px] text-neutral-500 text-center mt-1">
-                                                                +{images.length - 20} más
+                                                    {/* Selector de imágenes para la grilla */}
+                                                    {images.length > 0 && (
+                                                        <div className="mt-1.5 p-1.5 bg-neutral-900/50 rounded border border-neutral-700 max-h-32 overflow-y-auto">
+                                                            <div className="text-[9px] text-neutral-500 font-bold uppercase tracking-wider mb-1 flex items-center gap-1 sticky top-0 bg-neutral-900/80">
+                                                                <ImageIcon size={10} /> Seleccionar imágenes ({sheet.selectedImageIndices?.length || 0}/{sheet.imagesPerPage || 4})
                                                             </div>
-                                                        )}
-                                                        <button
-                                                            onClick={() => updateSheet(sheet.id, { selectedImageIndices: [] })}
-                                                            className="mt-1 text-[8px] text-neutral-500 hover:text-neutral-300 underline w-full text-center"
-                                                        >
-                                                            Limpiar selección
-                                                        </button>
-                                                    </div>
-                                                )}
-                                                {images.length === 0 && (
-                                                    <div className="mt-1.5 p-2 text-[9px] text-neutral-500 text-center border border-dashed border-neutral-700 rounded">
-                                                        Sube imágenes en el paso 2 para seleccionarlas
-                                                    </div>
-                                                )}
-                                            </>
-                                        )}
+                                                            <div className="grid grid-cols-4 gap-1">
+                                                                {images.slice(0, 20).map((img, idx) => {
+                                                                    const isSelected = sheet.selectedImageIndices?.includes(idx);
+                                                                    const isDisabled = !isSelected && (sheet.selectedImageIndices?.length || 0) >= (sheet.imagesPerPage || 4);
+                                                                    return (
+                                                                        <button
+                                                                            key={idx}
+                                                                            disabled={isDisabled && !isSelected}
+                                                                            onClick={() => {
+                                                                                const current = sheet.selectedImageIndices || [];
+                                                                                let updated;
+                                                                                if (isSelected) {
+                                                                                    updated = current.filter(i => i !== idx);
+                                                                                } else if (current.length < (sheet.imagesPerPage || 4)) {
+                                                                                    updated = [...current, idx];
+                                                                                } else {
+                                                                                    return;
+                                                                                }
+                                                                                updateSheet(sheet.id, { selectedImageIndices: updated });
+                                                                            }}
+                                                                            className={`relative aspect-square rounded overflow-hidden border text-[8px] transition-all
+                                                                            ${isSelected
+                                                                                    ? 'border-emerald-500 ring-1 ring-emerald-500/50'
+                                                                                    : 'border-neutral-600 hover:border-neutral-400'}
+                                                                            ${isDisabled && !isSelected ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}`}
+                                                                        >
+                                                                            <img src={img.url} alt={img.name} className="w-full h-full object-cover" />
+                                                                            {isSelected && (
+                                                                                <div className="absolute inset-0 bg-emerald-500/30 flex items-center justify-center">
+                                                                                    <CheckCircle size={12} className="text-white" />
+                                                                                </div>
+                                                                            )}
+                                                                            <div className="absolute bottom-0 left-0 right-0 bg-black/60 text-white px-0.5 truncate text-[6px]">
+                                                                                {idx + 1}
+                                                                            </div>
+                                                                        </button>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                            {images.length > 20 && (
+                                                                <div className="text-[8px] text-neutral-500 text-center mt-1">
+                                                                    +{images.length - 20} más
+                                                                </div>
+                                                            )}
+                                                            <button
+                                                                onClick={() => updateSheet(sheet.id, { selectedImageIndices: [] })}
+                                                                className="mt-1 text-[8px] text-neutral-500 hover:text-neutral-300 underline w-full text-center"
+                                                            >
+                                                                Limpiar selección
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                    {images.length === 0 && (
+                                                        <div className="mt-1.5 p-2 text-[9px] text-neutral-500 text-center border border-dashed border-neutral-700 rounded">
+                                                            Sube imágenes en el paso 2 para seleccionarlas
+                                                        </div>
+                                                    )}
+                                                </>
+                                            )}
 
-                                        {/* Badge de estado */}
-                                        <div className="flex items-center gap-2">
-                                            {sheet.templateName
-                                                ? <span className="flex items-center gap-1 text-[9px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded px-1.5 py-0.5 font-mono">
-                                                    <CheckCircle size={9} /> Lista
-                                                </span>
-                                                : <span className="flex items-center gap-1 text-[9px] text-neutral-500 bg-neutral-800 border border-neutral-700 rounded px-1.5 py-0.5 font-mono">
-                                                    Sin plantilla
-                                                </span>
-                                            }
-                                            {sheet.useAltHeader && (
-                                                <span className="text-[9px] text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded px-1.5 py-0.5 font-mono">
-                                                    Mini-header
-                                                </span>
-                                            )}
-                                            {sheet.firstPageOnly && _hl[sheet.id] && (
-                                                <span className="text-[9px] text-amber-300 bg-amber-500/10 border border-amber-400/30 rounded px-1.5 py-0.5 font-mono">
-                                                    {_hl[sheet.id]}
-                                                </span>
-                                            )}
+                                            {/* Badge de estado */}
+                                            <div className="flex items-center gap-2">
+                                                {sheet.templateName
+                                                    ? <span className="flex items-center gap-1 text-[9px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded px-1.5 py-0.5 font-mono">
+                                                        <CheckCircle size={9} /> Lista
+                                                    </span>
+                                                    : <span className="flex items-center gap-1 text-[9px] text-neutral-500 bg-neutral-800 border border-neutral-700 rounded px-1.5 py-0.5 font-mono">
+                                                        Sin plantilla
+                                                    </span>
+                                                }
+                                                {sheet.useAltHeader && (
+                                                    <span className="text-[9px] text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded px-1.5 py-0.5 font-mono">
+                                                        Mini-header
+                                                    </span>
+                                                )}
+                                                {sheet.firstPageOnly && _hl[sheet.id] && (
+                                                    <span className="text-[9px] text-amber-300 bg-amber-500/10 border border-amber-400/30 rounded px-1.5 py-0.5 font-mono">
+                                                        {_hl[sheet.id]}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                )); })()}
+                                    ));
+                                })()}
 
                                 {/* Selector de plantilla para agregar nueva hoja */}
                                 <div className="mb-2">
@@ -2212,6 +2218,34 @@ export default function MultiSheetReportApp() {
                                         <div>PDFs a generar: <span className="text-amber-400">{data.length} × {sheets.length} hojas</span></div>
                                     )}
                                 </div>
+
+                                {/* Original Quality Toggle */}
+                                <div className={`flex items-center justify-between p-2 rounded border transition-colors ${originalQuality
+                                        ? 'bg-amber-500/10 border-amber-500/30'
+                                        : 'bg-neutral-800/50 border-neutral-700/50'
+                                    }`}>
+                                    <div className="flex items-center gap-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                                            className={originalQuality ? 'text-amber-400' : 'text-neutral-500'}>
+                                            <path d="M6 3h12l4 6-10 13L2 9z" />
+                                        </svg>
+                                        <span className="text-[10px] text-neutral-300">Calidad Original</span>
+                                    </div>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={originalQuality}
+                                            onChange={(e) => setOriginalQuality(e.target.checked)}
+                                            className="sr-only peer"
+                                        />
+                                        <div className="w-8 h-4 bg-neutral-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-amber-600"></div>
+                                    </label>
+                                </div>
+                                {originalQuality && (
+                                    <div className="text-[9px] text-amber-400/80 px-1 mt-1">
+                                        ⚠ Sin compresión. El archivo será más pesado.
+                                    </div>
+                                )}
 
                                 {/* Botón descargar */}
                                 <button

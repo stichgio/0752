@@ -10,7 +10,6 @@ from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, Form, BackgroundTasks, HTTPException, APIRouter, Request, Query  
 from fastapi.exceptions import RequestValidationError  
 from fastapi.staticfiles import StaticFiles  
-import base64
 from fastapi.middleware.cors import CORSMiddleware  
 from fastapi.responses import FileResponse, JSONResponse  
 from pydantic import BaseModel, Field  
@@ -46,7 +45,7 @@ from template_editor.service import (
 )
 from utils.file_utils import build_safe_upload_path, save_upload, sanitize_upload_filename  
 
-# ── Increase multipart form-field size limit ──────────────────────────────────
+# Ã¢â€â‚¬Ã¢â€â‚¬ Increase multipart form-field size limit Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 # Starlette/python-multipart defaults to 1 MB per text part, which is too small
 # for large customTemplate HTML payloads and batch `data` JSON fields.
 # Patch the default so all Form() endpoints accept up to 50 MB per field.
@@ -70,14 +69,9 @@ try:
     _MultiPartParser.__init__ = _patched_mp_init  
 except Exception:
     pass  # Skip silently if starlette internals change in a future version
-# ─────────────────────────────────────────────────────────────────────────────
+# Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 PHOTO_GRID_HEAD_CLOSE_RE = re.compile(r"</head>", re.IGNORECASE)
-
-
-class UploadedFileContent(TypedDict):
-    filename: str
-    content: bytes
 
 
 class ReportFileEntry(TypedDict):
@@ -414,12 +408,12 @@ def _validate_pdf_file(file: UploadFile) -> bool:
 
 
 def _validate_pdf_uploads(files: List[UploadFile], min_files: int = 2) -> None:
-    """Validación compartida para endpoints de merge sin alterar contrato de API."""
+    """ValidaciÃƒÂ³n compartida para endpoints de merge sin alterar contrato de API."""
     if len(files) < min_files:
         raise HTTPException(status_code=400, detail="Se requieren al menos 2 archivos PDF")
     for file in files:
         if not _validate_pdf_file(file):
-            raise HTTPException(status_code=400, detail=f"El archivo '{file.filename}' no es un PDF válido")
+            raise HTTPException(status_code=400, detail=f"El archivo '{file.filename}' no es un PDF vÃƒÂ¡lido")
 
 
 # --- App Lifespan: singleton ReportService ---
@@ -495,7 +489,7 @@ async def request_validation_exception_handler(_: Request, exc: RequestValidatio
             "detail": exc.errors(),
             "error": {
                 "code": "VALIDATION_ERROR",
-                "message": "Error de validación de solicitud",
+                "message": "Error de validaciÃƒÂ³n de solicitud",
             },
         },
     )
@@ -637,8 +631,10 @@ async def generate_single_pdf(
     templateName: Optional[str] = Form(None),
     idColumn: Optional[str] = Form(None),
     exportScope: Optional[str] = Form(None),
+    originalQuality: Optional[str] = Form(None),
 ):
-    print(f"Received request: data len={len(data)}, files={len(files)}, customTemplate={'yes' if customTemplate else 'no'}, templateName={templateName}")
+    use_original_quality = (originalQuality or "").lower() in ("true", "1", "yes")
+    print(f"Received request: data len={len(data)}, files={len(files)}, customTemplate={'yes' if customTemplate else 'no'}, templateName={templateName}, originalQuality={use_original_quality}")
     try:
         # Parse JSON data
         row_data = json.loads(data)
@@ -665,19 +661,14 @@ async def generate_single_pdf(
         except Exception as e:
             print(f"Warning: Model validation failed (continuing with raw data): {e}")
 
-        # Helper to process logo
-        async def process_logo(logo_file):
-            if not logo_file: return None
+        async def read_logo_bytes(logo_file):
+            if not logo_file:
+                return None
             content = await logo_file.read()
-            encoded = base64.b64encode(content).decode("utf-8")
-            # Detect mime
-            mime = "image/jpeg"
-            if logo_file.filename.lower().endswith(".png"):
-                mime = "image/png"
-            return f"data:{mime};base64,{encoded}"
+            return content or None
 
-        logo_left_b64 = await process_logo(logoLeft)
-        logo_right_b64 = await process_logo(logoRight)
+        logo_left_bytes = await read_logo_bytes(logoLeft)
+        logo_right_bytes = await read_logo_bytes(logoRight)
 
         # Create temp directory for images
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -728,10 +719,11 @@ async def generate_single_pdf(
                 await service.generate_batch_pdf(
                     reports_payload,
                     output_path=output_path,
-                    logo_left=logo_left_b64,
-                    logo_right=logo_right_b64,
+                    logo_left=logo_left_bytes,
+                    logo_right=logo_right_bytes,
                     custom_template_str=resolved_custom_template,
-                    template_name=resolved_template_name
+                    template_name=resolved_template_name,
+                    original_quality=use_original_quality
                 )
             except Exception:
                 # If generation fails, ensure we clean up the file immediately
@@ -750,7 +742,7 @@ async def generate_single_pdf(
             )
 
     except json.JSONDecodeError as e:
-        raise HTTPException(status_code=400, detail=f"Formato JSON inválido en el campo 'data': {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Formato JSON invÃƒÂ¡lido en el campo 'data': {str(e)}")
     except HTTPException:
         raise
     except Exception as e:
@@ -760,7 +752,7 @@ async def generate_single_pdf(
         # Try to provide a user-friendly message for common errors
         error_msg = str(e)
         if "weasyprint" in error_trace.lower():
-            error_msg = f"Error del motor de generación PDF (WeasyPrint): {str(e)}"
+            error_msg = f"Error del motor de generaciÃƒÂ³n PDF (WeasyPrint): {str(e)}"
         elif "No such file" in error_msg:
              error_msg = f"Recurso de archivo no encontrado: {str(e)}"
 
@@ -791,8 +783,10 @@ async def generate_pdf_with_progress(
     templateName: Optional[str] = Form(None),
     idColumn: Optional[str] = Form(None),
     exportScope: Optional[str] = Form(None),
+    originalQuality: Optional[str] = Form(None),
 ):
     """SSE version of /generate-pdf with real-time progress events."""
+    use_original_quality = (originalQuality or "").lower() in ("true", "1", "yes")
     import asyncio
     import uuid
 
@@ -816,31 +810,34 @@ async def generate_pdf_with_progress(
     except Exception:
         pass
 
-    async def process_logo(logo_file: Optional[UploadFile]) -> Optional[str]:
+    async def read_logo_bytes(logo_file: Optional[UploadFile]) -> Optional[bytes]:
         if not logo_file:
             return None
         content = await logo_file.read()
-        encoded = base64.b64encode(content).decode("utf-8")
-        mime = "image/png" if (logo_file.filename or "").lower().endswith(".png") else "image/jpeg"
-        return f"data:{mime};base64,{encoded}"
+        return content or None
 
-    logo_left_b64 = await process_logo(logoLeft)
-    logo_right_b64 = await process_logo(logoRight)
+    logo_left_bytes = await read_logo_bytes(logoLeft)
+    logo_right_bytes = await read_logo_bytes(logoRight)
 
-    # Read all file contents into memory before streaming response starts
-    file_contents: List[UploadedFileContent] = []
-    for index, file in enumerate(files):
-        content = await file.read()
-        filename = file.filename or f"upload_{index:04d}"
-        file_contents.append({"filename": filename, "content": content})
+    temp_dir = tempfile.mkdtemp(prefix="pdf_progress_")
+    file_map: Dict[str, ReportFileEntry] = {}
+    try:
+        for index, file in enumerate(files):
+            original_name = file.filename or f"upload_{index:04d}"
+            file_path = build_safe_upload_path(temp_dir, original_name, prefix=f"{index:04d}_", default_name="image")
+            await save_upload(file, file_path)
+            file_map[original_name] = {"name": original_name, "path": file_path}
 
-    if isinstance(row_data, list):
-        uploaded_filenames = {item["filename"] for item in file_contents}
-        for item in row_data:
-            for name in item.get("image_filenames", []):
-                if str(name) not in uploaded_filenames:
-                    # FIX: BUG-005 avoid silent image mapping failures with descriptive 400
-                    raise HTTPException(status_code=400, detail=f"Image filename '{name}' not found in uploaded files")
+        if isinstance(row_data, list):
+            uploaded_filenames = set(file_map.keys())
+            for item in row_data:
+                for name in item.get("image_filenames", []):
+                    if str(name) not in uploaded_filenames:
+                        raise HTTPException(status_code=400, detail=f"Image filename '{name}' not found in uploaded files")
+    except Exception:
+        import shutil
+        shutil.rmtree(temp_dir, ignore_errors=True)
+        raise
 
     service = request.app.state.report_service
 
@@ -851,15 +848,7 @@ async def generate_pdf_with_progress(
             await progress_queue.put({"phase": phase, "current": current, "total": total, "detail": detail})
 
         async def run_generation():
-            temp_dir = tempfile.mkdtemp()
             try:
-                file_map: Dict[str, ReportFileEntry] = {}
-                for fc in file_contents:
-                    fpath = os.path.join(temp_dir, fc["filename"])
-                    with open(fpath, "wb") as f:
-                        f.write(fc["content"])
-                    file_map[fc["filename"]] = {"name": fc["filename"], "path": fpath}
-
                 reports_payload: List[ReportPayloadEntry] = []
                 if isinstance(row_data, list):
                     for item in row_data:
@@ -876,11 +865,12 @@ async def generate_pdf_with_progress(
                 await service.generate_batch_pdf(
                     reports_payload,
                     output_path=output_path,
-                    logo_left=logo_left_b64,
-                    logo_right=logo_right_b64,
+                    logo_left=logo_left_bytes,
+                    logo_right=logo_right_bytes,
                     custom_template_str=resolved_custom_template,
                     template_name=resolved_template_name,
-                    on_progress=on_progress
+                    on_progress=on_progress,
+                    original_quality=use_original_quality
                 )
                 await progress_queue.put({"phase": "done", "download_url": f"/api/download-temp/{filename}?download_name={quote(download_filename, safe='')}"})
             except Exception as e:
@@ -890,7 +880,7 @@ async def generate_pdf_with_progress(
                     progress_queue.put_nowait({"phase": "error", "detail": str(e)})
             except BaseException as e:
                 # CancelledError / KeyboardInterrupt: signal the frontend before re-raising
-                progress_queue.put_nowait({"phase": "error", "detail": "La generación fue interrumpida"})
+                progress_queue.put_nowait({"phase": "error", "detail": "La generaciÃƒÂ³n fue interrumpida"})
                 raise
             finally:
                 import shutil
@@ -1001,7 +991,7 @@ async def tool_merge_pdfs_normal(
     files: List[UploadFile] = File(...)
 ):
     """
-    Merge normal (secuencial) - Une PDFs uno después del otro sin intercalar.
+    Merge normal (secuencial) - Une PDFs uno despuÃƒÂ©s del otro sin intercalar.
     """
     print(f"Tool Merge Normal Request: {len(files)} files")
     _validate_pdf_uploads(files)
@@ -1069,7 +1059,7 @@ async def tool_split_pdf(
                     # Convert to list of tuples
                     range_tuples = [(r[0], r[1]) for r in range_list]
                 except Exception as e:
-                    raise HTTPException(status_code=400, detail=f"Formato de rangos inválido: {e}")
+                    raise HTTPException(status_code=400, detail=f"Formato de rangos invÃƒÂ¡lido: {e}")
 
                 output_files = split_pdf_by_ranges(
                     input_path=input_path,
@@ -1120,29 +1110,29 @@ async def tool_organize_pdf(
     Endpoint para la tab ORGANIZAR de pdf-tools.html.
     Recibe el archivo PDF + operations JSON del frontend (executeOrganize()).
 
-    El frontend envía:
+    El frontend envÃƒÂ­a:
       operations = {
-        pageOrder: [int, ...],   // originalPageNum de cada página activa, 1-indexed
-        rotations: [int, ...],   // grados de rotación por página
-        cuts: [int, ...]         // índices de corte 0-indexed sobre el array resultado
+        pageOrder: [int, ...],   // originalPageNum de cada pÃƒÂ¡gina activa, 1-indexed
+        rotations: [int, ...],   // grados de rotaciÃƒÂ³n por pÃƒÂ¡gina
+        cuts: [int, ...]         // ÃƒÂ­ndices de corte 0-indexed sobre el array resultado
       }
       mode = "organize" | "organize-split"
 
     Responde:
-      - mode=organize: application/pdf  → filename: organized.pdf
-      - mode=organize-split: application/zip → filename: organized_split.zip
+      - mode=organize: application/pdf  Ã¢â€ â€™ filename: organized.pdf
+      - mode=organize-split: application/zip Ã¢â€ â€™ filename: organized_split.zip
     """
     try:
         ops = json.loads(operations)
     except Exception:
-        raise HTTPException(status_code=400, detail="JSON de 'operations' inválido")
+        raise HTTPException(status_code=400, detail="JSON de 'operations' invÃƒÂ¡lido")
 
     page_order = ops.get("pageOrder", [])
     rotations = ops.get("rotations", [])
     cuts = ops.get("cuts", [])
 
     if not page_order:
-        raise HTTPException(status_code=400, detail="pageOrder está vacío")
+        raise HTTPException(status_code=400, detail="pageOrder estÃƒÂ¡ vacÃƒÂ­o")
 
     try:
         with tempfile.TemporaryDirectory() as temp_dir:

@@ -1,13 +1,13 @@
 """
 Router independiente para la herramienta "Informe Multi-Hoja".
 
-Genera un PDF multi-sección con grillas de imágenes en formato A4.
-NO depende de backend/templates/ — genera su propio HTML internamente.
+Genera un PDF multi-secciÃƒÆ’Ã‚Â³n con grillas de imÃƒÆ’Ã‚Â¡genes en formato A4.
+NO depende de backend/templates/ ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â genera su propio HTML internamente.
 
 Endpoints expuestos (montados en /api/multi-sheet/):
-  GET  /templates/independent → lista plantillas independientes publicadas
-  GET  /templates        → lista layouts base + plantillas independientes
-  POST /generate-pdf     → genera el PDF final
+  GET  /templates/independent ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ lista plantillas independientes publicadas
+  GET  /templates        ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ lista layouts base + plantillas independientes
+  POST /generate-pdf     ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ genera el PDF final
 """
 
 from __future__ import annotations
@@ -47,7 +47,7 @@ except ImportError:
     def get_published_template_by_name(name):  
         return None
 
-# ── Router ────────────────────────────────────────────────────────────────────
+# ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Router ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 router = APIRouter(tags=["multi-sheet-report"])
 
 def _configure_windows_gtk_runtime() -> None:
@@ -105,7 +105,7 @@ if CHROME_PATH and not WEASYPRINT_AVAILABLE:
     logger.info("Usando navegador headless como fallback PDF para multi-sheet: %s", CHROME_PATH)
 
 
-# Tipos MIME para imágenes
+# Tipos MIME para imÃƒÆ’Ã‚Â¡genes
 _MIME_MAP: dict[str, str] = {
     "jpg": "image/jpeg",
     "jpeg": "image/jpeg",
@@ -115,20 +115,20 @@ _MIME_MAP: dict[str, str] = {
 }
 
 
-# ── Grid helpers ──────────────────────────────────────────────────────────────
+# ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Grid helpers ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 def _grid_cols(images_per_page: int) -> int:
-    """Columnas óptimas para N imágenes en A4 portrait."""
+    """Columnas ÃƒÆ’Ã‚Â³ptimas para N imÃƒÆ’Ã‚Â¡genes en A4 portrait."""
     mapping = {1: 1, 2: 2, 3: 2, 4: 2, 5: 3, 6: 3, 7: 3, 8: 4, 9: 3}
     return mapping.get(images_per_page, 3)
 
 
 def _sort_image_filenames_by_seq(filenames: list[str]) -> list[str]:
-    """Ordena imágenes por su sufijo secuencial de 3 dígitos (ID_001 < ID_010 < ID_100).
+    """Ordena imÃƒÆ’Ã‚Â¡genes por su sufijo secuencial de 3 dÃƒÆ’Ã‚Â­gitos (ID_001 < ID_010 < ID_100).
 
     Formato normalizado esperado: {COLUMNA_ID}_{NNN}.ext
     Ejemplo: NIS_001.jpg, NIS_010.jpg, NIS_100.jpg
-    Imágenes sin sufijo secuencial se ordenan primero, por nombre.
+    ImÃƒÆ’Ã‚Â¡genes sin sufijo secuencial se ordenan primero, por nombre.
     """
     _SEQ_RE = re.compile(r'^(.+?)_(\d{3})\.[^.]+$', re.IGNORECASE)
 
@@ -141,10 +141,10 @@ def _sort_image_filenames_by_seq(filenames: list[str]) -> list[str]:
     return sorted(filenames, key=_key)
 
 
-# ── Constructores de bloques HTML de encabezado ───────────────────────────────
+# ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Constructores de bloques HTML de encabezado ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 def _build_main_header_html(header_config: dict[str, Any]) -> str:
-    title: str = header_config.get("title") or "INFORME TÉCNICO"
+    title: str = header_config.get("title") or "INFORME TÃƒÆ’Ã¢â‚¬Â°CNICO"
     subtitle: str = header_config.get("subtitle") or ""
     logo_left: str = header_config.get("logoLeft") or ""
     logo_right: str = header_config.get("logoRight") or ""
@@ -217,21 +217,21 @@ def _build_alt_header_html(
     )
 
 
-# ── Generador de página HTML con grilla de imágenes ──────────────────────────
+# ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Generador de pÃƒÆ’Ã‚Â¡gina HTML con grilla de imÃƒÆ’Ã‚Â¡genes ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 def _build_image_grid_html(image_data_uris: list[str], images_per_page: int) -> str:
-    """Grilla HTML para WeasyPrint; images_per_page define el tamaño visual."""
+    """Grilla HTML para WeasyPrint; images_per_page define el tamaÃƒÆ’Ã‚Â±o visual."""
     n = len(image_data_uris)
     if n == 0:
         return (
             '<div style="text-align:center;color:#999;padding:60px 20px;'
-            'font-family:Arial;font-size:11pt;">Sin imágenes para esta página</div>'
+            'font-family:Arial;font-size:11pt;">Sin imÃƒÆ’Ã‚Â¡genes para esta pÃƒÆ’Ã‚Â¡gina</div>'
         )
 
     cols = _grid_cols(images_per_page)
     rows = math.ceil(n / cols)
     cell_width_pct = 100.0 / cols
-    # Altura segura para evitar recorte cuando el encabezado/título ocupan más espacio.
+    # Altura segura para evitar recorte cuando el encabezado/tÃƒÆ’Ã‚Â­tulo ocupan mÃƒÆ’Ã‚Â¡s espacio.
     usable_height_mm = 230.0
     row_height_mm = min(usable_height_mm / rows, 135.0)
 
@@ -268,7 +268,7 @@ def _build_page_html(
     page_num: int,
     total_pages: int,
 ) -> str:
-    """Construye una página HTML completa A4 con encabezado + título + grilla."""
+    """Construye una pÃƒÆ’Ã‚Â¡gina HTML completa A4 con encabezado + tÃƒÆ’Ã‚Â­tulo + grilla."""
     grid_html = _build_image_grid_html(image_data_uris, images_per_page)
 
     page_indicator = f" &mdash; Pág. {page_num}/{total_pages}" if total_pages > 1 else ""
@@ -571,7 +571,37 @@ html, body {{
 </body></html>"""
 
 
-# ── Local template renderer ────────────────────────────────────────────────────
+# ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Local template renderer ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
+
+def _get_local_template_renderer(
+    record: LocalTemplateRecord,
+    template_cache: Optional[dict[str, Any]] = None,
+):
+    try:
+        from jinja2 import Environment, select_autoescape
+    except ImportError as exc:
+        raise RuntimeError("Jinja2 no estÃƒÆ’Ã‚Â¡ instalado.") from exc
+
+    cache_key = None
+    if template_cache is not None:
+        try:
+            stat = os.stat(record.file_path)
+            cache_key = f"{record.file_path}:{stat.st_mtime_ns}:{stat.st_size}"
+        except OSError:
+            cache_key = record.file_path
+        cached_template = template_cache.get(cache_key)
+        if cached_template is not None:
+            return cached_template
+
+    with open(record.file_path, "r", encoding="utf-8") as fh:
+        template_source = fh.read()
+
+    env = Environment(autoescape=select_autoescape(["html"]))
+    tmpl = env.from_string(template_source)
+    if template_cache is not None and cache_key is not None:
+        template_cache[cache_key] = tmpl
+    return tmpl
+
 
 def _render_local_template(
     template_name: str,
@@ -580,22 +610,14 @@ def _render_local_template(
     images_b64: list[str],
     image_filenames: list[str],
     template_record: Optional[LocalTemplateRecord] = None,
+    template_cache: Optional[dict[str, Any]] = None,
 ) -> str:
     """Render a local HTML template (Jinja2) with row data and images."""
-    try:
-        from jinja2 import Environment, select_autoescape  
-    except ImportError as exc:
-        raise RuntimeError("Jinja2 no está instalado.") from exc
-
     record = template_record or _find_local_template(template_name)
     if record is None:
         raise RuntimeError(f"Plantilla local no encontrada: {template_name}")
 
-    with open(record.file_path, "r", encoding="utf-8") as fh:
-        template_source = fh.read()
-
-    env = Environment(autoescape=select_autoescape(["html"]))
-    tmpl = env.from_string(template_source)
+    tmpl = _get_local_template_renderer(record, template_cache=template_cache)
 
     images_list = [
         {"path": uri, "name": fname}
@@ -610,7 +632,7 @@ def _render_local_template(
     )
 
 
-# ── Motor PDF ─────────────────────────────────────────────────────────────────
+# ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Motor PDF ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 import asyncio
 import functools
@@ -682,12 +704,15 @@ def _render_html_to_pdf_with_browser(html_string: str, base_url: str, output_pat
         shutil.rmtree(browser_tmp_dir, ignore_errors=True)
 
 
-def _render_html_to_pdf(html_string: str, base_url: str, output_path: str) -> None:
+def _render_html_to_pdf(html_string: str, base_url: str, output_path: str, original_quality: bool = False) -> None:
     errors: list[str] = []
 
     if WEASYPRINT_AVAILABLE and WEASYPRINT_HTML is not None:
         try:
-            WEASYPRINT_HTML(string=html_string, base_url=base_url).write_pdf(output_path)
+            write_kwargs = {}
+            if original_quality:
+                write_kwargs['uncompressed_pdf'] = True
+            WEASYPRINT_HTML(string=html_string, base_url=base_url).write_pdf(output_path, **write_kwargs)
             return
         except Exception as exc:
             logger.warning("WeasyPrint fallo para multi-sheet; se intentara fallback de navegador", exc_info=True)
@@ -713,16 +738,16 @@ def _render_html_to_pdf(html_string: str, base_url: str, output_path: str) -> No
     raise RuntimeError("No hay un motor PDF disponible. Instale WeasyPrint o Chrome/Edge.")
 
 
-async def _render_html_to_pdf_async(html_string: str, base_url: str, output_path: str) -> None:
+async def _render_html_to_pdf_async(html_string: str, base_url: str, output_path: str, original_quality: bool = False) -> None:
     """Non-blocking wrapper: runs WeasyPrint in a dedicated single-thread executor."""
     loop = asyncio.get_running_loop()
     await loop.run_in_executor(
         _pdf_executor,
-        functools.partial(_render_html_to_pdf, html_string, base_url, output_path),
+        functools.partial(_render_html_to_pdf, html_string, base_url, output_path, original_quality),
     )
 
 
-# ── Utilidades ────────────────────────────────────────────────────────────────
+# ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Utilidades ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 def _safe_remove(path: str) -> None:
     try:
@@ -759,7 +784,7 @@ async def _upload_to_b64(upload_file: UploadFile) -> Optional[str]:
         return None
 
 
-# ── Endpoints ─────────────────────────────────────────────────────────────────
+# ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Endpoints ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 # Built-in layouts supported by this router's HTML generator.
 # The frontend uses this list to populate the sheet-template dropdown.
@@ -1025,11 +1050,12 @@ async def generate_multi_sheet_pdf(
     files: list[UploadFile] = File(default=[]),
     logoLeftFile: Optional[UploadFile] = File(default=None),
     logoRightFile: Optional[UploadFile] = File(default=None),
+    originalQuality: Optional[str] = Form(default=None),
 ):
     """
-    Genera un PDF multi-sección con grillas de imágenes.
+    Genera un PDF multi-secciÃƒÆ’Ã‚Â³n con grillas de imÃƒÆ’Ã‚Â¡genes.
 
-    Cada entrada en sheets_config representa una página del PDF con:
+    Cada entrada en sheets_config representa una pÃƒÆ’Ã‚Â¡gina del PDF con:
       { order, title, useAltHeader, rowData, imageFilenames,
         imagesPerPage, pageNum, totalPages }
     """
@@ -1037,25 +1063,27 @@ async def generate_multi_sheet_pdf(
         sheets: list[Any] = json.loads(sheets_config)
     except json.JSONDecodeError as exc:
         raise HTTPException(
-            status_code=400, detail=f"sheets_config JSON inválido: {exc}"
+            status_code=400, detail=f"sheets_config JSON invÃƒÆ’Ã‚Â¡lido: {exc}"
         ) from exc
 
     try:
         header: dict[str, Any] = json.loads(header_config)
     except json.JSONDecodeError as exc:
         raise HTTPException(
-            status_code=400, detail=f"header_config JSON inválido: {exc}"
+            status_code=400, detail=f"header_config JSON invÃƒÆ’Ã‚Â¡lido: {exc}"
         ) from exc
 
     try:
         alt_header: dict[str, Any] = json.loads(alt_header_config)
     except json.JSONDecodeError as exc:
         raise HTTPException(
-            status_code=400, detail=f"alt_header_config JSON inválido: {exc}"
+            status_code=400, detail=f"alt_header_config JSON invÃƒÆ’Ã‚Â¡lido: {exc}"
         ) from exc
 
     if not sheets:
-        raise HTTPException(status_code=400, detail="No hay páginas configuradas")
+        raise HTTPException(status_code=400, detail="No hay pÃƒÆ’Ã‚Â¡ginas configuradas")
+
+    use_original_quality = (originalQuality or "").lower() in ("true", "1", "yes")
 
     if logoLeftFile is not None:
         logo_left_data = await _upload_to_b64(logoLeftFile)
@@ -1071,7 +1099,7 @@ async def generate_multi_sheet_pdf(
     output_path: Optional[str] = None
 
     try:
-        # Guardar imágenes adjuntas — usar basename para evitar path traversal
+        # Guardar imÃƒÆ’Ã‚Â¡genes adjuntas ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â usar basename para evitar path traversal
         for upload_file in files:
             if upload_file.filename:
                 safe_name = os.path.basename(upload_file.filename)
@@ -1087,7 +1115,7 @@ async def generate_multi_sheet_pdf(
         except ImportError as exc:
             raise HTTPException(
                 status_code=500,
-                detail="pypdf no está instalado. Ejecuta: pip install pypdf",
+                detail="pypdf no estÃƒÆ’Ã‚Â¡ instalado. Ejecuta: pip install pypdf",
             ) from exc
 
         def _sheet_order_value(sheet_data: Any, fallback: int = 0) -> int:
@@ -1102,6 +1130,7 @@ async def generate_multi_sheet_pdf(
             _normalize_template_name(record.name): record
             for record in local_records
         }
+        compiled_template_cache: dict[str, Any] = {}
         image_data_cache: dict[str, Optional[str]] = {}
         first_sheet_idx = next(
             (
@@ -1140,10 +1169,10 @@ async def generate_multi_sheet_pdf(
                 len(image_filenames), images_per_page,
             )
 
-            # Ordenar por sufijo secuencial 3 dígitos: COLUMNA_ID_001, _010, _100...
+            # Ordenar por sufijo secuencial 3 dÃƒÆ’Ã‚Â­gitos: COLUMNA_ID_001, _010, _100...
             image_filenames = _sort_image_filenames_by_seq(image_filenames)
 
-            # Dividir en grupos de images_per_page → N páginas con los mismos datos de fila
+            # Dividir en grupos de images_per_page ÃƒÂ¢Ã¢â‚¬Â Ã¢â‚¬â„¢ N pÃƒÆ’Ã‚Â¡ginas con los mismos datos de fila
             if image_filenames:
                 image_groups: list[list[str]] = [
                     image_filenames[i : i + images_per_page]
@@ -1163,7 +1192,7 @@ async def generate_multi_sheet_pdf(
                 ]
 
             for page_num, total_pages, page_filenames in page_ranges:
-                # Resolver imágenes a data URIs (basename para consistencia con upload)
+                # Resolver imÃƒÆ’Ã‚Â¡genes a data URIs (basename para consistencia con upload)
                 images_b64: list[str] = []
                 for fname in page_filenames:
                     safe_fname = os.path.basename(fname)
@@ -1176,7 +1205,7 @@ async def generate_multi_sheet_pdf(
                         if data_uri:
                             images_b64.append(data_uri)
 
-                # Construir HTML de la página
+                # Construir HTML de la pÃƒÆ’Ã‚Â¡gina
                 local_template_record = local_records_by_name.get(template_name)
 
                 if is_first_sheet and local_template_record is not None:
@@ -1187,6 +1216,7 @@ async def generate_multi_sheet_pdf(
                         images_b64=images_b64,
                         image_filenames=page_filenames,
                         template_record=local_template_record,
+                        template_cache=compiled_template_cache,
                     )
                 elif is_first_sheet and template_name == _normalize_template_name(_VOLANTEO_TEMPLATE_NAME):
                     page_html = _build_volanteo_page_html(
@@ -1202,6 +1232,7 @@ async def generate_multi_sheet_pdf(
                         images_b64=images_b64,
                         image_filenames=page_filenames,
                         template_record=local_template_record,
+                        template_cache=compiled_template_cache,
                     )
                 elif template_name == _normalize_template_name(_VOLANTEO_TEMPLATE_NAME):
                     page_html = _build_volanteo_page_html(
@@ -1224,24 +1255,24 @@ async def generate_multi_sheet_pdf(
                         total_pages=total_pages,
                     )
 
-                # Renderizar a PDF (async — no bloquea el event loop)
+                # Renderizar a PDF (async ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â no bloquea el event loop)
                 try:
                     tmp_pdf_file = tempfile.NamedTemporaryFile(
                         delete=False, suffix=".pdf", dir=tmp_dir
                     )
                     tmp_pdf_path = tmp_pdf_file.name
                     tmp_pdf_file.close()
-                    await _render_html_to_pdf_async(page_html, tmp_dir, tmp_pdf_path)
+                    await _render_html_to_pdf_async(page_html, tmp_dir, tmp_pdf_path, use_original_quality)
                     temp_pdf_paths.append(tmp_pdf_path)
                 except Exception as exc:
                     raise HTTPException(
                         status_code=500,
-                        detail=f"Error al generar PDF de página: {exc}",
+                        detail=f"Error al generar PDF de pÃƒÆ’Ã‚Â¡gina: {exc}",
                     ) from exc
 
         if not temp_pdf_paths:
             raise HTTPException(
-                status_code=400, detail="No se generó ninguna página PDF"
+                status_code=400, detail="No se generÃƒÆ’Ã‚Â³ ninguna pÃƒÆ’Ã‚Â¡gina PDF"
             )
 
         # Concatenar PDFs

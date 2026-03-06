@@ -90,7 +90,7 @@ class BoundedCache:
         self._cache.clear()
 
 # ============================================================================
-# CONFIGURACIÃ“N OPTIMIZADA Y ESTABLE
+# CONFIGURACIÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œN OPTIMIZADA Y ESTABLE
 # ============================================================================
 
 A4_WIDTH_MM, A4_HEIGHT_MM = 210, 297
@@ -168,11 +168,11 @@ MAX_PDF_WORKERS = 4
 PIPELINE_BUFFER_SIZE = 8
 GC_INTERVAL = 10
 
-# âœ… BATCHING OPTIMIZATION: Procesar mÃºltiples reportes en paralelo
-PDF_BATCH_SIZE = 5  # NÃºmero de PDFs a generar en paralelo por lote
-HTML_PREFETCH_SIZE = 10  # NÃºmero de HTMLs a pre-renderizar adelante
+# ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ BATCHING OPTIMIZATION: Procesar mÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âºltiples reportes en paralelo
+PDF_BATCH_SIZE = 5  # NÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âºmero de PDFs a generar en paralelo por lote
+HTML_PREFETCH_SIZE = 10  # NÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âºmero de HTMLs a pre-renderizar adelante
 
-# âœ… GHOSTSCRIPT COMPRESSION: Reducir tamaÃ±o del PDF final
+# ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ GHOSTSCRIPT COMPRESSION: Reducir tamaÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â±o del PDF final
 GHOSTSCRIPT_ENABLED = settings.ghostscript_enabled
 GHOSTSCRIPT_QUALITY = settings.ghostscript_quality
 
@@ -183,7 +183,7 @@ TEMP_DIR = tempfile.gettempdir()
 # ============================================================================
 
 def _check_ghostscript_available():
-    """Verifica si Ghostscript estÃ¡ disponible en el sistema"""
+    """Verifica si Ghostscript estÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ disponible en el sistema"""
     import shutil
     gs_commands = ['gs', 'gswin64c', 'gswin32c']
     for cmd in gs_commands:
@@ -193,16 +193,16 @@ def _check_ghostscript_available():
 
 def _compress_pdf_with_ghostscript(input_path, output_path=None, quality="printer"):
     """
-    Comprime un PDF usando Ghostscript sin pÃ©rdida visible de calidad.
+    Comprime un PDF usando Ghostscript sin pÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â©rdida visible de calidad.
 
     Args:
         input_path: Ruta al PDF original
         output_path: Ruta de salida (si None, sobrescribe el original)
         quality: Nivel de calidad
-            - "screen": 72 dpi, menor calidad, mÃ¡xima compresiÃ³n
-            - "ebook": 150 dpi, buena calidad, buena compresiÃ³n
-            - "printer": 300 dpi, alta calidad, compresiÃ³n moderada (RECOMENDADO)
-            - "prepress": 300 dpi, mÃ¡xima calidad, mÃ­nima compresiÃ³n
+            - "screen": 72 dpi, menor calidad, mÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡xima compresiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n
+            - "ebook": 150 dpi, buena calidad, buena compresiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n
+            - "printer": 300 dpi, alta calidad, compresiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n moderada (RECOMENDADO)
+            - "prepress": 300 dpi, mÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡xima calidad, mÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â­nima compresiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n
 
     Returns:
         tuple: (success: bool, compressed_path: str, stats: dict)
@@ -212,7 +212,7 @@ def _compress_pdf_with_ghostscript(input_path, output_path=None, quality="printe
 
     gs_cmd = _check_ghostscript_available()
     if not gs_cmd:
-        print("[GS] Ghostscript no disponible, omitiendo compresiÃ³n")
+        print("[GS] Ghostscript no disponible, omitiendo compresiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n")
         return False, input_path, {"error": "Ghostscript not available"}
 
     if output_path is None:
@@ -260,7 +260,7 @@ def _compress_pdf_with_ghostscript(input_path, output_path=None, quality="printe
             return False, input_path, {"error": result.stderr}
 
         if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
-            print("[GS] Error: Archivo comprimido invÃ¡lido")
+            print("[GS] Error: Archivo comprimido invÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡lido")
             return False, input_path, {"error": "Invalid output file"}
 
         compressed_size = os.path.getsize(output_path)
@@ -277,19 +277,19 @@ def _compress_pdf_with_ghostscript(input_path, output_path=None, quality="printe
             if replace_original:
                 os.remove(input_path)
                 shutil.move(output_path, input_path)
-                print(f"[GS] âœ… Comprimido: {original_size/1024/1024:.1f}MB â†’ {compressed_size/1024/1024:.1f}MB ({reduction:.1f}% reducciÃ³n)")
+                print(f"[GS] ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Comprimido: {original_size/1024/1024:.1f}MB ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ {compressed_size/1024/1024:.1f}MB ({reduction:.1f}% reducciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n)")
                 return True, input_path, stats
             else:
-                print(f"[GS] âœ… Comprimido: {original_size/1024/1024:.1f}MB â†’ {compressed_size/1024/1024:.1f}MB ({reduction:.1f}% reducciÃ³n)")
+                print(f"[GS] ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Comprimido: {original_size/1024/1024:.1f}MB ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ {compressed_size/1024/1024:.1f}MB ({reduction:.1f}% reducciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n)")
                 return True, output_path, stats
         else:
             if os.path.exists(output_path):
                 os.remove(output_path)
-            print(f"[GS] â„¹ï¸ Sin mejora de compresiÃ³n, usando original ({original_size/1024/1024:.1f}MB)")
+            print(f"[GS] ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¹ÃƒÆ’Ã‚Â¯Ãƒâ€šÃ‚Â¸Ãƒâ€šÃ‚Â Sin mejora de compresiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n, usando original ({original_size/1024/1024:.1f}MB)")
             return True, input_path, {"skipped": True, "reason": "No improvement"}
 
     except subprocess.TimeoutExpired:
-        print("[GS] Error: Timeout en compresiÃ³n")
+        print("[GS] Error: Timeout en compresiÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n")
         if replace_original and os.path.exists(output_path):
             os.remove(output_path)
         return False, input_path, {"error": "Timeout"}
@@ -322,7 +322,7 @@ class ReportService:
         try:
             _ = self.template.module
         except Exception as e:
-            logging.warning("Pre-compilaciÃ³n de report.html fallÃ³: %s", e)
+            logging.warning("Pre-compilaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n de report.html fallÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³: %s", e)
 
         self._template_cache = {}
         self._image_cache = BoundedCache(maxsize=100)
@@ -393,8 +393,31 @@ class ReportService:
         return metadata
 
     @staticmethod
-    def optimize_image_for_pdf(image_content, max_size=MAX_IMAGE_SIZE, quality=JPEG_QUALITY):
-        """OptimizaciÃ³n de imÃ¡genes con resoluciÃ³n adaptativa"""
+    def _extract_metadata_from_image_bytes(image_content):
+        metadata = {"date": "N/A", "coords": "N/A"}
+        try:
+            exif_dict = piexif.load(image_content)
+            if piexif.ImageIFD.DateTime in exif_dict["0th"]:
+                date_str = exif_dict["0th"][piexif.ImageIFD.DateTime].decode("utf-8")
+                metadata["date"] = date_str
+
+            if "GPS" in exif_dict and exif_dict["GPS"]:
+                gps = exif_dict["GPS"]
+                if piexif.GPSIFD.GPSLatitude in gps and piexif.GPSIFD.GPSLongitude in gps:
+                    lat = ReportService._convert_to_degrees(None, gps[piexif.GPSIFD.GPSLatitude])
+                    lon = ReportService._convert_to_degrees(None, gps[piexif.GPSIFD.GPSLongitude])
+                    if gps.get(piexif.GPSIFD.GPSLatitudeRef) == b'S':
+                        lat = -lat
+                    if gps.get(piexif.GPSIFD.GPSLongitudeRef) == b'W':
+                        lon = -lon
+                    metadata["coords"] = f"{lat:.6f}, {lon:.6f}"
+        except Exception:
+            pass
+        return metadata
+
+    @staticmethod
+    def prepare_image_for_pdf(image_content, max_size=MAX_IMAGE_SIZE, quality=JPEG_QUALITY, original_quality=False):
+        """Open the source image once and return metadata plus final PDF bytes."""
         try:
             if isinstance(image_content, str) and os.path.exists(image_content):
                 with open(image_content, "rb") as f:
@@ -402,8 +425,35 @@ class ReportService:
             elif not isinstance(image_content, bytes):
                 return None
 
+            metadata = ReportService._extract_metadata_from_image_bytes(image_content)
+
             with Image.open(io.BytesIO(image_content)) as opened_img:
+                width, height = opened_img.size
+                is_landscape = width >= height
                 img = ImageOps.exif_transpose(opened_img)
+                detected_mime = _normalize_image_mime(opened_img.format, "image/png")
+
+                if original_quality:
+                    output_bytes = image_content
+                    if img is not opened_img:
+                        buffer = io.BytesIO()
+                        save_fmt = opened_img.format or "PNG"
+                        save_kwargs = {"optimize": False}
+                        if save_fmt.upper() in ("JPEG", "JPG"):
+                            save_kwargs["quality"] = 100
+                            save_kwargs["subsampling"] = 0
+                            if img.mode not in ("RGB", "L"):
+                                img = img.convert("RGB")
+                        img.save(buffer, format=save_fmt, **save_kwargs)
+                        output_bytes = buffer.getvalue()
+                    return {
+                        "bytes": output_bytes,
+                        "mime_type": detected_mime,
+                        "width": width,
+                        "height": height,
+                        "is_landscape": is_landscape,
+                        "metadata": metadata,
+                    }
 
                 if img.mode in ('RGBA', 'P', 'LA'):
                     background = Image.new('RGB', img.size, (255, 255, 255))
@@ -428,10 +478,28 @@ class ReportService:
                     optimize=True,
                     progressive=True,
                 )
-                return buffer.getvalue()
+                return {
+                    "bytes": buffer.getvalue(),
+                    "mime_type": "image/jpeg",
+                    "width": width,
+                    "height": height,
+                    "is_landscape": is_landscape,
+                    "metadata": metadata,
+                }
         except Exception as e:
-            print(f"Error optimizing image: {e}")
+            print(f"Error preparing image: {e}")
             return None
+
+    @staticmethod
+    def optimize_image_for_pdf(image_content, max_size=MAX_IMAGE_SIZE, quality=JPEG_QUALITY, original_quality=False):
+        """OptimizaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n de imÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡genes con resoluciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n adaptativa"""
+        prepared = ReportService.prepare_image_for_pdf(
+            image_content,
+            max_size=max_size,
+            quality=quality,
+            original_quality=original_quality,
+        )
+        return prepared.get("bytes") if prepared else None
 
     @staticmethod
     def optimize_logo_for_pdf(logo_content, max_size=DEFAULT_LOGO_MAX_SIZE, mime_type="image/png"):
@@ -531,8 +599,12 @@ class ReportService:
             print(f"Error processing logo: {e}")
             return logo_data
 
-    async def _process_files_serial(self, files, max_size=MAX_IMAGE_SIZE, quality=JPEG_QUALITY):
-        """Procesamiento de imÃ¡genes con base64 inline (sin archivos temporales)"""
+    @staticmethod
+    def _build_image_cache_key(source_key, max_size, quality, original_quality):
+        return f"{source_key}|{max_size[0]}x{max_size[1]}|q={quality}|oq={int(bool(original_quality))}"
+
+    async def _process_files_serial(self, files, max_size=MAX_IMAGE_SIZE, quality=JPEG_QUALITY, original_quality=False):
+        """Procesamiento de imÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡genes con base64 inline (sin archivos temporales)"""
         processed_images = []
         orientations = []
 
@@ -581,9 +653,16 @@ class ReportService:
 
                     if f_path and os.path.exists(f_path):
                         stat = os.stat(f_path)
-                        cache_key = f"local:{f_path}:{stat.st_mtime}:{stat.st_size}"
+                        source_cache_key = f"local:{f_path}:{stat.st_mtime}:{stat.st_size}"
                     else:
-                        cache_key = f"md5:{hashlib.md5(content).hexdigest()}"
+                        source_cache_key = f"md5:{hashlib.md5(content).hexdigest()}"
+
+                    cache_key = self._build_image_cache_key(
+                        source_cache_key,
+                        max_size=max_size,
+                        quality=quality,
+                        original_quality=original_quality,
+                    )
 
                     cached = self._image_cache.get(cache_key)
                     if cached is not None:
@@ -592,53 +671,37 @@ class ReportService:
                         cached_result['data']['order'] = file_obj.get("order", idx) if isinstance(file_obj, dict) else idx
                         return cached_result
 
-                    metadata = {"date": "N/A", "coords": "N/A"}
-                    width, height, is_landscape = 0, 0, True
-
-                    if f_path and os.path.exists(f_path):
-                        try:
-                            metadata = self.get_image_metadata(f_path)
-                            width, height, is_landscape = self.get_image_dimensions(f_path)
-                        except Exception:
-                            pass
-
-                    optimized_bytes = await loop.run_in_executor(
+                    prepared_image = await loop.run_in_executor(
                         None,
-                        self.optimize_image_for_pdf,
+                        self.prepare_image_for_pdf,
                         content,
                         max_size,
-                        quality
+                        quality,
+                        original_quality
                     )
 
                     del content
 
-                    if not optimized_bytes:
+                    if not prepared_image:
                         return None
 
-                    if width == 0:
-                        try:
-                            with Image.open(io.BytesIO(optimized_bytes)) as img_check:
-                                width, height = img_check.size
-                                is_landscape = width >= height
-                        except Exception:
-                            is_landscape = True
-
-                    image_data_uri = self._convert_to_base64_uri(optimized_bytes, "image/jpeg")
-
-                    del optimized_bytes
+                    image_data_uri = self._convert_to_base64_uri(
+                        prepared_image["bytes"],
+                        prepared_image["mime_type"],
+                    )
 
                     result = {
                         "data": {
                             "path": image_data_uri,
                             "name": f_name,
                             "order": file_obj.get("order", idx) if isinstance(file_obj, dict) else idx,
-                            "date": metadata.get("date", "N/A"),
-                            "coords": metadata.get("coords", "N/A"),
-                            "is_landscape": is_landscape,
-                            "width": width,
-                            "height": height
+                            "date": prepared_image["metadata"].get("date", "N/A"),
+                            "coords": prepared_image["metadata"].get("coords", "N/A"),
+                            "is_landscape": prepared_image["is_landscape"],
+                            "width": prepared_image["width"],
+                            "height": prepared_image["height"]
                         },
-                        "orientation": is_landscape
+                        "orientation": prepared_image["is_landscape"]
                     }
 
                     self._image_cache.put(cache_key, result)
@@ -680,12 +743,12 @@ class ReportService:
 
         return processed_images, layout_mode, img_count
 
-    async def generate_batch_pdf(self, reports_list, output_path=None, logo_left=None, logo_right=None, custom_template_str=None, template_name=None, on_progress=None):
+    async def generate_batch_pdf(self, reports_list, output_path=None, logo_left=None, logo_right=None, custom_template_str=None, template_name=None, on_progress=None, original_quality=False):
         """
-        Pipeline optimizado con BATCHING para generaciÃ³n de PDFs
+        Pipeline optimizado con BATCHING para generaciÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³n de PDFs
 
         Mejoras de rendimiento:
-        - Pre-renderiza mÃºltiples HTMLs en paralelo (HTML_PREFETCH_SIZE)
+        - Pre-renderiza mÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âºltiples HTMLs en paralelo (HTML_PREFETCH_SIZE)
         - Genera PDFs en lotes paralelos (PDF_BATCH_SIZE)
         - Merge incremental para liberar memoria
         """
@@ -740,12 +803,12 @@ class ReportService:
         # FASE 1: Pre-procesar todos los reportes en paralelo (batched)
         # =====================================================================
         async def prepare_single_render_input(i, report):
-            """Prepara un HTML individual con sus imÃ¡genes procesadas"""
+            """Prepara un HTML individual con sus imÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡genes procesadas"""
             try:
                 row_data = report.get("data", {})
                 files = report.get("files", [])
 
-                # Procesar imÃ¡genes
+                # Procesar imÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡genes
                 image_max_size = resolve_backend_template_image_max_size(
                     backend_template_name,
                     len(files),
@@ -753,7 +816,8 @@ class ReportService:
                 images, layout_mode, img_count = await self._process_files_serial(
                     files,
                     max_size=image_max_size,
-                    quality=JPEG_QUALITY
+                    quality=100 if original_quality else JPEG_QUALITY,
+                    original_quality=original_quality
                 )
 
                 report_context = {
@@ -769,7 +833,7 @@ class ReportService:
                 html_out = template.render(
                     reports=[report_context],
                     report=row_data,
-                    title="PANEL FOTOGRÃFICO",
+                    title="PANEL FOTOGRÁFICO",
                     logo_left=logo_left_uri or logo_left,
                     logo_right=logo_right_uri or logo_right
                 )
@@ -813,7 +877,7 @@ class ReportService:
                 gc.collect()
 
         if not prepared_items:
-            raise RuntimeError("No se preparÃ³ ningÃºn reporte exitosamente")
+            raise RuntimeError("No se preparó ningún reporte exitosamente")
 
         prepared_items.sort(key=lambda x: x["index"])
 
@@ -830,14 +894,14 @@ class ReportService:
                 combined_html = template.render(
                     reports=combined_reports,
                     report=combined_reports[0]["data"] if combined_reports else {},
-                    title="PANEL FOTOGRÃFICO",
+                    title="PANEL FOTOGRÁFICO",
                     logo_left=logo_left_uri or logo_left,
                     logo_right=logo_right_uri or logo_right
                 )
 
-                single_pdf_path = await loop.run_in_executor(None, _render_pdf_to_file_safe, combined_html)
+                single_pdf_path = await loop.run_in_executor(None, _render_pdf_to_file_safe, combined_html, original_quality)
                 if not single_pdf_path:
-                    raise RuntimeError("No se generÃ³ el PDF consolidado. WeasyPrint puede no estar disponible en el servidor.")
+                    raise RuntimeError("No se generó el PDF consolidado. WeasyPrint puede no estar disponible en el servidor.")
 
                 if on_progress:
                     await on_progress("rendering", total_reports, total_reports, "")
@@ -851,7 +915,7 @@ class ReportService:
                     final_output_path = single_pdf_path
                     single_pdf_path = None
 
-                if GHOSTSCRIPT_ENABLED and total_reports > 1:
+                if GHOSTSCRIPT_ENABLED and total_reports > 1 and not original_quality:
                     print(f"[PDF] Applying Ghostscript compression (quality={GHOSTSCRIPT_QUALITY})...")
                     if on_progress:
                         await on_progress("compressing", 0, 1, "")
@@ -874,7 +938,7 @@ class ReportService:
 
                 total_time = time.time() - start_time
                 gen_time = total_time - merge_time
-                print(f"[PDF] âœ… Complete! {total_reports} reports in {total_time:.1f}s ({total_reports/total_time:.1f} reports/sec)")
+                print(f"[PDF] ÃƒÆ’Ã‚Â¢Ãƒâ€¦Ã¢â‚¬Å“ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â¦ Complete! {total_reports} reports in {total_time:.1f}s ({total_reports/total_time:.1f} reports/sec)")
                 print(f"[PDF]    - Generation + HTML: {gen_time:.1f}s")
                 print("[PDF]    - Merge skipped: single-pass render")
                 if compression_stats and "reduction_percent" in compression_stats:
@@ -913,7 +977,7 @@ class ReportService:
 
                 with ThreadPoolExecutor(max_workers=max_workers) as executor:
                     future_to_index = {
-                        executor.submit(_render_pdf_to_file_safe, item['html']): item['index']
+                        executor.submit(_render_pdf_to_file_safe, item['html'], original_quality): item['index']
                         for item in batch_items
                     }
 
@@ -1020,7 +1084,7 @@ class ReportService:
             # =====================================================================
             # FASE 4: Compresion Ghostscript (opcional)
             # =====================================================================
-            if GHOSTSCRIPT_ENABLED and total_reports > 1:
+            if GHOSTSCRIPT_ENABLED and total_reports > 1 and not original_quality:
                 print(f"[PDF] Applying Ghostscript compression (quality={GHOSTSCRIPT_QUALITY})...")
                 if on_progress:
                     await on_progress("compressing", 0, 1, "")
@@ -1075,13 +1139,13 @@ class ReportService:
 
 
 # ============================================================================
-# HELPER FUNCTIONS - VERSIÃ“N SEGURA
+# HELPER FUNCTIONS - VERSIÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…â€œN SEGURA
 # ============================================================================
 
-def _render_pdf_to_file_safe(html_string):
+def _render_pdf_to_file_safe(html_string, original_quality=False):
     """
     Renderizado seguro de PDF con manejo de errores robusto.
-    Usa WeasyPrint si estÃ¡ disponible, sino Chrome/Edge headless como fallback.
+    Usa WeasyPrint si estÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ disponible, sino Chrome/Edge headless como fallback.
     """
     import tempfile
 
@@ -1094,7 +1158,7 @@ def _render_pdf_to_file_safe(html_string):
             HTML(string=html_string, base_url=os.getcwd()).write_pdf(
                 temp_pdf.name,
                 optimize_images=False,
-                uncompressed_pdf=False
+                uncompressed_pdf=True if original_quality else False
             )
 
             temp_pdf.close()

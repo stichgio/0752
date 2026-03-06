@@ -98,6 +98,9 @@ export default function App() {
     const [pdfLoadingMessage, setPdfLoadingMessage] = useState('');
     const sseProgress = useSSEProgress();
 
+    // Original Quality Mode
+    const [originalQuality, setOriginalQuality] = useState(false);
+
     // Navigation helpers for Focus Mode (defined before hook so callbacks are always fresh)
     const canPrevRow = selectedIndex !== '' && parseInt(selectedIndex) > 0;
     const canNextRow = selectedIndex !== '' && parseInt(selectedIndex) < data.length - 1;
@@ -608,6 +611,7 @@ export default function App() {
         }
         if (idColumn) formData.append('idColumn', idColumn);
         formData.append('exportScope', exportScope);
+        if (originalQuality) formData.append('originalQuality', 'true');
 
         const isBatch = exportScope === 'all' && payload.length > 1;
 
@@ -1085,6 +1089,34 @@ export default function App() {
                                     </div>
                                 )}
                             </div>
+
+                            {/* Original Quality Toggle */}
+                            <div className={`flex items-center justify-between p-2 rounded border transition-colors mt-2 ${originalQuality
+                                    ? 'bg-amber-500/10 border-amber-500/30'
+                                    : 'bg-neutral-800/50 border-neutral-700/50'
+                                }`}>
+                                <div className="flex items-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                                        className={originalQuality ? 'text-amber-400' : 'text-neutral-500'}>
+                                        <path d="M6 3h12l4 6-10 13L2 9z" />
+                                    </svg>
+                                    <span className="text-[10px] text-neutral-300">Calidad Original</span>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        checked={originalQuality}
+                                        onChange={(e) => setOriginalQuality(e.target.checked)}
+                                        className="sr-only peer"
+                                    />
+                                    <div className="w-8 h-4 bg-neutral-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-amber-600"></div>
+                                </label>
+                            </div>
+                            {originalQuality && (
+                                <div className="text-[9px] text-amber-400/80 px-1 mt-1">
+                                    ⚠ Sin compresión. El archivo será más pesado.
+                                </div>
+                            )}
 
                             <div className="grid grid-cols-1 gap-2 mt-4">
                                 <button

@@ -139,7 +139,7 @@ class FakeSupabaseTemplateClient:
     def insert_template_version(self, payload):
         existing = self.get_template_version(payload["template_id"], payload["version_number"])
         if existing:
-            raise RuntimeError("La clave duplicada viola la restricción de unicidad")
+            raise RuntimeError("La clave duplicada viola la restricciÃƒÂ³n de unicidad")
         self.template_versions.append(self._copy(payload))
         return self._copy(payload)
 
@@ -273,3 +273,58 @@ def test_get_published_template_by_name_recompiles_canvas_templates():
     assert compiled is not None
     assert "<!-- stale compiled html -->" not in compiled
     assert '<table class="photo-grid-table">' in compiled
+
+
+def test_get_preview_html_uses_current_assets_fast_path():
+    class NoListVersionsClient(FakeSupabaseTemplateClient):
+        def __init__(self):
+            super().__init__()
+            self.allow_list_versions = True
+
+        def list_template_versions(self, template_id):
+            if self.allow_list_versions:
+                return super().list_template_versions(template_id)
+            raise AssertionError("list_template_versions should not be used for current preview resolution")
+
+    fake_client = NoListVersionsClient()
+    store = SupabaseTemplateStore(fake_client)
+    created = store.create_template(
+        name="preview-fast-path-template",
+        report_type="technical-report",
+        template_json=_sample_json(),
+        author="qa",
+        feature_flag=True,
+    )
+
+    fake_client.allow_list_versions = False
+    compiled = store.get_preview_html(created.id)
+    assert compiled is not None
+    assert "{{ cs }}" in compiled or "{{cs}}" in compiled
+
+
+def test_get_published_template_by_name_uses_current_version_fast_path_without_listing_versions():
+    class NoListVersionsClient(FakeSupabaseTemplateClient):
+        def __init__(self):
+            super().__init__()
+            self.allow_list_versions = True
+
+        def list_template_versions(self, template_id):
+            if self.allow_list_versions:
+                return super().list_template_versions(template_id)
+            raise AssertionError("list_template_versions should not be used for published current-version resolution")
+
+    fake_client = NoListVersionsClient()
+    store = SupabaseTemplateStore(fake_client)
+    created = store.create_template(
+        name="published-fast-path-template",
+        report_type="technical-report",
+        template_json=_sample_json(),
+        author="qa",
+        feature_flag=True,
+    )
+    store.publish_template(created.id, author="qa")
+
+    fake_client.allow_list_versions = False
+    compiled = store.get_published_template_by_name("published-fast-path-template")
+    assert compiled is not None
+    assert "{{ cs }}" in compiled or "{{cs}}" in compiled

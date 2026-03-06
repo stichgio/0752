@@ -92,7 +92,7 @@ def _make_blank_pdf() -> bytes:
 def test_generate_multi_sheet_pdf_volanteo_template_layout(client, monkeypatch):
     captured_html = []
 
-    def fake_render_html_to_pdf(html_string: str, _base_url: str, output_path: str) -> None:
+    def fake_render_html_to_pdf(html_string: str, _base_url: str, output_path: str, original_quality: bool = False) -> None:
         captured_html.append(html_string)
         with open(output_path, "wb") as fout:
             fout.write(_make_blank_pdf())
@@ -152,7 +152,7 @@ def test_generate_multi_sheet_pdf_volanteo_template_layout(client, monkeypatch):
 def test_generate_multi_sheet_pdf_uses_uploaded_logo_files(client, monkeypatch):
     captured_html = []
 
-    def fake_render_html_to_pdf(html_string: str, _base_url: str, output_path: str) -> None:
+    def fake_render_html_to_pdf(html_string: str, _base_url: str, output_path: str, original_quality: bool = False) -> None:
         captured_html.append(html_string)
         with open(output_path, "wb") as fout:
             fout.write(_make_blank_pdf())
@@ -280,7 +280,7 @@ def test_generate_pdf_with_local_volanteo_template(client, monkeypatch):
     """Generating PDF with 'Volanteo_simple' renders via Jinja2 from the HTML file."""
     captured_html = []
 
-    def fake_render(html_string: str, _base_url: str, output_path: str) -> None:
+    def fake_render(html_string: str, _base_url: str, output_path: str, original_quality: bool = False) -> None:
         captured_html.append(html_string)
         with open(output_path, "wb") as fout:
             fout.write(_make_blank_pdf())
@@ -327,7 +327,7 @@ def test_generate_pdf_with_local_volanteo_template(client, monkeypatch):
 def test_generate_multi_sheet_pdf_splits_sorted_images_into_multiple_pages(client, monkeypatch):
     captured_html: list[str] = []
 
-    def fake_render(html_string: str, _base_url: str, output_path: str) -> None:
+    def fake_render(html_string: str, _base_url: str, output_path: str, original_quality: bool = False) -> None:
         captured_html.append(html_string)
         with open(output_path, "wb") as fout:
             fout.write(_make_blank_pdf())
@@ -517,3 +517,41 @@ def test_generate_multi_sheet_pdf_returns_actionable_error_when_no_pdf_engine_av
     assert "libgobject-2.0-0" in detail
     assert "GTK_RUNTIME_BIN" in detail
     assert "Chrome/Edge" in detail
+
+
+def test_generate_multi_sheet_pdf_passes_original_quality_to_renderer(client, monkeypatch):
+    renderer_flags = []
+
+    def fake_render_html_to_pdf(html_string: str, _base_url: str, output_path: str, original_quality: bool = False) -> None:
+        _ = html_string
+        renderer_flags.append(original_quality)
+        with open(output_path, "wb") as fout:
+            fout.write(_make_blank_pdf())
+
+    monkeypatch.setattr(multi_sheet_report, "_render_html_to_pdf", fake_render_html_to_pdf)
+
+    response = client.post(
+        "/api/multi-sheet/generate-pdf",
+        data={
+            "sheets_config": json.dumps(
+                [
+                    {
+                        "order": 0,
+                        "title": "Hoja 1",
+                        "useAltHeader": False,
+                        "rowData": {},
+                        "imageFilenames": [],
+                        "imagesPerPage": 4,
+                        "pageNum": 1,
+                        "totalPages": 1,
+                    }
+                ]
+            ),
+            "header_config": json.dumps({"title": "Informe", "subtitle": "", "logoLeft": None, "logoRight": None}),
+            "alt_header_config": json.dumps({"idField": "", "dateField": "", "extraText": "", "height": "compact"}),
+            "originalQuality": "true",
+        },
+    )
+
+    assert response.status_code == 200
+    assert renderer_flags == [True]

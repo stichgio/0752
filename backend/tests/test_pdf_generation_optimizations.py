@@ -174,7 +174,7 @@ def test_fichas_consolidated_pdf_endpoints(client, monkeypatch):
 
 
 def test_generate_pdf_progress_emits_incremental_preparing_updates(client, monkeypatch):
-    def fake_render_pdf_to_file(html_string: str):
+    def fake_render_pdf_to_file(html_string: str, original_quality: bool = False):
         tmp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
         tmp_path.close()
         with open(tmp_path.name, "wb") as fout:
@@ -208,7 +208,7 @@ def test_generate_pdf_progress_emits_incremental_preparing_updates(client, monke
 def test_report_service_renders_default_template_per_report_for_batch_exports(monkeypatch):
     calls = []
 
-    def fake_render_pdf_to_file(html_string: str):
+    def fake_render_pdf_to_file(html_string: str, original_quality: bool = False):
         calls.append(html_string)
         tmp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
         tmp_path.close()
@@ -241,7 +241,7 @@ def test_report_service_renders_default_template_per_report_for_batch_exports(mo
 def test_report_service_keeps_single_render_for_single_default_report(monkeypatch):
     calls = []
 
-    def fake_render_pdf_to_file(html_string: str):
+    def fake_render_pdf_to_file(html_string: str, original_quality: bool = False):
         calls.append(html_string)
         tmp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
         tmp_path.close()
@@ -272,7 +272,7 @@ def test_report_service_keeps_single_render_for_single_default_report(monkeypatc
 def test_report_service_keeps_per_report_render_for_custom_templates(monkeypatch):
     calls = []
 
-    def fake_render_pdf_to_file(html_string: str):
+    def fake_render_pdf_to_file(html_string: str, original_quality: bool = False):
         calls.append(html_string)
         tmp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
         tmp_path.close()
@@ -304,7 +304,7 @@ def test_report_service_keeps_per_report_render_for_custom_templates(monkeypatch
 def test_report_service_emits_incremental_progress_for_custom_templates(monkeypatch):
     progress_events = []
 
-    def fake_render_pdf_to_file(html_string: str):
+    def fake_render_pdf_to_file(html_string: str, original_quality: bool = False):
         tmp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
         tmp_path.close()
         with open(tmp_path.name, "wb") as fout:
@@ -350,7 +350,7 @@ def test_report_service_emits_incremental_progress_for_custom_templates(monkeypa
 def test_report_service_renders_backend_templates_per_report_for_batch_exports(monkeypatch, template_name):
     calls = []
 
-    def fake_render_pdf_to_file(html_string: str):
+    def fake_render_pdf_to_file(html_string: str, original_quality: bool = False):
         calls.append({"template": template_name, "html": html_string})
         tmp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
         tmp_path.close()
@@ -383,7 +383,7 @@ def test_report_service_renders_backend_templates_per_report_for_batch_exports(m
 def test_report_service_rejects_partial_batch_pdf_generation(monkeypatch):
     calls = {"count": 0}
 
-    def fake_render_pdf_to_file(_html_string: str):
+    def fake_render_pdf_to_file(_html_string: str, original_quality: bool = False):
         calls["count"] += 1
         if calls["count"] == 1:
             tmp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
@@ -416,7 +416,7 @@ def test_report_service_cleans_up_partial_batch_temp_pdfs(monkeypatch):
     calls = {"count": 0}
     created_paths = []
 
-    def fake_render_pdf_to_file(_html_string: str):
+    def fake_render_pdf_to_file(_html_string: str, original_quality: bool = False):
         calls["count"] += 1
         if calls["count"] == 1:
             tmp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
@@ -472,7 +472,7 @@ def test_multi_sheet_memoizes_template_scan_and_image_encoding(client, monkeypat
         counts["image"] += 1
         return "data:image/jpeg;base64,ZmFrZQ=="
 
-    def fake_render_html_to_pdf(html_string: str, _base_url: str, output_path: str) -> None:
+    def fake_render_html_to_pdf(html_string: str, _base_url: str, output_path: str, original_quality: bool = False) -> None:
         captured_html.append(html_string)
         with open(output_path, "wb") as fout:
             fout.write(_make_blank_pdf())
@@ -562,11 +562,11 @@ def test_process_logo_resizes_large_binary_jpeg_and_keeps_mime():
 def test_report_service_uses_layout_specific_image_size_for_backend_template(monkeypatch):
     captured = {}
 
-    async def fake_process_files_serial(self, files, max_size=report_service.MAX_IMAGE_SIZE, quality=report_service.JPEG_QUALITY):
+    async def fake_process_files_serial(self, files, max_size=report_service.MAX_IMAGE_SIZE, quality=report_service.JPEG_QUALITY, original_quality=False):
         captured["max_size"] = max_size
         return [], "4", len(files)
 
-    def fake_render_pdf_to_file(html_string: str):
+    def fake_render_pdf_to_file(html_string: str, original_quality: bool = False):
         tmp_path = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
         tmp_path.close()
         with open(tmp_path.name, "wb") as fout:
@@ -596,3 +596,34 @@ def test_report_service_uses_layout_specific_image_size_for_backend_template(mon
     assert isinstance(pdf_bytes, bytes)
     assert captured["max_size"] == report_service.resolve_backend_template_image_max_size("format_reservorios.html", 4)
 
+
+
+def test_generate_pdf_forwards_original_quality_and_raw_logo_bytes(client):
+    captured = {}
+
+    class DummyService:
+        async def generate_batch_pdf(self, reports_payload, output_path=None, logo_left=None, logo_right=None, custom_template_str=None, template_name=None, on_progress=None, original_quality=False):
+            captured["reports_payload"] = reports_payload
+            captured["logo_left"] = logo_left
+            captured["logo_right"] = logo_right
+            captured["original_quality"] = original_quality
+            with open(output_path, "wb") as fout:
+                fout.write(b"%PDF-1.4\n%mock\n")
+
+        async def close(self):
+            return None
+
+    app.state.report_service = DummyService()
+    response = client.post(
+        "/api/generate-pdf",
+        data={"data": json.dumps({"id": "RPT-RAW", "valvulas": {}}), "originalQuality": "true"},
+        files=[
+            ("logoLeft", ("logo-left.png", b"left-logo-bytes", "image/png")),
+            ("logoRight", ("logo-right.jpg", b"right-logo-bytes", "image/jpeg")),
+        ],
+    )
+
+    assert response.status_code == 200
+    assert captured["original_quality"] is True
+    assert captured["logo_left"] == b"left-logo-bytes"
+    assert captured["logo_right"] == b"right-logo-bytes"

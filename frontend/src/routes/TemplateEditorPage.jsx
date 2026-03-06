@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import TemplateEditor from '../components/tools/TemplateEditor';
 import PageDocument from './PageDocument';
 
@@ -9,6 +9,7 @@ export default function TemplateEditorPage() {
         let cancelled = false;
         let frameA = 0;
         let frameB = 0;
+        document.documentElement.classList.add('template-editor-page-html');
         const fallbackId = window.setTimeout(() => {
             if (!cancelled) {
                 setIsReady(true);
@@ -25,6 +26,7 @@ export default function TemplateEditorPage() {
 
         return () => {
             cancelled = true;
+            document.documentElement.classList.remove('template-editor-page-html');
             window.clearTimeout(fallbackId);
             window.cancelAnimationFrame(frameA);
             window.cancelAnimationFrame(frameB);
@@ -32,7 +34,7 @@ export default function TemplateEditorPage() {
     }, []);
 
     return (
-        <PageDocument title="Template Editor">
+        <PageDocument title="Template Editor" bodyClassName="template-editor-page-body">
             <div className={`template-editor-page-shell${isReady ? ' app-ready' : ''}`}>
                 <div className="template-editor-boot-loader" aria-hidden="true">
                     <div className="template-editor-boot-card">
