@@ -2,7 +2,6 @@ import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import { formatBytes } from '@/utils/formatBytes';
 import { downloadBlob } from '@/utils/downloadBlob';
 import {
-    ChevronLeft,
     Download,
     Trash2,
     FileDown,
@@ -10,7 +9,6 @@ import {
     CheckCircle,
     AlertCircle,
     X,
-    Sliders,
     RotateCcw,
     FileText,
     Archive,
@@ -20,6 +18,7 @@ import {
     StopCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import DashboardLayout from '../../DashboardLayout';
 import {
     CompressedFile,
     CompressionOptions,
@@ -94,7 +93,7 @@ function generateId(): string {
 // ============================================================================
 function ToastContainer({ toasts, removeToast }: { toasts: Toast[]; removeToast: (id: string) => void }) {
     return (
-        <div className="fixed top-4 right-4 z-50 flex flex-col gap-2">
+        <div className="fixed top-20 right-4 z-50 flex w-[min(22rem,calc(100vw-2rem))] flex-col gap-2">
             <AnimatePresence>
                 {toasts.map((toast) => (
                     <motion.div
@@ -102,23 +101,23 @@ function ToastContainer({ toasts, removeToast }: { toasts: Toast[]; removeToast:
                         initial={{ opacity: 0, x: 50, scale: 0.9 }}
                         animate={{ opacity: 1, x: 0, scale: 1 }}
                         exit={{ opacity: 0, x: 50, scale: 0.9 }}
-                        className={`flex items-center gap-3 px-5 py-4 rounded-lg border shadow-lg max-w-md ${
+                        className={`flex items-center gap-2.5 rounded-2xl border px-3.5 py-2.5 shadow-2xl backdrop-blur ${
                             toast.type === 'error'
-                                ? 'bg-red-500/10 border-red-500/30 text-red-400'
+                                ? 'border-red-500/20 bg-neutral-950/95 text-red-400'
                                 : toast.type === 'success'
-                                ? 'bg-green-500/10 border-green-500/30 text-green-400'
-                                : 'bg-blue-500/10 border-blue-500/30 text-blue-400'
+                                ? 'border-emerald-500/20 bg-neutral-950/95 text-emerald-500'
+                                : 'border-neutral-700 bg-neutral-950/95 text-neutral-300'
                         }`}
                     >
-                        {toast.type === 'error' && <AlertCircle size={22} />}
-                        {toast.type === 'success' && <CheckCircle size={22} />}
-                        {toast.type === 'info' && <Info size={22} />}
-                        <span className="text-base font-mono flex-1">{toast.message}</span>
+                        {toast.type === 'error' && <AlertCircle size={16} />}
+                        {toast.type === 'success' && <CheckCircle size={16} />}
+                        {toast.type === 'info' && <Info size={16} />}
+                        <span className="flex-1 text-sm font-mono leading-snug">{toast.message}</span>
                         <button
                             onClick={() => removeToast(toast.id)}
-                            className="p-2 hover:bg-white/10 rounded transition-colors"
+                            className="flex h-7 w-7 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-white/5 hover:text-white"
                         >
-                            <X size={18} />
+                            <X size={14} />
                         </button>
                     </motion.div>
                 ))}
@@ -134,9 +133,9 @@ function ProgressBar({ current, total }: { current: number; total: number }) {
     const percentage = total > 0 ? (current / total) * 100 : 0;
 
     return (
-        <div className="w-full bg-[#1a1a1a] rounded-full h-3 overflow-hidden">
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-800">
             <motion.div
-                className="h-full bg-blue-600"
+                className="h-full bg-white"
                 initial={{ width: 0 }}
                 animate={{ width: `${percentage}%` }}
                 transition={{ duration: 0.3, ease: "easeOut" }}
@@ -154,10 +153,10 @@ function MethodBadge({ method }: { method: 'ghostscript' | 'pypdf' | 'none' }) {
     return (
         <span
             title={isGs ? 'Comprimido con Ghostscript' : 'Comprimido con pypdf (fallback)'}
-            className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-mono font-bold cursor-default ${
+            className={`inline-flex cursor-default items-center rounded-full border px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-[0.18em] ${
                 isGs
-                    ? 'bg-green-500/15 text-green-400 border border-green-500/30'
-                    : 'bg-yellow-500/15 text-yellow-400 border border-yellow-500/30'
+                    ? 'border-white/20 bg-white text-black'
+                    : 'border-amber-500/20 bg-amber-500/10 text-amber-300'
             }`}
         >
             {isGs ? 'GS' : 'pypdf'}
@@ -793,536 +792,482 @@ export default function Compressor() {
     // RENDER
     // ============================================================================
     return (
-        <div className="min-h-screen bg-[#0d0d0d] text-[#eee] technical-theme flex">
-            {/* Toast Notifications */}
-            <ToastContainer toasts={toasts} removeToast={removeToast} />
+        <DashboardLayout>
+            <div className="h-full px-4 py-6 text-white md:px-8 xl:px-10">
+                <ToastContainer toasts={toasts} removeToast={removeToast} />
 
-            {/* ============================================================ */}
-            {/* SIDEBAR IZQUIERDO */}
-            {/* ============================================================ */}
-            <aside className="w-[380px] bg-[#0a0a0a] border-r border-[#333] flex flex-col h-screen sticky top-0 shrink-0">
-                {/* Header */}
-                <div className="p-6 border-b border-[#333]">
-                    <div className="flex items-center gap-4">
-                        <a
-                            href="/"
-                            className="text-[#666] hover:text-[#eee] transition-colors"
-                            aria-label="Volver al inicio"
-                        >
-                            <ChevronLeft size={24} />
-                        </a>
-                        <h1 className="text-xl font-bold font-mono tracking-wide text-[#eee] uppercase">
-                            PDF Compressor
-                        </h1>
-                    </div>
-                    <p className="text-sm text-[#555] font-mono mt-3 leading-relaxed">
-                        Reduce el tamaño de tus archivos PDF manteniendo la calidad del documento
-                    </p>
-                </div>
+                <div className="mx-auto flex min-h-full w-full max-w-6xl flex-col gap-4 pb-28">
+                    <section className="rounded-[28px] border border-neutral-800 bg-neutral-950/80 p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] backdrop-blur md:p-5">
+                        <div className="flex flex-col gap-4">
+                            <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+                                <div className="space-y-2">
+                                    <div className="flex items-center gap-3">
+                                        <span className="h-2.5 w-2.5 rounded-full bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.55)]" />
+                                        <h1 className="font-[DotGothic16] text-4xl tracking-tight text-white">
+                                            PDF COMPRESSOR
+                                        </h1>
+                                    </div>
+                                    <p className="max-w-2xl text-xs font-mono uppercase tracking-[0.22em] text-neutral-500">
+                                        Compresion PDF monocroma, cola compacta y control fino por lote.
+                                    </p>
+                                </div>
 
-                {/* Contenido Scrolleable */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                                <div className="flex flex-1 flex-wrap items-center gap-2 xl:justify-end">
+                                    <label className="flex min-w-[17rem] flex-1 items-center gap-3 rounded-2xl border border-neutral-800 bg-neutral-900/60 px-3 py-2.5 sm:flex-none">
+                                        <span className="shrink-0 text-[10px] font-mono uppercase tracking-[0.2em] text-neutral-500">
+                                            Calidad
+                                        </span>
+                                        <select
+                                            value={options.pdfQuality}
+                                            onChange={(e) => setOptions({ ...options, pdfQuality: e.target.value as PDFQuality })}
+                                            className="min-w-0 flex-1 bg-transparent text-sm font-mono text-white outline-none transition-colors focus:text-white"
+                                            aria-label="Nivel de compresion PDF"
+                                        >
+                                            {PDF_QUALITY_OPTIONS.map(opt => (
+                                                <option key={opt.value} value={opt.value} className="bg-neutral-950 text-white">
+                                                    {opt.label} - {opt.description}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </label>
 
-                    {/* ================================================== */}
-                    {/* SECCION: CONFIGURACION PDF */}
-                    {/* ================================================== */}
-                    <motion.div className="space-y-4">
-                        <div className="flex items-center gap-3 text-[#888]">
-                            <FileText size={20} />
-                            <span className="text-base font-mono uppercase tracking-wider">Configuración PDF</span>
-                        </div>
+                                    <div className="flex items-center gap-3 rounded-2xl border border-neutral-800 bg-neutral-900/60 px-3 py-2.5">
+                                        <div className="min-w-0">
+                                            <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-neutral-500">
+                                                ZIP
+                                            </p>
+                                            <p className="text-xs font-mono text-neutral-300">
+                                                {pendingCount >= 3 || zipMode ? 'Salida agrupada' : 'Disponible con 3+ PDF'}
+                                            </p>
+                                        </div>
+                                        <button
+                                            onClick={() => setZipMode(z => !z)}
+                                            disabled={pendingCount < 3 && !zipMode}
+                                            className={`relative h-6 w-11 rounded-full border transition-all ${
+                                                zipMode
+                                                    ? 'border-white bg-white'
+                                                    : 'border-neutral-700 bg-neutral-950'
+                                            } ${(pendingCount < 3 && !zipMode) ? 'cursor-not-allowed opacity-40' : ''}`}
+                                            aria-label={zipMode ? 'Desactivar modo ZIP' : 'Activar modo ZIP'}
+                                        >
+                                            <span
+                                                className={`absolute top-[3px] h-4 w-4 rounded-full transition-all ${
+                                                    zipMode ? 'left-[22px] bg-black' : 'left-[3px] bg-neutral-500'
+                                                }`}
+                                            />
+                                        </button>
+                                    </div>
 
-                        {/* Calidad PDF */}
-                        <div>
-                            <label className="block text-sm text-[#888] mb-2 font-mono">
-                                Nivel de compresión
-                            </label>
-                            <select
-                                value={options.pdfQuality}
-                                onChange={(e) => setOptions({ ...options, pdfQuality: e.target.value as PDFQuality })}
-                                className="w-full bg-[#1a1a1a] border border-[#333] rounded-lg px-4 py-3 text-base text-white font-mono focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 outline-none transition-all cursor-pointer"
-                                aria-label="Nivel de compresión PDF"
+                                    <button
+                                        onClick={handleResetOptions}
+                                        className="flex h-11 w-11 items-center justify-center rounded-2xl border border-neutral-800 bg-neutral-900/60 text-neutral-400 transition-colors hover:border-neutral-600 hover:text-white"
+                                        aria-label="Restaurar valores por defecto"
+                                        title="Restaurar valores"
+                                    >
+                                        <RotateCcw size={15} />
+                                    </button>
+
+                                    <div className="hidden h-7 w-px bg-neutral-800 xl:block" />
+
+                                    <div className="flex flex-wrap items-center gap-2 text-[11px] font-mono uppercase tracking-[0.18em] text-neutral-500 sm:gap-3">
+                                        <span>
+                                            {files.length}/{MAX_FILES} archivos
+                                        </span>
+                                        <span className="h-1 w-1 rounded-full bg-neutral-700" />
+                                        <span>{pendingCount} pendientes</span>
+                                        <span className="h-1 w-1 rounded-full bg-neutral-700" />
+                                        <span className="text-emerald-500">{stats.processedCount} procesados</span>
+                                        {stats.processedCount > 0 && (
+                                            <>
+                                                <span className="h-1 w-1 rounded-full bg-neutral-700" />
+                                                <span className={stats.percentageSaved > 0 ? 'text-emerald-500' : 'text-neutral-500'}>
+                                                    {stats.percentageSaved > 0 ? `-${stats.percentageSaved.toFixed(1)}% ahorro` : '0% ahorro'}
+                                                </span>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <motion.div
+                                className={`flex cursor-pointer flex-col gap-3 rounded-2xl border border-dashed px-4 py-3 transition-colors sm:flex-row sm:items-center sm:justify-between ${
+                                    isDragActive
+                                        ? 'border-white/60 bg-neutral-800/80'
+                                        : 'border-neutral-700 bg-neutral-900/40 hover:border-neutral-500'
+                                }`}
+                                onDragEnter={handleDrag}
+                                onDragLeave={handleDrag}
+                                onDragOver={handleDrag}
+                                onDrop={handleDrop}
+                                onClick={() => fileInputRef.current?.click()}
+                                whileHover={!isDragActive ? { borderColor: '#737373' } : {}}
+                                role="button"
+                                tabIndex={0}
+                                aria-label="Area para soltar archivos PDF. Haz clic o arrastra archivos aqui."
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        fileInputRef.current?.click();
+                                    }
+                                }}
                             >
-                                {PDF_QUALITY_OPTIONS.map(opt => (
-                                    <option key={opt.value} value={opt.value}>
-                                        {opt.label} - {opt.description}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    id="fileInput"
+                                    multiple
+                                    accept="application/pdf"
+                                    onChange={handleFileInput}
+                                    className="hidden"
+                                    aria-label="Seleccionar archivos PDF"
+                                />
 
-                        {/* Modo ZIP toggle (visible solo con 3+ archivos pendientes) */}
-                        <AnimatePresence>
-                            {pendingCount >= 3 && (
-                                <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: 'auto' }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    className="flex items-center justify-between px-4 py-3 bg-[#111] border border-[#222] rounded-lg"
-                                >
-                                    <div>
-                                        <p className="text-sm font-mono text-[#ccc]">Modo ZIP</p>
-                                        <p className="text-xs font-mono text-[#555] mt-0.5">
-                                            Descarga todos en un .zip
+                                <div className="flex min-w-0 items-center gap-3">
+                                    <motion.div
+                                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border ${
+                                            isDragActive ? 'border-white/30 bg-white/10' : 'border-neutral-800 bg-neutral-950/80'
+                                        }`}
+                                        animate={isDragActive ? { scale: [1, 1.05, 1] } : {}}
+                                        transition={{ duration: 0.3 }}
+                                    >
+                                        <FileText size={18} className={isDragActive ? 'text-white' : 'text-neutral-400'} />
+                                    </motion.div>
+
+                                    <div className="min-w-0">
+                                        <p className="truncate text-sm font-mono text-white">
+                                            Arrastra PDFs o haz clic para cargar la cola
+                                        </p>
+                                        <p className="mt-0.5 text-xs font-mono text-neutral-500">
+                                            Solo PDF, maximo {MAX_FILES} archivos, tambien puedes pegar con Ctrl+V
                                         </p>
                                     </div>
-                                    <button
-                                        onClick={() => setZipMode(z => !z)}
-                                        className={`relative w-12 h-6 rounded-full transition-colors ${zipMode ? 'bg-blue-600' : 'bg-[#333]'}`}
-                                        aria-label={zipMode ? 'Desactivar modo ZIP' : 'Activar modo ZIP'}
-                                    >
-                                        <span
-                                            className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${zipMode ? 'left-7' : 'left-1'}`}
-                                        />
-                                    </button>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-
-                    </motion.div>
-
-                    {/* Boton Reset */}
-                    <button
-                        onClick={handleResetOptions}
-                        className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-dashed border-[#333] text-[#666] hover:text-white hover:border-[#555] rounded-lg text-base font-mono transition-all hover:bg-[#1a1a1a]"
-                        aria-label="Restaurar valores por defecto"
-                    >
-                        <RotateCcw size={18} />
-                        Restaurar Valores
-                    </button>
-
-                    {/* ================================================== */}
-                    {/* ESTADISTICAS */}
-                    {/* ================================================== */}
-                    <AnimatePresence>
-                        {files.length > 0 && (
-                            <motion.div
-                                className="space-y-4 pt-4 border-t border-[#222]"
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                            >
-                                <div className="flex items-center gap-3 text-[#888]">
-                                    <Sliders size={20} />
-                                    <span className="text-base font-mono uppercase tracking-wider">Resumen</span>
                                 </div>
 
-                                <div className="bg-[#111] border border-[#222] rounded-lg p-5 space-y-3">
-                                    <div className="flex justify-between text-base font-mono">
-                                        <span className="text-[#666]">Archivos PDF</span>
-                                        <span className="text-white font-semibold">
-                                            {files.length}
-                                            {files.length >= MAX_FILES && (
-                                                <span className="text-yellow-500 ml-1 text-xs">(máx)</span>
-                                            )}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between text-base font-mono">
-                                        <span className="text-[#666]">Procesados</span>
-                                        <span className="text-green-500 font-semibold">{stats.processedCount}</span>
-                                    </div>
-                                    {stats.processedCount > 0 && (
-                                        <>
-                                            <div className="border-t border-[#222] pt-3 mt-3">
-                                                <div className="flex justify-between text-base font-mono">
-                                                    <span className="text-[#666]">Tamaño original</span>
-                                                    <span className="text-white">{formatBytes(stats.totalOriginalSize)}</span>
-                                                </div>
-                                                <div className="flex justify-between text-base font-mono mt-2">
-                                                    <span className="text-[#666]">Tamaño final</span>
-                                                    <span className="text-white">{formatBytes(stats.totalCompressedSize)}</span>
-                                                </div>
-                                            </div>
-                                            <div className="border-t border-[#222] pt-3 flex justify-between text-base font-mono">
-                                                <span className="text-[#666]">Reducción total</span>
-                                                <span className={`font-bold text-lg ${stats.percentageSaved > 0 ? 'text-green-500' : 'text-[#666]'}`}>
-                                                    {stats.percentageSaved > 0 ? `-${stats.percentageSaved.toFixed(1)}%` : '0%'}
-                                                </span>
-                                            </div>
-                                        </>
-                                    )}
+                                <div className="flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.18em] text-neutral-500">
+                                    <span className="rounded-full border border-neutral-700 px-2.5 py-1">Drop</span>
+                                    <span className="rounded-full border border-neutral-700 px-2.5 py-1">Click</span>
                                 </div>
                             </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
-
-                {/* ================================================== */}
-                {/* FOOTER: BOTONES DE ACCION */}
-                {/* ================================================== */}
-                <div className="p-6 border-t border-[#333] space-y-3">
-                    {/* Progress Bar durante procesamiento */}
-                    {isProcessing && (
-                        <div className="mb-4">
-                            {processingProgress.total > 0 && (
-                                <>
-                                    <div className="flex justify-between text-sm text-[#888] font-mono mb-2">
-                                        <span>Progreso</span>
-                                        <span>{processingProgress.current} / {processingProgress.total}</span>
-                                    </div>
-                                    <ProgressBar current={processingProgress.current} total={processingProgress.total} />
-                                </>
-                            )}
-                            {processingMessage && (
-                                <p className="text-xs text-[#777] font-mono mt-2 truncate" title={processingMessage}>
-                                    {processingMessage}
-                                </p>
-                            )}
-                            {/* Cancel button */}
-                            <button
-                                onClick={handleCancelCompression}
-                                className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2 border border-red-500/40 text-red-400 hover:text-red-300 hover:border-red-400/60 rounded-lg font-mono text-sm transition-colors"
-                                aria-label="Cancelar compresión"
-                            >
-                                <StopCircle size={16} />
-                                Cancelar
-                            </button>
                         </div>
-                    )}
+                    </section>
 
-                    <motion.button
-                        onClick={zipMode ? handleZipDownload : handleCompress}
-                        disabled={isProcessing || pendingCount === 0}
-                        whileHover={!isProcessing && pendingCount > 0 ? { scale: 1.02 } : {}}
-                        whileTap={!isProcessing && pendingCount > 0 ? { scale: 0.98 } : {}}
-                        className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-[#222] disabled:text-[#555] text-white rounded-lg font-mono text-lg font-semibold transition-colors disabled:cursor-not-allowed"
-                        aria-label={isProcessing ? 'Comprimiendo archivos' : `Comprimir ${pendingCount} archivos pendientes`}
-                    >
-                        {isProcessing ? (
-                            <>
-                                <Loader2 size={22} className="animate-spin" />
-                                {zipMode ? 'Creando ZIP...' : 'Comprimiendo...'}
-                            </>
-                        ) : (
-                            <>
-                                {zipMode ? <Archive size={22} /> : <Archive size={22} />}
-                                {zipMode ? `ZIP (${pendingCount})` : `Comprimir (${pendingCount})`}
-                            </>
-                        )}
-                    </motion.button>
+                    <section className="min-h-[18rem] flex-1 overflow-hidden rounded-[28px] border border-neutral-800 bg-neutral-950/60 backdrop-blur">
+                        <AnimatePresence mode="popLayout">
+                            {files.length > 0 ? (
+                                <div className="h-full overflow-y-auto">
+                                    <div className="divide-y divide-neutral-800/80">
+                                        {files.map((f, index) => {
+                                            const reduction = f.compressedSize && f.compressedSize < f.originalSize
+                                                ? ((f.originalSize - f.compressedSize) / f.originalSize * 100)
+                                                : 0;
 
-                    <AnimatePresence>
-                        {completedCount > 0 && !zipMode && (
-                            <motion.button
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                exit={{ opacity: 0, height: 0 }}
-                                onClick={handleDownloadAll}
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                className="w-full flex items-center justify-center gap-3 px-6 py-4 bg-[#1a1a1a] hover:bg-[#222] border border-[#333] text-white rounded-lg font-mono text-base font-semibold transition-colors"
-                                aria-label={`Descargar ${completedCount} archivos`}
-                            >
-                                <FileDown size={22} />
-                                Descargar {completedCount > 1 ? `Todo (${completedCount})` : ''}
-                            </motion.button>
-                        )}
-                    </AnimatePresence>
+                                            const canRetry = f.status === 'completed' &&
+                                                !f.isEncrypted &&
+                                                (reduction === 0 || (f.error && f.error.includes('optimizado')));
 
-                    <AnimatePresence>
-                        {files.length > 0 && (
-                            <motion.button
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                exit={{ opacity: 0, height: 0 }}
-                                onClick={handleClearAll}
-                                disabled={isProcessing}
-                                className="w-full flex items-center justify-center gap-3 px-6 py-3 border border-red-500/30 text-red-500/80 hover:text-red-500 hover:border-red-500/50 hover:bg-red-500/5 disabled:opacity-50 rounded-lg font-mono text-base transition-colors"
-                                aria-label="Limpiar todos los archivos"
-                            >
-                                <Trash2 size={20} />
-                                Limpiar Todo
-                            </motion.button>
-                        )}
-                    </AnimatePresence>
-                </div>
-            </aside>
+                                            const currentQualityForRetry: PDFQuality = f.appliedQuality || options.pdfQuality;
+                                            const isPopoverOpen = downloadPopover?.fileId === f.id;
 
-            {/* ============================================================ */}
-            {/* AREA PRINCIPAL (DERECHA) */}
-            {/* ============================================================ */}
-            <main className="flex-1 flex flex-col h-screen overflow-hidden">
-                {/* Drop Zone */}
-                <div className="p-8 pb-6">
-                    <motion.div
-                        className={`border-2 border-dashed rounded-xl p-10 text-center transition-colors cursor-pointer ${isDragActive
-                            ? 'border-blue-500 bg-blue-500/10'
-                            : 'border-[#333] hover:border-[#444]'
-                            }`}
-                        onDragEnter={handleDrag}
-                        onDragLeave={handleDrag}
-                        onDragOver={handleDrag}
-                        onDrop={handleDrop}
-                        onClick={() => fileInputRef.current?.click()}
-                        whileHover={!isDragActive ? { borderColor: '#444' } : {}}
-                        role="button"
-                        tabIndex={0}
-                        aria-label="Área para soltar archivos PDF. Haz clic o arrastra archivos aquí."
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                                fileInputRef.current?.click();
-                            }
-                        }}
-                    >
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            id="fileInput"
-                            multiple
-                            accept="application/pdf"
-                            onChange={handleFileInput}
-                            className="hidden"
-                            aria-label="Seleccionar archivos PDF"
-                        />
-                        <div className="flex flex-col items-center gap-5">
-                            <motion.div
-                                className={`p-5 rounded-full ${isDragActive ? 'bg-blue-500/20' : 'bg-[#1a1a1a]'}`}
-                                animate={isDragActive ? { scale: [1, 1.1, 1] } : {}}
-                                transition={{ duration: 0.3 }}
-                            >
-                                <FileText size={48} className={isDragActive ? 'text-blue-500' : 'text-[#555]'} />
-                            </motion.div>
-                            <div>
-                                <p className="text-xl font-mono text-white mb-2">
-                                    Arrastra archivos PDF o haz clic para seleccionar
-                                </p>
-                                <p className="text-base text-[#666] font-mono">
-                                    Solo archivos PDF — máximo {MAX_FILES} archivos
-                                </p>
-                                <p className="text-sm text-[#555] font-mono mt-3">
-                                    También puedes pegar archivos con Ctrl+V
-                                </p>
-                            </div>
-                        </div>
-                    </motion.div>
-                </div>
+                                            return (
+                                                <motion.div
+                                                    key={f.id}
+                                                    layout
+                                                    initial={{ opacity: 0, y: 16 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    exit={{ opacity: 0, x: -60 }}
+                                                    transition={{ delay: index * 0.02 }}
+                                                    className="group flex items-center gap-3 px-3.5 py-2.5 transition-colors hover:bg-neutral-900/45 sm:px-4"
+                                                >
+                                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-neutral-800 bg-neutral-900/80">
+                                                        {f.isEncrypted
+                                                            ? <Lock size={14} className="text-red-400" />
+                                                            : <FileText size={14} className="text-neutral-300" />
+                                                        }
+                                                    </div>
 
-                {/* Lista de Archivos */}
-                <div className="flex-1 overflow-y-auto px-8 pb-8">
-                    <AnimatePresence mode="popLayout">
-                        {files.length > 0 ? (
-                            <div className="space-y-3">
-                                {files.map((f, index) => {
-                                    const reduction = f.compressedSize && f.compressedSize < f.originalSize
-                                        ? ((f.originalSize - f.compressedSize) / f.originalSize * 100)
-                                        : 0;
-
-                                    const canRetry = f.status === 'completed' &&
-                                        !f.isEncrypted &&
-                                        (reduction === 0 || (f.error && f.error.includes('optimizado')));
-
-                                    const currentQualityForRetry: PDFQuality = f.appliedQuality || options.pdfQuality;
-                                    const isPopoverOpen = downloadPopover?.fileId === f.id;
-
-                                    return (
-                                        <motion.div
-                                            key={f.id}
-                                            layout
-                                            initial={{ opacity: 0, y: 20 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, x: -100 }}
-                                            transition={{ delay: index * 0.03 }}
-                                            className="bg-[#111] border border-[#222] rounded-xl p-5 flex items-center gap-5 group hover:border-[#333] transition-colors"
-                                        >
-                                            {/* Icon */}
-                                            <div className="w-14 h-14 bg-[#1a1a1a] rounded-lg flex items-center justify-center overflow-hidden shrink-0">
-                                                {f.isEncrypted
-                                                    ? <Lock size={28} className="text-red-400" />
-                                                    : <FileText size={32} className="text-red-500" />
-                                                }
-                                            </div>
-
-                                            {/* Info */}
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-lg font-mono text-white truncate" title={f.originalName}>
-                                                    {f.originalName}
-                                                </p>
-                                                <div className="flex items-center gap-3 mt-2 flex-wrap">
-                                                    <span className="text-base font-mono text-[#666]">
-                                                        {formatBytes(f.originalSize)}
-                                                    </span>
-                                                    {f.status === 'completed' && f.compressedSize && (
-                                                        <>
-                                                            <span className="text-[#444] text-lg">→</span>
-                                                            <span className="text-base font-mono text-green-500 font-semibold">
-                                                                {formatBytes(f.compressedSize)}
-                                                            </span>
-                                                            {reduction > 0 && (
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                                            <p className="max-w-full truncate text-sm font-mono text-white" title={f.originalName}>
+                                                                {f.originalName}
+                                                            </p>
+                                                            {f.status === 'completed' && f.compressedSize && reduction > 0 && (
                                                                 <motion.span
-                                                                    initial={{ opacity: 0, scale: 0.8 }}
+                                                                    initial={{ opacity: 0, scale: 0.9 }}
                                                                     animate={{ opacity: 1, scale: 1 }}
-                                                                    className="text-base font-mono text-green-400"
+                                                                    className="text-xs font-mono text-emerald-500"
                                                                 >
-                                                                    (-{reduction.toFixed(1)}%)
+                                                                    -{reduction.toFixed(1)}%
                                                                 </motion.span>
                                                             )}
-                                                            {/* Processing time (2.2) */}
-                                                            {f.processingTime !== undefined && (
-                                                                <span className="text-xs font-mono text-[#555]">
-                                                                    {f.processingTime}s
-                                                                </span>
-                                                            )}
-                                                            {/* Method badge (2.1) */}
                                                             {f.compressionMethod && f.compressionMethod !== 'none' && (
                                                                 <MethodBadge method={f.compressionMethod} />
                                                             )}
-                                                        </>
-                                                    )}
-                                                </div>
-                                                {/* Status messages */}
-                                                <div className="mt-1 flex items-center gap-2 flex-wrap">
-                                                    {f.isEncrypted && (
-                                                        <span className="text-sm font-mono text-red-400 flex items-center gap-1">
-                                                            <Lock size={12} />
-                                                            PDF protegido con contraseña. No se puede comprimir.
-                                                        </span>
-                                                    )}
-                                                    {!f.isEncrypted && f.status === 'completed' && f.error && (
-                                                        <span className="text-sm font-mono text-yellow-500">
-                                                            {f.error}
-                                                        </span>
-                                                    )}
-                                                    {f.status === 'error' && f.error && (
-                                                        <span className="text-base font-mono text-red-400 truncate" title={f.error}>
-                                                            {f.error}
-                                                        </span>
-                                                    )}
-                                                    {/* Retry button (2.4) */}
-                                                    {canRetry && (
-                                                        <button
-                                                            onClick={() => retryWithLowerQuality(f.id, currentQualityForRetry)}
-                                                            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-mono text-blue-400 border border-blue-500/30 hover:border-blue-400/60 hover:bg-blue-500/10 rounded-lg transition-colors"
-                                                            title="Reintentar con nivel de compresión inferior"
-                                                        >
-                                                            <RefreshCw size={11} />
-                                                            Reintentar con nivel inferior
-                                                        </button>
-                                                    )}
-                                                </div>
-                                            </div>
+                                                        </div>
 
-                                            {/* Status */}
-                                            <div className="shrink-0">
-                                                {f.status === 'pending' && (
-                                                    <span className="text-sm font-mono text-[#666] px-4 py-2 bg-[#1a1a1a] rounded-lg">
-                                                        Pendiente
-                                                    </span>
-                                                )}
-                                                {f.status === 'processing' && (
-                                                    <Loader2 size={24} className="text-blue-500 animate-spin" />
-                                                )}
-                                                {f.status === 'completed' && !f.isEncrypted && (
-                                                    <CheckCircle size={24} className="text-green-500" />
-                                                )}
-                                                {f.status === 'completed' && f.isEncrypted && (
-                                                    <Lock size={24} className="text-red-400" />
-                                                )}
-                                                {f.status === 'error' && (
-                                                    <AlertCircle size={24} className="text-red-500" />
-                                                )}
-                                            </div>
-
-                                            {/* Actions */}
-                                            <div className="shrink-0 flex items-center gap-2">
-                                                {f.status === 'completed' && f.compressedBlob && !f.isEncrypted && (
-                                                    <div className="relative">
-                                                        <button
-                                                            onClick={() => handleDownloadClick(f)}
-                                                            className="p-3 hover:bg-[#222] rounded-lg transition-colors"
-                                                            title="Descargar"
-                                                            aria-label={`Descargar ${f.originalName}`}
-                                                        >
-                                                            <Download size={22} className="text-[#888] hover:text-white" />
-                                                        </button>
-
-                                                        {/* Download rename popover (2.3) */}
-                                                        <AnimatePresence>
-                                                            {isPopoverOpen && (
-                                                                <motion.div
-                                                                    ref={downloadPopoverRef}
-                                                                    initial={{ opacity: 0, scale: 0.9, y: -4 }}
-                                                                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                                                                    exit={{ opacity: 0, scale: 0.9, y: -4 }}
-                                                                    className="absolute right-0 top-full mt-2 z-30 bg-[#1a1a1a] border border-[#333] rounded-xl p-4 shadow-2xl w-72"
-                                                                    onClick={e => e.stopPropagation()}
-                                                                >
-                                                                    <p className="text-xs text-[#666] font-mono mb-2">
-                                                                        Nombre del archivo
-                                                                    </p>
-                                                                    <input
-                                                                        autoFocus
-                                                                        type="text"
-                                                                        value={downloadPopover.name}
-                                                                        onChange={e => setDownloadPopover(p => p ? { ...p, name: e.target.value } : null)}
-                                                                        onKeyDown={e => {
-                                                                            if (e.key === 'Enter') handlePopoverDownload();
-                                                                            if (e.key === 'Escape') setDownloadPopover(null);
-                                                                        }}
-                                                                        className="w-full bg-[#111] border border-[#333] rounded-lg px-3 py-2 text-sm text-white font-mono focus:border-blue-500 outline-none mb-3"
-                                                                        placeholder={f.originalName}
-                                                                    />
-                                                                    <div className="flex gap-2">
-                                                                        <button
-                                                                            onClick={handlePopoverDownload}
-                                                                            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-mono transition-colors"
-                                                                        >
-                                                                            <Download size={14} />
-                                                                            Descargar
-                                                                        </button>
-                                                                        <button
-                                                                            onClick={() => setDownloadPopover(null)}
-                                                                            className="px-3 py-2 bg-[#222] hover:bg-[#2a2a2a] text-[#888] rounded-lg text-sm font-mono transition-colors"
-                                                                        >
-                                                                            Cancelar
-                                                                        </button>
-                                                                    </div>
-                                                                </motion.div>
+                                                        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs font-mono text-neutral-500">
+                                                            <span>{formatBytes(f.originalSize)}</span>
+                                                            {f.status === 'completed' && f.compressedSize && (
+                                                                <>
+                                                                    <span className="text-neutral-700">-&gt;</span>
+                                                                    <span className={reduction > 0 ? 'text-emerald-500' : 'text-neutral-300'}>
+                                                                        {formatBytes(f.compressedSize)}
+                                                                    </span>
+                                                                </>
                                                             )}
-                                                        </AnimatePresence>
+                                                            {f.processingTime !== undefined && (
+                                                                <span>{f.processingTime}s</span>
+                                                            )}
+                                                        </div>
+
+                                                        <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs font-mono">
+                                                            {f.isEncrypted && (
+                                                                <span className="flex items-center gap-1 text-red-400">
+                                                                    <Lock size={12} />
+                                                                    PDF protegido con contrasena. No se puede comprimir.
+                                                                </span>
+                                                            )}
+                                                            {!f.isEncrypted && f.status === 'completed' && f.error && (
+                                                                <span className="text-amber-400">
+                                                                    {f.error}
+                                                                </span>
+                                                            )}
+                                                            {f.status === 'error' && f.error && (
+                                                                <span className="truncate text-red-400" title={f.error}>
+                                                                    {f.error}
+                                                                </span>
+                                                            )}
+                                                            {canRetry && (
+                                                                <button
+                                                                    onClick={() => retryWithLowerQuality(f.id, currentQualityForRetry)}
+                                                                    className="inline-flex items-center gap-1.5 rounded-full border border-neutral-700 bg-neutral-900/80 px-2.5 py-1 text-[11px] text-neutral-300 transition-colors hover:border-white/40 hover:text-white"
+                                                                    title="Reintentar con nivel de compresion inferior"
+                                                                >
+                                                                    <RefreshCw size={11} />
+                                                                    Nivel inferior
+                                                                </button>
+                                                            )}
+                                                        </div>
                                                     </div>
-                                                )}
-                                                <button
-                                                    onClick={() => handleRemoveFile(f.id)}
-                                                    className="p-3 hover:bg-red-500/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                                                    title="Eliminar"
-                                                    aria-label={`Eliminar ${f.originalName}`}
-                                                >
-                                                    <X size={22} className="text-[#666] hover:text-red-500" />
-                                                </button>
-                                            </div>
-                                        </motion.div>
-                                    );
-                                })}
-                            </div>
-                        ) : (
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="flex flex-col items-center justify-center h-full text-center"
-                            >
+
+                                                    <div className="hidden shrink-0 sm:block">
+                                                        {f.status === 'pending' && (
+                                                            <span className="rounded-full border border-neutral-800 bg-neutral-900/80 px-3 py-1 text-[11px] font-mono uppercase tracking-[0.18em] text-neutral-500">
+                                                                Pendiente
+                                                            </span>
+                                                        )}
+                                                        {f.status === 'processing' && (
+                                                            <Loader2 size={16} className="animate-spin text-white" />
+                                                        )}
+                                                        {f.status === 'completed' && !f.isEncrypted && (
+                                                            <CheckCircle size={16} className="text-emerald-500" />
+                                                        )}
+                                                        {f.status === 'completed' && f.isEncrypted && (
+                                                            <Lock size={16} className="text-red-400" />
+                                                        )}
+                                                        {f.status === 'error' && (
+                                                            <AlertCircle size={16} className="text-red-500" />
+                                                        )}
+                                                    </div>
+
+                                                    <div className="shrink-0 flex items-center gap-1">
+                                                        {f.status === 'completed' && f.compressedBlob && !f.isEncrypted && (
+                                                            <div className="relative">
+                                                                <button
+                                                                    onClick={() => handleDownloadClick(f)}
+                                                                    className="flex h-8 w-8 items-center justify-center rounded-xl border border-neutral-800 bg-neutral-900/70 text-neutral-400 transition-colors hover:border-neutral-600 hover:text-white"
+                                                                    title="Descargar"
+                                                                    aria-label={`Descargar ${f.originalName}`}
+                                                                >
+                                                                    <Download size={14} />
+                                                                </button>
+
+                                                                <AnimatePresence>
+                                                                    {isPopoverOpen && (
+                                                                        <motion.div
+                                                                            ref={downloadPopoverRef}
+                                                                            initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                                                                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                                                                            exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                                                                            className="absolute right-0 top-full z-30 mt-2 w-72 rounded-2xl border border-neutral-800 bg-neutral-950 p-4 shadow-2xl"
+                                                                            onClick={e => e.stopPropagation()}
+                                                                        >
+                                                                            <p className="mb-2 text-[10px] font-mono uppercase tracking-[0.18em] text-neutral-500">
+                                                                                Nombre de salida
+                                                                            </p>
+                                                                            <input
+                                                                                autoFocus
+                                                                                type="text"
+                                                                                value={downloadPopover.name}
+                                                                                onChange={e => setDownloadPopover(p => p ? { ...p, name: e.target.value } : null)}
+                                                                                onKeyDown={e => {
+                                                                                    if (e.key === 'Enter') handlePopoverDownload();
+                                                                                    if (e.key === 'Escape') setDownloadPopover(null);
+                                                                                }}
+                                                                                className="mb-3 w-full rounded-xl border border-neutral-800 bg-neutral-900 px-3 py-2 text-sm font-mono text-white outline-none transition-colors focus:border-neutral-600"
+                                                                                placeholder={f.originalName}
+                                                                            />
+                                                                            <div className="flex gap-2">
+                                                                                <button
+                                                                                    onClick={handlePopoverDownload}
+                                                                                    className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-white px-3 py-2 text-sm font-mono text-black transition-colors hover:bg-neutral-200"
+                                                                                >
+                                                                                    <Download size={14} />
+                                                                                    Descargar
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => setDownloadPopover(null)}
+                                                                                    className="rounded-xl border border-neutral-800 px-3 py-2 text-sm font-mono text-neutral-400 transition-colors hover:border-neutral-600 hover:text-white"
+                                                                                >
+                                                                                    Cancelar
+                                                                                </button>
+                                                                            </div>
+                                                                        </motion.div>
+                                                                    )}
+                                                                </AnimatePresence>
+                                                            </div>
+                                                        )}
+
+                                                        <button
+                                                            onClick={() => handleRemoveFile(f.id)}
+                                                            className="flex h-8 w-8 items-center justify-center rounded-xl border border-transparent text-neutral-500 transition-colors hover:border-red-500/20 hover:bg-red-500/10 hover:text-red-400 sm:opacity-0 sm:group-hover:opacity-100"
+                                                            title="Eliminar"
+                                                            aria-label={`Eliminar ${f.originalName}`}
+                                                        >
+                                                            <X size={14} />
+                                                        </button>
+                                                    </div>
+                                                </motion.div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            ) : (
                                 <motion.div
-                                    animate={{ y: [0, -5, 0] }}
-                                    transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="flex h-full flex-col items-center justify-center px-6 text-center"
                                 >
-                                    <Archive size={72} className="text-[#222] mb-6" />
+                                    <motion.div
+                                        animate={{ y: [0, -4, 0] }}
+                                        transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+                                        className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-neutral-800 bg-neutral-900/80"
+                                    >
+                                        <Archive size={24} className="text-neutral-500" />
+                                    </motion.div>
+                                    <p className="font-mono text-sm uppercase tracking-[0.2em] text-neutral-400">
+                                        No hay PDFs en cola
+                                    </p>
+                                    <p className="mt-2 max-w-md text-sm font-mono text-neutral-600">
+                                        Usa la barra superior para arrastrar, hacer clic, o pegar archivos PDF.
+                                    </p>
+                                    <p className="mt-5 flex items-center gap-2 text-xs font-mono text-neutral-500">
+                                        <kbd className="rounded-lg border border-neutral-800 bg-neutral-900 px-2.5 py-1.5">Ctrl</kbd>
+                                        <span>+</span>
+                                        <kbd className="rounded-lg border border-neutral-800 bg-neutral-900 px-2.5 py-1.5">V</kbd>
+                                        <span>para pegar</span>
+                                    </p>
                                 </motion.div>
-                                <p className="text-[#555] font-mono text-xl">
-                                    No hay archivos cargados
-                                </p>
-                                <p className="text-[#444] font-mono text-lg mt-2">
-                                    Arrastra archivos PDF o usa el área de arriba
-                                </p>
-                                <p className="text-[#555] font-mono text-base mt-6">
-                                    <kbd className="px-3 py-2 bg-[#1a1a1a] rounded border border-[#333] text-sm">Ctrl</kbd>
-                                    {' + '}
-                                    <kbd className="px-3 py-2 bg-[#1a1a1a] rounded border border-[#333] text-sm">V</kbd>
-                                    {' para pegar'}
-                                </p>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                            )}
+                        </AnimatePresence>
+                    </section>
+
+                    <section className="sticky bottom-0">
+                        <div className="rounded-[26px] border border-neutral-800 bg-black/85 px-4 py-3 shadow-[0_-16px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+                            <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+                                <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:gap-4">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <button
+                                            onClick={handleDownloadAll}
+                                            disabled={!files.some(f => f.status === 'completed' && f.compressedBlob) || isProcessing}
+                                            className="inline-flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-900/70 px-3.5 py-2 text-sm font-mono text-neutral-300 transition-colors hover:border-neutral-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-35"
+                                            aria-label={`Descargar ${completedCount} archivos`}
+                                        >
+                                            <FileDown size={14} />
+                                            Descargar todo
+                                        </button>
+
+                                        <button
+                                            onClick={handleClearAll}
+                                            disabled={files.length === 0 || isProcessing}
+                                            className="inline-flex items-center gap-2 rounded-xl border border-neutral-800 bg-neutral-900/70 px-3.5 py-2 text-sm font-mono text-neutral-300 transition-colors hover:border-neutral-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-35"
+                                            aria-label="Limpiar todos los archivos"
+                                        >
+                                            <Trash2 size={14} />
+                                            Limpiar
+                                        </button>
+                                        <AnimatePresence>
+                                            {isProcessing && (
+                                                <motion.button
+                                                    initial={{ opacity: 0, y: 6 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    exit={{ opacity: 0, y: 6 }}
+                                                    onClick={handleCancelCompression}
+                                                    className="inline-flex items-center gap-2 rounded-xl border border-red-500/20 bg-red-500/5 px-3.5 py-2 text-sm font-mono text-red-400 transition-colors hover:border-red-400/40 hover:text-red-300"
+                                                    aria-label="Cancelar compresion"
+                                                >
+                                                    <StopCircle size={14} />
+                                                    Cancelar
+                                                </motion.button>
+                                            )}
+                                        </AnimatePresence>
+                                    </div>
+
+                                    <div className="min-w-0 flex-1 xl:min-w-[20rem]">
+                                        {isProcessing ? (
+                                            <div className="space-y-2">
+                                                {processingProgress.total > 0 && (
+                                                    <>
+                                                        <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-[0.18em] text-neutral-500">
+                                                            <span>Progreso</span>
+                                                            <span>{processingProgress.current} / {processingProgress.total}</span>
+                                                        </div>
+                                                        <ProgressBar current={processingProgress.current} total={processingProgress.total} />
+                                                    </>
+                                                )}
+                                                {processingMessage && (
+                                                    <p className="truncate text-xs font-mono text-neutral-400" title={processingMessage}>
+                                                        {processingMessage}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <p className="text-xs font-mono uppercase tracking-[0.18em] text-neutral-500">
+                                                {zipMode
+                                                    ? 'Modo ZIP listo para el siguiente lote.'
+                                                    : pendingCount > 0
+                                                        ? `${pendingCount} PDF(s) listos en cola.`
+                                                        : 'Carga PDFs para habilitar la compresion.'}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <motion.button
+                                    onClick={zipMode ? handleZipDownload : handleCompress}
+                                    disabled={isProcessing || pendingCount === 0}
+                                    whileHover={!isProcessing && pendingCount > 0 ? { scale: 1.01 } : {}}
+                                    whileTap={!isProcessing && pendingCount > 0 ? { scale: 0.99 } : {}}
+                                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-[DotGothic16] uppercase tracking-[0.2em] text-black transition-colors hover:bg-neutral-200 disabled:cursor-not-allowed disabled:bg-neutral-700 disabled:text-neutral-400 xl:w-auto xl:min-w-[15rem]"
+                                    aria-label={isProcessing ? 'Comprimiendo archivos' : `Comprimir ${pendingCount} archivos pendientes`}
+                                >
+                                    {isProcessing ? (
+                                        <>
+                                            <Loader2 size={16} className="animate-spin" />
+                                            {zipMode ? 'Creando ZIP' : 'Comprimiendo'}
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Archive size={16} />
+                                            {zipMode ? `Comprimir ZIP (${pendingCount})` : `Comprimir (${pendingCount})`}
+                                        </>
+                                    )}
+                                </motion.button>
+                            </div>
+                        </div>
+                    </section>
                 </div>
-            </main>
-        </div>
+            </div>
+        </DashboardLayout>
     );
+
+
 }

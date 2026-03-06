@@ -1,7 +1,11 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
+  BindingDefinition,
+  BrandKit,
+  CanvasComponent,
   CanvasDocument,
+  CanvasVariant,
   TemplateElement,
   VariableDefinition,
   createElement,
@@ -20,6 +24,38 @@ import { InspectorRoot } from './inspector/InspectorRoot';
 import { StatusBar } from './toolbar/StatusBar';
 import { ContextToolbar } from './toolbar/ContextToolbar';
 import { migrateToCanvas } from './utils/elementDefaults';
+import {
+  addElementToPage,
+  addElementsToPage,
+  applyBrandKit,
+  applyVariantToDocument,
+  createBrandKit,
+  createPage,
+  createVariant,
+  deleteBrandKit,
+  deleteComponent,
+  deletePage,
+  deleteVariant,
+  ensureCanvasDocument,
+  getActivePageId,
+  getPageElements,
+  insertComponentInstance,
+  removeBinding,
+  removeElementsFromDocument,
+  reorderPages,
+  renamePage,
+  saveSelectionAsComponent,
+  setActivePage,
+  setComponentDetached,
+  syncComponentInstances,
+  updateBrandKit,
+  updateComponent,
+  updateComponentFromInstance,
+  updateElementsInDocument,
+  updateVariant,
+  upsertBinding,
+  duplicatePage,
+} from './documentModel';
 import type { CanvasChangeOptions } from './historyTypes';
 
 const CLIPBOARD_STORAGE_KEY = 'canvas_clipboard';
@@ -133,7 +169,7 @@ interface CanvasEditorProps {
 }
 
 export default function CanvasEditor({
-  document: doc,
+  document: incomingDoc,
   pageSettings,
   onChange,
   onPageSettingsChange,
@@ -150,6 +186,9 @@ export default function CanvasEditor({
   onEditPublishedTemplate,
   onDeletePublishedTemplate,
 }: CanvasEditorProps) {
+  const doc = useMemo(() => ensureCanvasDocument(incomingDoc), [incomingDoc]);
+  const activePageId = useMemo(() => getActivePageId(doc), [doc]);
+  const currentPageElements = useMemo(() => getPageElements(doc, activePageId), [doc, activePageId]);
   const MIN_SIDEBAR_WIDTH = 250;
   const MAX_SIDEBAR_WIDTH = 500;
 
@@ -184,6 +223,11 @@ export default function CanvasEditor({
       window.clearTimeout(timeoutId);
     };
   }, [isLeftSidebarOpen, isRightSidebarOpen, leftSidebarWidth, rightSidebarWidth]);
+
+  useEffect(() => {
+    const visibleIds = new Set(currentPageElements.map((element) => element.id));
+    setSelectedIds((prev) => prev.filter((id) => visibleIds.has(id)));
+  }, [activePageId, currentPageElements]);
 
   const clampSidebarWidth = useCallback((value: number) => {
     return Math.max(MIN_SIDEBAR_WIDTH, Math.min(MAX_SIDEBAR_WIDTH, Math.round(value)));
@@ -275,6 +319,103 @@ export default function CanvasEditor({
       ...doc,
       assetLibrary: Array.isArray(assetLibrary) ? assetLibrary : [],
     });
+  }, [doc, onChange]);
+
+  const handleSetActivePage = useCallback((pageId: string) => {
+    onChange(setActivePage(doc, pageId));
+    setSelectedIds([]);
+  }, [doc, onChange]);
+
+  const handleCreatePage = useCallback((name?: string) => {
+    onChange(createPage(doc, name));
+    setSelectedIds([]);
+  }, [doc, onChange]);
+
+  const handleRenamePage = useCallback((pageId: string, name: string) => {
+    onChange(renamePage(doc, pageId, name));
+  }, [doc, onChange]);
+
+  const handleDuplicatePage = useCallback((pageId: string) => {
+    onChange(duplicatePage(doc, pageId));
+    setSelectedIds([]);
+  }, [doc, onChange]);
+
+  const handleDeletePage = useCallback((pageId: string) => {
+    onChange(deletePage(doc, pageId));
+    setSelectedIds([]);
+  }, [doc, onChange]);
+
+  const handleMovePage = useCallback((sourceIndex: number, targetIndex: number) => {
+    onChange(reorderPages(doc, sourceIndex, targetIndex));
+  }, [doc, onChange]);
+
+  const handleCreateComponentFromSelection = useCallback((name?: string) => {
+    const next = saveSelectionAsComponent(doc, selectedIds, name);
+    if (next.component) onChange(next.doc);
+  }, [doc, onChange, selectedIds]);
+
+  const handleInsertComponent = useCallback((componentId: string) => {
+    const next = insertComponentInstance(doc, componentId, activePageId);
+    onChange(next.doc);
+    if (next.elementId) setSelectedIds([next.elementId]);
+  }, [activePageId, doc, onChange]);
+
+  const handleSyncComponent = useCallback((componentId: string) => {
+    onChange(syncComponentInstances(doc, componentId));
+  }, [doc, onChange]);
+
+  const handleUpdateComponentFromSelection = useCallback((componentId: string, groupId: string) => {
+    onChange(updateComponentFromInstance(doc, componentId, groupId));
+  }, [doc, onChange]);
+
+  const handleUpdateComponentRecord = useCallback((componentId: string, updates: Partial<CanvasComponent>) => {
+    onChange(updateComponent(doc, componentId, updates));
+  }, [doc, onChange]);
+
+  const handleDeleteComponent = useCallback((componentId: string) => {
+    onChange(deleteComponent(doc, componentId));
+  }, [doc, onChange]);
+
+  const handleCreateBrandKit = useCallback((name?: string) => {
+    const next = createBrandKit(doc, name);
+    onChange(next.doc);
+  }, [doc, onChange]);
+
+  const handleApplyBrandKit = useCallback((brandKitId: string) => {
+    onChange(applyBrandKit(doc, brandKitId));
+  }, [doc, onChange]);
+
+  const handleUpdateBrandKitRecord = useCallback((brandKitId: string, updates: Partial<BrandKit>) => {
+    onChange(updateBrandKit(doc, brandKitId, updates));
+  }, [doc, onChange]);
+
+  const handleDeleteBrandKit = useCallback((brandKitId: string) => {
+    onChange(deleteBrandKit(doc, brandKitId));
+  }, [doc, onChange]);
+
+  const handleCreateVariant = useCallback((name?: string) => {
+    const next = createVariant(doc, name);
+    onChange(next.doc);
+  }, [doc, onChange]);
+
+  const handleApplyVariantRecord = useCallback((variantId?: string | null) => {
+    onChange(applyVariantToDocument(doc, variantId));
+  }, [doc, onChange]);
+
+  const handleUpdateVariantRecord = useCallback((variantId: string, updates: Partial<CanvasVariant>) => {
+    onChange(updateVariant(doc, variantId, updates));
+  }, [doc, onChange]);
+
+  const handleDeleteVariant = useCallback((variantId: string) => {
+    onChange(deleteVariant(doc, variantId));
+  }, [doc, onChange]);
+
+  const handleUpsertBinding = useCallback((binding: BindingDefinition) => {
+    onChange(upsertBinding(doc, binding));
+  }, [doc, onChange]);
+
+  const handleRemoveBinding = useCallback((elementId: string) => {
+    onChange(removeBinding(doc, elementId));
   }, [doc, onChange]);
 
   // Migration — run once
@@ -411,10 +552,12 @@ export default function CanvasEditor({
       }
     }
 
-    const maxZ = Math.max(0, ...nextDoc.elements.map(e => e.style.zIndex || 0));
+    const targetPageId = getActivePageId(nextDoc);
+    const maxZ = Math.max(0, ...nextDoc.elements.filter((element) => element.pageId === targetPageId).map((element) => element.style.zIndex || 0));
+    newEl.pageId = targetPageId;
     newEl.style.zIndex = maxZ + 1;
 
-    onChange({ ...nextDoc, elements: [...nextDoc.elements, newEl] });
+    onChange(addElementToPage(nextDoc, newEl, targetPageId));
     setSelectedIds([newEl.id]);
   }, [doc, onChange, pageSettings.height, pageSettings.width, variableRegistry]);
 
@@ -428,7 +571,8 @@ export default function CanvasEditor({
       y: (pageSettings.height / 2) - 20,
     };
 
-    const maxZ = Math.max(0, ...doc.elements.map((e) => e.style.zIndex || 0));
+    const targetPageId = getActivePageId(doc);
+    const maxZ = Math.max(0, ...doc.elements.filter((element) => element.pageId === targetPageId).map((e) => e.style.zIndex || 0));
     const newElements: TemplateElement[] = [];
 
     block.elements.forEach((def, i) => {
@@ -447,11 +591,12 @@ export default function CanvasEditor({
       if (def.dividerConfig) el.dividerConfig = JSON.parse(JSON.stringify(def.dividerConfig));
       if (def.title !== undefined) el.title = def.title;
       if (def.signatureName !== undefined) el.signatureName = def.signatureName;
+      el.pageId = targetPageId;
 
       newElements.push(el);
     });
 
-    onChange({ ...doc, elements: [...doc.elements, ...newElements] });
+    onChange(addElementsToPage(doc, newElements, targetPageId));
     setSelectedIds(newElements.map((e) => e.id));
   }, [doc, onChange, pageSettings]);
 
@@ -461,6 +606,7 @@ export default function CanvasEditor({
       name: asset.name,
       content: asset.name,
       imageUrl: asset.url,
+      assetRefId: asset.id,
       size: isLogo ? { width: 30, height: 30 } : { width: 50, height: 50 },
       style: {
         backgroundColor: 'transparent',
@@ -472,8 +618,7 @@ export default function CanvasEditor({
 
   const handleDelete = useCallback(() => {
     if (!selectedIds.length) return;
-    const newElements = doc.elements.filter(el => !selectedIds.includes(el.id));
-    onChange({ ...doc, elements: newElements });
+    onChange(removeElementsFromDocument(doc, selectedIds));
     setSelectedIds([]);
   }, [doc, selectedIds, onChange]);
 
@@ -485,18 +630,19 @@ export default function CanvasEditor({
     doc.elements.filter(el => selectedIds.includes(el.id)).forEach(el => {
       const clone = cloneElementWithFreshIds(el);
       clone.name = `${el.name} (copia)`;
+      clone.pageId = el.pageId || activePageId;
       clone.position = { x: el.position.x + 5, y: el.position.y + 5 };
       clone.style = {
         ...clone.style,
-        zIndex: (Math.max(0, ...newElements.map(e => e.style.zIndex || 0))) + 1,
+        zIndex: (Math.max(0, ...newElements.filter((item) => item.pageId === clone.pageId).map(e => e.style.zIndex || 0))) + 1,
       };
       newElements.push(clone);
       newIds.push(clone.id);
     });
 
-    onChange({ ...doc, elements: newElements });
+    onChange(ensureCanvasDocument({ ...doc, elements: newElements }));
     setSelectedIds(newIds);
-  }, [doc, selectedIds, onChange]);
+  }, [activePageId, doc, selectedIds, onChange]);
 
   const handleGroup = useCallback(() => {
     if (selectedIds.length < 2) return;
@@ -525,6 +671,7 @@ export default function CanvasEditor({
       id: generateId(),
       type: 'group',
       name: `Grupo ${Math.floor(Math.random() * 1000)}`,
+      pageId: activePageId,
       position: { x: minX, y: minY },
       size: {
         width: Math.max(1, maxX - minX),
@@ -560,7 +707,7 @@ export default function CanvasEditor({
 
     if (!insertedGroup) groupedElements.push(groupElement);
 
-    onChange({ ...doc, elements: groupedElements });
+    onChange(ensureCanvasDocument({ ...doc, elements: groupedElements }));
     setSelectedIds([groupElement.id]);
   }, [doc, selectedIds, onChange]);
 
@@ -572,7 +719,7 @@ export default function CanvasEditor({
 
     const sourceChildren = Array.isArray(selectedGroup.groupChildren) ? selectedGroup.groupChildren : [];
     if (sourceChildren.length === 0) {
-      onChange({ ...doc, elements: doc.elements.filter((element) => element.id !== selectedGroup.id) });
+      onChange(ensureCanvasDocument({ ...doc, elements: doc.elements.filter((element) => element.id !== selectedGroup.id) }));
       setSelectedIds([]);
       return;
     }
@@ -586,6 +733,7 @@ export default function CanvasEditor({
           x: selectedGroup.position.x + child.position.x,
           y: selectedGroup.position.y + child.position.y,
         };
+        restored.pageId = selectedGroup.pageId || activePageId;
         restored.style = {
           ...restored.style,
           zIndex: baseZ + index,
@@ -602,13 +750,13 @@ export default function CanvasEditor({
       ungroupedElements.push(element);
     });
 
-    onChange({ ...doc, elements: ungroupedElements });
+    onChange(ensureCanvasDocument({ ...doc, elements: ungroupedElements }));
     setSelectedIds(restoredChildren.map((child) => child.id));
   }, [doc, selectedIds, onChange]);
 
   // Alignment
   const handleAlign = useCallback((type: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
-    const selected = doc.elements.filter(el => selectedIds.includes(el.id));
+    const selected = currentPageElements.filter(el => selectedIds.includes(el.id));
     if (selected.length === 0) return;
 
     // If single element, align to page. If multiple, align to bounding box.
@@ -644,26 +792,65 @@ export default function CanvasEditor({
     });
 
     handleUpdateElements(updates);
-  }, [doc, selectedIds, handleUpdateElements, pageSettings.height, pageSettings.width]);
+  }, [currentPageElements, selectedIds, handleUpdateElements, pageSettings.height, pageSettings.width]);
+
+  const handleDistribute = useCallback((axis: 'horizontal' | 'vertical') => {
+    const selected = currentPageElements.filter((element) => selectedIds.includes(element.id));
+    if (selected.length < 3) return;
+
+    const sorted = [...selected].sort((a, b) => axis === 'horizontal' ? a.position.x - b.position.x : a.position.y - b.position.y);
+    const first = sorted[0];
+    const last = sorted[sorted.length - 1];
+    const totalSize = sorted.reduce((sum, element) => sum + (axis === 'horizontal' ? element.size.width : element.size.height), 0);
+    const span = axis === 'horizontal'
+      ? (last.position.x + last.size.width) - first.position.x
+      : (last.position.y + last.size.height) - first.position.y;
+    const gap = (span - totalSize) / Math.max(1, sorted.length - 1);
+
+    let cursor = axis === 'horizontal' ? first.position.x : first.position.y;
+    const updates = new Map<string, Partial<TemplateElement>>();
+    sorted.forEach((element) => {
+      if (axis === 'horizontal') {
+        updates.set(element.id, { position: { x: cursor, y: element.position.y } });
+        cursor += element.size.width + gap;
+      } else {
+        updates.set(element.id, { position: { x: element.position.x, y: cursor } });
+        cursor += element.size.height + gap;
+      }
+    });
+
+    handleUpdateElements(updates);
+  }, [currentPageElements, handleUpdateElements, selectedIds]);
+
+  const handleApplyPrimaryStyle = useCallback(() => {
+    const selected = currentPageElements.filter((element) => selectedIds.includes(element.id));
+    if (selected.length < 2) return;
+    const [primary, ...rest] = selected;
+    const updates = new Map<string, Partial<TemplateElement>>();
+    rest.forEach((element) => {
+      updates.set(element.id, { style: { ...primary.style, zIndex: element.style.zIndex } });
+    });
+    handleUpdateElements(updates);
+  }, [currentPageElements, handleUpdateElements, selectedIds]);
 
   // Z-index manipulation
   const handleBringToFront = useCallback(() => {
-    const maxZ = Math.max(0, ...doc.elements.map(e => e.style.zIndex || 0));
+    const maxZ = Math.max(0, ...currentPageElements.map(e => e.style.zIndex || 0));
     const updates = new Map<string, Partial<TemplateElement>>();
     selectedIds.forEach((id, i) => {
       updates.set(id, { style: { ...doc.elements.find(e => e.id === id)!.style, zIndex: maxZ + 1 + i } });
     });
     handleUpdateElements(updates);
-  }, [doc, selectedIds, handleUpdateElements]);
+  }, [currentPageElements, doc, selectedIds, handleUpdateElements]);
 
   const handleSendToBack = useCallback(() => {
-    const minZ = Math.min(...doc.elements.map(e => e.style.zIndex || 0));
+    const minZ = Math.min(...currentPageElements.map(e => e.style.zIndex || 0), 0);
     const updates = new Map<string, Partial<TemplateElement>>();
     selectedIds.forEach((id, i) => {
       updates.set(id, { style: { ...doc.elements.find(e => e.id === id)!.style, zIndex: Math.max(0, minZ - selectedIds.length + i) } });
     });
     handleUpdateElements(updates);
-  }, [doc, selectedIds, handleUpdateElements]);
+  }, [currentPageElements, doc, selectedIds, handleUpdateElements]);
 
   // Lock / Visibility
   const handleToggleLock = useCallback((id?: string) => {
@@ -683,7 +870,7 @@ export default function CanvasEditor({
 
   // Layers reorder (change z-index based on new order)
   const handleReorder = useCallback((dragIndex: number, hoverIndex: number) => {
-    const sorted = [...doc.elements].sort((a, b) => (b.style.zIndex || 0) - (a.style.zIndex || 0));
+    const sorted = [...currentPageElements].sort((a, b) => (b.style.zIndex || 0) - (a.style.zIndex || 0));
     const [moved] = sorted.splice(dragIndex, 1);
     sorted.splice(hoverIndex, 0, moved);
 
@@ -697,7 +884,7 @@ export default function CanvasEditor({
     });
 
     if (updates.size > 0) handleUpdateElements(updates);
-  }, [doc, handleUpdateElements]);
+  }, [currentPageElements, handleUpdateElements]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -778,7 +965,7 @@ export default function CanvasEditor({
         }
         if (!Array.isArray(parsedClipboard) || parsedClipboard.length === 0) return;
 
-        const maxZ = Math.max(0, ...doc.elements.map(el => el.style.zIndex || 0));
+        const maxZ = Math.max(0, ...currentPageElements.map(el => el.style.zIndex || 0));
         const pastedElements: TemplateElement[] = [];
         const newIds: string[] = [];
 
@@ -791,6 +978,7 @@ export default function CanvasEditor({
             x: (source.position?.x ?? 0) + 10,
             y: (source.position?.y ?? 0) + 10,
           };
+          clone.pageId = activePageId;
           clone.style = {
             ...(source.style || {}),
             zIndex: maxZ + 1,
@@ -802,7 +990,7 @@ export default function CanvasEditor({
 
         if (!pastedElements.length) return;
 
-        onChange({ ...doc, elements: [...doc.elements, ...pastedElements] });
+        onChange(ensureCanvasDocument({ ...doc, elements: [...doc.elements, ...pastedElements] }));
         setSelectedIds(newIds);
         return;
       }
@@ -828,7 +1016,7 @@ export default function CanvasEditor({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [handleDelete, handleDuplicate, handleGroup, handleUngroup, doc, doc.elements, selectedIds, handleUpdateElements, onChange]);
 
-  const selectedElements = doc.elements.filter((element) => selectedIds.includes(element.id));
+  const selectedElements = currentPageElements.filter((element) => selectedIds.includes(element.id));
   const selectedElement = selectedElements.length === 1 ? selectedElements[0] : null;
   const canGroup =
     selectedElements.length >= 2 && selectedElements.every((element) => element.type !== 'group');
@@ -849,6 +1037,8 @@ export default function CanvasEditor({
       <ContextToolbar
         selectedCount={selectedIds.length}
         onAlign={handleAlign}
+        onDistribute={handleDistribute}
+        onApplyPrimaryStyle={handleApplyPrimaryStyle}
         onDelete={handleDelete}
         onDuplicate={handleDuplicate}
         onLockToggle={() => handleToggleLock()}
@@ -867,9 +1057,11 @@ export default function CanvasEditor({
           <>
             <SidebarRoot
               width={leftSidebarWidth}
+              document={doc}
+              activePageId={activePageId}
+              pageElements={currentPageElements}
               onAddElement={handleAddElement}
               onAddBlock={handleAddBlock}
-              elements={doc.elements}
               variables={variableRegistry}
               onVariablesChange={handleUpdateVariables}
               documentTheme={doc.theme}
@@ -895,6 +1087,26 @@ export default function CanvasEditor({
               onUnpublishTemplate={onUnpublishTemplate}
               onEditPublishedTemplate={onEditPublishedTemplate}
               onDeletePublishedTemplate={onDeletePublishedTemplate}
+              onSetActivePage={handleSetActivePage}
+              onCreatePage={handleCreatePage}
+              onRenamePage={handleRenamePage}
+              onDuplicatePage={handleDuplicatePage}
+              onDeletePage={handleDeletePage}
+              onMovePage={handleMovePage}
+              onCreateComponentFromSelection={handleCreateComponentFromSelection}
+              onInsertComponent={handleInsertComponent}
+              onSyncComponent={handleSyncComponent}
+              onUpdateComponentFromSelection={handleUpdateComponentFromSelection}
+              onUpdateComponent={handleUpdateComponentRecord}
+              onDeleteComponent={handleDeleteComponent}
+              onCreateBrandKit={handleCreateBrandKit}
+              onApplyBrandKit={handleApplyBrandKit}
+              onUpdateBrandKit={handleUpdateBrandKitRecord}
+              onDeleteBrandKit={handleDeleteBrandKit}
+              onCreateVariant={handleCreateVariant}
+              onApplyVariant={handleApplyVariantRecord}
+              onUpdateVariant={handleUpdateVariantRecord}
+              onDeleteVariant={handleDeleteVariant}
             />
             <div
               role="separator"
@@ -915,6 +1127,7 @@ export default function CanvasEditor({
         <div className="flex-1 relative flex flex-col min-w-0 overflow-hidden">
           <CanvasArea
             document={doc}
+            activePageId={activePageId}
             pageSettings={pageSettings}
             onChange={onChange}
             selectedIds={selectedIds}
@@ -972,11 +1185,18 @@ export default function CanvasEditor({
             <InspectorRoot
               width={rightSidebarWidth}
               selectedIds={selectedIds}
-              elements={doc.elements}
+              elements={currentPageElements}
               onUpdateElement={handleUpdateElement}
               theme={doc.theme}
               pageSettings={pageSettings}
               onPageSettingsChange={onPageSettingsChange}
+              bindingMap={doc.bindingMap}
+              dataSourceDefinition={doc.dataSourceDefinition}
+              dataPreview={dataPreview}
+              assetLibrary={doc.assetLibrary || []}
+              brandKits={doc.brandKits || []}
+              onUpsertBinding={handleUpsertBinding}
+              onRemoveBinding={handleRemoveBinding}
             />
           </>
         )}

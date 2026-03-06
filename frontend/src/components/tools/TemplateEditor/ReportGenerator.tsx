@@ -1419,7 +1419,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
             {/* Column modal */}
             {showColumnModal && (
                 <div className="fixed inset-0 bg-black/90 flex items-center justify-center z-[200]">
-                    <div className="bg-black border border-[#222] p-6 w-full max-w-[320px] mx-4 shadow-2xl">
+                    <form onSubmit={(e) => { e.preventDefault(); addCustomColumn(); }} className="bg-black border border-[#222] p-6 w-full max-w-[320px] mx-4 shadow-2xl">
                         <h3 className="text-[11px] font-mono uppercase tracking-[0.2em] text-white font-bold mb-5">
                             + Agregar Columna
                         </h3>
@@ -1458,6 +1458,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
 
                         <div className="flex gap-2 mt-4">
                             <button
+                                type="button"
                                 onClick={() => {
                                     setShowColumnModal(false);
                                     setNewColumnName('');
@@ -1469,13 +1470,13 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                                 Cancelar
                             </button>
                             <button
-                                onClick={addCustomColumn}
+                                type="submit"
                                 className="flex-1 flex items-center justify-center gap-2 bg-white hover:bg-[#e5e5e5] text-black font-mono font-bold text-[11px] tracking-wider uppercase py-3 px-4 rounded-none disabled:opacity-20 disabled:cursor-not-allowed transition-all duration-150"
                             >
                                 Agregar
                             </button>
                         </div>
-                    </div>
+                    </form>
                 </div>
             )}
 

@@ -2,6 +2,7 @@
 import type { TemplateElement, CanvasDocument } from './canvasTypes';
 import { normalizeTableData } from './utils/elementDefaults';
 import { normalizePageSettings, normalizeVariableRegistry } from './canvasTypes';
+import { ensureCanvasDocument, getPageElements } from './documentModel';
 
 // ─── SVG placeholder for preview ──────────────────────────────────────────────
 
@@ -72,20 +73,27 @@ function flattenElementsForExport(elements: TemplateElement[]): TemplateElement[
   return flattened;
 }
 
+function getExportPages(doc: CanvasDocument): Array<{ id: string; name: string; elements: TemplateElement[] }> {
+  const normalized = ensureCanvasDocument(doc);
+  return (normalized.pages || []).map((page) => ({
+    id: page.id,
+    name: page.name,
+    elements: flattenElementsForExport(getPageElements(normalized, page.id)).sort((a, b) => (a.style.zIndex || 0) - (b.style.zIndex || 0)),
+  }));
+}
+
 // ─── Jinja2 / HTML export ──────────────────────────────────────────────────────
 
 export function exportToJinja2(doc: CanvasDocument): string {
-  const elements = flattenElementsForExport(doc.elements);
-  const pageSettings = normalizePageSettings(doc.pageSettings);
-
-  // Sort by z-index
-  elements.sort((a, b) => (a.style.zIndex || 0) - (b.style.zIndex || 0));
+  const normalizedDoc = ensureCanvasDocument(doc);
+  const pageSettings = normalizePageSettings(normalizedDoc.pageSettings);
+  const pages = getExportPages(normalizedDoc);
 
   let html = `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>{{ report.title | default('${doc.name}') }}</title>
+  <title>{{ report.title | default('${normalizedDoc.name}') }}</title>
   <style>
     @page {
       size: ${pageSettings.width}mm ${pageSettings.height}mm;
@@ -111,6 +119,10 @@ export function exportToJinja2(doc: CanvasDocument): string {
       background: ${pageSettings.backgroundColor || '#ffffff'};
       overflow: hidden;
       page-break-after: always;
+    }
+
+    .template-container:last-of-type {
+      page-break-after: auto;
     }
 
     .element {
@@ -165,21 +177,20 @@ export function exportToJinja2(doc: CanvasDocument): string {
 </head>
 <body>
   {% for report in reports %}
-  <div class="template-container">
 `;
 
-  for (const el of elements) {
-    const style = generateElementStyle(el);
-    const content = generateElementContent(el);
-
-    // Skip types that are purely decorative with no HTML content
-    if (content === null) continue;
-
-    html += `    <div class="element" data-type="${el.type}" style="${style}">${content}</div>\n`;
+  for (const page of pages) {
+    html += `  <div class="template-container" data-page-id="${page.id}" data-page-name="${escapeHtml(page.name)}">\n`;
+    for (const el of page.elements) {
+      const style = generateElementStyle(el);
+      const content = generateElementContent(el);
+      if (content === null) continue;
+      html += `    <div class="element" data-type="${el.type}" style="${style}">${content}</div>\n`;
+    }
+    html += '  </div>\n';
   }
 
-  html += `  </div>
-  {% endfor %}
+  html += `  {% endfor %}
 </body>
 </html>`;
 
@@ -489,11 +500,12 @@ function generateElementContent(el: TemplateElement): string | null {
 // ─── JSON export / import ──────────────────────────────────────────────────────
 
 export function exportToJSON(doc: CanvasDocument): string {
+  const normalizedDoc = ensureCanvasDocument(doc);
   return JSON.stringify(
     {
-      ...doc,
-      pageSettings: normalizePageSettings(doc.pageSettings),
-      variables: normalizeVariableRegistry(doc.variables),
+      ...normalizedDoc,
+      pageSettings: normalizePageSettings(normalizedDoc.pageSettings),
+      variables: normalizeVariableRegistry(normalizedDoc.variables),
     },
     null,
     2
@@ -506,11 +518,11 @@ export function importFromJSON(json: string): CanvasDocument | null {
     if (!doc.id || !Array.isArray(doc.elements)) {
       return null;
     }
-    return {
+    return ensureCanvasDocument({
       ...doc,
       pageSettings: normalizePageSettings(doc.pageSettings),
       variables: normalizeVariableRegistry(doc.variables),
-    } as CanvasDocument;
+    } as CanvasDocument);
   } catch {
     return null;
   }

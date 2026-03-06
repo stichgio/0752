@@ -29,6 +29,15 @@ class PreviewTemplatePayload(BaseModel):
     logo_right: Optional[str] = None  # URL or base64 data URI
 
 
+class PreviewMatrixSamplePayload(BaseModel):
+    id: str
+    sampleData: Dict[str, Any] = Field(default_factory=dict)
+
+
+class PreviewMatrixPayload(BaseModel):
+    samples: list[PreviewMatrixSamplePayload] = Field(default_factory=list)
+
+
 class PublishTemplatePayload(BaseModel):
     author: str = Field(default="system", min_length=1, max_length=120)
 

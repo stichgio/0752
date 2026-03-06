@@ -1,291 +1,361 @@
 import React from 'react';
-import { TemplateElement, PageSettings, PhotoGridCount, PhotoGridOddPosition, type DocumentTheme } from '../canvasTypes';
+import {
+  TemplateElement,
+  PageSettings,
+  PhotoGridCount,
+  PhotoGridOddPosition,
+  generateId,
+  type BindingDefinition,
+  type CanvasDocument,
+  type DocumentTheme,
+} from '../canvasTypes';
 import { TransformPanel } from './TransformPanel.tsx';
 import { StylePanel } from './StylePanel.tsx';
 import { PageSettingsPanel } from './PageSettingsPanel.tsx';
-import { Sliders } from 'lucide-react';
+import { resolvePreviewExpression } from '../documentModel';
+import { Sliders, Unplug } from 'lucide-react';
 
 const PHOTO_COUNT_OPTIONS: Array<{ value: PhotoGridCount; label: string }> = [
-    { value: 2, label: '2 (compatibilidad)' },
-    { value: 3, label: '3 fotos' },
-    { value: 4, label: '4 fotos' },
-    { value: 5, label: '5 fotos' },
-    { value: 6, label: '6 fotos' },
+  { value: 2, label: '2 (compatibilidad)' },
+  { value: 3, label: '3 fotos' },
+  { value: 4, label: '4 fotos' },
+  { value: 5, label: '5 fotos' },
+  { value: 6, label: '6 fotos' },
 ];
 
 interface InspectorRootProps {
-    width?: number;
-    selectedIds: string[];
-    elements: TemplateElement[];
-    onUpdateElement: (id: string, updates: Partial<TemplateElement>) => void;
-    theme?: DocumentTheme;
-    pageSettings: PageSettings;
-    onPageSettingsChange: (settings: PageSettings) => void;
+  width?: number;
+  selectedIds: string[];
+  elements: TemplateElement[];
+  onUpdateElement: (id: string, updates: Partial<TemplateElement>) => void;
+  theme?: DocumentTheme;
+  pageSettings: PageSettings;
+  onPageSettingsChange: (settings: PageSettings) => void;
+  bindingMap?: CanvasDocument['bindingMap'];
+  dataSourceDefinition?: CanvasDocument['dataSourceDefinition'];
+  dataPreview?: Record<string, unknown>;
+  assetLibrary?: NonNullable<CanvasDocument['assetLibrary']>;
+  brandKits?: NonNullable<CanvasDocument['brandKits']>;
+  onUpsertBinding?: (binding: BindingDefinition) => void;
+  onRemoveBinding?: (elementId: string) => void;
+}
+
+function buildDefaultBinding(element: TemplateElement, bindingMap: CanvasDocument['bindingMap'], fields: NonNullable<NonNullable<CanvasDocument['dataSourceDefinition']>['fields']>): BindingDefinition {
+  const existing = bindingMap?.[element.id];
+  if (existing) return existing;
+
+  if (element.type === 'logo') {
+    const slot = element.variableName === 'logo_right' ? 'right' : 'left';
+    return {
+      id: `binding_${generateId()}`,
+      elementId: element.id,
+      target: 'logo',
+      mode: 'brand-kit',
+      brandKitSlot: slot,
+      expression: slot === 'right' ? 'logo_right' : 'logo_left',
+      previewLabel: slot === 'right' ? 'Logo right' : 'Logo left',
+    };
+  }
+
+  if (element.type === 'image') {
+    return {
+      id: `binding_${generateId()}`,
+      elementId: element.id,
+      target: 'image',
+      mode: element.assetRefId ? 'asset' : 'expression',
+      assetId: element.assetRefId,
+      expression: element.imageUrl || '',
+      previewLabel: element.imageUrl || '',
+    };
+  }
+
+  if (element.type === 'qr') {
+    return {
+      id: `binding_${generateId()}`,
+      elementId: element.id,
+      target: 'qr',
+      mode: 'expression',
+      expression: element.qrConfig?.content || '',
+      previewLabel: element.qrConfig?.content || '',
+    };
+  }
+
+  return {
+    id: `binding_${generateId()}`,
+    elementId: element.id,
+    target: 'variable',
+    mode: 'field',
+    sourceField: fields[0]?.key,
+    expression: element.variableName || '',
+    previewLabel: element.variableName || fields[0]?.key || '',
+  };
 }
 
 export function InspectorRoot({
-    width = 260,
-    selectedIds,
-    elements,
-    onUpdateElement,
-    theme,
-    pageSettings,
-    onPageSettingsChange,
+  width = 260,
+  selectedIds,
+  elements,
+  onUpdateElement,
+  theme,
+  pageSettings,
+  onPageSettingsChange,
+  bindingMap,
+  dataSourceDefinition,
+  dataPreview,
+  assetLibrary,
+  brandKits,
+  onUpsertBinding,
+  onRemoveBinding,
 }: InspectorRootProps) {
-    const selectedElementId = selectedIds[0] ?? null;
+  const selectedElementId = selectedIds[0] ?? null;
 
-    if (selectedElementId === null) {
-        return (
-            <PageSettingsPanel
-                width={width}
-                pageSettings={pageSettings}
-                onChange={onPageSettingsChange}
-            />
-        );
-    }
-
-    const primaryElement = elements.find(el => el.id === selectedElementId);
-
-    if (!primaryElement) return null;
-
-    const isPhotoGrid = primaryElement.type === 'photo-grid';
-    const photoCount: PhotoGridCount = isPhotoGrid ? (primaryElement.photoConfig?.count || 2) : 2;
-    const photoShowLabels = isPhotoGrid ? Boolean(primaryElement.photoConfig?.showLabels) : false;
-    const photoOddPosition: PhotoGridOddPosition = isPhotoGrid
-        ? (primaryElement.photoConfig?.oddPosition || 'center')
-        : 'center';
-    const photoLabels = isPhotoGrid
-        ? Array.from({ length: photoCount }, (_, i) => primaryElement.photoConfig?.labels?.[i] || `Foto ${i + 1}`)
-        : [];
-
-    const updatePhotoConfig = (updates: Partial<{
-        count: PhotoGridCount;
-        labels: string[];
-        showLabels: boolean;
-        oddPosition: PhotoGridOddPosition;
-    }>) => {
-        if (!isPhotoGrid) return;
-        onUpdateElement(primaryElement.id, {
-            photoConfig: {
-                count: updates.count ?? photoCount,
-                labels: updates.labels ?? photoLabels,
-                showLabels: updates.showLabels ?? photoShowLabels,
-                oddPosition: updates.oddPosition ?? photoOddPosition,
-            },
-        });
-    };
-
+  if (selectedElementId === null) {
     return (
-        <div className="h-full flex-none border-l border-neutral-200 bg-white flex flex-col overflow-y-auto" style={{ width }}>
-            {/* Header */}
-            <div className="px-3 py-2.5 border-b border-neutral-100 flex items-center gap-2">
-                <Sliders size={14} className="text-neutral-400" />
-                <h2 className="text-sm font-semibold text-neutral-700">Inspector</h2>
-                {selectedIds.length > 1 && (
-                    <span className="ml-auto text-xs bg-violet-100 text-violet-600 px-1.5 py-0.5 rounded font-medium">
-                        {selectedIds.length}
-                    </span>
-                )}
-            </div>
-
-            {/* Element info */}
-            <div className="px-3 py-2 border-b border-neutral-100">
-                <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded">
-                        {primaryElement.type}
-                    </span>
-                    <span className="text-xs text-neutral-600 truncate flex-1" title={primaryElement.name}>
-                        {primaryElement.name}
-                    </span>
-                </div>
-            </div>
-
-            {/* Transform */}
-            <TransformPanel element={primaryElement} onUpdate={onUpdateElement} />
-
-            {/* Style */}
-            <StylePanel element={primaryElement} onUpdate={onUpdateElement} theme={theme} />
-
-            {/* Variable - Jinja2 expression with backend presets */}
-            {primaryElement.type === 'variable' && (
-                <div className="px-3 py-3 border-b border-neutral-100 space-y-2">
-                    <label className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 block">
-                        Expresion Jinja2
-                    </label>
-
-                    {/* Preset picker */}
-                    <select
-                        className="w-full h-7 px-2 text-xs border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400 bg-white"
-                        value=""
-                        onChange={(e) => {
-                            if (e.target.value) onUpdateElement(primaryElement.id, { variableName: e.target.value });
-                            e.target.value = '';
-                        }}
-                    >
-                        <option value="">- Insertar campo del reporte -</option>
-                        <optgroup label="Datos del reporte">
-                            <option value="report.data.get('CENTRO', '-')">CENTRO</option>
-                            <option value="report.data.get('NIS', '-')">NIS</option>
-                            <option value="report.data.get('Nro OT', '-')">Nro OT</option>
-                            <option value="report.data.get('DIRECCION', '-')">DIRECCION</option>
-                            <option value="report.data.get('LOCALIDAD', '-')">LOCALIDAD</option>
-                            <option value="report.data.get('DISTRITO', '-')">DISTRITO</option>
-                            <option value="report.data.get('SECTOR', '-')">SECTOR</option>
-                            <option value="report.data.get('ESTADO', '-')">ESTADO</option>
-                            <option value="report.data.get('ACTIVIDAD', '-')">ACTIVIDAD</option>
-                            <option value="report.data.get('SUBACTIVIDAD', '-')">SUBACTIVIDAD</option>
-                            <option value="report.data.get('CONTRATA', '-')">CONTRATA</option>
-                            <option value="report.data.get('CONTRATISTA', '-')">CONTRATISTA</option>
-                            <option value="report.data.get('CUADRILLA', '-')">CUADRILLA</option>
-                            <option value="report.data.get('TIPO RED', '-')">TIPO RED</option>
-                            <option value="report.data.get('FECHA', '-')">FECHA</option>
-                            <option value="report.data.get('ZONAL', '-')">ZONAL</option>
-                            <option value="report.data.get('OBSERVACION SEDAPAL', '-')">OBSERVACION SEDAPAL</option>
-                            <option value="report.data.get('OBSERVACION CONTRATA', '-')">OBSERVACION CONTRATA</option>
-                            <option value="report.data.get('COD INFRAESTRUCT', '-')">COD INFRAESTRUCT</option>
-                            <option value="report.data.get('UBICACION', '-')">UBICACION</option>
-                            <option value="report.data.get('NAME ACTIVITY', '-')">NAME ACTIVITY</option>
-                            <option value="report.data.get('CODIGO BUZON', '-')">CODIGO BUZON</option>
-                        </optgroup>
-                        <optgroup label="Imagenes">
-                            <option value="report.images[0].name">Nombre foto 1</option>
-                            <option value="report.images[0].date">Fecha foto 1</option>
-                            <option value="report.images[0].coords">Coordenadas foto 1</option>
-                            <option value="report.images | length">Cantidad de fotos</option>
-                        </optgroup>
-                        <optgroup label="Logos">
-                            <option value="logo_left">logo_left</option>
-                            <option value="logo_right">logo_right</option>
-                        </optgroup>
-                    </select>
-
-                    {/* Free-text expression input */}
-                    <input
-                        type="text"
-                        value={primaryElement.variableName || ''}
-                        onChange={(e) => onUpdateElement(primaryElement.id, { variableName: e.target.value })}
-                        className="w-full h-7 px-2 text-xs font-mono border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400 focus:border-violet-400"
-                        placeholder="report.data.get('CAMPO', '-')"
-                    />
-
-                    {/* Generated expression preview */}
-                    {primaryElement.variableName && (
-                        <div className="px-2 py-1 bg-blue-50 border border-blue-100 rounded text-[10px] font-mono text-blue-700 break-all">
-                            {'{{ '}{primaryElement.variableName}{' }}'}
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* Image / Logo URL */}
-            {(primaryElement.type === 'image' || primaryElement.type === 'logo') && (
-                <div className="px-3 py-3 border-b border-neutral-100">
-                    <label className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 block mb-1.5">
-                        {primaryElement.type === 'logo' ? 'URL de Logo (opcional)' : 'URL de Imagen'}
-                    </label>
-                    <input
-                        type="text"
-                        value={primaryElement.imageUrl || ''}
-                        onChange={(e) => onUpdateElement(primaryElement.id, { imageUrl: e.target.value })}
-                        className="w-full h-7 px-2 text-xs border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400 focus:border-violet-400"
-                        placeholder="https://..."
-                    />
-                </div>
-            )}
-
-            {/* Photo grid config */}
-            {isPhotoGrid && (
-                <div className="px-3 py-3 border-b border-neutral-100 space-y-2.5">
-                    <label className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 block">
-                        Configuracion de Fotos
-                    </label>
-
-                    <div>
-                        <span className="text-[10px] font-medium text-neutral-400 block mb-1">Cantidad</span>
-                        <select
-                            value={photoCount}
-                            onChange={(e) => {
-                                const nextCount = Number(e.target.value) as PhotoGridCount;
-                                const nextLabels = Array.from(
-                                    { length: nextCount },
-                                    (_, i) => photoLabels[i] || `Foto ${i + 1}`
-                                );
-                                updatePhotoConfig({ count: nextCount, labels: nextLabels });
-                            }}
-                            className="w-full h-7 px-2 text-xs border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400 bg-white"
-                        >
-                            {PHOTO_COUNT_OPTIONS.map((opt) => (
-                                <option key={opt.value} value={opt.value}>{opt.label}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {photoCount % 2 !== 0 && (
-                        <div>
-                            <span className="text-[10px] font-medium text-neutral-400 block mb-1">Ubicacion impar</span>
-                            <select
-                                value={photoOddPosition}
-                                onChange={(e) => updatePhotoConfig({ oddPosition: e.target.value as PhotoGridOddPosition })}
-                                className="w-full h-7 px-2 text-xs border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400 bg-white"
-                            >
-                                <option value="left">Izquierda</option>
-                                <option value="center">Centro</option>
-                                <option value="right">Derecha</option>
-                            </select>
-                        </div>
-                    )}
-
-                    <label className="flex items-center gap-2 text-xs text-neutral-600">
-                        <input
-                            type="checkbox"
-                            checked={photoShowLabels}
-                            onChange={(e) => updatePhotoConfig({ showLabels: e.target.checked })}
-                            className="rounded border-neutral-300"
-                        />
-                        Mostrar etiquetas
-                    </label>
-
-                    {photoShowLabels && (
-                        <div className="space-y-1.5">
-                            {photoLabels.map((label, i) => (
-                                <input
-                                    key={i}
-                                    type="text"
-                                    value={label}
-                                    onChange={(e) => {
-                                        const nextLabels = [...photoLabels];
-                                        nextLabels[i] = e.target.value;
-                                        updatePhotoConfig({ labels: nextLabels });
-                                    }}
-                                    className="w-full h-7 px-2 text-xs border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400 focus:border-violet-400"
-                                    placeholder={`Etiqueta foto ${i + 1}`}
-                                />
-                            ))}
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* Logo - Jinja2 variable (used when no URL is set) */}
-            {primaryElement.type === 'logo' && (
-                <div className="px-3 py-3 border-b border-neutral-100">
-                    <label className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 block mb-1.5">
-                        Variable Jinja2
-                    </label>
-                    <select
-                        value={primaryElement.variableName || 'logo_left'}
-                        onChange={(e) => onUpdateElement(primaryElement.id, { variableName: e.target.value })}
-                        className="w-full h-7 px-2 text-xs border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400 bg-white"
-                    >
-                        <option value="logo_left">logo_left - logo izquierdo</option>
-                        <option value="logo_right">logo_right - logo derecho</option>
-                    </select>
-                    <p className="mt-1 text-[10px] text-neutral-400">
-                        Usada si no hay URL. El backend pasa <code className="bg-neutral-100 px-0.5 rounded">logo_left</code> y <code className="bg-neutral-100 px-0.5 rounded">logo_right</code>.
-                    </p>
-                </div>
-            )}
-        </div>
+      <PageSettingsPanel
+        width={width}
+        pageSettings={pageSettings}
+        onChange={onPageSettingsChange}
+      />
     );
-}
+  }
 
+  const primaryElement = elements.find((element) => element.id === selectedElementId);
+  if (!primaryElement) return null;
+
+  const fields = Array.isArray(dataSourceDefinition?.fields) ? dataSourceDefinition.fields : [];
+  const safeBinding = buildDefaultBinding(primaryElement, bindingMap, fields);
+  const resolvedPreview = resolvePreviewExpression(safeBinding.expression || primaryElement.variableName || '', dataPreview);
+  const safeAssets = assetLibrary || [];
+  const safeBrandKits = brandKits || [];
+
+  const updateBinding = (updates: Partial<BindingDefinition>) => {
+    onUpsertBinding?.({
+      ...safeBinding,
+      ...updates,
+    });
+  };
+
+  const isPhotoGrid = primaryElement.type === 'photo-grid';
+  const photoCount: PhotoGridCount = isPhotoGrid ? (primaryElement.photoConfig?.count || 2) : 2;
+  const photoShowLabels = isPhotoGrid ? Boolean(primaryElement.photoConfig?.showLabels) : false;
+  const photoOddPosition: PhotoGridOddPosition = isPhotoGrid ? (primaryElement.photoConfig?.oddPosition || 'center') : 'center';
+  const photoLabels = isPhotoGrid
+    ? Array.from({ length: photoCount }, (_, index) => primaryElement.photoConfig?.labels?.[index] || `Foto ${index + 1}`)
+    : [];
+
+  const updatePhotoConfig = (updates: Partial<{ count: PhotoGridCount; labels: string[]; showLabels: boolean; oddPosition: PhotoGridOddPosition }>) => {
+    if (!isPhotoGrid) return;
+    onUpdateElement(primaryElement.id, {
+      photoConfig: {
+        count: updates.count ?? photoCount,
+        labels: updates.labels ?? photoLabels,
+        showLabels: updates.showLabels ?? photoShowLabels,
+        oddPosition: updates.oddPosition ?? photoOddPosition,
+      },
+    });
+  };
+
+  return (
+    <div className="h-full flex-none border-l border-neutral-200 bg-white flex flex-col overflow-y-auto" style={{ width }}>
+      <div className="px-3 py-2.5 border-b border-neutral-100 flex items-center gap-2">
+        <Sliders size={14} className="text-neutral-400" />
+        <h2 className="text-sm font-semibold text-neutral-700">Inspector</h2>
+        {selectedIds.length > 1 && (
+          <span className="ml-auto text-xs bg-violet-100 text-violet-600 px-1.5 py-0.5 rounded font-medium">
+            {selectedIds.length}
+          </span>
+        )}
+      </div>
+
+      <div className="px-3 py-2 border-b border-neutral-100">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-mono bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded">{primaryElement.type}</span>
+          <span className="text-xs text-neutral-600 truncate flex-1" title={primaryElement.name}>{primaryElement.name}</span>
+          {primaryElement.componentId && (
+            <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-1 text-[10px] font-semibold text-blue-700">
+              <Unplug size={10} />
+              componente
+            </span>
+          )}
+        </div>
+      </div>
+
+      <TransformPanel element={primaryElement} onUpdate={onUpdateElement} />
+      <StylePanel element={primaryElement} onUpdate={onUpdateElement} theme={theme} />
+
+      {(primaryElement.type === 'variable' || primaryElement.type === 'logo' || primaryElement.type === 'image' || primaryElement.type === 'qr') && (
+        <div className="px-3 py-3 border-b border-neutral-100 space-y-2">
+          <label className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 block">Binding</label>
+
+          {(primaryElement.type === 'variable' || primaryElement.type === 'qr') && (
+            <>
+              <select
+                className="w-full h-7 px-2 text-xs border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400 bg-white"
+                value={safeBinding.sourceField || ''}
+                onChange={(event) => updateBinding({
+                  target: primaryElement.type === 'qr' ? 'qr' : 'variable',
+                  mode: 'field',
+                  sourceField: event.target.value,
+                  previewLabel: event.target.value,
+                })}
+              >
+                <option value="">- Seleccionar campo -</option>
+                {fields.map((field) => (
+                  <option key={field.key} value={field.key}>{field.label || field.key}</option>
+                ))}
+              </select>
+              <input
+                type="text"
+                value={safeBinding.expression || primaryElement.variableName || primaryElement.qrConfig?.content || ''}
+                onChange={(event) => updateBinding({
+                  target: primaryElement.type === 'qr' ? 'qr' : 'variable',
+                  mode: 'expression',
+                  expression: event.target.value,
+                  previewLabel: event.target.value,
+                })}
+                className="w-full h-7 px-2 text-xs font-mono border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400"
+                placeholder={primaryElement.type === 'qr' ? 'report.data.get(\'codigo\', \'-\')' : "report.data.get('CAMPO', '-')"}
+              />
+            </>
+          )}
+
+          {primaryElement.type === 'logo' && (
+            <>
+              <select
+                value={safeBinding.brandKitSlot || 'left'}
+                onChange={(event) => updateBinding({
+                  target: 'logo',
+                  mode: 'brand-kit',
+                  brandKitSlot: event.target.value === 'right' ? 'right' : 'left',
+                  expression: event.target.value === 'right' ? 'logo_right' : 'logo_left',
+                  previewLabel: event.target.value === 'right' ? 'Logo right' : 'Logo left',
+                })}
+                className="w-full h-7 px-2 text-xs border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400 bg-white"
+              >
+                <option value="left">Brand kit left</option>
+                <option value="right">Brand kit right</option>
+              </select>
+              <input
+                type="text"
+                value={primaryElement.imageUrl || ''}
+                onChange={(event) => onUpdateElement(primaryElement.id, { imageUrl: event.target.value })}
+                className="w-full h-7 px-2 text-xs border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400"
+                placeholder="URL opcional para override"
+              />
+            </>
+          )}
+
+          {primaryElement.type === 'image' && (
+            <>
+              <select
+                value={safeBinding.assetId || ''}
+                onChange={(event) => updateBinding({
+                  target: 'image',
+                  mode: event.target.value ? 'asset' : 'expression',
+                  assetId: event.target.value || undefined,
+                  previewLabel: safeAssets.find((asset) => asset.id === event.target.value)?.name || '',
+                })}
+                className="w-full h-7 px-2 text-xs border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400 bg-white"
+              >
+                <option value="">- Seleccionar asset -</option>
+                {safeAssets.map((asset) => (
+                  <option key={asset.id} value={asset.id}>{asset.name}</option>
+                ))}
+              </select>
+              <input
+                type="text"
+                value={primaryElement.imageUrl || ''}
+                onChange={(event) => onUpdateElement(primaryElement.id, { imageUrl: event.target.value })}
+                className="w-full h-7 px-2 text-xs border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400"
+                placeholder="URL opcional de imagen"
+              />
+            </>
+          )}
+
+          {safeBrandKits.length > 0 && primaryElement.type === 'logo' && (
+            <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-2 text-[10px] text-neutral-500">
+              Slots disponibles: {safeBrandKits.map((brandKit) => brandKit.name).join(', ')}
+            </div>
+          )}
+
+          <div className="px-2 py-1 bg-blue-50 border border-blue-100 rounded text-[10px] font-mono text-blue-700 break-all">
+            Preview: {resolvedPreview || '-'}
+          </div>
+          <button
+            type="button"
+            onClick={() => onRemoveBinding?.(primaryElement.id)}
+            className="inline-flex h-7 items-center justify-center rounded-md border border-neutral-200 bg-white px-2 text-[10px] font-semibold text-neutral-600 hover:bg-neutral-50"
+          >
+            Limpiar binding
+          </button>
+        </div>
+      )}
+
+      {isPhotoGrid && (
+        <div className="px-3 py-3 border-b border-neutral-100 space-y-2.5">
+          <label className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 block">Configuracion de Fotos</label>
+          <div>
+            <span className="text-[10px] font-medium text-neutral-400 block mb-1">Cantidad</span>
+            <select
+              value={photoCount}
+              onChange={(event) => {
+                const nextCount = Number(event.target.value) as PhotoGridCount;
+                const nextLabels = Array.from({ length: nextCount }, (_, index) => photoLabels[index] || `Foto ${index + 1}`);
+                updatePhotoConfig({ count: nextCount, labels: nextLabels });
+              }}
+              className="w-full h-7 px-2 text-xs border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400 bg-white"
+            >
+              {PHOTO_COUNT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {photoCount % 2 !== 0 && (
+            <div>
+              <span className="text-[10px] font-medium text-neutral-400 block mb-1">Ubicacion impar</span>
+              <select
+                value={photoOddPosition}
+                onChange={(event) => updatePhotoConfig({ oddPosition: event.target.value as PhotoGridOddPosition })}
+                className="w-full h-7 px-2 text-xs border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400 bg-white"
+              >
+                <option value="left">Izquierda</option>
+                <option value="center">Centro</option>
+                <option value="right">Derecha</option>
+              </select>
+            </div>
+          )}
+
+          <label className="flex items-center gap-2 text-xs text-neutral-600">
+            <input
+              type="checkbox"
+              checked={photoShowLabels}
+              onChange={(event) => updatePhotoConfig({ showLabels: event.target.checked })}
+              className="rounded border-neutral-300"
+            />
+            Mostrar etiquetas
+          </label>
+
+          {photoShowLabels && (
+            <div className="space-y-1.5">
+              {photoLabels.map((label, index) => (
+                <input
+                  key={index}
+                  type="text"
+                  value={label}
+                  onChange={(event) => {
+                    const nextLabels = [...photoLabels];
+                    nextLabels[index] = event.target.value;
+                    updatePhotoConfig({ labels: nextLabels });
+                  }}
+                  className="w-full h-7 px-2 text-xs border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400"
+                  placeholder={`Etiqueta foto ${index + 1}`}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

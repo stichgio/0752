@@ -34,6 +34,19 @@ export interface VariableDefinition {
   options?: string[];
 }
 
+export interface BindingDefinition {
+  id: string;
+  elementId: string;
+  target: 'variable' | 'logo' | 'image' | 'qr';
+  mode: 'field' | 'expression' | 'asset' | 'brand-kit';
+  sourceField?: string;
+  expression?: string;
+  fallback?: string;
+  assetId?: string;
+  brandKitSlot?: 'left' | 'right';
+  previewLabel?: string;
+}
+
 export interface Position {
   x: number;
   y: number;
@@ -125,6 +138,13 @@ export interface TemplateElement {
   visible?: boolean;
   layerId?: string;
   groupId?: string;
+  pageId?: string;
+  componentId?: string;
+  componentInstanceId?: string;
+  componentVersion?: number;
+  componentDetached?: boolean;
+  bindingId?: string;
+  assetRefId?: string;
 
   rotation?: number;
 
@@ -206,12 +226,62 @@ export interface DocumentTheme {
   colorTokens?: ColorToken[];
 }
 
-export interface AssetLibraryItem {
+export interface AssetRecord {
   id: string;
   name: string;
   type: 'image' | 'logo';
   url: string;
   tags?: string[];
+  folder?: string;
+  sourceType?: 'remote' | 'inline' | 'local';
+  createdAt?: string;
+  updatedAt?: string;
+  missing?: boolean;
+}
+
+export type AssetLibraryItem = AssetRecord;
+
+export interface BrandKit {
+  id: string;
+  name: string;
+  description?: string;
+  colorTokens?: ColorToken[];
+  textStyles?: TextStyleToken[];
+  logos?: {
+    left?: string;
+    right?: string;
+  };
+  backgroundColor?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CanvasComponent {
+  id: string;
+  name: string;
+  elements: TemplateElement[];
+  width: number;
+  height: number;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CanvasVariant {
+  id: string;
+  name: string;
+  description?: string;
+  brandKitId?: string;
+  theme?: DocumentTheme;
+  pageSettings?: Partial<PageSettings>;
+  sampleData?: Record<string, string | number | boolean>;
+}
+
+export interface TemplateValidationIssue {
+  level: 'error' | 'warning';
+  code: string;
+  message: string;
+  path?: string;
 }
 
 export interface CanvasDocument {
@@ -222,6 +292,14 @@ export interface CanvasDocument {
   variables?: VariableDefinition[];
   theme?: DocumentTheme;
   assetLibrary?: AssetLibraryItem[];
+  components?: CanvasComponent[];
+  variants?: CanvasVariant[];
+  brandKits?: BrandKit[];
+  bindingMap?: Record<string, BindingDefinition>;
+  activePageId?: string;
+  activeVariantId?: string | null;
+  brandKitId?: string | null;
+  assetRefs?: Record<string, string>;
   reportType?: string;
   dataSourceDefinition?: {
     schemaVersion?: string;
@@ -439,6 +517,14 @@ export function createEmptyDocument(): CanvasDocument {
     variables: [],
     theme: { textStyles: [], colorTokens: [] },
     assetLibrary: [],
+    components: [],
+    variants: [],
+    brandKits: [],
+    bindingMap: {},
+    activePageId: 'page-1',
+    activeVariantId: null,
+    brandKitId: null,
+    assetRefs: {},
     reportType: 'technical-report',
     dataSourceDefinition: { schemaVersion: '1.0', fields: [] },
     pageSettings: createDefaultPageSettings(),

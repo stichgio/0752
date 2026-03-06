@@ -4,6 +4,9 @@ import Compressor from '@/components/tools/Compressor'
 import { MissingApiConfigBanner } from '@/components/common'
 import './index.css'
 import './technical-theme.css'
+import { initializePageShell } from './bootstrapPageShell'
+
+initializePageShell()
 
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
@@ -11,3 +14,4 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <Compressor />
     </React.StrictMode>,
 )
+

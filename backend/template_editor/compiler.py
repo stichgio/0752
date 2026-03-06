@@ -1137,6 +1137,10 @@ CANVAS_CSS_TEMPLATE = """\
       page-break-after: always;
     }}
 
+    .template-container:last-of-type {{
+      page-break-after: auto;
+    }}
+
     .element {{
       position: absolute;
       overflow: hidden;
@@ -1650,6 +1654,55 @@ def _canvas_element_content(block: EditorBlock) -> Optional[str]:
     return ""
 
 
+def _collect_canvas_pages(template_json: TemplateJson) -> List[Dict[str, Any]]:
+    metadata = template_json.metadata or {}
+    raw_pages = metadata.get("pages") if isinstance(metadata.get("pages"), list) else []
+
+    page_order: List[str] = []
+    page_names: Dict[str, str] = {}
+    for index, raw_page in enumerate(raw_pages):
+        if not isinstance(raw_page, dict):
+            continue
+        page_id = str(raw_page.get("id") or "").strip()
+        if not page_id:
+            continue
+        page_order.append(page_id)
+        page_names[page_id] = str(raw_page.get("name") or f"Pagina {index + 1}")
+
+    if not page_order:
+        page_order = ["page-1"]
+        page_names["page-1"] = "Pagina 1"
+
+    fallback_page_id = page_order[0]
+    blocks_by_page: Dict[str, List[EditorBlock]] = {page_id: [] for page_id in page_order}
+
+    for section in template_json.sections:
+        for block in section.blocks:
+            visible = (block.metadata or {}).get("visible")
+            if visible is False:
+                continue
+            block_page_id = str((block.metadata or {}).get("pageId") or fallback_page_id)
+            if block_page_id not in blocks_by_page:
+                blocks_by_page[block_page_id] = []
+                page_order.append(block_page_id)
+                page_names[block_page_id] = block_page_id
+            blocks_by_page[block_page_id].append(block)
+
+    for page_id in page_order:
+        blocks_by_page[page_id].sort(
+            key=lambda b: _to_float(((b.metadata or {}).get("layout") or {}).get("zIndex"), 0)
+        )
+
+    return [
+        {
+            "id": page_id,
+            "name": page_names.get(page_id, page_id),
+            "blocks": blocks_by_page.get(page_id, []),
+        }
+        for page_id in page_order
+    ]
+
+
 def _compile_canvas_template(template_json: TemplateJson) -> str:
     """Compile a canvas-editor-v3 template to HTML/Jinja2.
 
@@ -1662,34 +1715,32 @@ def _compile_canvas_template(template_json: TemplateJson) -> str:
     page_bg = page_settings.get("backgroundColor", "#ffffff")
 
     css = CANVAS_CSS_TEMPLATE.format(width=page_w, height=page_h, background=page_bg)
+    pages = _collect_canvas_pages(template_json)
+    template_name = _escape_html(str(template_json.metadata.get("canvasDocumentId", "Template")))
 
-    # Collect all blocks, filter invisible, sort by zIndex
-    blocks: List[EditorBlock] = []
-    for section in template_json.sections:
-        for block in section.blocks:
-            visible = (block.metadata or {}).get("visible")
-            if visible is False:
+    page_html_chunks: List[str] = []
+    for page in pages:
+        elements_html: List[str] = []
+        for block in page["blocks"]:
+            content = _canvas_element_content(block)
+            if content is None:
                 continue
-            blocks.append(block)
+            style = _canvas_element_style(block)
+            elements_html.append(
+                f'    <div class="element {block.type}" style="{style}">{content}</div>'
+            )
 
-    blocks.sort(
-        key=lambda b: _to_float(((b.metadata or {}).get("layout") or {}).get("zIndex"), 0)
-    )
-
-    # Generate element HTML
-    elements_html: List[str] = []
-    for block in blocks:
-        content = _canvas_element_content(block)
-        if content is None:
-            continue
-        style = _canvas_element_style(block)
-        elements_html.append(
-            f'    <div class="element {block.type}" style="{style}">{content}</div>'
+        page_content = "\n".join(elements_html)
+        page_id = _escape_html(str(page.get("id", "page")))
+        page_name = _escape_html(str(page.get("name", page_id)))
+        page_html_chunks.append(
+            '  <div class="template-container" ' 
+            f'data-page-id="{page_id}" data-page-name="{page_name}">\n'
+            f'{page_content}\n'
+            '  </div>'
         )
 
-    page_content = "\n".join(elements_html)
-
-    template_name = _escape_html(str(template_json.metadata.get("canvasDocumentId", "Template")))
+    page_markup = "\n".join(page_html_chunks)
 
     return (
         '<!DOCTYPE html>\n'
@@ -1701,9 +1752,7 @@ def _compile_canvas_template(template_json: TemplateJson) -> str:
         '</head>\n'
         '<body>\n'
         '  {% for report in reports %}\n'
-        '  <div class="template-container">\n'
-        f'{page_content}\n'
-        '  </div>\n'
+        f'{page_markup}\n'
         '  {% endfor %}\n'
         '</body>\n'
         '</html>'

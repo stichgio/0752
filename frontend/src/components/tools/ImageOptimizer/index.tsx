@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { ChevronLeft, Upload, Download, Trash2, Image as ImageIcon, FileDown, Loader2, CheckCircle, AlertCircle, X, Sliders, RotateCcw, Crop, Maximize2, Move, Check, RotateCw, Type } from 'lucide-react';
+import DashboardLayout from '../../DashboardLayout';
 import imageCompression from 'browser-image-compression';
 import { ImageFile, CompressionOptions, CompressionStats, OutputFormat, AspectRatio, ASPECT_RATIO_OPTIONS, CropOffset, RenameOptions } from './types';
 import { formatBytes } from '@/utils/formatBytes';
@@ -785,6 +786,7 @@ export default function ImageOptimizer() {
     // RENDER
     // ========================================================================
     return (
+        <DashboardLayout>
         <div className="min-h-screen bg-[#0d0d0d] text-[#eee] technical-theme flex">
             {/* ============================================================ */}
             {/* SIDEBAR IZQUIERDO */}
@@ -1255,5 +1257,6 @@ export default function ImageOptimizer() {
                 />
             )}
         </div>
+        </DashboardLayout>
     );
 }

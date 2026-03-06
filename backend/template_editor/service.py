@@ -17,7 +17,7 @@ from .models import (
     ValidationResult,
 )
 from .supabase_client import SupabaseTemplateClient, is_supabase_enabled
-from .validators import sanitizeHtml, validateProtectedBlocks, validateTemplateStructure, validateVariables
+from .validators import sanitizeHtml, validateCanvasMetadata, validateProtectedBlocks, validateTemplateStructure, validateVariables
 
 ALLOWED_VARIABLES: Dict[str, Dict[str, Dict[str, bool]]] = {
     "technical_report": {
@@ -121,7 +121,8 @@ def run_validations(template_json: TemplateJson, role: UserRole) -> ValidationRe
     structure_result = validateTemplateStructure(template_json)
     vars_result = validateVariables(template_json, get_variable_catalog(template_json.reportType), FILTER_WHITELIST)
     protected_result = validateProtectedBlocks(template_json, role)
-    issues = structure_result.issues + vars_result.issues + protected_result.issues
+    canvas_result = validateCanvasMetadata(template_json)
+    issues = structure_result.issues + vars_result.issues + protected_result.issues + canvas_result.issues
     return ValidationResult(valid=not any(i.level == "error" for i in issues), issues=issues)
 
 

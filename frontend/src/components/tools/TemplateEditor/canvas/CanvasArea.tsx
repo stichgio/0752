@@ -23,9 +23,11 @@ import {
 } from '../utils/snapUtils';
 import { Lock } from 'lucide-react';
 import { resolveDropPosition, shouldActivateDrag, type DropAnchor } from '../utils/dragDropUtils';
+import { getPageElements } from '../documentModel';
 
 interface CanvasAreaProps {
     document: CanvasDocument;
+    activePageId: string;
     pageSettings: PageSettings;
     onChange: (doc: CanvasDocument) => void;
     selectedIds: string[];
@@ -130,6 +132,7 @@ function isSnapTemporarilyDisabled(event: { altKey?: boolean; metaKey?: boolean 
 
 export function CanvasArea({
     document: doc,
+    activePageId,
     pageSettings,
     onChange,
     selectedIds,
@@ -154,20 +157,21 @@ export function CanvasArea({
     });
     const [aspectLockIndicator, setAspectLockIndicator] = useState<{ x: number; y: number } | null>(null);
     const gridPatternIdRef = useRef(`canvas-grid-${Math.random().toString(36).slice(2, 9)}`);
+    const pageElements = useMemo(() => getPageElements(doc, activePageId), [doc, activePageId]);
     const elementMap = useMemo(() => {
         const next = new Map<string, TemplateElement>();
-        doc.elements.forEach((element) => {
+        pageElements.forEach((element) => {
             next.set(element.id, element);
         });
         return next;
-    }, [doc.elements]);
+    }, [pageElements]);
     const selectedIdSet = useMemo(() => new Set(selectedIds), [selectedIds]);
     const sortedVisibleElements = useMemo(
         () =>
-            [...doc.elements]
+            [...pageElements]
                 .filter((element) => element.visible !== false)
                 .sort((a, b) => (a.style.zIndex || 0) - (b.style.zIndex || 0)),
-        [doc.elements],
+        [pageElements],
     );
 
     const docRef = useRef(doc);
@@ -175,7 +179,7 @@ export function CanvasArea({
     const pageSettingsRef = useRef(pageSettings);
     const selectedIdsRef = useRef(selectedIds);
     // Keep the full document cache updated outside pointer-move handlers.
-    const documentSnapLinesRef = useRef<DocumentSnapLines>(buildDocumentSnapLines(doc.elements, pageSettings));
+    const documentSnapLinesRef = useRef<DocumentSnapLines>(buildDocumentSnapLines(pageElements, pageSettings));
     // Each drag/resize interaction gets a filtered copy so move handlers only read arrays.
     const activeSnapLinesRef = useRef<CollectedSnapLines | null>(null);
     const dragRafRef = useRef<number | null>(null);
@@ -283,7 +287,7 @@ export function CanvasArea({
     );
 
     const refreshDocumentSnapLines = useCallback(() => {
-        documentSnapLinesRef.current = buildDocumentSnapLines(docRef.current.elements, pageSettingsRef.current);
+        documentSnapLinesRef.current = buildDocumentSnapLines(getPageElements(docRef.current, activePageId), pageSettingsRef.current);
     }, []);
 
     const getSmartSnapThresholdMm = useCallback(() => {
@@ -1005,7 +1009,7 @@ export function CanvasArea({
         const mode = interactionRef.current.mode;
         if (mode === 'drag' || mode === 'drag-pending' || mode === 'resize') return;
         refreshDocumentSnapLines();
-    }, [doc.elements, pageSettings, refreshDocumentSnapLines]);
+    }, [activePageId, pageElements, pageSettings, refreshDocumentSnapLines]);
 
     useEffect(() => {
         if (!snapEnabled) {

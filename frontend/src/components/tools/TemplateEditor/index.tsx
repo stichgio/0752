@@ -14,6 +14,7 @@ import {
 import { buildDataPreviewFromReport } from './dataPreview';
 import CanvasEditor from './CanvasEditor';
 import { exportToJinja2, exportToJSON, importFromJSON, generatePreviewHtml } from './exportUtils';
+import { applyVariantToDocument, ensureCanvasDocument, validateCanvasDocument } from './documentModel';
 import { useUndoableState } from './hooks/useUndoableState';
 import type { CanvasChangeOptions } from './historyTypes';
 import { templateEditorApi, canvasDocumentToTemplateJson } from './api';
@@ -37,21 +38,12 @@ function isSamePageSettings(a: PageSettings, b: PageSettings): boolean {
 }
 
 function normalizeDocument(doc: CanvasDocument): CanvasDocument {
-  const elements = Array.isArray(doc.elements) ? doc.elements : [];
-  const pages = Array.isArray(doc.pages) && doc.pages.length > 0
-    ? doc.pages
-    : [{ id: 'page-1', name: 'Página 1', elementIds: elements.map((element) => element.id) }];
-
-  return {
+  return ensureCanvasDocument({
     ...doc,
     reportType: doc.reportType || 'technical-report',
-    pages,
-    theme: doc.theme || { textStyles: [], colorTokens: [] },
-    assetLibrary: doc.assetLibrary || [],
-    dataSourceDefinition: doc.dataSourceDefinition || { schemaVersion: '1.0', fields: [] },
     pageSettings: normalizePageSettings(doc.pageSettings),
     variables: normalizeVariableRegistry(doc.variables),
-  };
+  });
 }
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
@@ -159,6 +151,8 @@ export default function TemplateEditor() {
   const [showPreview, setShowPreview] = useState(false);
   const [previewHtml, setPreviewHtml] = useState('');
   const [showGenerator, setShowGenerator] = useState(false);
+  const [showPreviewMatrix, setShowPreviewMatrix] = useState(false);
+  const [previewMatrixEntries, setPreviewMatrixEntries] = useState<Array<{ id: string; label: string; previewHtml: string }>>([]);
   const [dataPreview, setDataPreview] = useState<Record<string, unknown> | undefined>(undefined);
   const [reportType, setReportType] = useState<string>('technical-report');
   const [availableReports, setAvailableReports] = useState<unknown[]>([]);
@@ -426,7 +420,7 @@ export default function TemplateEditor() {
   }, [loadDocument, toast]);
 
   const preview = useCallback(() => {
-    setPreviewHtml(generatePreviewHtml(doc));
+    setPreviewHtml(generatePreviewHtml(normalizeDocument(doc)));
     setShowPreview(true);
   }, [doc]);
 
@@ -561,15 +555,58 @@ export default function TemplateEditor() {
   }, [serverTemplateId]);
 
   const runValidation = useCallback(async () => {
-    if (!serverTemplateId) return [];
+    const localIssues = validateCanvasDocument(normalizeDocument(doc));
+    if (!serverTemplateId) {
+      setValidationIssues(localIssues);
+      return localIssues;
+    }
     const templateJson = canvasDocumentToTemplateJson(doc, reportType);
     const payload = templateJson || undefined;
-    if (!payload) return [];
+    if (!payload) return localIssues;
     const result = await templateEditorApi.validateTemplate(serverTemplateId, payload, 'editor');
-    const issues = Array.isArray(result.issues) ? result.issues : [];
-    setValidationIssues(issues);
-    return issues;
+    const remoteIssues = Array.isArray(result.issues) ? result.issues : [];
+    const merged = [...remoteIssues, ...localIssues.filter((issue) => !remoteIssues.some((remote) => remote.code === issue.code && remote.path === issue.path))];
+    setValidationIssues(merged);
+    return merged;
   }, [doc, reportType, serverTemplateId]);
+
+  const runPreviewMatrix = useCallback(() => {
+    const normalizedDoc = normalizeDocument(doc);
+    const entries = [
+      {
+        id: 'base',
+        label: 'Base',
+        previewHtml: generatePreviewHtml(normalizedDoc, (dataPreview || {}) as Record<string, string>),
+      },
+      ...((normalizedDoc.variants || []).map((variant) => ({
+        id: variant.id,
+        label: variant.name,
+        previewHtml: generatePreviewHtml(
+          applyVariantToDocument(normalizedDoc, variant.id),
+          { ...((dataPreview || {}) as Record<string, string>), ...((variant.sampleData || {}) as Record<string, string>) },
+        ),
+      }))),
+    ];
+    setPreviewMatrixEntries(entries);
+    setShowPreviewMatrix(true);
+  }, [dataPreview, doc]);
+
+  const rollbackToVersion = useCallback(async (version: number) => {
+    if (!serverTemplateId) return;
+    try {
+      await templateEditorApi.rollbackTemplate(serverTemplateId, version, 'editor');
+      const { doc: loadedDoc } = await templateEditorApi.loadPublishedForEditing(serverTemplateId);
+      const normalizedDoc = normalizeDocument(loadedDoc);
+      resetDocHistory(normalizedDoc);
+      setPageSettings(normalizedDoc.pageSettings);
+      setDirty(false);
+      await loadVersionHistory();
+      toast(`Se restauro la version ${version}`, 'ok');
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : 'No se pudo restaurar la version';
+      toast(msg, 'err');
+    }
+  }, [loadVersionHistory, resetDocHistory, serverTemplateId, toast]);
 
   const handleDeletePublishedTemplate = useCallback(async (templateId: string) => {
     try {
@@ -761,6 +798,20 @@ export default function TemplateEditor() {
                     <button
                       onClick={() => {
                         closeUtilitiesMenu();
+                        runPreviewMatrix();
+                      }}
+                      className={OVERFLOW_MENU_ITEM_CLASS}
+                    >
+                      <Eye size={16} className="mt-0.5 flex-shrink-0 text-neutral-500" />
+                      <span className="flex flex-col items-start leading-tight">
+                        <span className="font-medium text-neutral-800">Preview matrix</span>
+                        <span className="text-xs text-neutral-500">Compara base y variantes</span>
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        closeUtilitiesMenu();
                         void runValidation();
                       }}
                       className={OVERFLOW_MENU_ITEM_CLASS}
@@ -841,11 +892,43 @@ export default function TemplateEditor() {
             <h4 className="font-semibold text-neutral-700">Historial</h4>
             <ul className="max-h-24 overflow-auto mt-1">
               {versionHistory.map((v) => (
-                <li key={v.version} className="text-neutral-600">v{v.version} · {v.status} · {v.author}</li>
+                <li key={v.version} className="flex items-center justify-between gap-2 text-neutral-600">
+                  <span>v{v.version} - {v.status} - {v.author}</span>
+                  {serverTemplateId && (
+                    <button
+                      type="button"
+                      onClick={() => void rollbackToVersion(v.version)}
+                      className="rounded-md border border-neutral-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-neutral-600 hover:bg-neutral-50"
+                    >
+                      Restaurar
+                    </button>
+                  )}
+                </li>
               ))}
             </ul>
           </div>
         </section>
+      )}
+
+      {showPreviewMatrix && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowPreviewMatrix(false)}>
+          <div className="flex h-[92vh] w-[min(1280px,96vw)] flex-col rounded-xl bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
+            <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
+              <h3 className="text-sm font-semibold text-neutral-800">Preview matrix</h3>
+              <button type="button" onClick={() => setShowPreviewMatrix(false)} className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-200 bg-white text-neutral-500 hover:bg-neutral-50">
+                <X size={14} />
+              </button>
+            </div>
+            <div className="grid min-h-0 flex-1 gap-3 overflow-y-auto p-4 md:grid-cols-2">
+              {previewMatrixEntries.map((entry) => (
+                <div key={entry.id} className="overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50">
+                  <div className="border-b border-neutral-200 bg-white px-3 py-2 text-xs font-semibold text-neutral-700">{entry.label}</div>
+                  <iframe title={entry.label} srcDoc={entry.previewHtml} className="h-[72vh] w-full bg-white" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Preview Modal */}

@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { ImagePlus, Plus, Search, Trash2 } from 'lucide-react';
+import React, { useMemo, useRef, useState } from 'react';
+import { FolderOpen, ImagePlus, Link2, Plus, Search, Trash2, Upload } from 'lucide-react';
 import { generateId, type AssetLibraryItem } from '../canvasTypes';
 
 interface AssetsPanelProps {
@@ -8,49 +8,85 @@ interface AssetsPanelProps {
   onInsertAsset: (asset: AssetLibraryItem) => void;
 }
 
+function readFileAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(reader.error || new Error('No se pudo leer el archivo'));
+    reader.readAsDataURL(file);
+  });
+}
+
 export function AssetsPanel({ assets, onChange, onInsertAsset }: AssetsPanelProps) {
   const [search, setSearch] = useState('');
   const [name, setName] = useState('');
   const [url, setUrl] = useState('');
+  const [folder, setFolder] = useState('general');
   const [type, setType] = useState<AssetLibraryItem['type']>('image');
   const [tags, setTags] = useState('');
+  const [editingAssetId, setEditingAssetId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const filteredAssets = useMemo(() => {
     const term = search.trim().toLocaleLowerCase('es');
     if (!term) return assets;
     return assets.filter((asset) => {
-      const haystack = [
-        asset.name,
-        asset.url,
-        ...(asset.tags || []),
-      ].join(' ').toLocaleLowerCase('es');
+      const haystack = [asset.name, asset.url, asset.folder || '', ...(asset.tags || [])]
+        .join(' ')
+        .toLocaleLowerCase('es');
       return haystack.includes(term);
     });
   }, [assets, search]);
+
+  const upsertAsset = (nextAsset: AssetLibraryItem) => {
+    const exists = assets.some((asset) => asset.id === nextAsset.id);
+    onChange(exists ? assets.map((asset) => (asset.id === nextAsset.id ? nextAsset : asset)) : [...assets, nextAsset]);
+  };
 
   const addAsset = () => {
     const trimmedName = name.trim();
     const trimmedUrl = url.trim();
     if (!trimmedName || !trimmedUrl) return;
 
-    onChange([
-      ...assets,
-      {
-        id: `asset_${generateId()}`,
-        name: trimmedName,
-        type,
-        url: trimmedUrl,
-        tags: tags
-          .split(',')
-          .map((value) => value.trim())
-          .filter(Boolean),
-      },
-    ]);
+    upsertAsset({
+      id: editingAssetId || `asset_${generateId()}`,
+      name: trimmedName,
+      type,
+      url: trimmedUrl,
+      folder: folder.trim() || 'general',
+      tags: tags.split(',').map((value) => value.trim()).filter(Boolean),
+      sourceType: trimmedUrl.startsWith('data:') ? 'inline' : 'remote',
+      updatedAt: new Date().toISOString(),
+      createdAt: assets.find((asset) => asset.id === editingAssetId)?.createdAt || new Date().toISOString(),
+      missing: false,
+    });
 
+    setEditingAssetId(null);
     setName('');
     setUrl('');
+    setFolder('general');
     setTags('');
     setType('image');
+  };
+
+  const editAsset = (asset: AssetLibraryItem) => {
+    setEditingAssetId(asset.id);
+    setName(asset.name);
+    setUrl(asset.url);
+    setFolder(asset.folder || 'general');
+    setTags((asset.tags || []).join(', '));
+    setType(asset.type);
+  };
+
+  const handleUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const dataUrl = await readFileAsDataUrl(file);
+    setEditingAssetId(null);
+    setName(file.name.replace(/\.[^.]+$/, ''));
+    setUrl(dataUrl);
+    setType(file.type.includes('svg') || file.name.toLowerCase().includes('logo') ? 'logo' : 'image');
+    if (event.target) event.target.value = '';
   };
 
   return (
@@ -78,17 +114,31 @@ export function AssetsPanel({ assets, onChange, onInsertAsset }: AssetsPanelProp
               <option value="logo">Logo</option>
             </select>
           </div>
-          <InlineInput value={url} onChange={setUrl} placeholder="https://..." />
-          <InlineInput value={tags} onChange={setTags} placeholder="tags, separados, por, coma" />
-          <button
-            type="button"
-            onClick={addAsset}
-            disabled={!name.trim() || !url.trim()}
-            className="inline-flex h-8 w-full items-center justify-center gap-1.5 rounded-lg bg-violet-600 px-3 text-[11px] font-semibold text-white hover:bg-violet-700 disabled:pointer-events-none disabled:opacity-50"
-          >
-            <Plus size={12} />
-            Guardar asset
-          </button>
+          <InlineInput value={url} onChange={setUrl} placeholder="https://... o data:image/..." />
+          <div className="grid grid-cols-2 gap-2">
+            <InlineInput value={folder} onChange={setFolder} placeholder="Carpeta" />
+            <InlineInput value={tags} onChange={setTags} placeholder="tags, separados, por, coma" />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg border border-neutral-200 bg-neutral-50 px-3 text-[11px] font-semibold text-neutral-700 hover:bg-neutral-100"
+            >
+              <Upload size={12} />
+              Subir local
+            </button>
+            <button
+              type="button"
+              onClick={addAsset}
+              disabled={!name.trim() || !url.trim()}
+              className="inline-flex h-8 items-center justify-center gap-1.5 rounded-lg bg-violet-600 px-3 text-[11px] font-semibold text-white hover:bg-violet-700 disabled:pointer-events-none disabled:opacity-50"
+            >
+              <Plus size={12} />
+              {editingAssetId ? 'Actualizar' : 'Guardar'}
+            </button>
+          </div>
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
         </div>
       </div>
 
@@ -103,7 +153,7 @@ export function AssetsPanel({ assets, onChange, onInsertAsset }: AssetsPanelProp
         ) : (
           <div className="space-y-2">
             {filteredAssets.map((asset) => (
-              <div key={asset.id} className="rounded-xl border border-neutral-200 bg-white p-2">
+              <div key={asset.id} className={`rounded-xl border p-2 ${asset.missing ? 'border-amber-200 bg-amber-50/60' : 'border-neutral-200 bg-white'}`}>
                 <div className="flex items-start gap-2">
                   <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-neutral-200 bg-neutral-50">
                     <img
@@ -111,37 +161,54 @@ export function AssetsPanel({ assets, onChange, onInsertAsset }: AssetsPanelProp
                       alt={asset.name}
                       className="h-full w-full object-contain"
                       loading="lazy"
+                      onError={() => upsertAsset({ ...asset, missing: true })}
+                      onLoad={() => asset.missing && upsertAsset({ ...asset, missing: false })}
                     />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-[11px] font-semibold text-neutral-700" title={asset.name}>
-                      {asset.name}
+                    <div className="truncate text-[11px] font-semibold text-neutral-700" title={asset.name}>{asset.name}</div>
+                    <div className="mt-0.5 text-[10px] uppercase tracking-wide text-neutral-400">{asset.type}</div>
+                    <div className="mt-0.5 flex items-center gap-1 text-[10px] text-neutral-400">
+                      <FolderOpen size={10} />
+                      <span className="truncate">{asset.folder || 'general'}</span>
                     </div>
-                    <div className="mt-0.5 text-[10px] uppercase tracking-wide text-neutral-400">
-                      {asset.type}
-                    </div>
-                    <div className="mt-1 truncate text-[10px] text-neutral-400" title={asset.url}>
-                      {asset.url}
-                    </div>
+                    <div className="mt-1 truncate text-[10px] text-neutral-400" title={asset.url}>{asset.url}</div>
                     {asset.tags && asset.tags.length > 0 && (
                       <div className="mt-1 flex flex-wrap gap-1">
-                        {asset.tags.slice(0, 3).map((tag) => (
-                          <span key={tag} className="rounded-full bg-neutral-100 px-1.5 py-0.5 text-[9px] text-neutral-500">
-                            {tag}
-                          </span>
+                        {asset.tags.slice(0, 4).map((tag) => (
+                          <span key={tag} className="rounded-full bg-neutral-100 px-1.5 py-0.5 text-[9px] text-neutral-500">{tag}</span>
                         ))}
                       </div>
                     )}
+                    {asset.missing && <div className="mt-1 text-[10px] font-semibold text-amber-600">Requiere relink o reemplazo</div>}
                   </div>
                 </div>
 
-                <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
+                <div className="mt-2 grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     onClick={() => onInsertAsset(asset)}
                     className="inline-flex h-8 items-center justify-center gap-1 rounded-lg border border-violet-200 bg-violet-50 px-3 text-[11px] font-semibold text-violet-700 hover:bg-violet-100"
                   >
-                    Insertar en canvas
+                    Insertar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => editAsset(asset)}
+                    className="inline-flex h-8 items-center justify-center gap-1 rounded-lg border border-neutral-200 bg-white px-3 text-[11px] font-semibold text-neutral-700 hover:bg-neutral-50"
+                  >
+                    <Link2 size={12} />
+                    Relink
+                  </button>
+                </div>
+                <div className="mt-2 grid grid-cols-[1fr_auto] gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setEditingAssetId(asset.id); fileInputRef.current?.click(); }}
+                    className="inline-flex h-8 items-center justify-center gap-1 rounded-lg border border-neutral-200 bg-neutral-50 px-3 text-[11px] font-semibold text-neutral-700 hover:bg-neutral-100"
+                  >
+                    <Upload size={12} />
+                    Reemplazar local
                   </button>
                   <button
                     type="button"
@@ -161,15 +228,7 @@ export function AssetsPanel({ assets, onChange, onInsertAsset }: AssetsPanelProp
   );
 }
 
-function InlineInput({
-  value,
-  onChange,
-  placeholder,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  placeholder: string;
-}) {
+function InlineInput({ value, onChange, placeholder }: { value: string; onChange: (value: string) => void; placeholder: string }) {
   return (
     <input
       value={value}
@@ -179,4 +238,3 @@ function InlineInput({
     />
   );
 }
-

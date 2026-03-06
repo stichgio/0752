@@ -4,6 +4,9 @@ import PdfToolsApp from './components/tools/PdfTools/PdfToolsApp'
 import { MissingApiConfigBanner } from './components/common'
 import { Toaster } from 'sonner'
 import './index.css'
+import { initializePageShell } from './bootstrapPageShell'
+
+initializePageShell()
 
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
@@ -12,3 +15,4 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <PdfToolsApp />
     </React.StrictMode>,
 )
+

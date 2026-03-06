@@ -1191,7 +1191,7 @@ export default function App() {
                 {
                     showColumnModal && (
                         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-                            <div className="bg-[#0a0a0a] border border-white/20 rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl">
+                            <form onSubmit={(e) => { e.preventDefault(); addCustomColumn(); }} className="bg-[#0a0a0a] border border-white/20 rounded-lg p-6 w-full max-w-md mx-4 shadow-2xl">
                                 <h3 className="text-white font-mono font-bold text-base mb-5 flex items-center gap-2 tracking-wide">
                                     <span className="text-white">+</span> Agregar Columna Personalizada
                                 </h3>
@@ -1240,19 +1240,20 @@ export default function App() {
 
                                 <div className="flex gap-3 mt-6">
                                     <button
+                                        type="button"
                                         onClick={resetColumnModal}
                                         className="flex-1 border border-white/30 text-white/60 hover:text-white hover:border-white/60 rounded py-2.5 text-sm font-mono transition-colors"
                                     >
                                         Cancelar
                                     </button>
                                     <button
-                                        onClick={addCustomColumn}
+                                        type="submit"
                                         className="flex-1 bg-white hover:bg-white/90 text-black rounded py-2.5 text-sm font-mono font-semibold transition-colors"
                                     >
                                         Agregar Columna
                                     </button>
                                 </div>
-                            </div>
+                            </form>
                         </div>
                     )
                 }

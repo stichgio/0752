@@ -1,9 +1,16 @@
 import React from 'react';
 import { Braces, Database, Palette, Plus, Trash2, Type } from 'lucide-react';
+import { PagesPanel } from './PagesPanel';
+import { ComponentsPanel } from './ComponentsPanel';
+import { BrandKitsPanel } from './BrandKitsPanel';
+import { VariantsPanel } from './VariantsPanel';
 import {
   VARIABLE_KEY_PATTERN,
   generateId,
+  type BrandKit,
+  type CanvasComponent,
   type CanvasDocument,
+  type CanvasVariant,
   type DocumentTheme,
   type TextStyleToken,
   type VariableDefinition,
@@ -12,12 +19,36 @@ import {
 type DataSourceDefinition = NonNullable<CanvasDocument['dataSourceDefinition']>;
 
 interface DocumentPanelProps {
+  document: CanvasDocument;
+  activePageId: string;
+  pageElements: CanvasDocument['elements'];
+  selectedIds: string[];
   variables: VariableDefinition[];
   onVariablesChange: (variables: VariableDefinition[]) => void;
   theme?: DocumentTheme;
   onThemeChange: (theme: DocumentTheme) => void;
   dataSourceDefinition?: CanvasDocument['dataSourceDefinition'];
   onDataSourceDefinitionChange: (definition: DataSourceDefinition) => void;
+  onSetActivePage: (pageId: string) => void;
+  onCreatePage: (name?: string) => void;
+  onRenamePage: (pageId: string, name: string) => void;
+  onDuplicatePage: (pageId: string) => void;
+  onDeletePage: (pageId: string) => void;
+  onMovePage: (sourceIndex: number, targetIndex: number) => void;
+  onCreateComponentFromSelection: (name?: string) => void;
+  onInsertComponent: (componentId: string) => void;
+  onSyncComponent: (componentId: string) => void;
+  onUpdateComponentFromSelection: (componentId: string, groupId: string) => void;
+  onUpdateComponent: (componentId: string, updates: Partial<CanvasComponent>) => void;
+  onDeleteComponent: (componentId: string) => void;
+  onCreateBrandKit: (name?: string) => void;
+  onApplyBrandKit: (brandKitId: string) => void;
+  onUpdateBrandKit: (brandKitId: string, updates: Partial<BrandKit>) => void;
+  onDeleteBrandKit: (brandKitId: string) => void;
+  onCreateVariant: (name?: string) => void;
+  onApplyVariant: (variantId?: string | null) => void;
+  onUpdateVariant: (variantId: string, updates: Partial<CanvasVariant>) => void;
+  onDeleteVariant: (variantId: string) => void;
 }
 
 const VARIABLE_TYPES: Array<VariableDefinition['type']> = ['string', 'number', 'date', 'boolean', 'list'];
@@ -68,12 +99,36 @@ function buildNextField(index: number): NonNullable<DataSourceDefinition['fields
 }
 
 export function DocumentPanel({
+  document,
+  activePageId,
+  pageElements,
+  selectedIds,
   variables,
   onVariablesChange,
   theme,
   onThemeChange,
   dataSourceDefinition,
   onDataSourceDefinitionChange,
+  onSetActivePage,
+  onCreatePage,
+  onRenamePage,
+  onDuplicatePage,
+  onDeletePage,
+  onMovePage,
+  onCreateComponentFromSelection,
+  onInsertComponent,
+  onSyncComponent,
+  onUpdateComponentFromSelection,
+  onUpdateComponent,
+  onDeleteComponent,
+  onCreateBrandKit,
+  onApplyBrandKit,
+  onUpdateBrandKit,
+  onDeleteBrandKit,
+  onCreateVariant,
+  onApplyVariant,
+  onUpdateVariant,
+  onDeleteVariant,
 }: DocumentPanelProps) {
   const safeTheme = ensureTheme(theme);
   const safeDefinition = ensureDataSourceDefinition(dataSourceDefinition);
@@ -136,6 +191,17 @@ export function DocumentPanel({
 
   return (
     <div className="p-3 space-y-5">
+      <PagesPanel
+        document={document}
+        activePageId={activePageId}
+        onSetActivePage={onSetActivePage}
+        onCreatePage={onCreatePage}
+        onRenamePage={onRenamePage}
+        onDuplicatePage={onDuplicatePage}
+        onDeletePage={onDeletePage}
+        onMovePage={onMovePage}
+      />
+
       <SectionHeader
         icon={<Database size={12} />}
         title="Campos del documento"
@@ -267,9 +333,28 @@ export function DocumentPanel({
         })}
       </div>
 
+      <ComponentsPanel
+        document={document}
+        selectedIds={selectedIds}
+        onCreateComponentFromSelection={onCreateComponentFromSelection}
+        onInsertComponent={onInsertComponent}
+        onSyncComponent={onSyncComponent}
+        onUpdateComponentFromSelection={onUpdateComponentFromSelection}
+        onUpdateComponent={onUpdateComponent}
+        onDeleteComponent={onDeleteComponent}
+      />
+
+      <BrandKitsPanel
+        document={document}
+        onCreateBrandKit={onCreateBrandKit}
+        onApplyBrandKit={onApplyBrandKit}
+        onUpdateBrandKit={onUpdateBrandKit}
+        onDeleteBrandKit={onDeleteBrandKit}
+      />
+
       <SectionHeader
         icon={<Palette size={12} />}
-        title="Brand kit"
+        title="Theme tokens"
       />
       <div className="space-y-3">
         <SubHeader
@@ -409,6 +494,19 @@ export function DocumentPanel({
             ))}
           </div>
         )}
+      </div>
+
+      <VariantsPanel
+        document={document}
+        onCreateVariant={onCreateVariant}
+        onApplyVariant={onApplyVariant}
+        onUpdateVariant={onUpdateVariant}
+        onDeleteVariant={onDeleteVariant}
+      />
+
+      <div className="rounded-xl border border-dashed border-neutral-200 bg-neutral-50 px-3 py-2 text-[11px] text-neutral-500">
+        Pagina activa: <span className="font-semibold text-neutral-700">{document.pages?.find((page) => page.id === activePageId)?.name || 'Pagina actual'}</span>
+        <span className="ml-2 text-neutral-400">{pageElements.length} elementos visibles en edicion</span>
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ from fastapi import APIRouter, HTTPException, Request
 
 from .schemas import (
     CreateTemplatePayload,
+    PreviewMatrixPayload,
     PreviewTemplatePayload,
     PublishTemplatePayload,
     RollbackTemplatePayload,
@@ -123,6 +124,21 @@ async def get_template_endpoint(template_id: str):
     return _model_dump(record)
 
 
+def _latest_template_json_payload(record: Any) -> Dict[str, Any]:
+    versions = getattr(record, "versions", None) or []
+    if not versions:
+        return {}
+    latest = versions[-1]
+    template_json = getattr(latest, "templateJson", None)
+    if template_json is None:
+        return {}
+    if hasattr(template_json, "model_dump"):
+        return template_json.model_dump()
+    if hasattr(template_json, "dict"):
+        return template_json.dict()
+    return {}
+
+
 @router.put("/templates/{template_id}", response_model=UpdateTemplateResponse)
 async def update_template_endpoint(template_id: str, payload: UpdateTemplatePayload):
     _ensure_feature_enabled()
@@ -234,6 +250,64 @@ async def preview_template_endpoint(template_id: str, payload: PreviewTemplatePa
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Error en generación de vista previa: {exc}")
     return {"templateId": template_id, "previewHtml": preview_html}
+
+
+
+
+@router.post("/templates/{template_id}/preview-matrix")
+async def preview_matrix_endpoint(template_id: str, payload: PreviewMatrixPayload, request: Request):
+    _ensure_feature_enabled()
+    if not rate_limiter.check(f"preview-matrix:{request.client.host if request.client else 'local'}"):
+        raise HTTPException(status_code=429, detail="Limite de tasa de vista previa excedido")
+
+    compiled_html = get_preview_html(template_id)
+    if not compiled_html:
+        raise HTTPException(status_code=404, detail="Plantilla o borrador no encontrado")
+
+    previews = []
+    for sample in payload.samples:
+        previews.append({
+            "id": sample.id,
+            "previewHtml": _render_compiled_html(compiled_html, sample.sampleData),
+        })
+
+    return {"templateId": template_id, "previews": previews}
+
+
+@router.get("/templates/{template_id}/assets")
+async def template_assets_endpoint(template_id: str):
+    _ensure_feature_enabled()
+    record = get_template(template_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="Plantilla no encontrada")
+    template_json = _latest_template_json_payload(record)
+    metadata = template_json.get("metadata") if isinstance(template_json.get("metadata"), dict) else {}
+    assets = template_json.get("assetLibrary") if isinstance(template_json.get("assetLibrary"), list) else metadata.get("assetLibrary")
+    return {"assets": assets or []}
+
+
+@router.get("/templates/{template_id}/brand-kits")
+async def template_brand_kits_endpoint(template_id: str):
+    _ensure_feature_enabled()
+    record = get_template(template_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="Plantilla no encontrada")
+    template_json = _latest_template_json_payload(record)
+    metadata = template_json.get("metadata") if isinstance(template_json.get("metadata"), dict) else {}
+    brand_kits = metadata.get("brandKits") if isinstance(metadata.get("brandKits"), list) else []
+    return {"brandKits": brand_kits}
+
+
+@router.get("/templates/{template_id}/variants")
+async def template_variants_endpoint(template_id: str):
+    _ensure_feature_enabled()
+    record = get_template(template_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="Plantilla no encontrada")
+    template_json = _latest_template_json_payload(record)
+    metadata = template_json.get("metadata") if isinstance(template_json.get("metadata"), dict) else {}
+    variants = metadata.get("variants") if isinstance(metadata.get("variants"), list) else []
+    return {"variants": variants}
 
 
 @router.post("/templates/{template_id}/render")

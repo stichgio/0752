@@ -1,5 +1,6 @@
 import type { CanvasDocument, TemplateElement, PageSettings, CanvasPage } from './canvasTypes';
 import { createDefaultPageSettings } from './canvasTypes';
+import { ensureCanvasDocument } from './documentModel';
 
 type TemplateStatus = 'draft' | 'published' | 'archived';
 
@@ -126,6 +127,13 @@ function elementToBlock(element: TemplateElement): EditorBlockPayload {
   if (element.type === 'variable' && variableName) {
     metadata.variableName = variableName;
   }
+  if (element.pageId) metadata.pageId = element.pageId;
+  if (element.componentId) metadata.componentId = element.componentId;
+  if (element.componentInstanceId) metadata.componentInstanceId = element.componentInstanceId;
+  if (typeof element.componentVersion === 'number') metadata.componentVersion = element.componentVersion;
+  if (typeof element.componentDetached === 'boolean') metadata.componentDetached = element.componentDetached;
+  if (element.bindingId) metadata.bindingId = element.bindingId;
+  if (element.assetRefId) metadata.assetRefId = element.assetRefId;
   if (element.tableData) metadata.tableData = element.tableData;
   if (element.photoConfig) metadata.photoConfig = element.photoConfig;
   if (element.shapeConfig) metadata.shapeConfig = element.shapeConfig;
@@ -134,6 +142,7 @@ function elementToBlock(element: TemplateElement): EditorBlockPayload {
   if (element.signatureName) metadata.signatureName = element.signatureName;
   if (element.title) metadata.title = element.title;
   if (element.imageUrl) metadata.imageUrl = element.imageUrl;
+  if (element.qrConfig) metadata.qrConfig = element.qrConfig;
   if (typeof element.visible === 'boolean') metadata.visible = element.visible;
 
   return {
@@ -172,6 +181,13 @@ function blockToElement(block: EditorBlockPayload): TemplateElement {
 
   const meta = block.metadata as Record<string, unknown>;
   if (meta?.variableName) element.variableName = String(meta.variableName);
+  if (meta?.pageId) element.pageId = String(meta.pageId);
+  if (meta?.componentId) element.componentId = String(meta.componentId);
+  if (meta?.componentInstanceId) element.componentInstanceId = String(meta.componentInstanceId);
+  if (typeof meta?.componentVersion === 'number') element.componentVersion = Number(meta.componentVersion);
+  if (typeof meta?.componentDetached === 'boolean') element.componentDetached = Boolean(meta.componentDetached);
+  if (meta?.bindingId) element.bindingId = String(meta.bindingId);
+  if (meta?.assetRefId) element.assetRefId = String(meta.assetRefId);
   if (meta?.tableData) element.tableData = meta.tableData as TemplateElement['tableData'];
   if (meta?.photoConfig) element.photoConfig = meta.photoConfig as TemplateElement['photoConfig'];
   if (meta?.shapeConfig) element.shapeConfig = meta.shapeConfig as TemplateElement['shapeConfig'];
@@ -189,7 +205,8 @@ export function canvasDocumentToTemplateJson(
   doc: CanvasDocument,
   reportType = 'technical-report',
 ): TemplateJsonPayload {
-  const variableBindings = (doc.variables || []).reduce<Record<string, unknown>>((acc, item) => {
+  const normalizedDoc = ensureCanvasDocument(doc);
+  const variableBindings = (normalizedDoc.variables || []).reduce<Record<string, unknown>>((acc, item) => {
     if (item?.key) acc[item.key] = item.key;
     return acc;
   }, {});
@@ -201,24 +218,41 @@ export function canvasDocumentToTemplateJson(
         id: 'canvas-body',
         type: 'body',
         title: 'Canvas',
-        blocks: doc.elements.map(elementToBlock),
-        metadata: { pages: doc.pages || [] },
+        blocks: normalizedDoc.elements.map(elementToBlock),
+        metadata: {
+          pages: normalizedDoc.pages || [],
+          components: normalizedDoc.components || [],
+          variants: normalizedDoc.variants || [],
+          brandKits: normalizedDoc.brandKits || [],
+          activePageId: normalizedDoc.activePageId || null,
+          activeVariantId: normalizedDoc.activeVariantId || null,
+          brandKitId: normalizedDoc.brandKitId || null,
+        },
       },
     ],
     metadata: {
       source: 'canvas-editor-v3',
-      version: doc.version,
-      pageSettings: doc.pageSettings,
-      pages: doc.pages || [],
-      theme: doc.theme || {},
-      assetLibrary: doc.assetLibrary || [],
-      canvasDocumentId: doc.id,
-      canvasStatus: doc.status,
-      updatedAt: doc.updatedAt,
+      version: normalizedDoc.version,
+      pageSettings: normalizedDoc.pageSettings,
+      pages: normalizedDoc.pages || [],
+      theme: normalizedDoc.theme || {},
+      variables: normalizedDoc.variables || [],
+      assetLibrary: normalizedDoc.assetLibrary || [],
+      components: normalizedDoc.components || [],
+      variants: normalizedDoc.variants || [],
+      brandKits: normalizedDoc.brandKits || [],
+      bindingMap: normalizedDoc.bindingMap || {},
+      activePageId: normalizedDoc.activePageId || null,
+      activeVariantId: normalizedDoc.activeVariantId || null,
+      brandKitId: normalizedDoc.brandKitId || null,
+      assetRefs: normalizedDoc.assetRefs || {},
+      canvasDocumentId: normalizedDoc.id,
+      canvasStatus: normalizedDoc.status,
+      updatedAt: normalizedDoc.updatedAt,
     },
     variableBindings,
-    dataSourceDefinition: doc.dataSourceDefinition || {},
-    assetLibrary: (doc.assetLibrary || []) as Array<Record<string, unknown>>,
+    dataSourceDefinition: normalizedDoc.dataSourceDefinition || {},
+    assetLibrary: (normalizedDoc.assetLibrary || []) as Array<Record<string, unknown>>,
     protectionRules: {
       required_block_ids: [],
       editable_placeholder_by_block: {},
@@ -401,6 +435,31 @@ export const templateEditorApi = {
     return createDraft(baseInput);
   },
 
+
+
+  rollbackTemplate: async (id: string, targetVersion?: number, author = 'editor') =>
+    requestJson('/template-editor/templates/' + encodeURIComponent(id) + '/rollback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ author, targetVersion }),
+    }),
+
+  previewMatrix: async (id: string, samples: Array<{ id: string; sampleData: Record<string, unknown> }>) =>
+    requestJson<{ templateId: string; previews: Array<{ id: string; previewHtml: string }> }>('/template-editor/templates/' + encodeURIComponent(id) + '/preview-matrix', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ samples }),
+    }),
+
+  getTemplateAssets: async (id: string) =>
+    requestJson<{ assets: Array<Record<string, unknown>> }>('/template-editor/templates/' + encodeURIComponent(id) + '/assets'),
+
+  getTemplateBrandKits: async (id: string) =>
+    requestJson<{ brandKits: Array<Record<string, unknown>> }>('/template-editor/templates/' + encodeURIComponent(id) + '/brand-kits'),
+
+  getTemplateVariants: async (id: string) =>
+    requestJson<{ variants: Array<Record<string, unknown>> }>('/template-editor/templates/' + encodeURIComponent(id) + '/variants'),
+
   getRenderedPublishedTemplate: async (id: string): Promise<{
     id: string;
     name: string;
@@ -454,14 +513,22 @@ export const templateEditorApi = {
     const now = new Date().toISOString();
     return {
       name: raw.name,
-      doc: {
+      doc: ensureCanvasDocument({
         id: raw.id,
         name: raw.name,
         elements,
         pages,
-        variables: [],
+        variables: (metadata.variables as CanvasDocument['variables']) || [],
         theme: (metadata.theme as CanvasDocument['theme']) || { textStyles: [], colorTokens: [] },
         assetLibrary: (templateJson.assetLibrary as CanvasDocument['assetLibrary']) || (metadata.assetLibrary as CanvasDocument['assetLibrary']) || [],
+        components: (metadata.components as CanvasDocument['components']) || [],
+        variants: (metadata.variants as CanvasDocument['variants']) || [],
+        brandKits: (metadata.brandKits as CanvasDocument['brandKits']) || [],
+        bindingMap: (metadata.bindingMap as CanvasDocument['bindingMap']) || {},
+        activePageId: (metadata.activePageId as string | undefined) || pages[0]?.id || 'page-1',
+        activeVariantId: (metadata.activeVariantId as string | null | undefined) || null,
+        brandKitId: (metadata.brandKitId as string | null | undefined) || null,
+        assetRefs: (metadata.assetRefs as CanvasDocument['assetRefs']) || {},
         reportType: raw.reportType || 'technical-report',
         dataSourceDefinition: (templateJson.dataSourceDefinition as CanvasDocument['dataSourceDefinition']) || { schemaVersion: '1.0', fields: [] },
         pageSettings,
@@ -469,7 +536,7 @@ export const templateEditorApi = {
         status: (raw.status as CanvasDocument['status']) || 'draft',
         createdAt: now,
         updatedAt: raw.updatedAt || now,
-      },
+      }),
     };
   },
 };

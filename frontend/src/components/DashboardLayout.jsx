@@ -80,6 +80,7 @@ const DashboardLayout = ({ children }) => {
 
             {/* Navigation Sidebar */}
             <aside
+                style={{ viewTransitionName: 'dashboard-sidebar' }}
                 className={`${isSidebarCollapsed ? 'w-16' : 'w-64'
                     } bg-black border-r border-neutral-800 flex flex-col transition-all duration-300 relative z-50`}
             >
@@ -132,7 +133,7 @@ const DashboardLayout = ({ children }) => {
             </aside>
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col h-full overflow-hidden bg-neutral-950 relative">
+            <div style={{ viewTransitionName: 'dashboard-content' }} className="flex-1 flex flex-col h-full overflow-hidden bg-neutral-950 relative">
 
                 {/* Top Header */}
                 <header className="h-14 min-h-[3.5rem] bg-neutral-950/80 backdrop-blur-md border-b border-neutral-800 flex items-center justify-between px-6 sticky top-0 z-40">

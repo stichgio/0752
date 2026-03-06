@@ -1,129 +1,135 @@
 import React from 'react';
 import {
-    AlignLeft, AlignCenter, AlignRight,
-    AlignStartVertical, AlignCenterVertical, AlignEndVertical,
-    Trash2, Copy, Lock, Unlock,
-    ArrowUpToLine, ArrowDownToLine,
+  AlignCenter,
+  AlignCenterVertical,
+  AlignEndVertical,
+  AlignLeft,
+  AlignRight,
+  AlignStartVertical,
+  ArrowDownToLine,
+  ArrowUpToLine,
+  Copy,
+  Equal,
+  Lock,
+  Paintbrush2,
+  Trash2,
+  Unlock,
 } from 'lucide-react';
 
 interface ContextToolbarProps {
-    selectedCount: number;
-    onAlign: (type: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
-    onDelete: () => void;
-    onDuplicate: () => void;
-    onLockToggle: () => void;
-    isLocked: boolean;
-    onBringToFront: () => void;
-    onSendToBack: () => void;
-    canGroup: boolean;
-    canUngroup: boolean;
-    onGroup: () => void;
-    onUngroup: () => void;
+  selectedCount: number;
+  onAlign: (type: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => void;
+  onDistribute: (axis: 'horizontal' | 'vertical') => void;
+  onApplyPrimaryStyle: () => void;
+  onDelete: () => void;
+  onDuplicate: () => void;
+  onLockToggle: () => void;
+  isLocked: boolean;
+  onBringToFront: () => void;
+  onSendToBack: () => void;
+  canGroup: boolean;
+  canUngroup: boolean;
+  onGroup: () => void;
+  onUngroup: () => void;
 }
 
 export function ContextToolbar({
-    selectedCount,
-    onAlign,
-    onDelete,
-    onDuplicate,
-    onLockToggle,
-    isLocked,
-    onBringToFront,
-    onSendToBack,
-    canGroup,
-    canUngroup,
-    onGroup,
-    onUngroup,
+  selectedCount,
+  onAlign,
+  onDistribute,
+  onApplyPrimaryStyle,
+  onDelete,
+  onDuplicate,
+  onLockToggle,
+  isLocked,
+  onBringToFront,
+  onSendToBack,
+  canGroup,
+  canUngroup,
+  onGroup,
+  onUngroup,
 }: ContextToolbarProps) {
-    if (selectedCount === 0) return null;
+  if (selectedCount === 0) return null;
 
-    return (
-        <div className="absolute top-2 left-1/2 -translate-x-1/2 z-50 flex items-center gap-0.5 bg-white/95 backdrop-blur-sm rounded-lg shadow-lg border border-neutral-200 px-1 py-0.5">
-            <span className="text-[10px] font-medium text-neutral-400 px-2 select-none">
-                {selectedCount} sel
-            </span>
+  return (
+    <div className="absolute top-2 left-1/2 z-50 flex -translate-x-1/2 items-center gap-0.5 rounded-lg border border-neutral-200 bg-white/95 px-1 py-0.5 shadow-lg backdrop-blur-sm">
+      <span className="select-none px-2 text-[10px] font-medium text-neutral-400">{selectedCount} sel</span>
 
-            <Divider />
+      <Divider />
 
-            {canGroup && (
-                <button
-                    onClick={onGroup}
-                    title="Agrupar (Ctrl+G)"
-                    className="h-7 px-2 rounded-md text-[11px] font-medium text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors"
-                >
-                    Agrupar
-                </button>
-            )}
+      {canGroup && (
+        <button
+          onClick={onGroup}
+          title="Agrupar (Ctrl+G)"
+          className="h-7 rounded-md px-2 text-[11px] font-medium text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700"
+        >
+          Agrupar
+        </button>
+      )}
 
-            {canUngroup && (
-                <button
-                    onClick={onUngroup}
-                    title="Desagrupar (Ctrl+Shift+G)"
-                    className="h-7 px-2 rounded-md text-[11px] font-medium text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 transition-colors"
-                >
-                    Desagrupar
-                </button>
-            )}
+      {canUngroup && (
+        <button
+          onClick={onUngroup}
+          title="Desagrupar (Ctrl+Shift+G)"
+          className="h-7 rounded-md px-2 text-[11px] font-medium text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700"
+        >
+          Desagrupar
+        </button>
+      )}
 
-            {(canGroup || canUngroup) && <Divider />}
+      {(canGroup || canUngroup) && <Divider />}
 
-            <ToolBtn icon={<AlignLeft size={14} />} onClick={() => onAlign('left')} title="Alinear Izquierda" />
-            <ToolBtn icon={<AlignCenter size={14} />} onClick={() => onAlign('center')} title="Centro H" />
-            <ToolBtn icon={<AlignRight size={14} />} onClick={() => onAlign('right')} title="Alinear Derecha" />
+      <ToolBtn icon={<AlignLeft size={14} />} onClick={() => onAlign('left')} title="Alinear izquierda" />
+      <ToolBtn icon={<AlignCenter size={14} />} onClick={() => onAlign('center')} title="Centro horizontal" />
+      <ToolBtn icon={<AlignRight size={14} />} onClick={() => onAlign('right')} title="Alinear derecha" />
 
-            <Divider />
+      <Divider />
 
-            <ToolBtn icon={<AlignStartVertical size={14} />} onClick={() => onAlign('top')} title="Arriba" />
-            <ToolBtn icon={<AlignCenterVertical size={14} />} onClick={() => onAlign('middle')} title="Centro V" />
-            <ToolBtn icon={<AlignEndVertical size={14} />} onClick={() => onAlign('bottom')} title="Abajo" />
+      <ToolBtn icon={<AlignStartVertical size={14} />} onClick={() => onAlign('top')} title="Arriba" />
+      <ToolBtn icon={<AlignCenterVertical size={14} />} onClick={() => onAlign('middle')} title="Centro vertical" />
+      <ToolBtn icon={<AlignEndVertical size={14} />} onClick={() => onAlign('bottom')} title="Abajo" />
 
-            <Divider />
+      {selectedCount >= 3 && (
+        <>
+          <Divider />
+          <ToolBtn icon={<Equal size={14} />} onClick={() => onDistribute('horizontal')} title="Distribuir horizontal" />
+          <ToolBtn icon={<Equal size={14} className="rotate-90" />} onClick={() => onDistribute('vertical')} title="Distribuir vertical" />
+        </>
+      )}
 
-            <ToolBtn icon={<ArrowUpToLine size={14} />} onClick={onBringToFront} title="Al frente" />
-            <ToolBtn icon={<ArrowDownToLine size={14} />} onClick={onSendToBack} title="Al fondo" />
+      {selectedCount >= 2 && (
+        <>
+          <Divider />
+          <ToolBtn icon={<Paintbrush2 size={14} />} onClick={onApplyPrimaryStyle} title="Aplicar estilo del primero" />
+        </>
+      )}
 
-            <Divider />
+      <Divider />
 
-            <ToolBtn
-                icon={isLocked ? <Unlock size={14} /> : <Lock size={14} />}
-                onClick={onLockToggle}
-                title={isLocked ? 'Desbloquear' : 'Bloquear'}
-                active={isLocked}
-            />
-            <ToolBtn icon={<Copy size={14} />} onClick={onDuplicate} title="Duplicar (Ctrl+D)" />
-            <ToolBtn icon={<Trash2 size={14} />} onClick={onDelete} title="Eliminar (Del)" variant="danger" />
-        </div>
-    );
+      <ToolBtn icon={<ArrowUpToLine size={14} />} onClick={onBringToFront} title="Al frente" />
+      <ToolBtn icon={<ArrowDownToLine size={14} />} onClick={onSendToBack} title="Al fondo" />
+
+      <Divider />
+
+      <ToolBtn icon={isLocked ? <Unlock size={14} /> : <Lock size={14} />} onClick={onLockToggle} title={isLocked ? 'Desbloquear' : 'Bloquear'} active={isLocked} />
+      <ToolBtn icon={<Copy size={14} />} onClick={onDuplicate} title="Duplicar (Ctrl+D)" />
+      <ToolBtn icon={<Trash2 size={14} />} onClick={onDelete} title="Eliminar (Del)" variant="danger" />
+    </div>
+  );
 }
 
 function Divider() {
-    return <div className="w-px h-5 bg-neutral-200 mx-0.5" />;
+  return <div className="mx-0.5 h-5 w-px bg-neutral-200" />;
 }
 
-function ToolBtn({
-    icon,
-    onClick,
-    title,
-    variant,
-    active,
-}: {
-    icon: React.ReactNode;
-    onClick: () => void;
-    title: string;
-    variant?: 'danger';
-    active?: boolean;
-}) {
-    let cls = 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700';
-    if (variant === 'danger') cls = 'text-red-400 hover:bg-red-50 hover:text-red-600';
-    if (active) cls = 'bg-violet-100 text-violet-700';
+function ToolBtn({ icon, onClick, title, variant, active }: { icon: React.ReactNode; onClick: () => void; title: string; variant?: 'danger'; active?: boolean }) {
+  let cls = 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700';
+  if (variant === 'danger') cls = 'text-red-400 hover:bg-red-50 hover:text-red-600';
+  if (active) cls = 'bg-violet-100 text-violet-700';
 
-    return (
-        <button
-            onClick={onClick}
-            title={title}
-            className={`p-1.5 rounded-md transition-colors ${cls}`}
-        >
-            {icon}
-        </button>
-    );
+  return (
+    <button onClick={onClick} title={title} className={`rounded-md p-1.5 transition-colors ${cls}`}>
+      {icon}
+    </button>
+  );
 }

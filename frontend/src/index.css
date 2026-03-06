@@ -10,6 +10,100 @@
 :root {
   color-scheme: dark;
   accent-color: #444;
+  --page-shell-enter-duration: 180ms;
+  --page-shell-exit-duration: 140ms;
+  --page-shell-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
+  background-color: #050505;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+/* ================================================
+   View Transitions — Smooth MPA Navigation
+   ================================================ */
+@view-transition {
+  navigation: auto;
+}
+
+/* Default page crossfade (pages without DashboardLayout) */
+::view-transition-old(root) {
+  animation: vt-fade-out 90ms ease-out both;
+}
+::view-transition-new(root) {
+  animation: vt-fade-in 180ms ease-out 40ms both;
+}
+
+/* Sidebar: freeze in place between DashboardLayout pages */
+::view-transition-group(dashboard-sidebar) {
+  animation-duration: 0s;
+}
+::view-transition-old(dashboard-sidebar),
+::view-transition-new(dashboard-sidebar) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* Content area: quick crossfade */
+::view-transition-old(dashboard-content) {
+  animation: vt-fade-out 100ms ease-out both;
+}
+::view-transition-new(dashboard-content) {
+  animation: vt-fade-in 180ms ease-out 40ms both;
+}
+
+@keyframes vt-fade-out {
+  to { opacity: 0; }
+}
+@keyframes vt-fade-in {
+  from { opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+/* ================================================
+   Page Shell Fallback (browsers without VT API)
+   ================================================ */
+@media (prefers-reduced-motion: no-preference) {
+  body.page-shell-ready #root {
+    animation: page-shell-enter var(--page-shell-enter-duration) var(--page-shell-ease);
+  }
+
+  body.page-shell-leaving #root {
+    opacity: 0;
+    transform: translateY(8px);
+    transition:
+      opacity var(--page-shell-exit-duration) ease-out,
+      transform var(--page-shell-exit-duration) var(--page-shell-ease);
+  }
+}
+
+@keyframes page-shell-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Tailwind Layer Utilities */
@@ -200,3 +294,6 @@ select * {
     print-color-adjust: exact !important;
   }
 }
+
+
+
