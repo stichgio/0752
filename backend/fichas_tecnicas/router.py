@@ -11,6 +11,7 @@ import os
 import json
 import unicodedata
 from datetime import datetime
+from jinja2 import Environment, FileSystemLoader
 
 # Para XLSX
 try:
@@ -24,6 +25,24 @@ from .database import db
 from .models import FichaTecnica  
 
 router = APIRouter(prefix="/api/fichas-tecnicas", tags=["fichas-tecnicas"])
+
+_TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "templates")
+_TEMPLATE_ENV = Environment(loader=FileSystemLoader(_TEMPLATES_DIR), auto_reload=False, cache_size=8)
+
+def _get_ficha_template():
+    return _TEMPLATE_ENV.get_template("ficha_tecnica.html")
+
+def _serialize_ficha_summary(ficha: FichaTecnica) -> Dict[str, Any]:
+    return {
+        "id": ficha.id,
+        "os_numero": ficha.os_numero,
+        "cliente": ficha.cliente,
+        "direccion": ficha.direccion,
+        "distrito": ficha.distrito,
+        "fecha": ficha.fecha,
+        "status": ficha.status,
+    }
+
 
 
 def parse_csv_file(content: bytes) -> List[Dict[str, Any]]:
@@ -152,7 +171,8 @@ def parse_xlsx_file(content: bytes) -> List[Dict[str, Any]]:
 async def get_all_fichas(
     cliente: Optional[str] = None,
     distrito: Optional[str] = None,
-    status: Optional[str] = None
+    status: Optional[str] = None,
+    summary: bool = False
 ):
     """Obtener todas las fichas con filtros opcionales"""
     fichas = db.get_all_fichas()
@@ -164,7 +184,8 @@ async def get_all_fichas(
     if status:
         fichas = [f for f in fichas if f.status == status]
 
-    return {"fichas": [f.model_dump() for f in fichas], "total": len(fichas)}
+    serialized = [_serialize_ficha_summary(f) for f in fichas] if summary else [f.model_dump() for f in fichas]
+    return {"fichas": serialized, "total": len(fichas)}
 
 
 @router.get("/fichas/{ficha_id}")
@@ -312,9 +333,7 @@ async def generate_consolidated_pdf(
         logo_right_b64 = await process_logo(logoRight)
 
         # Cargar template
-        templates_dir = os.path.join(os.path.dirname(__file__), "templates")
-        env = Environment(loader=FileSystemLoader(templates_dir))
-        template = env.get_template("ficha_tecnica.html")
+        template = _get_ficha_template()
 
         # =====================================================================
         # STREAMING OPTIMIZADO: Generar PDFs en lotes y merge incremental
@@ -341,7 +360,7 @@ async def generate_consolidated_pdf(
                 temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
                 temp_pdf_name = temp_pdf.name
                 temp_pdf.close()
-                HTML(string=html_content, base_url=templates_dir).write_pdf(temp_pdf_name)
+                HTML(string=html_content, base_url=_TEMPLATES_DIR).write_pdf(temp_pdf_name)
                 return temp_pdf_name
             except Exception as e:
                 print(f"[PDF Consolidado] Error renderizando: {e}")
@@ -495,10 +514,7 @@ async def generate_consolidated_pdf_progress(
                 logo_left_b64 = encode_logo(logo_left_bytes, logo_left_fname)
                 logo_right_b64 = encode_logo(logo_right_bytes, logo_right_fname)
 
-                templates_dir = os.path.join(os.path.dirname(__file__), "templates")
-                env = Environment(loader=FileSystemLoader(templates_dir))
-                template = env.get_template("ficha_tecnica.html")
-
+                template = _get_ficha_template()
                 PDF_BATCH_SIZE = 5
                 temp_pdf_files = []
                 rendered_count = 0
@@ -511,7 +527,7 @@ async def generate_consolidated_pdf_progress(
                             logo_right=logo_right_b64
                         )
                         temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
-                        HTML(string=html_content, base_url=templates_dir).write_pdf(temp_pdf.name)
+                        HTML(string=html_content, base_url=_TEMPLATES_DIR).write_pdf(temp_pdf.name)
                         temp_pdf.close()
                         return temp_pdf.name
                     except Exception as e:
@@ -662,9 +678,7 @@ async def generate_pdf(
         logo_left_b64 = await process_logo(logoLeft)
         logo_right_b64 = await process_logo(logoRight)
 
-        templates_dir = os.path.join(os.path.dirname(__file__), "templates")
-        env = Environment(loader=FileSystemLoader(templates_dir))
-        template = env.get_template("ficha_tecnica.html")
+        template = _get_ficha_template()
 
         ficha_dict = ficha.model_dump()
 
@@ -677,7 +691,7 @@ async def generate_pdf(
         from weasyprint import HTML  
         pdf_bytes = HTML(
             string=html_content,
-            base_url=templates_dir
+            base_url=_TEMPLATES_DIR
         ).write_pdf()
 
         return Response(
@@ -724,9 +738,7 @@ async def generate_template_pdf(
         logo_left_b64 = await process_logo(logoLeft)
         logo_right_b64 = await process_logo(logoRight)
 
-        templates_dir = os.path.join(os.path.dirname(__file__), "templates")
-        env = Environment(loader=FileSystemLoader(templates_dir))
-        template = env.get_template("ficha_tecnica.html")
+        template = _get_ficha_template()
 
         template_ficha = {
             "id": "XXXXXXXX",
@@ -768,7 +780,7 @@ async def generate_template_pdf(
         from weasyprint import HTML  
         pdf_bytes = HTML(
             string=html_content,
-            base_url=templates_dir
+            base_url=_TEMPLATES_DIR
         ).write_pdf()
 
         return Response(

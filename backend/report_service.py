@@ -730,11 +730,12 @@ class ReportService:
             use_single_pass_render = True
 
         # Rendering all backend-template reports in a single HTML document is fragile
-        # when the batch contains multiple photo-heavy pages. Render per report and merge
-        # so consolidated exports remain complete and deterministic.
+        # when the batch contains multiple photo-heavy pages. Keep the merged path only
+        # for multi-report exports; a single report can safely skip the extra merge work.
         if total_reports > 1:
             use_single_pass_render = False
-
+        elif total_reports == 1:
+            use_single_pass_render = True
         # =====================================================================
         # FASE 1: Pre-procesar todos los reportes en paralelo (batched)
         # =====================================================================

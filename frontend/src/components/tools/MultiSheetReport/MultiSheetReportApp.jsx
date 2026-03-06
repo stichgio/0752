@@ -1644,11 +1644,11 @@ export default function MultiSheetReportApp() {
     // ─────────────────────────────────────────────────────────────────────────
     return (
         <DashboardLayout>
-            <div className="flex h-full w-full bg-neutral-900 overflow-hidden font-sans text-sm">
+            <div className="flex h-full min-h-0 w-full bg-neutral-900 overflow-hidden font-sans text-sm">
 
                 {/* ── Sidebar ───────────────────────────────────────────────── */}
-                <aside className="w-96 bg-neutral-950 text-white flex flex-col border-r border-neutral-800">
-                    <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                <aside className="w-96 min-h-0 bg-neutral-950 text-white flex flex-col border-r border-neutral-800">
+                    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-6">
 
                         {/* Step 0 — Logos y Encabezado Principal */}
                         <Step number="0" title="Logos y Encabezado" icon={<Settings size={16} />}>
@@ -2235,7 +2235,7 @@ export default function MultiSheetReportApp() {
                 </aside>
 
                 {/* ── Panel de Preview ──────────────────────────────────────── */}
-                <main className="flex-1 overflow-y-auto bg-neutral-800 p-6">
+                <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-neutral-800 p-6">
                     {sheets.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-center">
                             <BookOpen size={48} className="text-neutral-700 mb-4" />

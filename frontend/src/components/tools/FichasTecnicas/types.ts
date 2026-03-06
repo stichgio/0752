@@ -58,6 +58,11 @@ export interface FichaTecnica {
     last_modified: string;
 }
 
+export type FichaTecnicaListItem = Pick<
+    FichaTecnica,
+    'id' | 'os_numero' | 'cliente' | 'direccion' | 'distrito' | 'fecha' | 'status'
+>;
+
 export const createEmptyFicha = (): FichaTecnica => ({
     id: '',
     os_numero: '',

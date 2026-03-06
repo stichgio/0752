@@ -1,10 +1,10 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, FileDown, Files } from 'lucide-react';
 import DatabasePanel from './DatabasePanel';
 import PreviewPanel from './PreviewPanel';
 import FormPanel from './FormPanel';
-import { FichaTecnica } from './types';
+import { FichaTecnica, FichaTecnicaListItem } from './types';
 import { fichasTecnicasApi } from './api';
 import LoadingModal from '@/components/common/LoadingModal';
 import { useFocusMode } from '@/hooks/useFocusMode';
@@ -15,7 +15,7 @@ import { getApiBase } from '@/utils/apiBase';
 import { downloadBlob } from '@/utils/downloadBlob';
 
 export default function FichasTecnicas() {
-    const [fichas, setFichas] = useState<FichaTecnica[]>([]);
+    const [fichas, setFichas] = useState<FichaTecnicaListItem[]>([]);
     const {
         formData, setFormData,
         selectedId: selectedFichaId, setSelectedId: setSelectedFichaId,
@@ -33,7 +33,7 @@ export default function FichasTecnicas() {
 
     const loadFichas = async () => {
         await run(async () => {
-            const data = await fichasTecnicasApi.getAllFichas();
+            const data = await fichasTecnicasApi.getAllFichas(undefined, true);
             console.log('[FichasTecnicas] Loaded fichas:', data.fichas?.length, 'total:', data.total);
             setFichas(data.fichas || []);
         });
@@ -77,7 +77,7 @@ export default function FichasTecnicas() {
         await run(async () => {
             const result = await fichasTecnicasApi.importFile(file);
             console.log('[FichasTecnicas] Import result:', result);
-            const freshData = await fichasTecnicasApi.getAllFichas();
+            const freshData = await fichasTecnicasApi.getAllFichas(undefined, true);
             console.log('[FichasTecnicas] Fresh fichas count:', freshData.fichas?.length);
             setFichas(freshData.fichas || []);
             alert(`${result.imported_count} fichas importadas`);

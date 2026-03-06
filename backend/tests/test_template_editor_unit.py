@@ -346,3 +346,20 @@ def test_compat_skips_chrome_page_fix_for_plain_html():
     html = '<html><head></head><body><div class="page">Hola</div></body></html>'
     result = _normalize_photo_grid_template_compat(html)
     assert "chrome-page-compat-fix" not in result
+
+
+def test_compat_skips_chrome_page_fix_for_photo_cell_wrap_only():
+    """Regression: Phase 1 injects <style id="photo-grid-compat-fix"> which
+    contains the substring "photo-grid". Phase 2 must NOT match that substring
+    as a photo panel marker — only markers present in the original HTML count."""
+    html = (
+        '<html><head></head><body>'
+        '<div class="page">'
+        '<div class="photo-cell-wrap"><img src="x.jpg"></div>'
+        '</div></body></html>'
+    )
+    result = _normalize_photo_grid_template_compat(html)
+    # Phase 1 must inject photo-grid-compat-fix (because of photo-cell-wrap)
+    assert "photo-grid-compat-fix" in result
+    # Phase 2 must NOT inject chrome-page-compat-fix (no real photo panel markers)
+    assert "chrome-page-compat-fix" not in result

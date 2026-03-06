@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface DraftState<T> {
     formData: T | null;
@@ -10,6 +10,25 @@ export function useLocalDraft<T>(storageKey: string) {
     const [formData, setFormData] = useState<T | null>(null);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+    const [isHydrated, setIsHydrated] = useState(false);
+    const latestStateRef = useRef<DraftState<T>>({
+        formData: null,
+        selectedId: null,
+        hasUnsavedChanges: false,
+    });
+
+    const persistDraft = useCallback(() => {
+        try {
+            const nextState = latestStateRef.current;
+            if (!nextState.formData) {
+                localStorage.removeItem(storageKey);
+                return;
+            }
+            localStorage.setItem(storageKey, JSON.stringify(nextState));
+        } catch (e) {
+            console.error('Error saving draft:', e);
+        }
+    }, [storageKey]);
 
     // Load from localStorage on mount
     useEffect(() => {
@@ -24,18 +43,42 @@ export function useLocalDraft<T>(storageKey: string) {
                 console.error('Error loading draft:', e);
             }
         }
+        setIsHydrated(true);
     }, [storageKey]);
 
-    // Persist to localStorage on change
     useEffect(() => {
-        if (formData) {
-            localStorage.setItem(storageKey, JSON.stringify({
-                formData,
-                selectedId,
-                hasUnsavedChanges
-            } as DraftState<T>));
-        }
-    }, [formData, selectedId, hasUnsavedChanges, storageKey]);
+        latestStateRef.current = {
+            formData,
+            selectedId,
+            hasUnsavedChanges,
+        };
+    }, [formData, selectedId, hasUnsavedChanges]);
+
+    // Persist to localStorage on change, but defer writes to avoid blocking the UI on every keystroke.
+    useEffect(() => {
+        if (!isHydrated) return;
+        const timeoutId = window.setTimeout(() => {
+            persistDraft();
+        }, 250);
+        return () => window.clearTimeout(timeoutId);
+    }, [formData, selectedId, hasUnsavedChanges, isHydrated, persistDraft]);
+
+    useEffect(() => {
+        if (!isHydrated) return;
+
+        const flushDraft = () => {
+            persistDraft();
+        };
+
+        window.addEventListener('pagehide', flushDraft);
+        window.addEventListener('beforeunload', flushDraft);
+
+        return () => {
+            window.removeEventListener('pagehide', flushDraft);
+            window.removeEventListener('beforeunload', flushDraft);
+            flushDraft();
+        };
+    }, [isHydrated, persistDraft]);
 
     return {
         formData, setFormData,

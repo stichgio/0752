@@ -12,6 +12,7 @@ import traceback
 import re
 import unicodedata
 from datetime import datetime
+from jinja2 import Environment, FileSystemLoader
 
 # Para XLSX
 try:
@@ -25,6 +26,26 @@ from .database import db
 from .models import TechnicalReport
 
 router = APIRouter(prefix="/api/technical-reports", tags=["technical-reports"])
+
+_TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "templates")
+_TEMPLATE_ENV = Environment(loader=FileSystemLoader(_TEMPLATES_DIR), auto_reload=False, cache_size=8)
+
+def _get_technical_report_template():
+    return _TEMPLATE_ENV.get_template("informe_tecnico.html")
+
+def _serialize_report_summary(report: TechnicalReport) -> Dict[str, Any]:
+    return {
+        "id": report.id,
+        "metadata": {
+            "informe_id": report.metadata.informe_id,
+        },
+        "header": {
+            "cs": report.header.cs,
+            "codigo_infraestructura": report.header.codigo_infraestructura,
+        },
+        "status": report.status,
+    }
+
 
 
 def normalize_header_value(value: str) -> str:
@@ -1025,7 +1046,8 @@ def transform_flat_to_nested(flat_data: Dict[str, Any]) -> Dict[str, Any]:
 async def get_all_reports(
     cs: Optional[str] = None,
     contratista: Optional[str] = None,
-    status: Optional[str] = None
+    status: Optional[str] = None,
+    summary: bool = False
 ):
     """Obtener todos los informes con filtros opcionales"""
     reports = db.get_all_reports()
@@ -1037,7 +1059,8 @@ async def get_all_reports(
     if status:
         reports = [r for r in reports if r.status == status]
     
-    return {"reports": [r.dict() for r in reports], "total": len(reports)}
+    serialized = [_serialize_report_summary(r) for r in reports] if summary else [r.model_dump() for r in reports]
+    return {"reports": serialized, "total": len(reports)}
 
 
 @router.get("/variables")
@@ -1226,9 +1249,7 @@ async def generate_consolidated_pdf(
         logo_right_b64 = await process_logo(logoRight)
 
         # Cargar template
-        templates_dir = os.path.join(os.path.dirname(__file__), "templates")
-        env = Environment(loader=FileSystemLoader(templates_dir))
-        template = env.get_template("informe_tecnico.html")
+        template = _get_technical_report_template()
 
         # =====================================================================
         # STREAMING OPTIMIZADO: Generar PDFs en lotes y merge incremental
@@ -1253,7 +1274,7 @@ async def generate_consolidated_pdf(
 
                 # Generar PDF a archivo temporal (no en memoria)
                 temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
-                HTML(string=html_content, base_url=templates_dir).write_pdf(temp_pdf.name)
+                HTML(string=html_content, base_url=_TEMPLATES_DIR).write_pdf(temp_pdf.name)
                 temp_pdf.close()
                 return temp_pdf.name
             except Exception as e:
@@ -1405,10 +1426,7 @@ async def generate_consolidated_pdf_progress(
                 logo_left_b64 = encode_logo(logo_left_bytes, logo_left_fname)
                 logo_right_b64 = encode_logo(logo_right_bytes, logo_right_fname)
 
-                templates_dir = os.path.join(os.path.dirname(__file__), "templates")
-                env = Environment(loader=FileSystemLoader(templates_dir))
-                template = env.get_template("informe_tecnico.html")
-
+                template = _get_technical_report_template()
                 PDF_BATCH_SIZE = 5
                 temp_pdf_files = []
                 rendered_count = 0
@@ -1417,7 +1435,7 @@ async def generate_consolidated_pdf_progress(
                     try:
                         html_content = template.render(report=report_data, logo_left=logo_left_b64, logo_right=logo_right_b64)
                         temp_pdf = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
-                        HTML(string=html_content, base_url=templates_dir).write_pdf(temp_pdf.name)
+                        HTML(string=html_content, base_url=_TEMPLATES_DIR).write_pdf(temp_pdf.name)
                         temp_pdf.close()
                         return temp_pdf.name
                     except Exception as e:

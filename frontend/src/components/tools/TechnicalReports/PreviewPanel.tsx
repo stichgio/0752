@@ -9,6 +9,29 @@ interface Props {
 }
 
 export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: Props) {
+    const [logoLeftUrl, setLogoLeftUrl] = React.useState<string | null>(null);
+    const [logoRightUrl, setLogoRightUrl] = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+        if (!logoLeft) {
+            setLogoLeftUrl(null);
+            return;
+        }
+        const url = URL.createObjectURL(logoLeft);
+        setLogoLeftUrl(url);
+        return () => URL.revokeObjectURL(url);
+    }, [logoLeft]);
+
+    React.useEffect(() => {
+        if (!logoRight) {
+            setLogoRightUrl(null);
+            return;
+        }
+        const url = URL.createObjectURL(logoRight);
+        setLogoRightUrl(url);
+        return () => URL.revokeObjectURL(url);
+    }, [logoRight]);
+
     if (!reportData) {
         return (
             <div className="flex items-center justify-center h-full bg-[#111] rounded-lg border border-[#333]">
@@ -26,9 +49,6 @@ export default function PreviewPanel({ reportData, zoom, logoLeft, logoRight }: 
         }
         return null;
     };
-
-    const logoLeftUrl = logoLeft ? URL.createObjectURL(logoLeft) : null;
-    const logoRightUrl = logoRight ? URL.createObjectURL(logoRight) : null;
 
     // Styles matching the HTML template exactly
     const styles = {

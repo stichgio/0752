@@ -95,8 +95,8 @@ export default function MultiSheetReportPage() {
     }, []);
 
     return (
-        <PageDocument title="Informe Multi-Hoja - Glitch">
-            <div ref={pageRef} data-msheets-page>
+        <PageDocument title="Informe Multi-Hoja - Glitch" bodyClassName="bg-neutral-950 text-neutral-200 min-h-screen">
+            <div ref={pageRef} data-msheets-page className="h-full min-h-0 overflow-hidden">
                 <MultiSheetReportApp />
             </div>
         </PageDocument>

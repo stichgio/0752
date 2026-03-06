@@ -1,10 +1,10 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, FileDown, Files } from 'lucide-react';
 import DatabasePanel from './DatabasePanel';
 import PreviewPanel from './PreviewPanel';
 import FormPanel from './FormPanel';
-import { TechnicalReport } from './types';
+import { TechnicalReport, TechnicalReportListItem } from './types';
 import { technicalReportsApi } from './api';
 import html2canvas from 'html2canvas';
 import LoadingModal from '@/components/common/LoadingModal';
@@ -16,7 +16,7 @@ import { getApiBase } from '@/utils/apiBase';
 import { downloadBlob } from '@/utils/downloadBlob';
 
 export default function TechnicalReports() {
-    const [reports, setReports] = useState<TechnicalReport[]>([]);
+    const [reports, setReports] = useState<TechnicalReportListItem[]>([]);
     const {
         formData, setFormData,
         selectedId: selectedReportId, setSelectedId: setSelectedReportId,
@@ -34,7 +34,7 @@ export default function TechnicalReports() {
 
     const loadReports = async () => {
         await run(async () => {
-            const data = await technicalReportsApi.getAllReports();
+            const data = await technicalReportsApi.getAllReports(undefined, true);
             console.log('[TechReports] Loaded reports:', data.reports?.length, 'total:', data.total);
             setReports(data.reports || []);
         });
@@ -78,7 +78,7 @@ export default function TechnicalReports() {
         await run(async () => {
             const result = await technicalReportsApi.importCSV(file);
             console.log('[TechReports] Import result:', result);
-            const freshData = await technicalReportsApi.getAllReports();
+            const freshData = await technicalReportsApi.getAllReports(undefined, true);
             console.log('[TechReports] Fresh reports count:', freshData.reports?.length);
             setReports(freshData.reports || []);
             alert(`${result.imported_count} informes importados`);

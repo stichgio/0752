@@ -2,11 +2,15 @@ import { FichaTecnica } from './types';
 import { apiClient, appendLogos, postBlob } from '@/utils/apiClient';
 
 export const fichasTecnicasApi = {
-    getAllFichas: async (filters?: { cliente?: string; distrito?: string; status?: string }) => {
+    getAllFichas: async (
+        filters?: { cliente?: string; distrito?: string; status?: string },
+        summary = false
+    ) => {
         const params = new URLSearchParams();
         if (filters?.cliente) params.append('cliente', filters.cliente);
         if (filters?.distrito) params.append('distrito', filters.distrito);
         if (filters?.status) params.append('status', filters.status);
+        if (summary) params.append('summary', 'true');
         const { data } = await apiClient.get(`/api/fichas-tecnicas/fichas?${params}`);
         return data;
     },

@@ -38,7 +38,7 @@ export default function AppRouter() {
                 <Route
                     index
                     element={
-                        <PageDocument title="Glitch">
+                        <PageDocument title="Glitch" bodyClassName="bg-neutral-950 text-slate-50 min-h-screen">
                             <App />
                         </PageDocument>
                     }
@@ -46,7 +46,7 @@ export default function AppRouter() {
                 <Route
                     path="ocr"
                     element={
-                        <PageDocument title="OCR - Glitch">
+                        <PageDocument title="OCR - Glitch" bodyClassName="bg-neutral-950 text-neutral-200 min-h-screen">
                             <OCRTool />
                         </PageDocument>
                     }
@@ -54,7 +54,7 @@ export default function AppRouter() {
                 <Route
                     path="compressor"
                     element={
-                        <PageDocument title="PDF Compressor">
+                        <PageDocument title="PDF Compressor" bodyClassName="technical-theme bg-[#0d0d0d] text-[#eee]">
                             <Compressor />
                         </PageDocument>
                     }
@@ -62,7 +62,7 @@ export default function AppRouter() {
                 <Route
                     path="image-optimizer"
                     element={
-                        <PageDocument title="Optimizador de Imagenes">
+                        <PageDocument title="Optimizador de Imagenes" bodyClassName="technical-theme bg-[#0d0d0d] text-[#eee]">
                             <ImageOptimizer />
                         </PageDocument>
                     }
@@ -71,7 +71,7 @@ export default function AppRouter() {
                 <Route
                     path="pdf-tools"
                     element={
-                        <PageDocument title="PDF Tools - Glitch">
+                        <PageDocument title="PDF Tools - Glitch" bodyClassName="bg-neutral-950 text-neutral-200 min-h-screen">
                             <PdfToolsApp />
                         </PageDocument>
                     }
@@ -81,7 +81,7 @@ export default function AppRouter() {
             <Route
                 path="reportes-tecnicos"
                 element={
-                    <PageDocument title="Informes Técnicos">
+                    <PageDocument title="Informes Técnicos" bodyClassName="technical-theme bg-[#0d0d0d] text-[#eee]">
                         <TechnicalReports />
                     </PageDocument>
                 }
@@ -89,7 +89,7 @@ export default function AppRouter() {
             <Route
                 path="fichas-tecnicas"
                 element={
-                    <PageDocument title="Fichas Técnicas">
+                    <PageDocument title="Fichas Técnicas" bodyClassName="technical-theme bg-[#0d0d0d] text-[#eee]">
                         <FichasTecnicas />
                     </PageDocument>
                 }

@@ -1,9 +1,9 @@
 import React, { useRef } from 'react';
 import { Upload, Trash2, RefreshCw, Search, FileSpreadsheet } from 'lucide-react';
-import { FichaTecnica } from './types';
+import { FichaTecnicaListItem } from './types';
 
 interface Props {
-    fichas: FichaTecnica[];
+    fichas: FichaTecnicaListItem[];
     selectedFichaId: string | null;
     onFichaSelect: (id: string) => void;
     onImportFile: (file: File) => void;
@@ -30,16 +30,16 @@ export default function DatabasePanel({
         }
     };
 
-    const filteredFichas = fichas.filter(f => {
-        const search = searchTerm.toLowerCase();
-        return (
+    const filteredFichas = React.useMemo(() => {
+        const search = searchTerm.trim().toLowerCase();
+        if (!search) return fichas;
+        return fichas.filter((f) => (
             f.cliente?.toLowerCase().includes(search) ||
             f.os_numero?.toLowerCase().includes(search) ||
             f.distrito?.toLowerCase().includes(search) ||
             f.id?.toLowerCase().includes(search)
-        );
-    });
-
+        ));
+    }, [fichas, searchTerm]);
     return (
         <div className="bg-[#111] border border-[#333] rounded-lg p-4 h-full flex flex-col">
             <div className="flex items-center justify-between mb-4">

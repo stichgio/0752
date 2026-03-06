@@ -291,8 +291,11 @@ def _normalize_photo_grid_template_compat(template_html: Optional[str]) -> Optio
             compat_css,
         )
 
+    # Check against original template_html (not normalized_html) to avoid
+    # false positives from the injected style id "photo-grid-compat-fix"
+    # which contains the substring "photo-grid".
     has_photo_panel = any(
-        marker in normalized_html
+        marker in template_html
         for marker in (
             "panel-fotografico",
             "photo-grid",
@@ -302,7 +305,7 @@ def _normalize_photo_grid_template_compat(template_html: Optional[str]) -> Optio
         )
     )
     has_page_shell = any(
-        marker in normalized_html
+        marker in template_html
         for marker in (
             "class=\"page\"",
             "class='page'",

@@ -1,9 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Upload, RefreshCw, Search, Trash2 } from 'lucide-react';
-import { TechnicalReport } from './types';
+import { TechnicalReportListItem } from './types';
 
 interface Props {
-    reports: TechnicalReport[];
+    reports: TechnicalReportListItem[];
     selectedReportId: string | null;
     onReportSelect: (reportId: string) => void;
     onImportCSV: (file: File) => void;
@@ -16,15 +16,21 @@ export default function DatabasePanel({ reports, selectedReportId, onReportSelec
     const [filterCS, setFilterCS] = useState('');
     const selectedItemRef = useRef<HTMLButtonElement>(null);
 
-    const filteredReports = reports.filter(r => {
-        const matchSearch = r.header.cs.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            r.header.codigo_infraestructura.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchCS = !filterCS || r.header.cs === filterCS;
-        return matchSearch && matchCS;
-    });
+    const filteredReports = useMemo(() => {
+        const normalizedSearch = searchTerm.trim().toLowerCase();
+        return reports.filter((r) => {
+            const matchSearch = !normalizedSearch ||
+                r.header.cs.toLowerCase().includes(normalizedSearch) ||
+                r.header.codigo_infraestructura.toLowerCase().includes(normalizedSearch);
+            const matchCS = !filterCS || r.header.cs === filterCS;
+            return matchSearch && matchCS;
+        });
+    }, [reports, searchTerm, filterCS]);
 
-    const uniqueCS = [...new Set(reports.map(r => r.header.cs))];
-
+    const uniqueCS = useMemo(
+        () => [...new Set(reports.map((r) => r.header.cs))],
+        [reports]
+    );
     useEffect(() => {
         if (selectedItemRef.current) {
             selectedItemRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });

@@ -2,11 +2,15 @@ import { TechnicalReport } from './types';
 import { apiClient, appendLogos, postBlob } from '@/utils/apiClient';
 
 export const technicalReportsApi = {
-    getAllReports: async (filters?: { cs?: string; contratista?: string; status?: string }) => {
+    getAllReports: async (
+        filters?: { cs?: string; contratista?: string; status?: string },
+        summary = false
+    ) => {
         const params = new URLSearchParams();
         if (filters?.cs) params.append('cs', filters.cs);
         if (filters?.contratista) params.append('contratista', filters.contratista);
         if (filters?.status) params.append('status', filters.status);
+        if (summary) params.append('summary', 'true');
         const { data } = await apiClient.get(`/api/technical-reports/reports?${params}`);
         return data;
     },

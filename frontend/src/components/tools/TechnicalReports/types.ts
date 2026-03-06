@@ -113,3 +113,10 @@ export interface TechnicalReport {
     status: 'draft' | 'completed';
     last_modified: string;
 }
+
+export interface TechnicalReportListItem {
+    id: string;
+    metadata: Pick<ReportMetadata, 'informe_id'>;
+    header: Pick<ReportHeader, 'cs' | 'codigo_infraestructura'>;
+    status: TechnicalReport['status'];
+}
