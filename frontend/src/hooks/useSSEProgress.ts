@@ -8,6 +8,10 @@ interface ProgressState {
     percent: number;
     phaseLabel: string;
     detail: string;
+    totalReports?: number;
+    preparedCount?: number;
+    generatedCount?: number;
+    mergedCount?: number;
 }
 
 interface SSEProgressOptions {
@@ -15,15 +19,47 @@ interface SSEProgressOptions {
     onError?: (error: string) => void;
 }
 
+interface ProgressEventData {
+    phase?: string;
+    current?: number;
+    total?: number;
+    detail?: string;
+    overall_percent?: number;
+    total_reports?: number;
+    prepared_count?: number;
+    generated_count?: number;
+    merged_count?: number;
+}
+
 // Weighted phase percentages for smooth progress
 const PHASE_WEIGHTS: Record<string, [number, number]> = {
-    preparing:   [0, 30],
-    rendering:   [30, 75],
-    merging:     [75, 90],
+    preparing: [0, 30],
+    rendering: [30, 75],
+    merging: [75, 90],
     compressing: [90, 100],
 };
 
-function calcPercent(phase: string, current: number, total: number): number {
+const PHASE_LABELS: Record<string, string> = {
+    preparing: 'Preparando documentos...',
+    rendering: 'Renderizando PDFs...',
+    merging: 'Uniendo documentos...',
+    compressing: 'Comprimiendo archivo...',
+};
+
+const FINALIZATION_UNITS = 1;
+
+function normalizeCount(value: unknown): number {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed < 0) return 0;
+    return Math.round(parsed);
+}
+
+function clampCount(value: number, max?: number): number {
+    if (typeof max !== 'number' || max <= 0) return Math.max(0, value);
+    return Math.max(0, Math.min(value, max));
+}
+
+function calcPhasePercent(phase: string, current: number, total: number): number {
     const range = PHASE_WEIGHTS[phase];
     if (!range) return 0;
     const [lo, hi] = range;
@@ -32,12 +68,78 @@ function calcPercent(phase: string, current: number, total: number): number {
     return Math.round(lo + frac * (hi - lo));
 }
 
-const PHASE_LABELS: Record<string, string> = {
-    preparing: 'Preparando documentos...',
-    rendering: 'Renderizando PDFs...',
-    merging: 'Uniendo documentos...',
-    compressing: 'Comprimiendo archivo...',
-};
+function calcOverallPercent(
+    totalReports: number,
+    preparedCount: number,
+    generatedCount: number,
+    mergedCount: number
+): number {
+    if (totalReports <= 0) return 0;
+    const totalUnits = (totalReports * 3) + FINALIZATION_UNITS;
+    const completedUnits = clampCount(preparedCount, totalReports)
+        + clampCount(generatedCount, totalReports)
+        + clampCount(mergedCount, totalReports);
+    return Math.min(99, Math.round((completedUnits / totalUnits) * 100));
+}
+
+export function deriveProgressState(
+    previous: ProgressState | null,
+    data: ProgressEventData
+): ProgressState {
+    const phase = data.phase || '';
+    const current = normalizeCount(data.current);
+    const total = normalizeCount(data.total);
+    const previousTotalReports = previous?.totalReports ?? 0;
+    const inferredTotalReports = normalizeCount(
+        data.total_reports ?? (phase !== 'compressing' ? total : previousTotalReports)
+    );
+    const totalReports = inferredTotalReports > 0 ? inferredTotalReports : previousTotalReports;
+
+    const previousPrepared = previous?.preparedCount ?? 0;
+    const previousGenerated = previous?.generatedCount ?? 0;
+    const previousMerged = previous?.mergedCount ?? 0;
+
+    const preparedCount = clampCount(
+        normalizeCount(
+            data.prepared_count
+            ?? (phase === 'preparing' ? Math.max(previousPrepared, current) : previousPrepared)
+        ),
+        totalReports || undefined
+    );
+    const generatedCount = clampCount(
+        normalizeCount(
+            data.generated_count
+            ?? (phase === 'rendering' ? Math.max(previousGenerated, current) : previousGenerated)
+        ),
+        totalReports || undefined
+    );
+    const mergedCount = clampCount(
+        normalizeCount(
+            data.merged_count
+            ?? (phase === 'merging' ? Math.max(previousMerged, current) : previousMerged)
+        ),
+        totalReports || undefined
+    );
+
+    const overallPercent = typeof data.overall_percent === 'number'
+        ? Math.max(0, Math.min(100, normalizeCount(data.overall_percent)))
+        : totalReports > 0
+            ? calcOverallPercent(totalReports, preparedCount, generatedCount, mergedCount)
+            : calcPhasePercent(phase, current, total);
+
+    return {
+        phase,
+        current,
+        total,
+        percent: overallPercent,
+        phaseLabel: PHASE_LABELS[phase] || phase,
+        detail: data.detail || '',
+        totalReports: totalReports || undefined,
+        preparedCount,
+        generatedCount,
+        mergedCount,
+    };
+}
 
 export function useSSEProgress() {
     const [isLoading, setIsLoading] = useState(false);
@@ -52,7 +154,18 @@ export function useSSEProgress() {
         const controller = new AbortController();
         abortRef.current = controller;
         setIsLoading(true);
-        setProgress({ phase: 'preparing', current: 0, total: 0, percent: 0, phaseLabel: 'Iniciando...', detail: '' });
+        setProgress({
+            phase: 'preparing',
+            current: 0,
+            total: 0,
+            percent: 0,
+            phaseLabel: 'Iniciando...',
+            detail: '',
+            totalReports: undefined,
+            preparedCount: 0,
+            generatedCount: 0,
+            mergedCount: 0,
+        });
 
         try {
             const base = getApiBase();
@@ -73,7 +186,6 @@ export function useSSEProgress() {
 
             const decoder = new TextDecoder();
             let buffer = '';
-
             let completed = false;
 
             while (true) {
@@ -95,28 +207,20 @@ export function useSSEProgress() {
 
                             if (currentEvent === 'done' || data.phase === 'done') {
                                 completed = true;
-                                setProgress(p => p ? { ...p, percent: 100, phaseLabel: 'Completado!' } : p);
+                                setProgress((previous) => previous
+                                    ? { ...previous, phase: 'done', percent: 100, phaseLabel: 'Completado!' }
+                                    : previous
+                                );
                                 setIsLoading(false);
                                 opts.onComplete(data.download_url);
                                 return;
                             }
 
                             if (currentEvent === 'error' || data.phase === 'error') {
-                                throw new Error(data.detail || 'Error en generación');
+                                throw new Error(data.detail || 'Error en generacion');
                             }
 
-                            // Regular progress event
-                            const phase = data.phase || '';
-                            const current = data.current ?? 0;
-                            const total = data.total ?? 0;
-                            setProgress({
-                                phase,
-                                current,
-                                total,
-                                percent: calcPercent(phase, current, total),
-                                phaseLabel: PHASE_LABELS[phase] || phase,
-                                detail: data.detail || '',
-                            });
+                            setProgress((previous) => deriveProgressState(previous, data));
                         } catch (parseErr) {
                             if (parseErr instanceof SyntaxError) {
                                 console.warn('[SSE] Chunk malformado descartado:', currentEvent.slice(0, 120), parseErr);
@@ -129,9 +233,8 @@ export function useSSEProgress() {
                 }
             }
 
-            // Stream closed without a 'done' event — treat as error to release spinner
             if (!completed) {
-                throw new Error('La conexión SSE se cerró sin completar la operación');
+                throw new Error('La conexion SSE se cerro sin completar la operacion');
             }
         } catch (err: any) {
             if (err.name === 'AbortError') return;
