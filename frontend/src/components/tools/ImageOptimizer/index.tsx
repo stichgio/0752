@@ -1,551 +1,138 @@
-﻿import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { ChevronLeft, Upload, Download, Trash2, Image as ImageIcon, FileDown, Loader2, CheckCircle, AlertCircle, X, Sliders, RotateCcw, Crop, Maximize2, Move, Check, RotateCw, Type } from 'lucide-react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FileDown, Loader2, Sparkles, Trash2, Upload } from 'lucide-react';
+import JSZip from 'jszip';
 import DashboardLayout from '../../DashboardLayout';
-import imageCompression from 'browser-image-compression';
-import { ImageFile, CompressionOptions, CompressionStats, OutputFormat, AspectRatio, ASPECT_RATIO_OPTIONS, CropOffset, RenameOptions } from './types';
-import { formatBytes } from '@/utils/formatBytes';
+import CropEditor from './CropEditor';
+import PreviewWorkspace from './PreviewWorkspace';
+import QueuePanel from './QueuePanel';
+import SettingsPanel from './SettingsPanel';
+import { ModeToggle, PillPreset, ToastContainer } from './ui';
+import { createImageItem, processImageItem } from './pipeline';
+import { DEFAULT_BATCH_SETTINGS, IMAGE_OPTIMIZER_PRESETS, PRESET_BY_ID, cloneBatchSettings } from './presets';
+import { BatchSettings, CropOffset, ImageItem, PresetId, Toast } from './types';
+import {
+    buildDownloadNameMap,
+    buildZipFilename,
+    generateId,
+    getCropRectangle,
+    getDownloadableItems,
+    getEligibleItems,
+    getPrimaryActionLabel,
+    getProcessableItems,
+    getStats,
+    isItemDirectExport,
+    previewFilenames,
+    resolveSettingsForItem,
+    revokeItemUrls,
+    syncStaleState,
+} from './utils';
 import { downloadBlob } from '@/utils/downloadBlob';
+const RENAME_ONLY_PILL_CLASSNAME = PRESET_BY_ID['rename-only']?.accentClassName ?? 'border-amber-500/25 bg-amber-500/10 text-amber-300';
 
-// ============================================================================
-// CONFIGURACION POR DEFECTO
-// ============================================================================
-const DEFAULT_OPTIONS: CompressionOptions = {
-    maxSizeMB: 1,
-    maxWidth: 1920,
-    maxHeight: 1080,
-    quality: 0.7,
-    outputFormat: 'jpeg',
-    aspectRatio: 'original',
-    useWebWorker: true,
-};
-
-// ============================================================================
-// UTILIDADES
-// ============================================================================
-function getOutputMimeType(format: OutputFormat, originalType: string): string {
-    switch (format) {
-        case 'jpeg': return 'image/jpeg';
-        case 'png': return 'image/png';
-        case 'webp': return 'image/webp';
-        default: return originalType;
-    }
-}
-
-function getOutputExtension(format: OutputFormat, originalName: string): string {
-    const baseName = originalName.replace(/\.[^/.]+$/, '');
-    switch (format) {
-        case 'jpeg': return `${baseName}.jpg`;
-        case 'png': return `${baseName}.png`;
-        case 'webp': return `${baseName}.webp`;
-        default: return originalName;
-    }
-}
-
-function getRenamedFilename(
-    index: number, total: number, prefix: string, startAt: number,
-    format: OutputFormat, originalName: string
-): string {
-    const num = index + startAt;
-    const digits = Math.max(3, String(total + startAt - 1).length);
-    const padded = String(num).padStart(digits, '0');
-    const ext = format === 'original'
-        ? (originalName.split('.').pop() || 'jpg')
-        : format === 'jpeg' ? 'jpg' : format;
-    return `${prefix}_${padded}.${ext}`;
-}
-
-function getAspectRatioValue(ratio: AspectRatio): number | null {
-    const option = ASPECT_RATIO_OPTIONS.find(o => o.value === ratio);
-    return option?.ratio ?? null;
-}
-
-// ============================================================================
-// FUNCION DE RECORTE CON CANVAS
-// - Recorte horizontal (imagen mas alta): corta desde ARRIBA por defecto, preserva abajo
-// - Recorte vertical (imagen mas ancha): corta de los LADOS, centrado por defecto
-// - Soporta offset personalizado si el usuario lo ajusto
-// ============================================================================
-async function cropImageToRatio(
-    file: File,
-    targetRatio: number,
-    customOffset?: CropOffset
-): Promise<File> {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        const url = URL.createObjectURL(file);
-
-        img.onload = () => {
-            try {
-                const originalWidth = img.naturalWidth;
-                const originalHeight = img.naturalHeight;
-                const originalRatio = originalWidth / originalHeight;
-
-                let cropWidth: number;
-                let cropHeight: number;
-                let offsetX: number;
-                let offsetY: number;
-
-                if (originalRatio > targetRatio) {
-                    // Imagen mas ancha que el ratio objetivo -> recortar LADOS
-                    cropHeight = originalHeight;
-                    cropWidth = Math.round(originalHeight * targetRatio);
-                    const maxOffsetX = originalWidth - cropWidth;
-
-                    if (customOffset) {
-                        // Usar offset personalizado
-                        offsetX = Math.round(customOffset.x * maxOffsetX);
-                    } else {
-                        // Centrado por defecto
-                        offsetX = Math.round(maxOffsetX / 2);
-                    }
-                    offsetY = 0;
-                } else {
-                    // Imagen mas alta que el ratio objetivo -> recortar vertical
-                    cropWidth = originalWidth;
-                    cropHeight = Math.round(originalWidth / targetRatio);
-                    const maxOffsetY = originalHeight - cropHeight;
-
-                    offsetX = 0;
-                    if (customOffset) {
-                        // Usar offset personalizado
-                        offsetY = Math.round(customOffset.y * maxOffsetY);
-                    } else {
-                        // Desde abajo por defecto (preserva la parte inferior - ej: persona, datos)
-                        offsetY = maxOffsetY;
-                    }
-                }
-
-                // Crear canvas con las dimensiones del recorte
-                const canvas = document.createElement('canvas');
-                canvas.width = cropWidth;
-                canvas.height = cropHeight;
-
-                const ctx = canvas.getContext('2d');
-                if (!ctx) {
-                    throw new Error('No se pudo obtener contexto 2D del canvas');
-                }
-
-                // Dibujar la porcion recortada
-                ctx.drawImage(
-                    img,
-                    offsetX, offsetY, cropWidth, cropHeight,  // Source rect
-                    0, 0, cropWidth, cropHeight               // Dest rect
-                );
-
-                // Convertir canvas a Blob
-                canvas.toBlob(
-                    (blob) => {
-                        if (!blob) {
-                            reject(new Error('Error al convertir canvas a blob'));
-                            return;
-                        }
-
-                        // Crear nuevo File con el mismo nombre
-                        const croppedFile = new File([blob], file.name, {
-                            type: file.type,
-                            lastModified: Date.now(),
-                        });
-
-                        URL.revokeObjectURL(url);
-                        resolve(croppedFile);
-                    },
-                    file.type,
-                    0.95 // Alta calidad para el crop intermedio
-                );
-            } catch (error) {
-                URL.revokeObjectURL(url);
-                reject(error);
-            }
-        };
-
-        img.onerror = () => {
-            URL.revokeObjectURL(url);
-            reject(new Error('Error al cargar imagen para recorte'));
-        };
-
-        img.src = url;
-    });
-}
-
-// ============================================================================
-// FUNCION PARA OBTENER DIMENSIONES DE IMAGEN
-// ============================================================================
-async function getImageDimensions(file: File): Promise<{ width: number; height: number }> {
-    return new Promise((resolve, reject) => {
-        const img = new Image();
-        const url = URL.createObjectURL(file);
-
-        img.onload = () => {
-            URL.revokeObjectURL(url);
-            resolve({ width: img.naturalWidth, height: img.naturalHeight });
-        };
-
-        img.onerror = () => {
-            URL.revokeObjectURL(url);
-            reject(new Error('Error al cargar imagen'));
-        };
-
-        img.src = url;
-    });
-}
-
-// ============================================================================
-// COMPONENTE DE VISTA PREVIA Y EDITOR DE RECORTE INTERACTIVO
-// ============================================================================
-interface CropEditorProps {
-    image: ImageFile;
-    aspectRatio: AspectRatio;
-    onClose: () => void;
-    onSave: (imageId: string, offset: CropOffset) => void;
-}
-
-function CropEditor({ image, aspectRatio, onClose, onSave }: CropEditorProps) {
-    const targetRatio = getAspectRatioValue(aspectRatio);
-    const containerRef = useRef<HTMLDivElement>(null);
-    const [isDragging, setIsDragging] = useState(false);
-
-    // Estado del offset (0-1 representa el porcentaje de desplazamiento posible)
-    const [offset, setOffset] = useState<CropOffset>(() => {
-        // Inicializar con el offset existente o valores por defecto
-        if (image.customCropOffset) {
-            return image.customCropOffset;
-        }
-        // Valores por defecto segun el tipo de recorte
-        if (!image.originalWidth || !image.originalHeight || !targetRatio) {
-            return { x: 0.5, y: 0 };
-        }
-        const originalRatio = image.originalWidth / image.originalHeight;
-        if (originalRatio > targetRatio) {
-            // Recorte lateral -> centrado por defecto
-            return { x: 0.5, y: 0 };
-        } else {
-            // Recorte vertical -> desde abajo por defecto (preserva inferior)
-            return { x: 0, y: 1 };
-        }
-    });
-
-    // Calcular info del recorte
-    const cropInfo = useMemo(() => {
-        if (!image.originalWidth || !image.originalHeight || targetRatio === null) {
-            return null;
-        }
-
-        const originalWidth = image.originalWidth;
-        const originalHeight = image.originalHeight;
-        const originalRatio = originalWidth / originalHeight;
-
-        let cropWidth: number;
-        let cropHeight: number;
-        let maxOffsetX: number;
-        let maxOffsetY: number;
-        let cropType: 'horizontal' | 'vertical' | 'none';
-
-        if (Math.abs(originalRatio - targetRatio) < 0.01) {
-            return { cropType: 'none' as const, cropWidth: originalWidth, cropHeight: originalHeight, maxOffsetX: 0, maxOffsetY: 0 };
-        }
-
-        if (originalRatio > targetRatio) {
-            // Imagen mas ancha -> recortar LADOS
-            cropHeight = originalHeight;
-            cropWidth = Math.round(originalHeight * targetRatio);
-            maxOffsetX = originalWidth - cropWidth;
-            maxOffsetY = 0;
-            cropType = 'vertical';
-        } else {
-            // Imagen mas alta -> recortar vertical
-            cropWidth = originalWidth;
-            cropHeight = Math.round(originalWidth / targetRatio);
-            maxOffsetX = 0;
-            maxOffsetY = originalHeight - cropHeight;
-            cropType = 'horizontal';
-        }
-
-        return { cropType, cropWidth, cropHeight, maxOffsetX, maxOffsetY };
-    }, [image, targetRatio]);
-
-    // Calcular posicion actual del recorte en pixeles
-    const currentCrop = useMemo(() => {
-        if (!cropInfo || cropInfo.cropType === 'none') return null;
-
-        const offsetX = cropInfo.cropType === 'vertical' ? Math.round(offset.x * cropInfo.maxOffsetX) : 0;
-        const offsetY = cropInfo.cropType === 'horizontal' ? Math.round(offset.y * cropInfo.maxOffsetY) : 0;
-
-        return { offsetX, offsetY, width: cropInfo.cropWidth, height: cropInfo.cropHeight };
-    }, [cropInfo, offset]);
-
-    // Manejar el arrastre
-    const handleMouseDown = useCallback((e: React.MouseEvent) => {
-        e.preventDefault();
-        setIsDragging(true);
-    }, []);
-
-    const handleMouseMove = useCallback((e: React.MouseEvent) => {
-        if (!isDragging || !containerRef.current || !cropInfo || cropInfo.cropType === 'none') return;
-
-        const rect = containerRef.current.getBoundingClientRect();
-        const imgElement = containerRef.current.querySelector('img');
-        if (!imgElement) return;
-
-        const imgRect = imgElement.getBoundingClientRect();
-
-        if (cropInfo.cropType === 'vertical') {
-            // Movimiento horizontal
-            const relativeX = e.clientX - imgRect.left;
-            const imgWidth = imgRect.width;
-            const cropWidthPercent = cropInfo.cropWidth / image.originalWidth!;
-            const maxOffset = 1 - cropWidthPercent;
-
-            // Calcular el centro del area de recorte
-            let newOffset = (relativeX / imgWidth) - (cropWidthPercent / 2);
-            newOffset = Math.max(0, Math.min(maxOffset, newOffset));
-            // Normalizar a 0-1
-            const normalizedOffset = maxOffset > 0 ? newOffset / maxOffset : 0.5;
-
-            setOffset(prev => ({ ...prev, x: normalizedOffset }));
-        } else {
-            // Movimiento vertical
-            const relativeY = e.clientY - imgRect.top;
-            const imgHeight = imgRect.height;
-            const cropHeightPercent = cropInfo.cropHeight / image.originalHeight!;
-            const maxOffset = 1 - cropHeightPercent;
-
-            // Calcular el centro del area de recorte
-            let newOffset = (relativeY / imgHeight) - (cropHeightPercent / 2);
-            newOffset = Math.max(0, Math.min(maxOffset, newOffset));
-            // Normalizar a 0-1
-            const normalizedOffset = maxOffset > 0 ? newOffset / maxOffset : 0;
-
-            setOffset(prev => ({ ...prev, y: normalizedOffset }));
-        }
-    }, [isDragging, cropInfo, image]);
-
-    const handleMouseUp = useCallback(() => {
-        setIsDragging(false);
-    }, []);
-
-    // Resetear al valor por defecto
-    const handleReset = useCallback(() => {
-        if (!cropInfo) return;
-        if (cropInfo.cropType === 'vertical') {
-            setOffset({ x: 0.5, y: 0 }); // Centrado
-        } else {
-            setOffset({ x: 0, y: 1 }); // Desde abajo
-        }
-    }, [cropInfo]);
-
-    // Guardar y cerrar
-    const handleSave = useCallback(() => {
-        onSave(image.id, offset);
-        onClose();
-    }, [image.id, offset, onSave, onClose]);
-
-    if (!cropInfo || cropInfo.cropType === 'none') {
-        return null;
-    }
-
-    // Calcular porcentajes para visualizacion
-    const cropBoxStyle = useMemo(() => {
-        if (!currentCrop || !image.originalWidth || !image.originalHeight) return {};
-
-        return {
-            left: `${(currentCrop.offsetX / image.originalWidth) * 100}%`,
-            top: `${(currentCrop.offsetY / image.originalHeight) * 100}%`,
-            width: `${(currentCrop.width / image.originalWidth) * 100}%`,
-            height: `${(currentCrop.height / image.originalHeight) * 100}%`,
-        };
-    }, [currentCrop, image]);
-
-    return (
-        <div
-            className="fixed inset-0 bg-black/95 z-50 flex items-center justify-center p-4"
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-        >
-            <div className="max-w-5xl w-full max-h-[95vh] flex flex-col" onClick={e => e.stopPropagation()}>
-                {/* Header */}
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                        <Crop size={20} className="text-green-500" />
-                        <h3 className="text-white font-mono text-sm">Ajustar Area de Recorte</h3>
-                        <span className="text-[#666] font-mono text-xs">
-                            {aspectRatio} - {cropInfo.cropType === 'horizontal' ? 'Arrastra verticalmente' : 'Arrastra horizontalmente'}
-                        </span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={handleReset}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#222] hover:bg-[#333] rounded text-xs font-mono text-[#888] hover:text-white transition-colors"
-                        >
-                            <RotateCw size={12} />
-                            Resetear
-                        </button>
-                        <button
-                            onClick={onClose}
-                            className="p-2 hover:bg-white/10 rounded transition-colors"
-                        >
-                            <X size={20} className="text-[#666] hover:text-white" />
-                        </button>
-                    </div>
-                </div>
-
-                {/* Editor Container */}
-                <div
-                    ref={containerRef}
-                    className="relative bg-[#111] rounded-lg overflow-hidden flex-1 flex items-center justify-center"
-                    style={{ cursor: isDragging ? 'grabbing' : 'default' }}
-                >
-                    {/* Imagen con overlay oscuro */}
-                    <div className="relative inline-block">
-                        <img
-                            src={image.preview}
-                            alt={image.originalName}
-                            className="max-h-[65vh] w-auto select-none"
-                            draggable={false}
-                        />
-
-                        {/* Overlay oscuro sobre toda la imagen */}
-                        <div className="absolute inset-0 bg-black/60 pointer-events-none" />
-
-                        {/* Area de recorte (clara) - arrastrable */}
-                        <div
-                            className="absolute border-2 border-green-500 cursor-grab active:cursor-grabbing"
-                            style={{
-                                ...cropBoxStyle,
-                                boxShadow: '0 0 0 9999px rgba(0,0,0,0.6)',
-                            }}
-                            onMouseDown={handleMouseDown}
-                        >
-                            {/* Imagen visible dentro del recorte */}
-                            <div
-                                className="absolute inset-0 overflow-hidden"
-                                style={{
-                                    backgroundImage: `url(${image.preview})`,
-                                    backgroundSize: `${(image.originalWidth! / cropInfo.cropWidth) * 100}% ${(image.originalHeight! / cropInfo.cropHeight) * 100}%`,
-                                    backgroundPosition: `-${currentCrop?.offsetX || 0}px -${currentCrop?.offsetY || 0}px`,
-                                }}
-                            />
-
-                            {/* Indicador de arrastre */}
-                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                <div className="bg-black/50 rounded-full p-2">
-                                    <Move size={20} className="text-white/80" />
-                                </div>
-                            </div>
-
-                            {/* Esquinas de referencia */}
-                            <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-white" />
-                            <div className="absolute top-0 right-0 w-4 h-4 border-t-2 border-r-2 border-white" />
-                            <div className="absolute bottom-0 left-0 w-4 h-4 border-b-2 border-l-2 border-white" />
-                            <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-white" />
-
-                            {/* Lineas de tercios */}
-                            <div className="absolute inset-0 pointer-events-none">
-                                <div className="absolute left-1/3 top-0 bottom-0 w-px bg-white/20" />
-                                <div className="absolute left-2/3 top-0 bottom-0 w-px bg-white/20" />
-                                <div className="absolute top-1/3 left-0 right-0 h-px bg-white/20" />
-                                <div className="absolute top-2/3 left-0 right-0 h-px bg-white/20" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Footer con info y botones */}
-                <div className="mt-4 flex items-center justify-between">
-                    <div className="flex items-center gap-6 text-xs font-mono">
-                        <div className="text-[#666]">
-                            Original: <span className="text-white">{image.originalWidth}x{image.originalHeight}</span>
-                        </div>
-                        <div className="text-[#666]">
-                            Resultado: <span className="text-green-500">{cropInfo.cropWidth}x{cropInfo.cropHeight}</span>
-                        </div>
-                        <div className="text-[#666]">
-                            Offset: <span className="text-yellow-500">
-                                {cropInfo.cropType === 'vertical'
-                                    ? `X: ${Math.round(offset.x * 100)}%`
-                                    : `Y: ${Math.round(offset.y * 100)}%`
-                                }
-                            </span>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={onClose}
-                            className="px-4 py-2 bg-[#222] hover:bg-[#333] rounded text-sm font-mono text-[#888] hover:text-white transition-colors"
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            onClick={handleSave}
-                            className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 rounded text-sm font-mono text-white transition-colors"
-                        >
-                            <Check size={16} />
-                            Aplicar Recorte
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-// ============================================================================
-// COMPONENTE PRINCIPAL
-// ============================================================================
 export default function ImageOptimizer() {
-    const [images, setImages] = useState<ImageFile[]>([]);
-    const imagesRef = useRef<ImageFile[]>([]);
-    const [options, setOptions] = useState<CompressionOptions>(DEFAULT_OPTIONS);
-    const [isProcessing, setIsProcessing] = useState(false);
+    const [items, setItems] = useState<ImageItem[]>([]);
+    const [settings, setSettings] = useState<BatchSettings>(DEFAULT_BATCH_SETTINGS);
+    const [activePresetId, setActivePresetId] = useState<PresetId | null>(null);
+    const [activeItemId, setActiveItemId] = useState<string | null>(null);
+    const [previewTab, setPreviewTab] = useState<'original' | 'crop' | 'result' | 'compare'>('original');
     const [isDragActive, setIsDragActive] = useState(false);
-    const [previewImage, setPreviewImage] = useState<ImageFile | null>(null);
-    const [renameOptions, setRenameOptions] = useState<RenameOptions>({ enabled: false, prefix: 'foto', startAt: 1 });
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [toasts, setToasts] = useState<Toast[]>([]);
+    const [processingProgress, setProcessingProgress] = useState({ current: 0, total: 0 });
+    const [processingMessage, setProcessingMessage] = useState('');
+    const [cropEditorItemId, setCropEditorItemId] = useState<string | null>(null);
+    const [renameOnlyMode, setRenameOnlyMode] = useState(false);
+    const [viewMode, setViewMode] = useState<'grid' | 'single'>('grid');
+    const savedOperationsRef = useRef<BatchSettings['operations'] | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const itemsRef = useRef<ImageItem[]>([]);
+    const settingsRef = useRef<BatchSettings>(settings);
 
-    // Keep ref in sync with state for cleanup on unmount
     useEffect(() => {
-        imagesRef.current = images;
-    }, [images]);
+        itemsRef.current = items;
+    }, [items]);
 
-    // Cleanup previews on unmount (uses ref to access latest images)
+    useEffect(() => {
+        settingsRef.current = settings;
+    }, [settings]);
+
     useEffect(() => {
         return () => {
-            imagesRef.current.forEach(img => {
-                URL.revokeObjectURL(img.preview);
-            });
+            itemsRef.current.forEach((item) => revokeItemUrls(item));
         };
     }, []);
 
-    // Limpiar customCropOffset cuando cambia el aspect ratio
     useEffect(() => {
-        setImages(prev => prev.map(img => ({
-            ...img,
-            customCropOffset: undefined
-        })));
-    }, [options.aspectRatio]);
+        if (items.length === 0) {
+            setActiveItemId(null);
+            return;
+        }
+        if (!activeItemId || !items.some((item) => item.id === activeItemId)) {
+            setActiveItemId(items[0].id);
+        }
+    }, [activeItemId, items]);
 
-    // Estadisticas calculadas
-    const stats: CompressionStats = React.useMemo(() => {
-        const completed = images.filter(img => img.status === 'completed');
-        const totalOriginalSize = completed.reduce((acc, img) => acc + img.originalSize, 0);
-        const totalCompressedSize = completed.reduce((acc, img) => acc + (img.compressedSize || 0), 0);
-        const totalSaved = totalOriginalSize - totalCompressedSize;
-        const percentageSaved = totalOriginalSize > 0 ? (totalSaved / totalOriginalSize) * 100 : 0;
+    const addToast = useCallback((message: string, type: Toast['type'] = 'info', duration = 3500) => {
+        const id = generateId();
+        setToasts((prev) => [...prev, { id, message, type }]);
+        if (duration > 0) {
+            window.setTimeout(() => {
+                setToasts((prev) => prev.filter((toast) => toast.id !== id));
+            }, duration);
+        }
+    }, []);
 
-        return {
-            totalOriginalSize,
-            totalCompressedSize,
-            totalSaved,
-            percentageSaved,
-            processedCount: completed.length,
-            totalCount: images.length,
-        };
-    }, [images]);
+    const removeToast = useCallback((id: string) => {
+        setToasts((prev) => prev.filter((toast) => toast.id !== id));
+    }, []);
 
-    // ========================================================================
-    // HANDLERS DE DRAG & DROP
-    // ========================================================================
+    const commitItems = useCallback((updater: ImageItem[] | ((prev: ImageItem[]) => ImageItem[])) => {
+        setItems((prev) => {
+            const next = typeof updater === 'function' ? updater(prev) : updater;
+            return syncStaleState(next, settingsRef.current);
+        });
+    }, []);
+
+    const commitSettings = useCallback((nextSettings: BatchSettings, presetId: PresetId | null) => {
+        settingsRef.current = nextSettings;
+        setSettings(nextSettings);
+        setActivePresetId(presetId);
+        setItems((prev) => syncStaleState(prev, nextSettings));
+    }, []);
+
+    const updateSettings = useCallback((updater: (draft: BatchSettings) => void) => {
+        const draft = cloneBatchSettings(settingsRef.current);
+        updater(draft);
+        commitSettings(draft, null);
+    }, [commitSettings]);
+
+    const updateItem = useCallback((id: string, updater: (item: ImageItem) => ImageItem) => {
+        commitItems((prev) => prev.map((item) => {
+            if (item.id !== id) return item;
+            const next = updater(item);
+            return {
+                ...next,
+                excluded: next.overrides.excluded,
+            };
+        }));
+    }, [commitItems]);
+
+    const processInputFiles = useCallback(async (inputFiles: FileList | File[] | null) => {
+        if (!inputFiles || inputFiles.length === 0) return;
+        const fileArray = Array.from(inputFiles);
+        const validFiles = fileArray.filter((file) => file.type.startsWith('image/') && !file.type.includes('gif'));
+        const ignored = fileArray.length - validFiles.length;
+        if (ignored > 0) {
+            addToast(`${ignored} archivo(s) ignorado(s). Solo JPG, PNG y WEBP.`, 'error', 4500);
+        }
+        if (validFiles.length === 0) return;
+
+        const createdItems = await Promise.all(validFiles.map((file) => createImageItem(file)));
+        commitItems((prev) => [...prev, ...createdItems]);
+        setActiveItemId((current) => current || createdItems[0]?.id || null);
+        addToast(`${createdItems.length} imagen(es) agregada(s) al lote.`, 'success', 2200);
+    }, [addToast, commitItems]);
+
     const handleDrag = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
@@ -556,710 +143,445 @@ export default function ImageOptimizer() {
         }
     }, []);
 
-    const processFiles = useCallback(async (files: FileList | File[]) => {
-        const validFiles = Array.from(files).filter(file =>
-            file.type.startsWith('image/') && !file.type.includes('gif')
-        );
-
-        // Crear ImageFiles con dimensiones
-        const newImages: ImageFile[] = await Promise.all(
-            validFiles.map(async (file) => {
-                let dimensions = { width: 0, height: 0 };
-                try {
-                    dimensions = await getImageDimensions(file);
-                } catch (e) {
-                    console.warn('No se pudieron obtener dimensiones:', e);
-                }
-
-                return {
-                    id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                    file,
-                    preview: URL.createObjectURL(file),
-                    originalSize: file.size,
-                    status: 'pending' as const,
-                    originalName: file.name,
-                    originalWidth: dimensions.width,
-                    originalHeight: dimensions.height,
-                };
-            })
-        );
-
-        setImages(prev => [...prev, ...newImages]);
-    }, []);
-
     const handleDrop = useCallback((e: React.DragEvent) => {
         e.preventDefault();
         e.stopPropagation();
         setIsDragActive(false);
-
         if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-            processFiles(e.dataTransfer.files);
+            processInputFiles(e.dataTransfer.files);
         }
-    }, [processFiles]);
+    }, [processInputFiles]);
 
     const handleFileInput = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
-            processFiles(e.target.files);
+            processInputFiles(e.target.files);
         }
-    }, [processFiles]);
+        e.target.value = '';
+    }, [processInputFiles]);
 
-    // ========================================================================
-    // HANDLER PARA GUARDAR OFFSET PERSONALIZADO DE RECORTE
-    // ========================================================================
+    useEffect(() => {
+        const handlePaste = (e: ClipboardEvent) => {
+            const files = Array.from(e.clipboardData?.files || []).filter((file) => file.type.startsWith('image/'));
+            if (files.length > 0) {
+                processInputFiles(files);
+            }
+        };
+        window.addEventListener('paste', handlePaste);
+        return () => window.removeEventListener('paste', handlePaste);
+    }, [processInputFiles]);
+
+    const activeItem = useMemo(() => items.find((item) => item.id === activeItemId) ?? null, [activeItemId, items]);
+    const activeItemSettings = useMemo(() => (activeItem ? resolveSettingsForItem(settings, activeItem) : settings), [activeItem, settings]);
+    const activeCropPreview = useMemo(() => {
+        if (!activeItem || !activeItem.sourceWidth || !activeItem.sourceHeight) return null;
+        if (!activeItemSettings.operations.cropEnabled) return null;
+        return getCropRectangle(activeItem.sourceWidth, activeItem.sourceHeight, activeItemSettings.crop.aspectRatio, activeItem.overrides.customCropOffset);
+    }, [activeItem, activeItemSettings]);
+
+    const stats = useMemo(() => getStats(items, settings), [items, settings]);
+    const selectedCount = stats.selectedCount;
+    const activeScope: 'all' | 'selected' = selectedCount > 0 ? 'selected' : 'all';
+    const scopedItems = useMemo(() => getEligibleItems(items, activeScope), [activeScope, items]);
+    const downloadableItems = useMemo(() => getDownloadableItems(items, settings, activeScope), [activeScope, items, settings]);
+    const processableItems = useMemo(() => getProcessableItems(items, settings, activeScope), [activeScope, items, settings]);
+    const downloadNameMap = useMemo(() => buildDownloadNameMap(getEligibleItems(items), settings), [items, settings]);
+    const previewNames = useMemo(() => previewFilenames(settings, items.length), [items.length, settings]);
+    const primaryActionLabel = useMemo(() => getPrimaryActionLabel(scopedItems, settings), [scopedItems, settings]);
+    const activeScopeLabel = selectedCount > 0 ? `${selectedCount} seleccionadas` : `${stats.includedCount} imagen(es) incluidas en el lote.`;
+
+    const handleApplyGlobalPreset = useCallback((presetId: PresetId) => {
+        const preset = IMAGE_OPTIMIZER_PRESETS.find((item) => item.id === presetId);
+        if (!preset) return;
+        commitSettings(cloneBatchSettings(preset.settings), presetId);
+        addToast(`Preset global aplicado: ${preset.label}.`, 'success', 2200);
+    }, [addToast, commitSettings]);
+
+    const handleApplyPresetToSelection = useCallback(() => {
+        if (!activePresetId || selectedCount === 0) {
+            addToast('Selecciona imagenes y un preset activo para aplicar.', 'info', 2600);
+            return;
+        }
+        commitItems((prev) => prev.map((item) => {
+            if (!item.selected) return item;
+            return { ...item, overrides: { ...item.overrides, presetId: activePresetId } };
+        }));
+        addToast('Preset activo aplicado a la seleccion.', 'success', 2200);
+    }, [activePresetId, addToast, commitItems, selectedCount]);
+
+
+    const handleToggleRenameOnlyMode = useCallback((enabled: boolean) => {
+        if (enabled) {
+            savedOperationsRef.current = { ...settingsRef.current.operations };
+            updateSettings((draft) => {
+                draft.operations.cropEnabled = false;
+                draft.operations.resizeEnabled = false;
+                draft.operations.formatEnabled = false;
+                draft.operations.compressionEnabled = false;
+                draft.operations.renameEnabled = true;
+            });
+        } else {
+            const saved = savedOperationsRef.current;
+            if (saved) {
+                updateSettings((draft) => {
+                    draft.operations = { ...saved };
+                });
+                savedOperationsRef.current = null;
+            }
+        }
+        setRenameOnlyMode(enabled);
+    }, [updateSettings]);
+
+    const handleSelectAll = useCallback(() => {
+        const allSelected = items.length > 0 && items.every((item) => item.selected);
+        commitItems((prev) => prev.map((item) => ({ ...item, selected: !allSelected })));
+    }, [commitItems, items]);
+
+    const handleClearSelection = useCallback(() => {
+        commitItems((prev) => prev.map((item) => ({ ...item, selected: false })));
+    }, [commitItems]);
+
+    const handleReprocessSelected = useCallback(() => {
+        if (selectedCount === 0) {
+            addToast('No hay imagenes seleccionadas para reprocesar.', 'info', 1800);
+            return;
+        }
+        commitItems((prev) => prev.map((item) => item.selected ? { ...item, status: 'pending', error: undefined, stale: !!item.resultBlob } : item));
+        addToast('Seleccion marcada para reprocesar.', 'success', 2000);
+    }, [addToast, commitItems, selectedCount]);
+
+    const handleToggleExcludeSelected = useCallback(() => {
+        const selectedItems = items.filter((item) => item.selected);
+        if (selectedItems.length === 0) {
+            addToast('Selecciona una o mas imagenes.', 'info', 1800);
+            return;
+        }
+        const shouldExclude = selectedItems.some((item) => !item.excluded);
+        commitItems((prev) => prev.map((item) => item.selected ? {
+            ...item,
+            excluded: shouldExclude,
+            overrides: { ...item.overrides, excluded: shouldExclude },
+        } : item));
+        addToast(shouldExclude ? 'Seleccion excluida del lote.' : 'Seleccion incluida nuevamente.', 'success', 2200);
+    }, [addToast, commitItems, items]);
+
+    const handleRemoveSelected = useCallback(() => {
+        const selectedItems = items.filter((item) => item.selected);
+        if (selectedItems.length === 0) {
+            addToast('No hay imagenes seleccionadas.', 'info', 1800);
+            return;
+        }
+        selectedItems.forEach((item) => revokeItemUrls(item));
+        commitItems((prev) => prev.filter((item) => !item.selected));
+        addToast(`${selectedItems.length} imagen(es) eliminada(s).`, 'success', 2200);
+    }, [addToast, commitItems, items]);
+
+    const handleRemoveItem = useCallback((id: string) => {
+        commitItems((prev) => {
+            const target = prev.find((item) => item.id === id);
+            if (target) revokeItemUrls(target);
+            return prev.filter((item) => item.id !== id);
+        });
+        addToast('Imagen eliminada de la cola.', 'info', 1800);
+    }, [addToast, commitItems]);
+
+    const handleClearAll = useCallback(() => {
+        items.forEach((item) => revokeItemUrls(item));
+        setItems([]);
+        setActiveItemId(null);
+        addToast('Cola limpiada.', 'info', 2000);
+    }, [addToast, items]);
+
     const handleSaveCropOffset = useCallback((imageId: string, offset: CropOffset) => {
-        setImages(prev => prev.map(img =>
-            img.id === imageId ? { ...img, customCropOffset: offset } : img
-        ));
+        updateItem(imageId, (item) => ({ ...item, overrides: { ...item.overrides, customCropOffset: offset } }));
+        addToast('Recorte personalizado guardado.', 'success', 1800);
+    }, [addToast, updateItem]);
+
+    const getResolvedBlob = useCallback((item: ImageItem): Blob | null => {
+        if (isItemDirectExport(item, settingsRef.current)) {
+            return item.sourceFile;
+        }
+        if (item.status === 'completed' && !item.stale && item.resultBlob) {
+            return item.resultBlob;
+        }
+        return null;
     }, []);
 
-    // ========================================================================
-    // PROCESO DE COMPRESION: Original -> Crop -> Resize/Compress -> Output
-    // ========================================================================
-    const compressImage = async (imageFile: ImageFile): Promise<ImageFile> => {
-        try {
-            let fileToProcess: File = imageFile.file;
-
-            // PASO 1: Recortar si hay un aspect ratio definido
-            const targetRatio = getAspectRatioValue(options.aspectRatio);
-            if (targetRatio !== null) {
-                // Usar offset personalizado si existe
-                fileToProcess = await cropImageToRatio(
-                    fileToProcess,
-                    targetRatio,
-                    imageFile.customCropOffset
-                );
-            }
-
-            // PASO 2: Determinar configuracion de compresion
-            const outputMimeType = getOutputMimeType(options.outputFormat, imageFile.file.type);
-            const maxDimension = Math.min(options.maxWidth, options.maxHeight);
-
-            const compressionOptions: any = {
-                maxSizeMB: options.maxSizeMB,
-                maxWidthOrHeight: maxDimension,
-                useWebWorker: options.useWebWorker,
-                initialQuality: options.quality,
-            };
-
-            // Agregar fileType solo si no es 'original'
-            if (options.outputFormat !== 'original') {
-                compressionOptions.fileType = outputMimeType;
-            }
-
-            // PASO 3: Comprimir
-            const compressedBlob = await imageCompression(fileToProcess, compressionOptions);
-
-            // PASO 4: Obtener dimensiones finales
-            let finalDimensions = { width: 0, height: 0 };
-            try {
-                const tempFile = new File([compressedBlob], 'temp.jpg', { type: compressedBlob.type });
-                finalDimensions = await getImageDimensions(tempFile);
-            } catch (e) {
-                console.warn('No se pudieron obtener dimensiones finales:', e);
-            }
-
-            return {
-                ...imageFile,
-                compressedSize: compressedBlob.size,
-                compressedBlob,
-                status: 'completed',
-                finalWidth: finalDimensions.width,
-                finalHeight: finalDimensions.height,
-            };
-        } catch (error) {
-            console.error('Error en compresion:', error);
-            return {
-                ...imageFile,
-                status: 'error',
-                error: error instanceof Error ? error.message : 'Error desconocido',
-            };
+    const downloadItems = useCallback(async (itemsToDownload: ImageItem[]) => {
+        if (itemsToDownload.length === 0) {
+            addToast('No hay archivos listos para descargar en este alcance.', 'info', 2200);
+            return;
         }
-    };
-
-    const handleCompress = async () => {
-        if (images.length === 0 || isProcessing) return;
-
-        setIsProcessing(true);
-
-        // Marcar pendientes como processing
-        setImages(prev => prev.map(img =>
-            img.status === 'pending' ? { ...img, status: 'processing' } : img
-        ));
-
-        // Procesar imagenes secuencialmente
-        const pendingImages = images.filter(img => img.status === 'pending');
-
-        for (const img of pendingImages) {
-            const result = await compressImage(img);
-            setImages(prev => prev.map(i => i.id === img.id ? result : i));
-        }
-
-        setIsProcessing(false);
-    };
-
-    // ========================================================================
-    // HANDLERS DE DESCARGA
-    // ========================================================================
-    const getFilename = (img: ImageFile, index: number, total: number): string => {
-        if (renameOptions.enabled && renameOptions.prefix.trim()) {
-            return getRenamedFilename(index, total, renameOptions.prefix.trim(), renameOptions.startAt, options.outputFormat, img.originalName);
-        }
-        return getOutputExtension(options.outputFormat, img.originalName);
-    };
-
-    const handleDownloadSingle = (img: ImageFile) => {
-        if (!img.compressedBlob) return;
-        const completedImages = images.filter(i => i.status === 'completed' && i.compressedBlob);
-        const idx = completedImages.findIndex(i => i.id === img.id);
-        const filename = getFilename(img, idx >= 0 ? idx : 0, completedImages.length);
-        downloadBlob(img.compressedBlob, filename);
-    };
-
-    const handleDownloadAll = async () => {
-        const completedImages = images.filter(img => img.status === 'completed' && img.compressedBlob);
-        if (completedImages.length === 0) return;
-
-        if (completedImages.length === 1) {
-            handleDownloadSingle(completedImages[0]);
+        const entries = itemsToDownload
+            .map((item) => ({ item, blob: getResolvedBlob(item) }))
+            .filter((entry): entry is { item: ImageItem; blob: Blob } => !!entry.blob);
+        if (entries.length === 0) {
+            addToast('Todavia no hay resultados descargables.', 'info', 2200);
             return;
         }
 
-        // Para multiples imagenes, crear ZIP via backend
-        const formData = new FormData();
-        completedImages.forEach((img, idx) => {
-            if (img.compressedBlob) {
-                const fileName = getFilename(img, idx, completedImages.length);
-                formData.append('files', img.compressedBlob, fileName);
-            }
-        });
-
-        try {
-            const API_BASE = import.meta.env.VITE_API_URL || '/api';
-            const response = await fetch(`${API_BASE}/image-optimizer/download-zip`, {
-                method: 'POST',
-                body: formData,
+        const nameMap = buildDownloadNameMap(entries.map((entry) => entry.item), settingsRef.current);
+        if (settingsRef.current.export.mode === 'individual' || entries.length === 1) {
+            entries.forEach((entry, index) => {
+                const filename = nameMap.get(entry.item.id) || entry.item.originalName;
+                window.setTimeout(() => downloadBlob(entry.blob, filename), index * 120);
             });
-
-            if (!response.ok) throw new Error('Error al crear ZIP');
-
-            const blob = await response.blob();
-            const zipName = renameOptions.enabled && renameOptions.prefix.trim()
-                ? `${renameOptions.prefix.trim()}_${completedImages.length}.zip`
-                : `imagenes_${Date.now()}.zip`;
-            downloadBlob(blob, zipName);
-        } catch (error) {
-            console.error('ZIP download failed, downloading individually:', error);
-            completedImages.forEach((img, idx) => {
-                if (img.compressedBlob) {
-                    const filename = getFilename(img, idx, completedImages.length);
-                    downloadBlob(img.compressedBlob, filename);
-                }
-            });
+            addToast(`Descargando ${entries.length} archivo(s).`, 'success', 2200);
+            return;
         }
-    };
 
-    // ========================================================================
-    // HANDLERS DE GESTION
-    // ========================================================================
-    const handleRemoveImage = (id: string) => {
-        setImages(prev => {
-            const img = prev.find(i => i.id === id);
-            if (img) {
-                URL.revokeObjectURL(img.preview);
+        // Client-side ZIP creation using JSZip
+        try {
+            const zip = new JSZip();
+            entries.forEach((entry) => {
+                const filename = nameMap.get(entry.item.id) || entry.item.originalName;
+                zip.file(filename, entry.blob);
+            });
+            const zipBlob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+            const zipFilename = buildZipFilename(settingsRef.current);
+            downloadBlob(zipBlob, zipFilename);
+            addToast(`ZIP generado con ${entries.length} archivo(s).`, 'success', 2400);
+        } catch (error) {
+            console.error('ZIP creation failed', error);
+            // Fallback to individual downloads
+            entries.forEach((entry, index) => {
+                const filename = nameMap.get(entry.item.id) || entry.item.originalName;
+                window.setTimeout(() => downloadBlob(entry.blob, filename), index * 120);
+            });
+            const message = error instanceof Error ? error.message : 'Error desconocido';
+            addToast(`Fallo el ZIP (${message}); se descargaron individualmente.`, 'error', 3800);
+        }
+    }, [addToast, getResolvedBlob]);
+
+    const handleProcessScope = useCallback(async (scope: 'all' | 'selected') => {
+        const targets = getProcessableItems(itemsRef.current, settingsRef.current, scope);
+        if (targets.length === 0) {
+            await downloadItems(getDownloadableItems(itemsRef.current, settingsRef.current, scope));
+            return;
+        }
+
+        setIsProcessing(true);
+        setProcessingProgress({ current: 0, total: targets.length });
+
+        // Marcar todos como procesando para evitar condition de carrera con UI reactiva
+        commitItems((prev) => prev.map((item) => targets.some((t) => t.id === item.id) ? { ...item, status: 'processing', error: undefined } : item));
+
+        // Esperar el sig frame para dibujar
+        await new Promise((resolve) => setTimeout(resolve, 50));
+
+        let successCount = 0;
+
+        for (let index = 0; index < targets.length; index += 1) {
+            const target = targets[index];
+            setProcessingMessage(`Procesando ${target.originalName}`);
+
+            try {
+                const latestItem = itemsRef.current.find((item) => item.id === target.id) || target;
+                const artifact = await processImageItem(latestItem, settingsRef.current);
+                const previewUrl = URL.createObjectURL(artifact.blob);
+                commitItems((prev) => prev.map((item) => {
+                    if (item.id !== target.id) return item;
+                    if (item.resultPreview) URL.revokeObjectURL(item.resultPreview);
+                    return {
+                        ...item,
+                        resultBlob: artifact.blob,
+                        resultPreview: previewUrl,
+                        resultSize: artifact.blob.size,
+                        finalWidth: artifact.width,
+                        finalHeight: artifact.height,
+                        status: 'completed',
+                        error: undefined,
+                        stale: false,
+                        processedSignature: artifact.signature,
+                        processedAt: Date.now(),
+                    };
+                }));
+                successCount += 1;
+            } catch (error) {
+                const message = error instanceof Error ? error.message : 'Error desconocido';
+                commitItems((prev) => prev.map((item) => item.id === target.id ? { ...item, status: 'error', error: message } : item));
             }
-            return prev.filter(i => i.id !== id);
-        });
-    };
 
-    const handleClearAll = () => {
-        images.forEach(img => URL.revokeObjectURL(img.preview));
-        setImages([]);
-    };
+            setProcessingProgress({ current: index + 1, total: targets.length });
+        }
 
-    const handleResetOptions = () => {
-        setOptions(DEFAULT_OPTIONS);
-    };
+        setIsProcessing(false);
+        setProcessingMessage('');
+        addToast(`${successCount}/${targets.length} imagen(es) procesadas.`, successCount === targets.length ? 'success' : 'info', 2800);
+    }, [addToast, commitItems, downloadItems]);
 
-    const completedCount = images.filter(img => img.status === 'completed').length;
-    const pendingCount = images.filter(img => img.status === 'pending').length;
+    const cropEditorItem = cropEditorItemId ? items.find((item) => item.id === cropEditorItemId) ?? null : null;
+    const activeItemOutputName = activeItem ? downloadNameMap.get(activeItem.id) || activeItem.originalName : '';
+    const activeItemDownloadable = activeItem ? !!getResolvedBlob(activeItem) : false;
+    const activeIsDirect = activeItem ? isItemDirectExport(activeItem, settings) : false;
 
-    // ========================================================================
-    // RENDER
-    // ========================================================================
     return (
         <DashboardLayout>
-        <div className="min-h-screen bg-[#0d0d0d] text-[#eee] technical-theme flex">
-            {/* ============================================================ */}
-            {/* SIDEBAR IZQUIERDO */}
-            {/* ============================================================ */}
-            <aside className="w-[320px] bg-[#0a0a0a] border-r border-[#333] flex flex-col h-screen sticky top-0 shrink-0">
-                {/* Header */}
-                <div className="p-4 border-b border-[#333]">
-                    <div className="flex items-center gap-3">
-                        <Link to="/" className="text-[#666] hover:text-[#eee] transition-colors">
-                            <ChevronLeft size={20} />
-                        </Link>
-                        <h1 className="text-sm font-bold font-mono tracking-wide text-[#eee] uppercase">
-                            Optimizador de Imagenes
-                        </h1>
-                    </div>
-                </div>
+            <div className="flex h-full flex-col px-2 py-2 text-white overflow-hidden bg-[#0C0C0E]">
+                <ToastContainer toasts={toasts} removeToast={removeToast} />
 
-                {/* Contenido Scrolleable */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-6">
-
-                    {/* ================================================== */}
-                    {/* SECCION: RECORTE */}
-                    {/* ================================================== */}
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-2 text-[#888]">
-                            <Crop size={14} />
-                            <span className="text-xs font-mono uppercase tracking-wider">Recorte</span>
-                        </div>
-
-                        <div>
-                            <label className="block text-xs text-[#666] mb-1.5 font-mono">Relacion de Aspecto</label>
-                            <select
-                                value={options.aspectRatio}
-                                onChange={(e) => setOptions({ ...options, aspectRatio: e.target.value as AspectRatio })}
-                                className="w-full bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 text-sm text-white font-mono focus:border-[#555] outline-none"
-                            >
-                                {ASPECT_RATIO_OPTIONS.map(opt => (
-                                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                                ))}
-                            </select>
-                            {options.aspectRatio !== 'original' && (
-                                <p className="text-[10px] text-[#555] mt-1.5 font-mono">
-                                    Se aplicara un recorte centrado automatico
-                                </p>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* ================================================== */}
-                    {/* SECCION: REDIMENSIONAR */}
-                    {/* ================================================== */}
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-2 text-[#888]">
-                            <Maximize2 size={14} />
-                            <span className="text-xs font-mono uppercase tracking-wider">Redimensionar</span>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2">
-                            <div>
-                                <label className="block text-xs text-[#666] mb-1.5 font-mono">Ancho Max (px)</label>
-                                <input
-                                    type="number"
-                                    min="100"
-                                    max="4096"
-                                    step="100"
-                                    value={options.maxWidth}
-                                    onChange={(e) => setOptions({ ...options, maxWidth: parseInt(e.target.value) || 1920 })}
-                                    className="w-full bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 text-sm text-white font-mono focus:border-[#555] outline-none"
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-xs text-[#666] mb-1.5 font-mono">Alto Max (px)</label>
-                                <input
-                                    type="number"
-                                    min="100"
-                                    max="4096"
-                                    step="100"
-                                    value={options.maxHeight}
-                                    onChange={(e) => setOptions({ ...options, maxHeight: parseInt(e.target.value) || 1080 })}
-                                    className="w-full bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 text-sm text-white font-mono focus:border-[#555] outline-none"
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* ================================================== */}
-                    {/* SECCION: COMPRESION */}
-                    {/* ================================================== */}
-                    <div className="space-y-3">
-                        <div className="flex items-center gap-2 text-[#888]">
-                            <Sliders size={14} />
-                            <span className="text-xs font-mono uppercase tracking-wider">Compresion</span>
-                        </div>
-
-                        {/* Formato de Salida */}
-                        <div>
-                            <label className="block text-xs text-[#666] mb-1.5 font-mono">Formato de Salida</label>
-                            <select
-                                value={options.outputFormat}
-                                onChange={(e) => setOptions({ ...options, outputFormat: e.target.value as OutputFormat })}
-                                className="w-full bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 text-sm text-white font-mono focus:border-[#555] outline-none"
-                            >
-                                <option value="original">Original</option>
-                                <option value="jpeg">JPEG (Recomendado)</option>
-                                <option value="png">PNG</option>
-                                <option value="webp">WEBP (Mejor compresion)</option>
-                            </select>
-                        </div>
-
-                        {/* Calidad */}
-                        <div>
-                            <label className="block text-xs text-[#666] mb-1.5 font-mono">
-                                Calidad: {Math.round(options.quality * 100)}%
-                            </label>
-                            <input
-                                type="range"
-                                min="0.1"
-                                max="1"
-                                step="0.05"
-                                value={options.quality}
-                                onChange={(e) => setOptions({ ...options, quality: parseFloat(e.target.value) })}
-                                className="w-full accent-green-500 h-2"
-                            />
-                            <div className="flex justify-between text-[10px] text-[#555] font-mono mt-1">
-                                <span>Menor peso</span>
-                                <span>Mayor calidad</span>
-                            </div>
-                        </div>
-
-                        {/* Tamano Maximo */}
-                        <div>
-                            <label className="block text-xs text-[#666] mb-1.5 font-mono">Peso Maximo (MB)</label>
-                            <input
-                                type="number"
-                                min="0.1"
-                                max="10"
-                                step="0.1"
-                                value={options.maxSizeMB}
-                                onChange={(e) => setOptions({ ...options, maxSizeMB: parseFloat(e.target.value) || 1 })}
-                                className="w-full bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 text-sm text-white font-mono focus:border-[#555] outline-none"
-                            />
-                        </div>
-                    </div>
-
-                    {/* ================================================== */}
-                    {/* SECCION: RENOMBRADO */}
-                    {/* ================================================== */}
-                    <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-[#888]">
-                                <Type size={14} />
-                                <span className="text-xs font-mono uppercase tracking-wider">Renombrado</span>
-                            </div>
-                            <label className="relative inline-flex items-center cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    checked={renameOptions.enabled}
-                                    onChange={(e) => setRenameOptions({ ...renameOptions, enabled: e.target.checked })}
-                                    className="sr-only peer"
-                                />
-                                <div className="w-8 h-4 bg-[#333] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-green-600"></div>
-                            </label>
-                        </div>
-
-                        {renameOptions.enabled && (
-                            <div className="space-y-2">
-                                <div>
-                                    <label className="block text-xs text-[#666] mb-1.5 font-mono">Prefijo</label>
-                                    <input
-                                        type="text"
-                                        value={renameOptions.prefix}
-                                        onChange={(e) => setRenameOptions({ ...renameOptions, prefix: e.target.value })}
-                                        placeholder="foto"
-                                        className="w-full bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 text-sm text-white font-mono focus:border-[#555] outline-none"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs text-[#666] mb-1.5 font-mono">Iniciar en</label>
-                                    <input
-                                        type="number"
-                                        min="0"
-                                        max="9999"
-                                        value={renameOptions.startAt}
-                                        onChange={(e) => setRenameOptions({ ...renameOptions, startAt: Math.max(0, parseInt(e.target.value) || 0) })}
-                                        className="w-full bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 text-sm text-white font-mono focus:border-[#555] outline-none"
-                                    />
-                                </div>
-                                <div className="bg-[#111] border border-[#222] rounded px-3 py-2">
-                                    <p className="text-[10px] text-[#555] font-mono mb-1">Vista previa:</p>
-                                    <p className="text-[11px] text-green-500 font-mono truncate">
-                                        {[0, 1, 2].map(i => getRenamedFilename(
-                                            i, Math.max(images.length, 3),
-                                            renameOptions.prefix.trim() || 'foto',
-                                            renameOptions.startAt,
-                                            options.outputFormat,
-                                            'ejemplo.jpg'
-                                        )).join(', ')}
-                                    </p>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Boton Reset */}
-                    <button
-                        onClick={handleResetOptions}
-                        className="w-full flex items-center justify-center gap-2 px-3 py-2 border border-dashed border-[#333] text-[#666] hover:text-white hover:border-[#555] rounded text-xs font-mono transition-colors"
-                    >
-                        <RotateCcw size={12} />
-                        Restaurar Valores
-                    </button>
-
-                    {/* ================================================== */}
-                    {/* ESTADISTICAS */}
-                    {/* ================================================== */}
-                    {images.length > 0 && (
-                        <div className="space-y-3 pt-2 border-t border-[#222]">
-                            <div className="flex items-center gap-2 text-[#888]">
-                                <ImageIcon size={14} />
-                                <span className="text-xs font-mono uppercase tracking-wider">Estadisticas</span>
-                            </div>
-
-                            <div className="bg-[#111] border border-[#222] rounded-lg p-3 space-y-2">
-                                <div className="flex justify-between text-xs font-mono">
-                                    <span className="text-[#666]">Imagenes</span>
-                                    <span className="text-white">{images.length}</span>
-                                </div>
-                                <div className="flex justify-between text-xs font-mono">
-                                    <span className="text-[#666]">Procesadas</span>
-                                    <span className="text-green-500">{stats.processedCount}</span>
-                                </div>
-                                <div className="flex justify-between text-xs font-mono">
-                                    <span className="text-[#666]">Original</span>
-                                    <span className="text-white">{formatBytes(stats.totalOriginalSize)}</span>
-                                </div>
-                                <div className="flex justify-between text-xs font-mono">
-                                    <span className="text-[#666]">Comprimido</span>
-                                    <span className="text-white">{formatBytes(stats.totalCompressedSize)}</span>
-                                </div>
-                                <div className="border-t border-[#222] pt-2 flex justify-between text-xs font-mono">
-                                    <span className="text-[#666]">Ahorro</span>
-                                    <span className="text-green-500 font-bold">{stats.percentageSaved.toFixed(1)}%</span>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* ================================================== */}
-                {/* FOOTER: BOTONES DE ACCION */}
-                {/* ================================================== */}
-                <div className="p-4 border-t border-[#333] space-y-2">
-                    <button
-                        onClick={handleCompress}
-                        disabled={isProcessing || pendingCount === 0}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-green-600 hover:bg-green-700 disabled:bg-[#222] disabled:text-[#555] text-white rounded font-mono text-sm transition-colors disabled:cursor-not-allowed"
-                    >
-                        {isProcessing ? (
-                            <>
-                                <Loader2 size={16} className="animate-spin" />
-                                Procesando...
-                            </>
-                        ) : (
-                            <>
-                                <ImageIcon size={16} />
-                                Comprimir ({pendingCount})
-                            </>
-                        )}
-                    </button>
-
-                    {completedCount > 0 && (
-                        <button
-                            onClick={handleDownloadAll}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-[#1a1a1a] hover:bg-[#222] border border-[#333] text-white rounded font-mono text-sm transition-colors"
-                        >
-                            <FileDown size={16} />
-                            Descargar Todo ({completedCount})
-                        </button>
-                    )}
-
-                    {images.length > 0 && (
-                        <button
-                            onClick={handleClearAll}
-                            disabled={isProcessing}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-2 border border-red-500/30 text-red-500/80 hover:text-red-500 hover:border-red-500/50 hover:bg-red-500/5 disabled:opacity-50 rounded font-mono text-xs transition-colors"
-                        >
-                            <Trash2 size={14} />
-                            Limpiar Todo
-                        </button>
-                    )}
-                </div>
-            </aside>
-
-            {/* ============================================================ */}
-            {/* AREA PRINCIPAL (DERECHA) */}
-            {/* ============================================================ */}
-            <main className="flex-1 flex flex-col h-screen overflow-hidden">
-                {/* Drop Zone */}
-                <div className="p-6 pb-4">
-                    <div
-                        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${isDragActive
-                            ? 'border-green-500 bg-green-500/10'
-                            : 'border-[#333] hover:border-[#444]'
-                            }`}
-                        onDragEnter={handleDrag}
-                        onDragLeave={handleDrag}
-                        onDragOver={handleDrag}
-                        onDrop={handleDrop}
-                    >
-                        <input
-                            type="file"
-                            id="imageInput"
-                            multiple
-                            accept="image/jpeg,image/png,image/webp"
-                            onChange={handleFileInput}
-                            className="hidden"
-                        />
-                        <label htmlFor="imageInput" className="cursor-pointer">
-                            <div className="flex flex-col items-center gap-3">
-                                <div className={`p-3 rounded-full ${isDragActive ? 'bg-green-500/20' : 'bg-[#1a1a1a]'}`}>
-                                    <Upload size={32} className={isDragActive ? 'text-green-500' : 'text-[#444]'} />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-mono text-white mb-1">
-                                        Arrastra imagenes o haz clic para seleccionar
-                                    </p>
-                                    <p className="text-xs text-[#555] font-mono">
-                                        JPG, PNG, WEBP (No GIFs)
-                                    </p>
-                                </div>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-
-                {/* Grid de Imagenes */}
-                <div className="flex-1 overflow-y-auto px-6 pb-6">
-                    {images.length > 0 ? (
-                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
-                            {images.map((img) => (
-                                <div
-                                    key={img.id}
-                                    className="bg-[#111] border border-[#222] rounded-lg overflow-hidden group relative"
-                                >
-                                    {/* Preview */}
-                                    <div className="aspect-square relative">
-                                        <img
-                                            src={img.preview}
-                                            alt={img.originalName}
-                                            className="w-full h-full object-cover"
+                <div className="flex h-full w-full flex-col gap-3 overflow-hidden">
+                    <section className="relative shrink-0 overflow-hidden rounded-[14px] border border-white/[0.06] bg-[#0A0A0C] px-5 py-3 shadow-sm">
+                        <div className="flex flex-wrap items-center gap-3 xl:flex-nowrap">
+                            <div className="flex min-w-0 flex-1 items-center gap-4 overflow-hidden">
+                                <h1 className="shrink-0 font-[DotGothic16] text-2xl uppercase tracking-[0.16em] text-white">Image Optimizer</h1>
+                                <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto no-scrollbar">
+                                    {IMAGE_OPTIMIZER_PRESETS.map((preset) => (
+                                        <PillPreset
+                                            key={preset.id}
+                                            label={preset.label}
+                                            accentClassName={preset.accentClassName}
+                                            active={activePresetId === preset.id}
+                                            onClick={() => handleApplyGlobalPreset(preset.id as PresetId)}
                                         />
-
-                                        {/* Status Overlay */}
-                                        {img.status === 'processing' && (
-                                            <div className="absolute inset-0 bg-black/70 flex items-center justify-center">
-                                                <Loader2 size={24} className="text-green-500 animate-spin" />
-                                            </div>
-                                        )}
-
-                                        {img.status === 'completed' && (
-                                            <div className="absolute top-2 right-2">
-                                                <CheckCircle size={18} className="text-green-500" />
-                                            </div>
-                                        )}
-
-                                        {img.status === 'error' && (
-                                            <div className="absolute inset-0 bg-red-500/20 flex items-center justify-center">
-                                                <AlertCircle size={24} className="text-red-500" />
-                                            </div>
-                                        )}
-
-                                        {/* Remove Button */}
-                                        <button
-                                            onClick={() => handleRemoveImage(img.id)}
-                                            className="absolute top-2 left-2 p-1 bg-black/70 rounded opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-500"
-                                        >
-                                            <X size={12} />
-                                        </button>
-
-                                        {/* Preview/Edit Crop Button - Solo si hay ratio diferente a original y la imagen esta pendiente */}
-                                        {options.aspectRatio !== 'original' && img.status === 'pending' && (
-                                            <button
-                                                onClick={() => setPreviewImage(img)}
-                                                className={`absolute bottom-2 right-2 p-1.5 rounded transition-opacity flex items-center gap-1 ${img.customCropOffset
-                                                        ? 'bg-yellow-500/80 opacity-100 hover:bg-yellow-600'
-                                                        : 'bg-black/70 opacity-0 group-hover:opacity-100 hover:bg-green-600'
-                                                    }`}
-                                                title={img.customCropOffset ? 'Recorte personalizado - Click para editar' : 'Ajustar recorte'}
-                                            >
-                                                <Crop size={12} />
-                                            </button>
-                                        )}
-
-                                        {/* Indicador de recorte personalizado */}
-                                        {img.customCropOffset && options.aspectRatio !== 'original' && img.status === 'pending' && (
-                                            <div className="absolute top-2 right-2 px-1.5 py-0.5 bg-yellow-500/90 rounded text-[8px] font-mono text-black font-bold">
-                                                CUSTOM
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Info */}
-                                    <div className="p-2">
-                                        <p className="text-[10px] text-[#666] font-mono truncate mb-1" title={img.originalName}>
-                                            {img.originalName}
-                                        </p>
-
-                                        {/* Dimensiones originales */}
-                                        {img.originalWidth && img.originalHeight && (
-                                            <p className="text-[9px] text-[#444] font-mono mb-1">
-                                                {img.originalWidth}x{img.originalHeight}
-                                                {img.finalWidth && img.finalHeight && img.status === 'completed' && (
-                                                    <span className="text-green-500/70"> â†’ {img.finalWidth}x{img.finalHeight}</span>
-                                                )}
-                                            </p>
-                                        )}
-
-                                        <div className="flex justify-between text-[10px] font-mono">
-                                            <span className="text-[#555]">{formatBytes(img.originalSize)}</span>
-                                            {img.status === 'completed' && img.compressedSize && (
-                                                <span className="text-green-500">
-                                                    {formatBytes(img.compressedSize)}
-                                                    <span className="ml-1 text-[#444]">
-                                                        (-{Math.round((1 - img.compressedSize / img.originalSize) * 100)}%)
-                                                    </span>
-                                                </span>
-                                            )}
-                                        </div>
-
-                                        {img.status === 'error' && (
-                                            <p className="text-[9px] text-red-500 mt-1 truncate">{img.error}</p>
-                                        )}
-
-                                        {img.status === 'completed' && (
-                                            <button
-                                                onClick={() => handleDownloadSingle(img)}
-                                                className="w-full mt-2 flex items-center justify-center gap-1 px-2 py-1.5 bg-[#1a1a1a] hover:bg-[#222] border border-[#333] rounded text-[10px] font-mono transition-colors"
-                                            >
-                                                <Download size={10} />
-                                                Descargar
-                                            </button>
-                                        )}
-                                    </div>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center h-full text-center">
-                            <ImageIcon size={56} className="text-[#222] mb-4" />
-                            <p className="text-[#444] font-mono text-sm">
-                                No hay imagenes cargadas
-                            </p>
-                            <p className="text-[#333] font-mono text-xs mt-1">
-                                Arrastra archivos o usa el area de arriba
-                            </p>
-                        </div>
-                    )}
-                </div>
-            </main>
+                            </div>
+                            <div className="flex w-full flex-wrap items-center justify-end gap-2 xl:w-auto xl:flex-nowrap">
+                                <button
+                                    onClick={() => handleProcessScope(activeScope)}
+                                    disabled={isProcessing || stats.includedCount === 0}
+                                    className="inline-flex items-center gap-2 rounded-full border border-white px-4 py-2 text-[10px] font-mono uppercase tracking-[0.15em] text-white transition-all hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:border-white/[0.08] disabled:bg-[#1e1e22] disabled:text-zinc-400"
+                                >
+                                    {isProcessing ? <Loader2 size={13} className="animate-spin" /> : <Sparkles size={13} />}
+                                    {primaryActionLabel}
+                                </button>
+                                <button
+                                    onClick={() => downloadItems(downloadableItems)}
+                                    disabled={isProcessing || downloadableItems.length === 0}
+                                    className="inline-flex items-center gap-2 rounded-full border border-emerald-500/35 bg-emerald-500/10 px-4 py-2 text-[10px] font-mono uppercase tracking-[0.15em] text-emerald-300 transition-colors hover:border-emerald-500/55 hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:border-white/[0.08] disabled:bg-white/[0.02] disabled:text-zinc-600"
+                                >
+                                    <FileDown size={13} />
+                                    Descargar
+                                </button>
+                                <button
+                                    onClick={handleClearAll}
+                                    disabled={isProcessing || items.length === 0}
+                                    className="inline-flex items-center gap-2 rounded-full border border-white/[0.10] px-4 py-2 text-[10px] font-mono uppercase tracking-[0.15em] text-zinc-400 transition-colors hover:border-red-500/30 hover:text-red-400 disabled:cursor-not-allowed disabled:border-white/[0.06] disabled:text-zinc-700"
+                                >
+                                    <Trash2 size={13} />
+                                    Limpiar
+                                </button>
+                                <div
+                                    className={`group relative flex min-w-[12rem] cursor-pointer items-center gap-2 rounded-full border px-4 py-2 transition-colors duration-200 ${isDragActive
+                                        ? 'border-primary-500/40 bg-primary-500/8'
+                                        : 'border-dashed border-white/[0.08] bg-white/[0.02] hover:border-white/[0.14] hover:bg-white/[0.04]'
+                                        }`}
+                                    onDragEnter={handleDrag}
+                                    onDragLeave={handleDrag}
+                                    onDragOver={handleDrag}
+                                    onDrop={handleDrop}
+                                    onClick={() => fileInputRef.current?.click()}
+                                    role="button"
+                                    tabIndex={0}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' || e.key === ' ') {
+                                            fileInputRef.current?.click();
+                                        }
+                                    }}
+                                >
+                                    <input ref={fileInputRef} type="file" multiple accept="image/jpeg,image/png,image/webp" onChange={handleFileInput} className="hidden" />
+                                    <Upload size={12} className={`shrink-0 transition-colors ${isDragActive ? 'text-primary-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+                                    <span className="flex-1 text-[10px] font-mono uppercase tracking-widest text-zinc-500 transition-colors group-hover:text-zinc-300">
+                                        {isDragActive ? 'Suelta aqui' : 'Agregar imagenes'}
+                                    </span>
+                                    <span className="hidden text-[9px] font-mono tracking-wider text-zinc-700 sm:inline">JPG · PNG · WEBP</span>
+                                </div>
 
-            {/* Modal Editor de Recorte Interactivo */}
-            {previewImage && options.aspectRatio !== 'original' && (
-                <CropEditor
-                    image={previewImage}
-                    aspectRatio={options.aspectRatio}
-                    onClose={() => setPreviewImage(null)}
-                    onSave={handleSaveCropOffset}
-                />
-            )}
-        </div>
-        </DashboardLayout>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div className="grid flex-1 min-h-0 gap-3 pb-2 xl:grid-cols-[240px_minmax(0,1fr)_280px]">
+                        <SettingsPanel
+                            settings={settings}
+                            previewNames={previewNames}
+                            activeItem={activeItem}
+                            renameOnlyMode={renameOnlyMode}
+                            onUpdateSettings={updateSettings}
+                            onOpenCropEditor={(id?: string) => {
+                                const targetId = id ?? activeItem?.id;
+                                if (targetId) setCropEditorItemId(targetId);
+                            }}
+                        />
+
+                        <PreviewWorkspace
+                            items={items}
+                            activeItem={activeItem}
+                            activeItemSettings={activeItemSettings}
+                            activeItemOutputName={activeItemOutputName}
+                            activeItemDownloadable={activeItemDownloadable}
+                            activeIsDirect={activeIsDirect}
+                            activeCropPreview={activeCropPreview}
+                            previewTab={previewTab}
+                            processing={isProcessing}
+                            processingProgress={processingProgress}
+                            processingMessage={processingMessage}
+                            primaryActionLabel={primaryActionLabel}
+                            activeScopeLabel={activeScopeLabel}
+                            viewMode={viewMode}
+                            onChangePreviewTab={setPreviewTab}
+                            onViewModeChange={setViewMode}
+                            onSetActiveItem={setActiveItemId}
+                            onDownloadSingle={(item) => downloadItems([item])}
+                            onRemoveItem={handleRemoveItem}
+                            onOpenCropEditor={(id?: string) => {
+                                const targetId = id ?? activeItem?.id;
+                                if (targetId) setCropEditorItemId(targetId);
+                            }}
+                            onUpdateCustomFilename={(id, value) => updateItem(id, (item) => ({ ...item, overrides: { ...item.overrides, customFilename: value } }))}
+                            onUpdatePresetOverride={(id, value) => updateItem(id, (item) => ({ ...item, overrides: { ...item.overrides, presetId: value } }))}
+                            onToggleSkipCompression={(id, value) => updateItem(id, (item) => ({ ...item, overrides: { ...item.overrides, skipCompression: value } }))}
+                            onToggleExcluded={(id, value) => updateItem(id, (item) => ({ ...item, excluded: value, overrides: { ...item.overrides, excluded: value } }))}
+                            onClearPresetOverride={(id) => updateItem(id, (item) => ({ ...item, overrides: { ...item.overrides, presetId: null } }))}
+                        />
+
+                        <QueuePanel
+                            items={items}
+                            settings={settings}
+                            activeItemId={activeItemId}
+                            selectedCount={selectedCount}
+                            includedCount={stats.includedCount}
+                            activeScopeLabel={activeScopeLabel}
+                            downloadableItems={downloadableItems}
+                            onSelectAll={handleSelectAll}
+                            onClearSelection={handleClearSelection}
+                            onApplyPresetToSelection={handleApplyPresetToSelection}
+                            onReprocessSelected={handleReprocessSelected}
+                            onToggleExcludeSelected={handleToggleExcludeSelected}
+                            onRemoveSelected={handleRemoveSelected}
+                            onToggleSelection={(id) => updateItem(id, (item) => ({ ...item, selected: !item.selected }))}
+                            onSetActiveItem={setActiveItemId}
+                            onOpenCropEditor={setCropEditorItemId}
+                            onDownloadSingle={(item) => downloadItems([item])}
+                            onRemoveItem={handleRemoveItem}
+                            getResolvedBlob={getResolvedBlob}
+                        />
+                    </div>
+                </div>
+
+                {
+                    cropEditorItem ? (
+                        <CropEditor
+                            image={cropEditorItem}
+                            aspectRatio={resolveSettingsForItem(settings, cropEditorItem).crop.aspectRatio}
+                            onClose={() => setCropEditorItemId(null)}
+                            onSave={handleSaveCropOffset}
+                        />
+                    ) : null
+                }
+
+                {
+                    isProcessing ? (
+                        <div className="fixed bottom-6 left-1/2 z-40 flex -translate-x-1/2 items-center gap-3 rounded-full border border-neutral-800 bg-neutral-950/95 px-4 py-2 text-sm font-mono text-neutral-300 shadow-2xl backdrop-blur">
+                            <Loader2 size={16} className="animate-spin" />
+                            {processingMessage || `Procesando ${processableItems.length} imagen(es)`}
+                        </div>
+                    ) : null
+                }
+            </div >
+        </DashboardLayout >
     );
 }
+
 
 
