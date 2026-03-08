@@ -56,7 +56,7 @@ export function LayersPanel({
                     <Layers size={18} className="text-neutral-300" />
                 </div>
                 <p className="text-sm text-neutral-400">No hay capas</p>
-                <p className="text-xs text-neutral-300 mt-0.5">AÃ±ade elementos desde la paleta</p>
+                <p className="text-xs text-neutral-300 mt-0.5">Añade elementos desde la paleta</p>
             </div>
         );
     }
