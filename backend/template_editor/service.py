@@ -511,8 +511,8 @@ class SupabaseTemplateStore:
             try:
                 if _has_canvas_layout(template_json):
                     return _compile_canvas_template(template_json)
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"[service] Warning: canvas template compilation failed, falling back to compiled_html: {e}")
         return compiled_html or None
 
     def update_template(

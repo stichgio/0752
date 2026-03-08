@@ -388,8 +388,8 @@ class ReportService:
                     if gps[piexif.GPSIFD.GPSLatitudeRef] == b'S': lat = -lat
                     if gps[piexif.GPSIFD.GPSLongitudeRef] == b'W': lon = -lon
                     metadata["coords"] = f"{lat:.6f}, {lon:.6f}"
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[report_service] Warning: could not extract EXIF from file path: {e}")
         return metadata
 
     @staticmethod
@@ -411,8 +411,8 @@ class ReportService:
                     if gps.get(piexif.GPSIFD.GPSLongitudeRef) == b'W':
                         lon = -lon
                     metadata["coords"] = f"{lat:.6f}, {lon:.6f}"
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[report_service] Warning: could not extract EXIF from image bytes: {e}")
         return metadata
 
     @staticmethod
@@ -1127,8 +1127,8 @@ class ReportService:
             if final_writer is not None:
                 try:
                     final_writer.close()
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"[report_service] Warning: could not close PDF writer: {e}")
             if not completed and final_output_path is not None:
                 try:
                     if os.path.exists(final_output_path):

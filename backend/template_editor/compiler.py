@@ -2055,8 +2055,8 @@ def compile_canvas_to_html(canvas_doc: dict, variables: Optional[dict] = None) -
                 try:
                     from .utils import url_to_base64
                     safe_img = url_to_base64(safe_img)
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"[compiler] Warning: could not convert logo img url to base64: {e}")
 
             if variables:
                 # If variables are provided, we are generating final PDF output. Use the variable!
@@ -2066,8 +2066,8 @@ def compile_canvas_to_html(canvas_doc: dict, variables: Optional[dict] = None) -
                     try:
                         from .utils import url_to_base64
                         src = url_to_base64(src)
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        print(f"[compiler] Warning: could not convert logo variable url to base64: {e}")
                 content_html = f'<img src="{src}" style="{img_style_logo}">' if src else ''
             else:
                 # We are generating PREVIEW HTML to be processed by Jinja in `render_template_endpoint`
@@ -2091,7 +2091,7 @@ def compile_canvas_to_html(canvas_doc: dict, variables: Optional[dict] = None) -
             table_data = el.get("tableData", meta.get("tableData", {}))
             data_matrix = table_data.get("data", [])
             row_count = table_data.get("rowCount", len(data_matrix))
-            col_count = table_data.get("colCount", len(data_matrix[0]) if data_matrix else 2)
+            col_count = table_data.get("colCount", len(data_matrix[0]) if data_matrix and isinstance(data_matrix[0], (list, tuple)) else 2)
             border_col = table_data.get("borderColor", "#cbd5e1")
             tbl = f'<table style="width:100%; height:100%; border-collapse:collapse; font-size: 7.5pt; table-layout:fixed;"><tbody>'
             for r in range(row_count):
@@ -2187,8 +2187,8 @@ def compile_canvas_to_html(canvas_doc: dict, variables: Optional[dict] = None) -
         from jinja2.sandbox import SandboxedEnvironment
         try:
             html = SandboxedEnvironment(autoescape=True).from_string(html).render(**variables)
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[compiler] Warning: Jinja template rendering failed: {e}")
 
     # VALIDACIONES ANTES DEL PDF
     # 1) Verificar que el HTML tiene contenido:
@@ -2203,7 +2203,8 @@ def compile_canvas_to_html(canvas_doc: dict, variables: Optional[dict] = None) -
         try:
             from .utils import url_to_base64
             return f'src="{url_to_base64(url)}"'
-        except:
+        except Exception as e:
+            print(f"[compiler] Warning: could not convert image src to base64: {e}")
             return match.group(0)
     html = re.sub(r'src="(https?://[^"]+)"', replace_src, html)
 
