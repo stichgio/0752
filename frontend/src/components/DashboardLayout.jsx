@@ -136,17 +136,6 @@ const DashboardLayout = ({ children }) => {
                 </aside>
 
                 <div style={{ viewTransitionName: 'dashboard-content' }} className="flex-1 flex flex-col h-full overflow-hidden bg-neutral-950 relative">
-                    <header className="h-14 min-h-[3.5rem] bg-neutral-950/80 backdrop-blur-md border-b border-neutral-800 flex items-center justify-between px-6 sticky top-0 z-40">
-                        <div className="flex items-center gap-4">
-                        </div>
-
-                        <div className="flex items-center gap-4">
-                            <div className="w-8 h-8 rounded-full bg-neutral-900 border border-neutral-800 flex items-center justify-center text-xs font-bold text-white">
-                                OP
-                            </div>
-                        </div>
-                    </header>
-
                     <main className="flex-1 overflow-auto relative bg-[radial-gradient(#1a1a1a_1px,transparent_1px)] [background-size:20px_20px]">
                         <div className="absolute inset-0 bg-neutral-950/50 pointer-events-none"></div>
                         <div className="relative z-10 w-full h-full">
