@@ -50,6 +50,19 @@ RUN chmod -R 755 $HOME/app/data
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Pre-download RapidOCR ONNX models during build to avoid runtime downloads
+# (HF Spaces containers may have DNS restrictions that block huggingface.co at startup)
+RUN python -c "\
+from rapidocr_onnxruntime import RapidOCR; \
+import numpy as np; \
+from PIL import Image; \
+import io; \
+engine = RapidOCR(); \
+img = np.zeros((32, 200, 3), dtype=np.uint8); \
+engine(img); \
+print('RapidOCR models pre-downloaded successfully')" \
+  || echo "Warning: RapidOCR pre-download failed; models will be fetched at first use"
+
 # Expose the API port (Hugging Face Spaces uses 7860)
 EXPOSE 7860
 
