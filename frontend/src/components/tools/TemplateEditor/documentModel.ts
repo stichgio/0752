@@ -128,7 +128,7 @@ export function ensureCanvasDocument(doc: CanvasDocument): CanvasDocument {
   const basePages = ensureDocumentPages(doc);
   const pages = basePages.map((page, index) => ({
     id: page?.id || `page-${index + 1}`,
-    name: safeLabel(page?.name || '', `PÃ¡gina ${index + 1}`),
+    name: safeLabel(page?.name || '', `Página ${index + 1}`),
     elementIds: Array.isArray(page?.elementIds) ? page.elementIds.filter(Boolean) : [],
     thumbnail: typeof page?.thumbnail === 'string' ? page.thumbnail : undefined,
   }));
@@ -249,7 +249,7 @@ export function createPage(doc: CanvasDocument, name?: string): CanvasDocument {
   const index = (normalized.pages?.length || 0) + 1;
   const page: CanvasPage = {
     id: `page-${generateId()}`,
-    name: safeLabel(name || '', `PÃ¡gina ${index}`),
+    name: safeLabel(name || '', `Página ${index}`),
     elementIds: [],
   };
   return ensureCanvasDocument({
@@ -707,7 +707,7 @@ export function validateCanvasDocument(doc: CanvasDocument): TemplateValidationI
       issues.push({
         level: 'warning',
         code: 'PAGE_EMPTY',
-        message: `La pÃ¡gina "${page.name}" estÃ¡ vacÃ­a`,
+        message: `La página "${page.name}" está vacía`,
         path: `pages[${index}]`,
       });
     }
@@ -718,7 +718,7 @@ export function validateCanvasDocument(doc: CanvasDocument): TemplateValidationI
       issues.push({
         level: 'error',
         code: 'PAGE_ORPHAN_ELEMENT',
-        message: `El elemento "${element.name}" no pertenece a una pÃ¡gina vÃ¡lida`,
+        message: `El elemento "${element.name}" no pertenece a una página válida`,
         path: `elements.${element.id}.pageId`,
       });
     }
@@ -729,7 +729,7 @@ export function validateCanvasDocument(doc: CanvasDocument): TemplateValidationI
       issues.push({
         level: 'warning',
         code: 'ELEMENT_OUT_OF_BOUNDS',
-        message: `El elemento "${element.name}" excede los lÃ­mites de la pÃ¡gina`,
+        message: `El elemento "${element.name}" excede los límites de la página`,
         path: `elements.${element.id}`,
       });
     }

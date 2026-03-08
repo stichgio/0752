@@ -41,7 +41,7 @@ export default function TechnicalReports() {
     };
 
     const handleReportSelect = async (reportId: string) => {
-        if (hasUnsavedChanges && !window.confirm('Â¿Guardar cambios?')) return;
+        if (hasUnsavedChanges && !window.confirm('¿Guardar cambios?')) return;
         if (hasUnsavedChanges) await handleSaveChanges();
 
         try {
@@ -86,7 +86,7 @@ export default function TechnicalReports() {
     };
 
     const handleClearAllReports = async () => {
-        if (window.confirm('Â¿ESTÃ SEGURO? \n\nEsto eliminarÃ¡ TODOS los informes de la base de datos permanentemente.\nEsta acciÃ³n no se puede deshacer.')) {
+        if (window.confirm('¿ESTÁ SEGURO? \n\nEsto eliminará TODOS los informes de la base de datos permanentemente.\nEsta acción no se puede deshacer.')) {
             await run(async () => {
                 await technicalReportsApi.deleteAllReports();
                 await loadReports();
@@ -138,7 +138,7 @@ export default function TechnicalReports() {
         }
 
         const confirmed = window.confirm(
-            `Â¿Desea generar un PDF consolidado con los ${reports.length} informes?\n\nEsto puede tomar varios minutos dependiendo de la cantidad de informes.`
+            `¿Desea generar un PDF consolidado con los ${reports.length} informes?\n\nEsto puede tomar varios minutos dependiendo de la cantidad de informes.`
         );
         if (!confirmed) return;
 
@@ -194,7 +194,7 @@ export default function TechnicalReports() {
                             <ChevronLeft size={24} />
                         </Link>
                         <h1 className="text-2xl font-bold font-mono tracking-wide text-[#eee] uppercase">
-                            Generador de Informes TÃ©cnicos
+                            Generador de Informes Técnicos
                         </h1>
                     </div>
                     <div className="flex items-center gap-4">

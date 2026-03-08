@@ -139,7 +139,7 @@ class FakeSupabaseTemplateClient:
     def insert_template_version(self, payload):
         existing = self.get_template_version(payload["template_id"], payload["version_number"])
         if existing:
-            raise RuntimeError("La clave duplicada viola la restricciÃƒÂ³n de unicidad")
+            raise RuntimeError("La clave duplicada viola la restricción de unicidad")
         self.template_versions.append(self._copy(payload))
         return self._copy(payload)
 

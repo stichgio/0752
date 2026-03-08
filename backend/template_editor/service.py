@@ -652,7 +652,7 @@ class SupabaseTemplateStore:
         else:
             version_to_restore = int(target_version)
             if version_to_restore not in available_versions:
-                raise ValueError("VersiÃƒÂ³n objetivo no encontrada")
+                raise ValueError("Versión objetivo no encontrada")
 
         updated_row = self.client.update_template(
             template_id,
@@ -674,7 +674,7 @@ class SupabaseTemplateStore:
     def set_template_status(self, template_id: str, status: str, author: str) -> TemplateEditorRecord:
         normalized_status = str(status or "").lower()
         if normalized_status not in ALLOWED_TEMPLATE_STATUS:
-            raise ValueError("Estado invÃƒÂ¡lido")
+            raise ValueError("Estado inválido")
         if normalized_status == "published":
             return self.publish_template(template_id, author)
         row = self.client.get_template(template_id)
@@ -756,7 +756,7 @@ class InMemoryTemplateClient:
     def insert_template_version(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         existing = self.get_template_version(str(payload.get("template_id")), int(payload.get("version_number") or 0))
         if existing:
-            raise RuntimeError("La clave duplicada viola la restricciÃƒÂ³n de unicidad")
+            raise RuntimeError("La clave duplicada viola la restricción de unicidad")
         self.template_versions.append(self._copy(payload))
         return self._copy(payload)
 
