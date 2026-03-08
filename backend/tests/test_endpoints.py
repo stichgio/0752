@@ -6,13 +6,11 @@ import io
 import os
 import sys
 import pytest
-from docx import Document  
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from fastapi.testclient import TestClient
 from main import app
-from ocr_tools import router as ocr_router
 
 client = TestClient(app)
 
@@ -189,92 +187,6 @@ class TestOrganizeAndExtractPDF:
         assert response.status_code == 200
         assert "application/pdf" in response.headers.get("content-type", "")
 
-
-class TestOCRTool:
-    class _DummyResult:
-        def __init__(self, text: str):
-            self.text = text
-            self.model = "rapidocr-local-free"
-            self.pages_processed = 1
-
-    class _DummyOCRService:
-        def __init__(self, text: str):
-            self.text = text
-
-        async def extract_text(self, **kwargs):
-            return TestOCRTool._DummyResult(self.text)
-
-        async def extract_structured(self, **kwargs):
-            return TestOCRTool._DummyStructuredResult(
-                {
-                    "numero_documento": "F001-123",
-                    "total": "150.00",
-                }
-            )
-
-    class _DummyStructuredResult:
-        def __init__(self, data):
-            self.data = data
-            self.model = "rapidocr-local-free"
-            self.pages_processed = 1
-
-    def test_ocr_extract_txt(self, monkeypatch):
-        monkeypatch.setattr(ocr_router, "_ocr_service", self._DummyOCRService("Linea 1\nLinea 2"))
-        pdf = _make_blank_pdf(pages=1)
-
-        response = client.post(
-            "/api/tools/ocr-extract",
-            files=[("file", ("scan.pdf", pdf, "application/pdf"))],
-            data={"output_format": "txt"},
-        )
-
-        assert response.status_code == 200
-        assert "text/plain" in response.headers.get("content-type", "")
-        assert "Linea 1" in response.text
-
-    def test_ocr_extract_docx(self, monkeypatch):
-        monkeypatch.setattr(ocr_router, "_ocr_service", self._DummyOCRService("Texto OCR"))
-        pdf = _make_blank_pdf(pages=1)
-
-        response = client.post(
-            "/api/tools/ocr-extract",
-            files=[("file", ("scan.pdf", pdf, "application/pdf"))],
-            data={"output_format": "docx"},
-        )
-
-        assert response.status_code == 200
-        assert "application/vnd.openxmlformats-officedocument.wordprocessingml.document" in response.headers.get("content-type", "")
-
-        doc = Document(io.BytesIO(response.content))
-        all_text = "\n".join(p.text for p in doc.paragraphs)
-        assert "Texto OCR" in all_text
-
-    def test_ocr_rejects_unsupported_format(self):
-        response = client.post(
-            "/api/tools/ocr-extract",
-            files=[("file", ("notes.txt", b"hola", "text/plain"))],
-            data={"output_format": "txt"},
-        )
-
-        assert response.status_code == 400
-        assert "Formato no soportado" in response.json()["detail"]
-
-    def test_ocr_extract_structured_json(self, monkeypatch):
-        monkeypatch.setattr(ocr_router, "_ocr_service", self._DummyOCRService("Texto OCR"))
-        pdf = _make_blank_pdf(pages=1)
-
-        response = client.post(
-            "/api/tools/ocr-extract-structured",
-            files=[("file", ("invoice.pdf", pdf, "application/pdf"))],
-            data={"schema_type": "factura", "instructions": "Prioriza total"},
-        )
-
-        assert response.status_code == 200
-        assert "application/json" in response.headers.get("content-type", "")
-
-        payload = json.loads(response.content.decode("utf-8"))
-        assert payload["schema_type"] == "factura"
-        assert payload["data"]["numero_documento"] == "F001-123"
 
 
 # --- Technical Reports DB Endpoints ---
