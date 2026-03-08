@@ -94,7 +94,7 @@ export default function PreviewWorkspace({
                                         onViewModeChange('single');
                                     }}
                                 >
-                                    <div className="relative aspect-[4/3] w-full overflow-hidden bg-zinc-900">
+                                    <div className="relative aspect-[3/4] w-full overflow-hidden bg-zinc-900">
                                         {thumb ? (
                                             <img src={thumb} alt={item.originalName} className="h-full w-full object-cover" />
                                         ) : (
