@@ -2097,7 +2097,8 @@ def compile_canvas_to_html(canvas_doc: dict, variables: Optional[dict] = None) -
             for r in range(row_count):
                 tbl += "<tr>"
                 for c in range(col_count):
-                    val = data_matrix[r][c] if r < len(data_matrix) and c < len(data_matrix[r]) else ""
+                    row_data = data_matrix[r] if r < len(data_matrix) else None
+                    val = row_data[c] if isinstance(row_data, (list, tuple)) and c < len(row_data) else ""
                     tbl += f'<td style="border: 1px solid {border_col}; padding: 1.5mm;">{val}</td>'
                 tbl += "</tr>"
             tbl += "</tbody></table>"
@@ -2112,7 +2113,8 @@ def compile_canvas_to_html(canvas_doc: dict, variables: Optional[dict] = None) -
                     safe_url = url_to_base64(img_url)
                     img_style_local = f"display: block; width: 100%; height: 100%; max-width: {w}mm; max-height: {h}mm; object-fit: contain;"
                     content_html = f'<img src="{safe_url}" style="{img_style_local}">'
-                except: pass
+                except Exception as e:
+                    print(f"[compiler] Warning: failed to embed image from '{img_url}': {e}")
 
         # ------------- SIGNATURE -------------
         elif t == "signature":

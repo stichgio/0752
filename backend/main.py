@@ -402,7 +402,8 @@ def _validate_pdf_file(file: UploadFile) -> bool:
         header = file.file.read(5)
         file.file.seek(current_pos)
         return header == b"%PDF-"
-    except Exception:
+    except Exception as e:
+        print(f"[pdf_validation] Warning: could not read header for '{getattr(file, 'filename', '?')}': {e}")
         return False
 
 
