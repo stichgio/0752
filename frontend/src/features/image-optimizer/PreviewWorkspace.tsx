@@ -74,8 +74,8 @@ export default function PreviewWorkspace({
     if (viewMode === 'grid') {
         return (
             <section className="relative flex h-full flex-col overflow-hidden rounded-[14px] border border-white/[0.06] bg-[#111114] shadow-sm">
-                <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-3">
-                    <div className="grid gap-2" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))' }}>
+                <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-4">
+                    <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}>
                         {items.map((item) => {
                             const statusColor = item.excluded ? '#52525b'
                                 : item.status === 'error' ? '#ef4444'
@@ -94,7 +94,7 @@ export default function PreviewWorkspace({
                                         onViewModeChange('single');
                                     }}
                                 >
-                                    <div className="relative aspect-video w-full overflow-hidden bg-zinc-900">
+                                    <div className="relative aspect-[4/3] w-full overflow-hidden bg-zinc-900">
                                         {thumb ? (
                                             <img src={thumb} alt={item.originalName} className="h-full w-full object-cover" />
                                         ) : (
