@@ -15,7 +15,7 @@ import { usePdfDocument } from '../hooks/usePdfDocument';
 import { useUndoRedo } from '../hooks/useUndoRedo';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import { organizePdf } from '../api/pdfToolsApi';
-import { downloadBlob } from '../../../../utils/downloadBlob';
+import { downloadBlob } from '../../../utils/downloadBlob';
 
 function makeInitialState() {
     return { pages: [], cutPoints: [], selectedPages: [] };

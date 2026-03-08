@@ -1,14 +1,14 @@
 ﻿import { Navigate, Route, Routes } from 'react-router-dom';
 import App from './App.jsx';
-import DashboardLayout from './components/DashboardLayout';
-import Compressor from './components/tools/Compressor';
-import FichasTecnicas from './components/tools/FichasTecnicas';
-import ImageOptimizer from './components/tools/ImageOptimizer';
-import PdfToolsApp from './components/tools/PdfTools/PdfToolsApp';
-import TechnicalReports from './components/tools/TechnicalReports';
-import PageDocument from './routes/PageDocument';
-import MultiSheetReportPage from './routes/MultiSheetReportPage';
-import TemplateEditorPage from './routes/TemplateEditorPage';
+import DashboardLayout from './components/layout/DashboardLayout';
+import Compressor from './features/compressor';
+import FichasTecnicas from './features/fichas-tecnicas';
+import ImageOptimizer from './features/image-optimizer';
+import PdfToolsApp from './features/pdf-tools/PdfToolsApp';
+import TechnicalReports from './features/technical-reports';
+import PageDocument from './components/layout/PageDocument';
+import MultiSheetReportPage from './features/multi-sheet-report/page';
+import TemplateEditorPage from './features/template-editor/page';
 
 const legacyRoutes = [
     { path: 'index.html', to: '/' },

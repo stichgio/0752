@@ -9,7 +9,7 @@ import ActionBar from '../shared/ActionBar';
 import PdfPreviewModal from '../shared/PdfPreviewModal';
 import { usePdfDocument } from '../hooks/usePdfDocument';
 import { extractPages } from '../api/pdfToolsApi';
-import { downloadBlob } from '../../../../utils/downloadBlob';
+import { downloadBlob } from '../../../utils/downloadBlob';
 
 export default function ExtractTab() {
     const [file, setFile] = useState(null);

@@ -12,7 +12,7 @@ import {
     BookOpen,
     Scissors,
 } from 'lucide-react';
-import PomodoroTimer from './PomodoroTimer';
+import PomodoroTimer from '../PomodoroTimer';
 
 const DashboardLayoutContext = createContext(false);
 
