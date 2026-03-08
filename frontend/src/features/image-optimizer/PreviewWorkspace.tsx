@@ -75,7 +75,7 @@ export default function PreviewWorkspace({
         return (
             <section className="relative flex h-full flex-col overflow-hidden rounded-[14px] border border-white/[0.06] bg-[#111114] shadow-sm">
                 <div className="custom-scrollbar min-h-0 flex-1 overflow-y-auto p-4">
-                    <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}>
+                    <div className="grid gap-3" style={{ gridTemplateColumns: 'repeat(6, minmax(0, 1fr))' }}>
                         {items.map((item) => {
                             const statusColor = item.excluded ? '#52525b'
                                 : item.status === 'error' ? '#ef4444'
