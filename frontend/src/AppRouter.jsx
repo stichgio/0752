@@ -4,7 +4,6 @@ import DashboardLayout from './components/DashboardLayout';
 import Compressor from './components/tools/Compressor';
 import FichasTecnicas from './components/tools/FichasTecnicas';
 import ImageOptimizer from './components/tools/ImageOptimizer';
-import OCRTool from './components/tools/OCRTool';
 import PdfToolsApp from './components/tools/PdfTools/PdfToolsApp';
 import TechnicalReports from './components/tools/TechnicalReports';
 import PageDocument from './routes/PageDocument';
@@ -13,7 +12,6 @@ import TemplateEditorPage from './routes/TemplateEditorPage';
 
 const legacyRoutes = [
     { path: 'index.html', to: '/' },
-    { path: 'ocr.html', to: '/ocr' },
     { path: 'compressor.html', to: '/compressor' },
     { path: 'fichas-tecnicas.html', to: '/fichas-tecnicas' },
     { path: 'image-optimizer.html', to: '/image-optimizer' },
@@ -40,14 +38,6 @@ export default function AppRouter() {
                     element={
                         <PageDocument title="Glitch" bodyClassName="bg-neutral-950 text-slate-50 min-h-screen">
                             <App />
-                        </PageDocument>
-                    }
-                />
-                <Route
-                    path="ocr"
-                    element={
-                        <PageDocument title="OCR - Glitch" bodyClassName="bg-neutral-950 text-neutral-200 min-h-screen">
-                            <OCRTool />
                         </PageDocument>
                     }
                 />

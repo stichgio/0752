@@ -30,7 +30,6 @@ from technical_reports.models import TechnicalReport
 from fichas_tecnicas.router import router as fichas_tecnicas_router  
 from image_optimizer.router import router as image_optimizer_router  
 from compressor.router import router as compressor_router  
-from ocr_tools.router import router as ocr_tools_router  
 from template_editor.router import router as template_editor_router  
 from msheets.multi_sheet_report import router as msheets_router      
 # Multi-Sheet Report router imported and added below for production compatibility.
@@ -509,9 +508,6 @@ app.add_middleware(
         "X-Filename",
         "X-Error",
         "Content-Disposition",
-        "X-OCR-Model",
-        "X-OCR-Pages",
-        "X-OCR-Schema",
     ],
 )
 
@@ -528,7 +524,6 @@ app.include_router(technical_reports_router)
 app.include_router(fichas_tecnicas_router)
 app.include_router(image_optimizer_router)
 app.include_router(compressor_router)
-app.include_router(ocr_tools_router)
 app.include_router(template_editor_router)
 app.include_router(msheets_router, prefix="/api/multi-sheet")
 

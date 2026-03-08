@@ -1,9 +1,8 @@
-﻿import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
     FileText,
     LayoutDashboard,
-    ScanLine,
     ChevronLeft,
     ChevronRight,
     ClipboardList,
@@ -36,12 +35,6 @@ const navItems = [
         label: 'Fichas Técnicas',
         to: '/fichas-tecnicas',
         match: (pathname) => pathname.startsWith('/fichas-tecnicas'),
-    },
-    {
-        icon: <ScanLine size={20} />,
-        label: 'OCR',
-        to: '/ocr',
-        match: (pathname) => pathname.startsWith('/ocr'),
     },
     {
         icon: <Archive size={20} />,
