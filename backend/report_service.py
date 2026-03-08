@@ -782,8 +782,8 @@ class ReportService:
                     template = self.get_template(template_name)
                     backend_template_name = os.path.basename(template_name)
                     use_single_pass_render = True
-                except Exception:
-                    print(f"Template {template_name} not found, falling back to default")
+                except Exception as e:
+                    print(f"Template {template_name} not found, falling back to default: {e}")
                     template = self.template
                     backend_template_name = "report.html"
                     use_single_pass_render = True

@@ -65,9 +65,9 @@ try:
         kwargs.setdefault("max_part_size", 50 * 1024 * 1024)  # 50 MB (was 1 MB)
         _orig_mp_init(self, headers, stream, *args, **kwargs)
 
-    _MultiPartParser.__init__ = _patched_mp_init  
-except Exception:
-    pass  # Skip silently if starlette internals change in a future version
+    _MultiPartParser.__init__ = _patched_mp_init
+except Exception as e:
+    print(f"[main] Warning: could not patch multipart size limit: {e}")  # Skip silently if starlette internals change in a future version
 # ─────────────────────────────────────────────────────────────────────────────
 
 PHOTO_GRID_HEAD_CLOSE_RE = re.compile(r"</head>", re.IGNORECASE)
@@ -803,8 +803,8 @@ async def generate_pdf_with_progress(
         if isinstance(row_data, dict) and 'valvulas' in row_data:
             validated = TechnicalReport(**row_data)
             row_data = validated.model_dump()
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[main] Warning: TechnicalReport validation failed, using raw data: {e}")
 
     async def read_logo_bytes(logo_file: Optional[UploadFile]) -> Optional[bytes]:
         if not logo_file:
