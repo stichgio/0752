@@ -306,7 +306,7 @@ def _compress_pdf_with_ghostscript(input_path, output_path=None, quality="printe
 class ReportService:
     def __init__(self, templates_dir=None):
         if templates_dir is None:
-            templates_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
+            templates_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "templates")
 
         cache_dir = os.path.join(TEMP_DIR, 'jinja2_cache')
         os.makedirs(cache_dir, exist_ok=True)
@@ -773,7 +773,7 @@ class ReportService:
             from jinja2 import Template
             template = Template(custom_template_str)
         elif template_name:
-            tech_tpl_path = os.path.join(os.path.dirname(__file__), "technical_reports", "templates", template_name)
+            tech_tpl_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "technical_reports", "templates", template_name)
             if os.path.exists(tech_tpl_path):
                 tech_env = Environment(loader=FileSystemLoader(os.path.dirname(tech_tpl_path)))
                 template = tech_env.get_template(os.path.basename(tech_tpl_path))

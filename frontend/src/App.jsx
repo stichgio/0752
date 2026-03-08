@@ -4,8 +4,8 @@ import html2canvas from 'html2canvas';
 import { downloadBlob, getFilenameFromHeaders } from './utils/downloadBlob';
 import { FileSpreadsheet, Image as ImageIcon, Printer, Settings, FileCode, CheckCircle, AlertCircle, RotateCcw, ChevronLeft, ChevronRight, Search, Table2 } from 'lucide-react';
 import PreviewPanel from './components/PreviewPanel';
-import { Step, LoadingModal } from './components/common';
-import DashboardLayout from './components/DashboardLayout';
+import { Step, LoadingModal } from './components/ui';
+import DashboardLayout from './components/layout/DashboardLayout';
 import DataPreviewTable from './components/DataPreviewTable';
 import { toast } from 'sonner';
 

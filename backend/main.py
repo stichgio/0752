@@ -21,7 +21,7 @@ import re
 import unicodedata
 from typing import Any, Dict, List, Literal, Optional, TypedDict
 from urllib.parse import quote
-from report_service import ReportService  
+from services.report_service import ReportService  
 from pdf_tools import merge_pdfs_interleaved, merge_pdfs_sequential, split_pdf, split_pdf_by_ranges, organize_pdf, extract_pages  
 from pdf_tools.utils import PDFValidationError  
 import zipfile
@@ -765,7 +765,7 @@ async def generate_single_pdf(
 # --- SSE Progress Endpoints ---
 
 from fastapi.responses import StreamingResponse  
-from progress import format_sse_event, ProgressCallback  
+from core.progress import format_sse_event, ProgressCallback  
 
 
 @api_router.post("/generate-pdf-progress")

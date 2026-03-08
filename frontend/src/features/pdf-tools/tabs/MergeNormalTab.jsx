@@ -6,7 +6,7 @@ import PdfDropzone from '../shared/PdfDropzone';
 import FileListItem from '../shared/FileListItem';
 import ActionBar from '../shared/ActionBar';
 import { mergePdfsNormal } from '../api/pdfToolsApi';
-import { downloadBlob } from '../../../../utils/downloadBlob';
+import { downloadBlob } from '../../../utils/downloadBlob';
 
 export default function MergeNormalTab() {
     const [files, setFiles] = useState([]);

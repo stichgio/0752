@@ -1,6 +1,6 @@
 ﻿import { useEffect, useRef } from 'react';
-import MultiSheetReportApp from '../components/tools/MultiSheetReport/MultiSheetReportApp';
-import PageDocument from './PageDocument';
+import MultiSheetReportApp from './MultiSheetReportApp';
+import PageDocument from '../../components/layout/PageDocument';
 
 const GRID_PREVIEW_SELECTOR =
     '.bg-white.rounded-lg.shadow-md.overflow-hidden.border.border-neutral-200 .mt-2.grid.gap-1.p-1.bg-neutral-50.rounded.border.border-neutral-200';

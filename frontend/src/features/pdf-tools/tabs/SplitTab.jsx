@@ -10,7 +10,7 @@ import ActionBar from '../shared/ActionBar';
 import PdfPreviewModal from '../shared/PdfPreviewModal';
 import { usePdfDocument } from '../hooks/usePdfDocument';
 import { splitPdf } from '../api/pdfToolsApi';
-import { downloadBlob } from '../../../../utils/downloadBlob';
+import { downloadBlob } from '../../../utils/downloadBlob';
 
 export default function SplitTab() {
     const [file, setFile] = useState(null);

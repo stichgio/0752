@@ -2,7 +2,7 @@
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Layers, Shuffle, Scissors, LayoutGrid, FileOutput } from 'lucide-react';
-import DashboardLayout from '../../DashboardLayout';
+import DashboardLayout from '../../components/layout/DashboardLayout';
 import MergeInterleavedTab from './tabs/MergeInterleavedTab';
 import MergeNormalTab from './tabs/MergeNormalTab';
 import SplitTab from './tabs/SplitTab';

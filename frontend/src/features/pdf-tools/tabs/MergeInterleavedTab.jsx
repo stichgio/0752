@@ -6,7 +6,7 @@ import PdfDropzone from '../shared/PdfDropzone';
 import FileListItem from '../shared/FileListItem';
 import ActionBar from '../shared/ActionBar';
 import { mergePdfsInterleaved } from '../api/pdfToolsApi';
-import { downloadBlob } from '../../../../utils/downloadBlob';
+import { downloadBlob } from '../../../utils/downloadBlob';
 
 export default function MergeInterleavedTab() {
     const [view, setView] = useState('multiple'); // 'multiple' | 'individual'
