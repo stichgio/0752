@@ -14,7 +14,7 @@ from PIL import Image
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from main import app
-import report_service
+from services import report_service
 from technical_reports.models import TechnicalReport
 from technical_reports import router as tech_router
 from fichas_tecnicas.models import FichaTecnica

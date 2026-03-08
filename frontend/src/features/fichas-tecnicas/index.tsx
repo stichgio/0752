@@ -4,10 +4,9 @@ import { ChevronLeft, ChevronRight, FileDown, Files } from 'lucide-react';
 import DatabasePanel from './DatabasePanel';
 import PreviewPanel from './PreviewPanel';
 import FormPanel from './FormPanel';
-import { TechnicalReport, TechnicalReportListItem } from './types';
-import { technicalReportsApi } from './api';
-import html2canvas from 'html2canvas';
-import LoadingModal from '@/components/common/LoadingModal';
+import { FichaTecnica, FichaTecnicaListItem } from './types';
+import { fichasTecnicasApi } from './api';
+import LoadingModal from '@/components/ui/LoadingModal';
 import { useFocusMode } from '@/hooks/useFocusMode';
 import { useLocalDraft } from '@/hooks/useLocalDraft';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
@@ -15,13 +14,13 @@ import { useSSEProgress } from '@/hooks/useSSEProgress';
 import { getApiBase } from '@/utils/apiBase';
 import { downloadBlob } from '@/utils/downloadBlob';
 
-export default function TechnicalReports() {
-    const [reports, setReports] = useState<TechnicalReportListItem[]>([]);
+export default function FichasTecnicas() {
+    const [fichas, setFichas] = useState<FichaTecnicaListItem[]>([]);
     const {
         formData, setFormData,
-        selectedId: selectedReportId, setSelectedId: setSelectedReportId,
+        selectedId: selectedFichaId, setSelectedId: setSelectedFichaId,
         hasUnsavedChanges, setHasUnsavedChanges,
-    } = useLocalDraft<TechnicalReport>('current_report_draft');
+    } = useLocalDraft<FichaTecnica>('current_ficha_draft');
     const { isLoading, loadingMessage, run } = useAsyncAction();
     const sseProgress = useSSEProgress();
 
@@ -29,33 +28,33 @@ export default function TechnicalReports() {
     const [logoRight, setLogoRight] = useState<File | null>(null);
 
     useEffect(() => {
-        loadReports();
+        loadFichas();
     }, []);
 
-    const loadReports = async () => {
+    const loadFichas = async () => {
         await run(async () => {
-            const data = await technicalReportsApi.getAllReports(undefined, true);
-            console.log('[TechReports] Loaded reports:', data.reports?.length, 'total:', data.total);
-            setReports(data.reports || []);
+            const data = await fichasTecnicasApi.getAllFichas(undefined, true);
+            console.log('[FichasTecnicas] Loaded fichas:', data.fichas?.length, 'total:', data.total);
+            setFichas(data.fichas || []);
         });
     };
 
-    const handleReportSelect = async (reportId: string) => {
+    const handleFichaSelect = async (fichaId: string) => {
         if (hasUnsavedChanges && !window.confirm('¿Guardar cambios?')) return;
         if (hasUnsavedChanges) await handleSaveChanges();
 
         try {
-            const report = await technicalReportsApi.getReport(reportId);
-            setFormData(report);
-            setSelectedReportId(reportId);
+            const ficha = await fichasTecnicasApi.getFicha(fichaId);
+            setFormData(ficha);
+            setSelectedFichaId(fichaId);
             setHasUnsavedChanges(false);
         } catch (error) {
             console.error('Error:', error);
-            alert('Error cargando informe');
+            alert('Error cargando ficha');
         }
     };
 
-    const handleFormChange = (data: Partial<TechnicalReport>) => {
+    const handleFormChange = (data: Partial<FichaTecnica>) => {
         if (formData) {
             setFormData({ ...formData, ...data });
             setHasUnsavedChanges(true);
@@ -63,82 +62,50 @@ export default function TechnicalReports() {
     };
 
     const handleSaveChanges = async () => {
-        if (!formData || !selectedReportId) return;
+        if (!formData || !selectedFichaId) return;
         try {
-            await technicalReportsApi.updateReport(selectedReportId, formData);
+            await fichasTecnicasApi.updateFicha(selectedFichaId, formData);
             setHasUnsavedChanges(false);
-            await loadReports();
+            await loadFichas();
         } catch (error) {
             console.error('Error:', error);
             alert('Error guardando');
         }
     };
 
-    const handleImportCSV = async (file: File) => {
+    const handleImportFile = async (file: File) => {
         await run(async () => {
-            const result = await technicalReportsApi.importCSV(file);
-            console.log('[TechReports] Import result:', result);
-            const freshData = await technicalReportsApi.getAllReports(undefined, true);
-            console.log('[TechReports] Fresh reports count:', freshData.reports?.length);
-            setReports(freshData.reports || []);
-            alert(`${result.imported_count} informes importados`);
-        }, { onError: msg => alert(`Error importando archivo: ${msg}`) });
+            const result = await fichasTecnicasApi.importFile(file);
+            console.log('[FichasTecnicas] Import result:', result);
+            const freshData = await fichasTecnicasApi.getAllFichas(undefined, true);
+            console.log('[FichasTecnicas] Fresh fichas count:', freshData.fichas?.length);
+            setFichas(freshData.fichas || []);
+            alert(`${result.imported_count} fichas importadas`);
+        }, {
+            message: 'Importando archivo...',
+            onError: msg => alert(`Error importando archivo: ${msg}`)
+        });
     };
 
-    const handleClearAllReports = async () => {
-        if (window.confirm('¿ESTÁ SEGURO? \n\nEsto eliminará TODOS los informes de la base de datos permanentemente.\nEsta acción no se puede deshacer.')) {
+    const handleClearAllFichas = async () => {
+        if (window.confirm('¿ESTÁ SEGURO? \n\nEsto eliminará TODAS las fichas de la base de datos permanentemente.\nEsta acción no se puede deshacer.')) {
             await run(async () => {
-                await technicalReportsApi.deleteAllReports();
-                await loadReports();
+                await fichasTecnicasApi.deleteAllFichas();
+                await loadFichas();
                 setFormData(null);
-                setSelectedReportId(null);
+                setSelectedFichaId(null);
                 setHasUnsavedChanges(false);
-            }, { onError: msg => alert(`Error eliminando informes: ${msg}`) });
+            }, { onError: msg => alert(`Error eliminando fichas: ${msg}`) });
         }
-    };
-
-    const handleDownloadPDF = async () => {
-        if (!selectedReportId || !formData) return;
-        await run(
-            async () => {
-                const blob = await technicalReportsApi.generatePDF(formData, [], logoLeft, logoRight);
-                downloadBlob(blob, `informe_${selectedReportId}.pdf`);
-            },
-            { message: 'Generando PDF...', onError: msg => alert(`Error generando PDF: ${msg}`) }
-        );
-    };
-
-    const handleDownloadImage = async () => {
-        const element = document.getElementById('technical-report-preview');
-        if (!element || !selectedReportId || !formData) return;
-
-        await run(
-            async () => {
-                const canvas = await html2canvas(element, {
-                    scale: 2,
-                    backgroundColor: '#ffffff',
-                    useCORS: true
-                });
-                const dataUrl = canvas.toDataURL('image/png');
-                const link = document.createElement('a');
-                link.download = `informe_${selectedReportId}.png`;
-                link.href = dataUrl;
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-            },
-            { message: 'Capturando imagen...', onError: msg => alert(`Error descargando imagen: ${msg}`) }
-        );
     };
 
     const handleDownloadConsolidatedPDF = async () => {
-        if (reports.length === 0) {
-            alert('No hay informes para exportar');
+        if (fichas.length === 0) {
+            alert('No hay fichas para exportar');
             return;
         }
-
         const confirmed = window.confirm(
-            `¿Desea generar un PDF consolidado con los ${reports.length} informes?\n\nEsto puede tomar varios minutos dependiendo de la cantidad de informes.`
+            `¿Desea generar un PDF consolidado con las ${fichas.length} fichas?\n\nEsto puede tomar varios minutos dependiendo de la cantidad de fichas.`
         );
         if (!confirmed) return;
 
@@ -147,14 +114,14 @@ export default function TechnicalReports() {
         if (logoLeft) formData.append('logoLeft', logoLeft);
         if (logoRight) formData.append('logoRight', logoRight);
 
-        sseProgress.run('/api/technical-reports/generate-consolidated-pdf-progress', formData, {
+        sseProgress.run('/api/fichas-tecnicas/generate-consolidated-pdf-progress', formData, {
             onComplete: async (downloadUrl: string) => {
                 try {
                     const base = getApiBase();
                     const resp = await fetch(`${base}${downloadUrl}`);
                     if (!resp.ok) throw new Error(`Error en descarga: ${resp.status}`);
                     const blob = await resp.blob();
-                    downloadBlob(blob, `informes_tecnicos_consolidado_${reports.length}.pdf`);
+                    downloadBlob(blob, `fichas_tecnicas_consolidado_${fichas.length}.pdf`);
                 } catch (err: any) {
                     alert(`Error descargando PDF: ${err.message}`);
                 }
@@ -164,11 +131,11 @@ export default function TechnicalReports() {
                 console.warn('SSE failed, falling back:', errMsg);
                 await run(
                     async () => {
-                        const blob = await technicalReportsApi.generateConsolidatedPDF(logoLeft, logoRight);
-                        downloadBlob(blob, `informes_tecnicos_consolidado_${reports.length}.pdf`);
+                        const blob = await fichasTecnicasApi.generateConsolidatedPDF(logoLeft, logoRight);
+                        downloadBlob(blob, `fichas_tecnicas_consolidado_${fichas.length}.pdf`);
                     },
                     {
-                        message: `Generando PDF consolidado (${reports.length} informes)...`,
+                        message: `Generando PDF consolidado (${fichas.length} fichas)...`,
                         onError: msg => alert(`Error generando PDF consolidado: ${msg}`)
                     }
                 );
@@ -176,13 +143,37 @@ export default function TechnicalReports() {
         });
     };
 
-    const currentIndex = reports.findIndex(r => r.id === selectedReportId);
+    const handleDownloadPDF = async () => {
+        if (!selectedFichaId) {
+            handleDownloadTemplatePDF();
+            return;
+        }
+        await run(
+            async () => {
+                const blob = await fichasTecnicasApi.generatePDF(selectedFichaId, logoLeft, logoRight);
+                downloadBlob(blob, `ficha_tecnica_${selectedFichaId}.pdf`);
+            },
+            { message: 'Generando PDF...', onError: msg => alert(`Error generando PDF: ${msg}`) }
+        );
+    };
+
+    const handleDownloadTemplatePDF = async () => {
+        await run(
+            async () => {
+                const blob = await fichasTecnicasApi.generateTemplatePDF(logoLeft, logoRight);
+                downloadBlob(blob, `plantilla_ficha_tecnica.pdf`);
+            },
+            { message: 'Generando plantilla PDF...', onError: msg => alert(`Error generando plantilla PDF: ${msg}`) }
+        );
+    };
+
+    const currentIndex = fichas.findIndex(f => f.id === selectedFichaId);
     const canPrev = currentIndex > 0;
-    const canNext = currentIndex < reports.length - 1;
+    const canNext = currentIndex < fichas.length - 1;
 
     const isFocusMode = useFocusMode({
-        onPrev: () => canPrev && handleReportSelect(reports[currentIndex - 1].id),
-        onNext: () => canNext && handleReportSelect(reports[currentIndex + 1].id),
+        onPrev: () => canPrev && handleFichaSelect(fichas[currentIndex - 1].id),
+        onNext: () => canNext && handleFichaSelect(fichas[currentIndex + 1].id),
     });
 
     return (
@@ -194,57 +185,62 @@ export default function TechnicalReports() {
                             <ChevronLeft size={24} />
                         </Link>
                         <h1 className="text-2xl font-bold font-mono tracking-wide text-[#eee] uppercase">
-                            Generador de Informes Técnicos
+                            Fichas Técnicas de Evaluación
                         </h1>
                     </div>
                     <div className="flex items-center gap-4">
-                        <button onClick={() => canPrev && handleReportSelect(reports[currentIndex - 1].id)} disabled={!canPrev} className="btn-secondary flex items-center gap-2 disabled:opacity-50">
+                        <button onClick={() => canPrev && handleFichaSelect(fichas[currentIndex - 1].id)} disabled={!canPrev} className="btn-secondary flex items-center gap-2 disabled:opacity-50">
                             <ChevronLeft size={16} />
                             Anterior
                         </button>
-                        <span className="text-sm text-[#888] font-mono min-w-[80px] text-center">{selectedReportId ? `${currentIndex + 1} de ${reports.length}` : '-'}</span>
-                        <button onClick={() => canNext && handleReportSelect(reports[currentIndex + 1].id)} disabled={!canNext} className="btn-secondary flex items-center gap-2 disabled:opacity-50">
+                        <span className="text-sm text-[#888] font-mono min-w-[80px] text-center">{selectedFichaId ? `${currentIndex + 1} de ${fichas.length}` : '-'}</span>
+                        <button onClick={() => canNext && handleFichaSelect(fichas[currentIndex + 1].id)} disabled={!canNext} className="btn-secondary flex items-center gap-2 disabled:opacity-50">
                             Siguiente
                             <ChevronRight size={16} />
                         </button>
-                        <button onClick={handleDownloadPDF} disabled={!selectedReportId || isLoading} className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                        <button
+                            onClick={handleDownloadPDF}
+                            disabled={isLoading}
+                            className="btn-red flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={selectedFichaId ? "Descargar PDF de la ficha actual" : "Descargar plantilla en blanco"}
+                        >
                             <FileDown size={16} />
-                            Descargar PDF
+                            {selectedFichaId ? 'Descargar PDF' : 'Descargar Plantilla'}
                         </button>
                         <button
                             onClick={handleDownloadConsolidatedPDF}
-                            disabled={reports.length === 0 || isLoading}
-                            className="btn-secondary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-blue-600 to-blue-800 hover:from-blue-500 hover:to-blue-700 text-white border-blue-500"
-                            title={`Descargar PDF consolidado con ${reports.length} informes`}
+                            disabled={fichas.length === 0 || isLoading}
+                            className="btn-red flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={`Descargar PDF consolidado con ${fichas.length} fichas`}
                         >
                             <Files size={16} />
                             PDF Consolidado
                         </button>
+
                     </div>
                 </div>
             </div>
 
             {/* Main Layout Grid - Adjusted for Focus Mode */}
             <div className={`grid transition-all duration-300 ease-in-out h-[calc(100vh-80px)] overflow-hidden ${isFocusMode
-                ? 'grid-cols-[0px_1fr_0px] gap-0 p-0 h-screen'
-                : 'grid-cols-[300px_1fr_400px] gap-6 p-6'
+                    ? 'grid-cols-[0px_1fr_0px] gap-0 p-0 h-screen'
+                    : 'grid-cols-[300px_1fr_400px] gap-6 p-6'
                 }`}>
-                {/* Columna Izquierda: Scroll Independiente */}
+                {/* Columna Izquierda: Base de Datos */}
                 <div className={`h-full overflow-y-auto pr-2 transition-opacity duration-300 ${isFocusMode ? 'invisible opacity-0' : 'visible opacity-100'}`}>
-                    <DatabasePanel reports={reports} selectedReportId={selectedReportId} onReportSelect={handleReportSelect} onImportCSV={handleImportCSV} onReload={loadReports} onClearAll={handleClearAllReports} />
+                    <DatabasePanel fichas={fichas} selectedFichaId={selectedFichaId} onFichaSelect={handleFichaSelect} onImportFile={handleImportFile} onReload={loadFichas} onClearAll={handleClearAllFichas} />
                 </div>
 
-                {/* Columna Central */}
-                <PreviewPanel reportData={formData} zoom={100} logoLeft={logoLeft} logoRight={logoRight} />
+                {/* Columna Central: Vista Previa */}
+                <PreviewPanel fichaData={formData} logoLeft={logoLeft} logoRight={logoRight} />
 
-                {/* Columna Derecha: Scroll Independiente */}
+                {/* Columna Derecha: Formulario */}
                 <div className={`h-full overflow-y-auto pl-2 transition-opacity duration-300 ${isFocusMode ? 'invisible opacity-0' : 'visible opacity-100'}`}>
                     <FormPanel
-                        reportData={formData}
+                        fichaData={formData}
                         onChange={handleFormChange}
                         onSave={handleSaveChanges}
                         hasUnsavedChanges={hasUnsavedChanges}
-                        onDownloadImage={handleDownloadImage}
                         logoLeft={logoLeft}
                         logoRight={logoRight}
                         onLogoLeftChange={setLogoLeft}
@@ -252,23 +248,24 @@ export default function TechnicalReports() {
                     />
                 </div>
             </div>
+
             {/* Navigation Buttons for Focus Mode */}
             {isFocusMode && (
                 <>
                     <button
-                        onClick={() => canPrev && handleReportSelect(reports[currentIndex - 1].id)}
+                        onClick={() => canPrev && handleFichaSelect(fichas[currentIndex - 1].id)}
                         disabled={!canPrev}
                         className={`fixed left-4 top-1/2 -translate-y-1/2 p-2 transition-colors z-[100] outline-none ${!canPrev ? 'text-gray-800 opacity-50 cursor-not-allowed' : 'text-red-600 hover:text-red-500 opacity-80 hover:opacity-100'}`}
-                        title="Informe Anterior"
+                        title="Ficha Anterior"
                     >
                         <ChevronLeft size={80} strokeWidth={1.5} />
                     </button>
 
                     <button
-                        onClick={() => canNext && handleReportSelect(reports[currentIndex + 1].id)}
+                        onClick={() => canNext && handleFichaSelect(fichas[currentIndex + 1].id)}
                         disabled={!canNext}
                         className={`fixed right-4 top-1/2 -translate-y-1/2 p-2 transition-colors z-[100] outline-none ${!canNext ? 'text-gray-800 opacity-50 cursor-not-allowed' : 'text-red-600 hover:text-red-500 opacity-80 hover:opacity-100'}`}
-                        title="Siguiente Informe"
+                        title="Siguiente Ficha"
                     >
                         <ChevronRight size={80} strokeWidth={1.5} />
                     </button>
@@ -279,11 +276,10 @@ export default function TechnicalReports() {
                     </div>
                 </>
             )}
-
             {(isLoading || sseProgress.isLoading) && (
                 <LoadingModal
-                    message={sseProgress.isLoading ? `Generando PDF consolidado (${reports.length} informes)...` : loadingMessage}
-                    accentColor="#D71921"
+                    message={sseProgress.isLoading ? `Generando PDF consolidado (${fichas.length} fichas)...` : loadingMessage}
+                    accentColor="#00a0b0"
                     progress={sseProgress.isLoading ? sseProgress.progress : null}
                 />
             )}

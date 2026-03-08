@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import TemplateEditor from '../components/tools/TemplateEditor';
-import PageDocument from './PageDocument';
+import TemplateEditor from './index';
+import PageDocument from '../../components/layout/PageDocument';
 
 export default function TemplateEditorPage() {
     const [isReady, setIsReady] = useState(false);

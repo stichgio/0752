@@ -418,7 +418,7 @@ async def generate_consolidated_pdf(
         # =====================================================================
         # Compresión Ghostscript (opcional)
         # =====================================================================
-        from report_service import GHOSTSCRIPT_ENABLED, GHOSTSCRIPT_QUALITY, _compress_pdf_with_ghostscript  
+        from services.report_service import GHOSTSCRIPT_ENABLED, GHOSTSCRIPT_QUALITY, _compress_pdf_with_ghostscript  
 
         if GHOSTSCRIPT_ENABLED and len(all_fichas) > 1:
             print(f"[PDF Consolidado] Aplicando compresión Ghostscript...")
@@ -465,7 +465,7 @@ async def generate_consolidated_pdf_progress(
     import uuid
     import tempfile
     import base64
-    from progress import format_sse_event  
+    from core.progress import format_sse_event  
 
     # Read logos before streaming starts
     logo_left_bytes = await logoLeft.read() if logoLeft else None
@@ -485,7 +485,7 @@ async def generate_consolidated_pdf_progress(
                 from weasyprint import HTML  
                 from pypdf import PdfWriter  
                 from concurrent.futures import ThreadPoolExecutor, as_completed
-                from report_service import GHOSTSCRIPT_ENABLED, GHOSTSCRIPT_QUALITY, _compress_pdf_with_ghostscript  
+                from services.report_service import GHOSTSCRIPT_ENABLED, GHOSTSCRIPT_QUALITY, _compress_pdf_with_ghostscript  
                 import gc
 
                 all_fichas = db.get_all_fichas()

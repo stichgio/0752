@@ -18,7 +18,7 @@ import {
     StopCircle,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import DashboardLayout from '../../DashboardLayout';
+import DashboardLayout from '../../components/layout/DashboardLayout';
 import {
     CompressedFile,
     CompressionOptions,

@@ -1,4 +1,4 @@
-import { getApiBase } from '../../../../utils/apiBase';
+import { getApiBase } from '../../../utils/apiBase';
 
 const API_BASE = `${getApiBase()}/api/tools`;
 

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FileDown, Loader2, Sparkles, Trash2, Upload } from 'lucide-react';
 import JSZip from 'jszip';
-import DashboardLayout from '../../DashboardLayout';
+import DashboardLayout from '../../components/layout/DashboardLayout';
 import CropEditor from './CropEditor';
 import PreviewWorkspace from './PreviewWorkspace';
 import QueuePanel from './QueuePanel';
