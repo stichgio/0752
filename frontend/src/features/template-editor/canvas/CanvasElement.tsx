@@ -295,14 +295,9 @@ function CanvasElementComponent({
             return;
         }
 
-        // Tables: when selected, don't drag — let clicks reach cells for editing
-        if (type === 'table' && isSelected) {
-            return;
-        }
-
         onSelect(id, e.shiftKey);
         onDragStart(e, id);
-    }, [disableInteraction, locked, isEditing, isInlineTextEditable, type, isSelected, onSelect, onDragStart, id]);
+    }, [disableInteraction, locked, isEditing, isInlineTextEditable, isSelected, onSelect, onDragStart, id]);
 
     const setWrapperNodeRef = useCallback(
         (node: HTMLDivElement | null) => {
@@ -907,4 +902,5 @@ function getCursorForDirection(dir: string): string {
     };
     return map[dir] || 'pointer';
 }
+
 

@@ -220,7 +220,7 @@ export function TableComponent({ tableData, style, disabled = false, onTableData
                             return (
                                 <td
                                     key={colIndex}
-                                    onClick={(event) => startCellEdit(event, rowIndex, colIndex)}
+                                    onDoubleClick={(event) => startCellEdit(event, rowIndex, colIndex)}
                                     style={{
                                         border: `1px solid ${table.borderColor}`,
                                         padding: '2px 4px',
@@ -251,6 +251,7 @@ export function TableComponent({ tableData, style, disabled = false, onTableData
                                                 );
                                             }}
                                             onBlur={commitCellEdit}
+                                            onPointerDown={(event) => event.stopPropagation()}
                                             onMouseDown={(event) => event.stopPropagation()}
                                             onDoubleClick={(event) => event.stopPropagation()}
                                             onKeyDown={(event) => {
@@ -329,3 +330,4 @@ export function TableComponent({ tableData, style, disabled = false, onTableData
         </table>
     );
 }
+
