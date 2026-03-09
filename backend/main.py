@@ -764,7 +764,7 @@ async def generate_single_pdf(
 # --- SSE Progress Endpoints ---
 
 from fastapi.responses import StreamingResponse  
-from progress import format_sse_event, ProgressCallback  
+from core.progress import format_sse_event, ProgressCallback  
 
 
 @api_router.post("/generate-pdf-progress")
