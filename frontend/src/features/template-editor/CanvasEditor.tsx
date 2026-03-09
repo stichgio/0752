@@ -758,7 +758,15 @@ export default function CanvasEditor({
     setSelectedIds(restoredChildren.map((child) => child.id));
   }, [doc, selectedIds, onChange]);
 
-  // Alignment
+  // --- Alignment helpers for ContextToolbar ---
+  // NOTE: handleAlign and handleDistribute below are used exclusively by ContextToolbar.
+  // They differ from handleAlignElements / handleDistributeElements (used by AlignmentToolbar) in two ways:
+  //   1. handleAlign handles the single-element case by aligning to the PAGE bounds (not the selection
+  //      bounding box), which AlignmentToolbar never needs because it only appears with 2+ elements.
+  //   2. Neither handleAlign nor handleDistribute respect the `locked` property on elements; the
+  //      documentModel helpers used by AlignmentToolbar do.
+  // Do NOT unify these two code paths until ContextToolbar is either removed or updated to use
+  // documentModel.alignElements / distributeElements with proper locked-element awareness.
   const handleAlign = useCallback((type: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
     const selected = currentPageElements.filter(el => selectedIds.includes(el.id));
     if (selected.length === 0) return;
@@ -826,6 +834,9 @@ export default function CanvasEditor({
     handleUpdateElements(updates);
   }, [currentPageElements, handleUpdateElements, selectedIds]);
 
+  // --- Alignment helpers for AlignmentToolbar ---
+  // These delegate to documentModel helpers that correctly skip locked elements.
+  // They are separate from handleAlign / handleDistribute above intentionally — see comment there.
   const handleAlignElements = useCallback((ids: string[], axis: AlignAxis) => {
     const newElements = alignElements(doc.elements, ids, axis);
     onChange({ ...doc, elements: newElements }, { commitToHistory: true });
@@ -1147,10 +1158,13 @@ export default function CanvasEditor({
               </span>
               <AlignmentToolbar
                 selectedIds={selectedIds}
-                elements={currentPageElements}
                 onAlign={handleAlignElements}
                 onDistribute={handleDistributeElements}
-                canDistribute={selectedIds.length >= 3}
+                canDistribute={
+                  currentPageElements
+                    .filter((el) => selectedIds.includes(el.id) && !el.locked)
+                    .length >= 3
+                }
               />
             </div>
           )}

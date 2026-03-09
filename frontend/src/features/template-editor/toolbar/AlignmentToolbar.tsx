@@ -10,20 +10,18 @@ import {
   AlignVerticalDistributeCenter,
 } from 'lucide-react';
 import type { AlignAxis } from '../documentModel';
-import type { TemplateElement } from '../canvasTypes';
 
 export type { AlignAxis };
 
 export interface AlignmentToolbarProps {
   selectedIds: string[];
-  elements: TemplateElement[];
   onAlign: (ids: string[], axis: AlignAxis) => void;
   onDistribute: (ids: string[], direction: 'horizontal' | 'vertical') => void;
-  /** true when 3+ elements are selected */
+  /** true when 3+ unlocked elements are selected */
   canDistribute: boolean;
 }
 
-export function AlignmentToolbar({
+export const AlignmentToolbar = React.memo(function AlignmentToolbar({
   selectedIds,
   onAlign,
   onDistribute,
@@ -37,17 +35,17 @@ export function AlignmentToolbar({
       <AlignBtn
         icon={<AlignLeft size={14} />}
         onClick={() => onAlign(selectedIds, 'left')}
-        title="Align left"
+        title="Alinear a la izquierda"
       />
       <AlignBtn
         icon={<AlignCenter size={14} />}
         onClick={() => onAlign(selectedIds, 'center-h')}
-        title="Align center horizontal"
+        title="Centrar horizontalmente"
       />
       <AlignBtn
         icon={<AlignRight size={14} />}
         onClick={() => onAlign(selectedIds, 'right')}
-        title="Align right"
+        title="Alinear a la derecha"
       />
 
       <ToolbarDivider />
@@ -56,38 +54,38 @@ export function AlignmentToolbar({
       <AlignBtn
         icon={<AlignStartVertical size={14} />}
         onClick={() => onAlign(selectedIds, 'top')}
-        title="Align top"
+        title="Alinear arriba"
       />
       <AlignBtn
         icon={<AlignCenterVertical size={14} />}
         onClick={() => onAlign(selectedIds, 'center-v')}
-        title="Align center vertical"
+        title="Centrar verticalmente"
       />
       <AlignBtn
         icon={<AlignEndVertical size={14} />}
         onClick={() => onAlign(selectedIds, 'bottom')}
-        title="Align bottom"
+        title="Alinear abajo"
       />
 
-      {/* Group 3: distribute (only shown when 3+ elements) */}
+      {/* Group 3: distribute (only shown when 3+ unlocked elements) */}
       {canDistribute && (
         <>
           <ToolbarDivider />
           <AlignBtn
             icon={<AlignHorizontalDistributeCenter size={14} />}
             onClick={() => onDistribute(selectedIds, 'horizontal')}
-            title="Distribute horizontal"
+            title="Distribuir horizontalmente"
           />
           <AlignBtn
             icon={<AlignVerticalDistributeCenter size={14} />}
             onClick={() => onDistribute(selectedIds, 'vertical')}
-            title="Distribute vertical"
+            title="Distribuir verticalmente"
           />
         </>
       )}
     </div>
   );
-}
+});
 
 function ToolbarDivider() {
   return <div className="mx-0.5 h-5 w-px bg-gray-200" />;
@@ -106,7 +104,7 @@ function AlignBtn({
 }) {
   return (
     <button
-      onClick={disabled ? undefined : onClick}
+      onClick={onClick}
       title={title}
       disabled={disabled}
       className={`p-1.5 rounded hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors ${

@@ -133,6 +133,14 @@ describe('alignElements', () => {
     // Locked element should not be moved
     expect(result.find((el) => el.id === 'b')?.position.x).toBe(80);
   });
+
+  it('is a no-op when all selected elements are locked', () => {
+    const a = { ...makeEl('a', 10, 5), locked: true };
+    const b = { ...makeEl('b', 80, 5), locked: true };
+    const result = alignElements([a, b], ['a', 'b'], 'left');
+    expect(result.find((el) => el.id === 'a')?.position.x).toBe(10);
+    expect(result.find((el) => el.id === 'b')?.position.x).toBe(80);
+  });
 });
 
 describe('distributeElements', () => {
