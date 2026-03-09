@@ -1,16 +1,9 @@
 from dotenv import load_dotenv  
-import os
-
-# Cargar variables de entorno
-load_dotenv(encoding='utf-8')
-
-# Asegurar PYTHONPATH correcto para importaciones locales
-if not os.environ.get('PYTHONPATH'):
-    # Detectar si estamos en el contenedor de HF (app en root) o local (carpeta backend)
-    if os.path.exists('backend'):
-        os.environ['PYTHONPATH'] = './backend'
-    else:
-        os.environ['PYTHONPATH'] = '.'
+try:
+    load_dotenv(encoding='utf-8')
+except (UnicodeDecodeError, ValueError):
+    import os
+    os.environ.setdefault('PYTHONPATH', './backend')
 
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -28,7 +21,7 @@ import re
 import unicodedata
 from typing import Any, Dict, List, Literal, Optional, TypedDict
 from urllib.parse import quote
-from services.report_service import ReportService  
+from report_service import ReportService  
 from pdf_tools import merge_pdfs_interleaved, merge_pdfs_sequential, split_pdf, split_pdf_by_ranges, organize_pdf, extract_pages  
 from pdf_tools.utils import PDFValidationError  
 import zipfile
@@ -37,6 +30,7 @@ from technical_reports.models import TechnicalReport
 from fichas_tecnicas.router import router as fichas_tecnicas_router  
 from image_optimizer.router import router as image_optimizer_router  
 from compressor.router import router as compressor_router  
+from ocr_tools.router import router as ocr_tools_router  
 from template_editor.router import router as template_editor_router  
 from msheets.multi_sheet_report import router as msheets_router      
 # Multi-Sheet Report router imported and added below for production compatibility.
@@ -51,7 +45,7 @@ from template_editor.service import (
 )
 from utils.file_utils import build_safe_upload_path, save_upload, sanitize_upload_filename  
 
-# ── Increase multipart form-field size limit ──────────────────────────────────
+# Ã¢â€â‚¬Ã¢â€â‚¬ Increase multipart form-field size limit Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 # Starlette/python-multipart defaults to 1 MB per text part, which is too small
 # for large customTemplate HTML payloads and batch `data` JSON fields.
 # Patch the default so all Form() endpoints accept up to 50 MB per field.
@@ -72,10 +66,10 @@ try:
         kwargs.setdefault("max_part_size", 50 * 1024 * 1024)  # 50 MB (was 1 MB)
         _orig_mp_init(self, headers, stream, *args, **kwargs)
 
-    _MultiPartParser.__init__ = _patched_mp_init
-except Exception as e:
-    print(f"[main] Warning: could not patch multipart size limit: {e}")  # Skip silently if starlette internals change in a future version
-# ─────────────────────────────────────────────────────────────────────────────
+    _MultiPartParser.__init__ = _patched_mp_init  
+except Exception:
+    pass  # Skip silently if starlette internals change in a future version
+# Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 
 PHOTO_GRID_HEAD_CLOSE_RE = re.compile(r"</head>", re.IGNORECASE)
 
@@ -409,18 +403,17 @@ def _validate_pdf_file(file: UploadFile) -> bool:
         header = file.file.read(5)
         file.file.seek(current_pos)
         return header == b"%PDF-"
-    except Exception as e:
-        print(f"[pdf_validation] Warning: could not read header for '{getattr(file, 'filename', '?')}': {e}")
+    except Exception:
         return False
 
 
 def _validate_pdf_uploads(files: List[UploadFile], min_files: int = 2) -> None:
-    """Validación compartida para endpoints de merge sin alterar contrato de API."""
+    """ValidaciÃƒÂ³n compartida para endpoints de merge sin alterar contrato de API."""
     if len(files) < min_files:
         raise HTTPException(status_code=400, detail="Se requieren al menos 2 archivos PDF")
     for file in files:
         if not _validate_pdf_file(file):
-            raise HTTPException(status_code=400, detail=f"El archivo '{file.filename}' no es un PDF válido")
+            raise HTTPException(status_code=400, detail=f"El archivo '{file.filename}' no es un PDF vÃƒÂ¡lido")
 
 
 # --- App Lifespan: singleton ReportService ---
@@ -496,7 +489,7 @@ async def request_validation_exception_handler(_: Request, exc: RequestValidatio
             "detail": exc.errors(),
             "error": {
                 "code": "VALIDATION_ERROR",
-                "message": "Error de validación de solicitud",
+                "message": "Error de validaciÃƒÂ³n de solicitud",
             },
         },
     )
@@ -516,6 +509,9 @@ app.add_middleware(
         "X-Filename",
         "X-Error",
         "Content-Disposition",
+        "X-OCR-Model",
+        "X-OCR-Pages",
+        "X-OCR-Schema",
     ],
 )
 
@@ -532,6 +528,7 @@ app.include_router(technical_reports_router)
 app.include_router(fichas_tecnicas_router)
 app.include_router(image_optimizer_router)
 app.include_router(compressor_router)
+app.include_router(ocr_tools_router)
 app.include_router(template_editor_router)
 app.include_router(msheets_router, prefix="/api/multi-sheet")
 
@@ -745,7 +742,7 @@ async def generate_single_pdf(
             )
 
     except json.JSONDecodeError as e:
-        raise HTTPException(status_code=400, detail=f"Formato JSON inválido en el campo 'data': {str(e)}")
+        raise HTTPException(status_code=400, detail=f"Formato JSON invÃƒÂ¡lido en el campo 'data': {str(e)}")
     except HTTPException:
         raise
     except Exception as e:
@@ -755,7 +752,7 @@ async def generate_single_pdf(
         # Try to provide a user-friendly message for common errors
         error_msg = str(e)
         if "weasyprint" in error_trace.lower():
-            error_msg = f"Error del motor de generación PDF (WeasyPrint): {str(e)}"
+            error_msg = f"Error del motor de generaciÃƒÂ³n PDF (WeasyPrint): {str(e)}"
         elif "No such file" in error_msg:
              error_msg = f"Recurso de archivo no encontrado: {str(e)}"
 
@@ -772,7 +769,7 @@ async def generate_single_pdf(
 # --- SSE Progress Endpoints ---
 
 from fastapi.responses import StreamingResponse  
-from core.progress import format_sse_event, ProgressCallback  
+from progress import format_sse_event, ProgressCallback  
 
 
 @api_router.post("/generate-pdf-progress")
@@ -810,8 +807,8 @@ async def generate_pdf_with_progress(
         if isinstance(row_data, dict) and 'valvulas' in row_data:
             validated = TechnicalReport(**row_data)
             row_data = validated.model_dump()
-    except Exception as e:
-        print(f"[main] Warning: TechnicalReport validation failed, using raw data: {e}")
+    except Exception:
+        pass
 
     async def read_logo_bytes(logo_file: Optional[UploadFile]) -> Optional[bytes]:
         if not logo_file:
@@ -883,7 +880,7 @@ async def generate_pdf_with_progress(
                     progress_queue.put_nowait({"phase": "error", "detail": str(e)})
             except BaseException as e:
                 # CancelledError / KeyboardInterrupt: signal the frontend before re-raising
-                progress_queue.put_nowait({"phase": "error", "detail": "La generación fue interrumpida"})
+                progress_queue.put_nowait({"phase": "error", "detail": "La generaciÃƒÂ³n fue interrumpida"})
                 raise
             finally:
                 import shutil
@@ -994,7 +991,7 @@ async def tool_merge_pdfs_normal(
     files: List[UploadFile] = File(...)
 ):
     """
-    Merge normal (secuencial) - Une PDFs uno después del otro sin intercalar.
+    Merge normal (secuencial) - Une PDFs uno despuÃƒÂ©s del otro sin intercalar.
     """
     print(f"Tool Merge Normal Request: {len(files)} files")
     _validate_pdf_uploads(files)
@@ -1062,7 +1059,7 @@ async def tool_split_pdf(
                     # Convert to list of tuples
                     range_tuples = [(r[0], r[1]) for r in range_list]
                 except Exception as e:
-                    raise HTTPException(status_code=400, detail=f"Formato de rangos inválido: {e}")
+                    raise HTTPException(status_code=400, detail=f"Formato de rangos invÃƒÂ¡lido: {e}")
 
                 output_files = split_pdf_by_ranges(
                     input_path=input_path,
@@ -1113,29 +1110,29 @@ async def tool_organize_pdf(
     Endpoint para la tab ORGANIZAR de pdf-tools.html.
     Recibe el archivo PDF + operations JSON del frontend (executeOrganize()).
 
-    El frontend envía:
+    El frontend envÃƒÂ­a:
       operations = {
-        pageOrder: [int, ...],   // originalPageNum de cada página activa, 1-indexed
-        rotations: [int, ...],   // grados de rotación por página
-        cuts: [int, ...]         // índices de corte 0-indexed sobre el array resultado
+        pageOrder: [int, ...],   // originalPageNum de cada pÃƒÂ¡gina activa, 1-indexed
+        rotations: [int, ...],   // grados de rotaciÃƒÂ³n por pÃƒÂ¡gina
+        cuts: [int, ...]         // ÃƒÂ­ndices de corte 0-indexed sobre el array resultado
       }
       mode = "organize" | "organize-split"
 
     Responde:
-      - mode=organize: application/pdf  → filename: organized.pdf
-      - mode=organize-split: application/zip → filename: organized_split.zip
+      - mode=organize: application/pdf  Ã¢â€ â€™ filename: organized.pdf
+      - mode=organize-split: application/zip Ã¢â€ â€™ filename: organized_split.zip
     """
     try:
         ops = json.loads(operations)
     except Exception:
-        raise HTTPException(status_code=400, detail="JSON de 'operations' inválido")
+        raise HTTPException(status_code=400, detail="JSON de 'operations' invÃƒÂ¡lido")
 
     page_order = ops.get("pageOrder", [])
     rotations = ops.get("rotations", [])
     cuts = ops.get("cuts", [])
 
     if not page_order:
-        raise HTTPException(status_code=400, detail="pageOrder está vacío")
+        raise HTTPException(status_code=400, detail="pageOrder estÃƒÂ¡ vacÃƒÂ­o")
 
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
