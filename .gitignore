@@ -48,6 +48,9 @@ uploads/
 output/
 tmp/
 .vscode/
+# Git worktrees
+.worktrees/
+
 # Agent State
 .claude/
 security_best_practices_report.md
