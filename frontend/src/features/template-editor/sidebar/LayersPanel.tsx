@@ -25,6 +25,20 @@ const TYPE_ICONS: Record<string, React.ReactNode> = {
     group: <Box size={12} />,
 };
 
+export function getElementDisplayName(element: TemplateElement, index: number): string {
+    if (element.name?.trim()) return element.name;
+    const typeLabels: Record<string, string> = {
+        text: 'Texto', heading: 'Título', variable: 'Variable',
+        image: 'Imagen', logo: 'Logo', table: 'Tabla',
+        rectangle: 'Rectángulo', circle: 'Círculo', line: 'Línea',
+        shape: 'Forma', divider: 'Divisor', qr: 'QR',
+        'photo-grid': 'Cuadrícula', signature: 'Firma',
+        container: 'Contenedor', group: 'Grupo',
+    };
+    const label = typeLabels[element.type] ?? element.type;
+    return `${label} ${index + 1}`;
+}
+
 interface LayersPanelProps {
     elements: TemplateElement[];
     selectedIds: string[];
@@ -32,6 +46,7 @@ interface LayersPanelProps {
     onToggleLock: (id: string) => void;
     onToggleVisible: (id: string) => void;
     onReorder: (dragIndex: number, hoverIndex: number) => void;
+    onRenameElement?: (id: string, name: string) => void;
 }
 
 export function LayersPanel({
@@ -41,13 +56,34 @@ export function LayersPanel({
     onToggleLock,
     onToggleVisible,
     onReorder,
+    onRenameElement,
 }: LayersPanelProps) {
     void onReorder;
     const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editingValue, setEditingValue] = useState('');
 
     const sortedElements = useMemo(() => {
         return [...elements].sort((a, b) => (b.style.zIndex || 0) - (a.style.zIndex || 0));
     }, [elements]);
+
+    const handleStartEditing = (el: TemplateElement) => {
+        setEditingId(el.id);
+        setEditingValue(el.name ?? '');
+    };
+
+    const handleConfirmEditing = (el: TemplateElement) => {
+        if (onRenameElement) {
+            onRenameElement(el.id, editingValue.trim());
+        }
+        setEditingId(null);
+        setEditingValue('');
+    };
+
+    const handleCancelEditing = () => {
+        setEditingId(null);
+        setEditingValue('');
+    };
 
     if (elements.length === 0) {
         return (
@@ -63,15 +99,18 @@ export function LayersPanel({
 
     return (
         <div className="flex flex-col p-1.5 space-y-0.5">
-            {sortedElements.map((el) => {
+            {sortedElements.map((el, sortedIndex) => {
                 const isSelected = selectedIds.includes(el.id);
                 const isHidden = el.visible === false;
                 const isLocked = !!el.locked;
                 const isGroup = el.type === 'group';
                 const isCollapsed = collapsedGroups[el.id] ?? false;
+                const isEditing = editingId === el.id;
                 const groupChildren = isGroup
                     ? [...(el.groupChildren || [])].sort((a, b) => (b.style.zIndex || 0) - (a.style.zIndex || 0))
                     : [];
+
+                const displayName = getElementDisplayName(el, sortedIndex);
 
                 return (
                     <div key={el.id} className="space-y-0.5">
@@ -81,6 +120,7 @@ export function LayersPanel({
                                 : 'hover:bg-neutral-50 text-neutral-600'
                                 } ${isHidden ? 'opacity-40' : ''}`}
                             onClick={(e) => {
+                                if (isEditing) return;
                                 e.stopPropagation();
                                 onSelect(el.id, e.shiftKey || e.ctrlKey);
                             }}
@@ -108,7 +148,37 @@ export function LayersPanel({
                             </div>
 
                             <div className="flex-1 min-w-0">
-                                <div className="truncate font-medium text-[11px] leading-tight">{el.name || el.type}</div>
+                                {isEditing ? (
+                                    <input
+                                        type="text"
+                                        autoFocus
+                                        value={editingValue}
+                                        onChange={(e) => setEditingValue(e.target.value)}
+                                        onBlur={() => handleConfirmEditing(el)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                                e.preventDefault();
+                                                handleConfirmEditing(el);
+                                            } else if (e.key === 'Escape') {
+                                                e.preventDefault();
+                                                handleCancelEditing();
+                                            }
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
+                                        className="text-sm font-medium bg-white border border-blue-400 rounded px-1 py-0 outline-none focus:ring-1 focus:ring-blue-500 w-full"
+                                    />
+                                ) : (
+                                    <span
+                                        className="truncate font-medium text-[11px] leading-tight block cursor-default"
+                                        title={displayName}
+                                        onDoubleClick={(e) => {
+                                            e.stopPropagation();
+                                            handleStartEditing(el);
+                                        }}
+                                    >
+                                        {displayName}
+                                    </span>
+                                )}
                                 <div className="text-[9px] text-neutral-400 leading-tight">
                                     z: {el.style.zIndex || 0}
                                     {isGroup ? ` · ${groupChildren.length} hijos` : ''}

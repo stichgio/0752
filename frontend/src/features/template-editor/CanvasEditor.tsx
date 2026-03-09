@@ -901,6 +901,13 @@ export default function CanvasEditor({
     onChange({ ...doc, elements: newElements });
   }, [doc, onChange]);
 
+  const handleRenameElement = useCallback((id: string, name: string) => {
+    const newElements = doc.elements.map(el =>
+      el.id === id ? { ...el, name } : el
+    );
+    onChange({ ...doc, elements: newElements }, { commitToHistory: true });
+  }, [doc, onChange]);
+
   // Layers reorder (change z-index based on new order)
   const handleReorder = useCallback((dragIndex: number, hoverIndex: number) => {
     const sorted = [...currentPageElements].sort((a, b) => (b.style.zIndex || 0) - (a.style.zIndex || 0));
@@ -1117,6 +1124,7 @@ export default function CanvasEditor({
               onToggleLock={handleToggleLock}
               onToggleVisible={handleToggleVisible}
               onReorder={handleReorder}
+              onRenameElement={handleRenameElement}
               onLoadTemplate={onLoadTemplate}
               currentDocName={doc.name}
               isDirty={isDirty}

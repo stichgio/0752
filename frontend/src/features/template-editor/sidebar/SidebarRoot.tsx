@@ -61,6 +61,7 @@ interface SidebarRootProps {
   onUnpublishTemplate?: (templateId: string) => Promise<void> | void;
   onEditPublishedTemplate?: (templateId: string) => Promise<void> | void;
   onDeletePublishedTemplate?: (templateId: string) => Promise<void> | void;
+  onRenameElement?: (id: string, name: string) => void;
   onSetActivePage: (pageId: string) => void;
   onCreatePage: (name?: string) => void;
   onRenamePage: (pageId: string, name: string) => void;
@@ -177,6 +178,7 @@ export function SidebarRoot(props: SidebarRootProps) {
                 onToggleLock={props.onToggleLock}
                 onToggleVisible={props.onToggleVisible}
                 onReorder={props.onReorder}
+                onRenameElement={props.onRenameElement}
               />
             )}
             {activeTab === 'document' && (
