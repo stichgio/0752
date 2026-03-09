@@ -27,6 +27,5 @@ export default defineConfig({
     },
     optimizeDeps: {
         include: ['lucide-react'],
-        exclude: ['@excalidraw/excalidraw'],
     }
 })
