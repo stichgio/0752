@@ -118,7 +118,7 @@ export function StylePanel({ element, onUpdate, theme }: StylePanelProps) {
                                             {token.label}
                                         </span>
                                         <span className="text-[9px] text-neutral-400">
-                                            {token.style.fontFamily || 'Arial'} · {token.style.fontSize || 12}
+                                            {token.style.fontFamily || 'Arial'} - {token.style.fontSize || 12}
                                         </span>
                                     </button>
                                 ))}

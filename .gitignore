@@ -52,3 +52,5 @@ tmp/
 .claude/
 security_best_practices_report.md
 
+claude.md
+gemini.md
