@@ -1,9 +1,12 @@
-﻿import { defineConfig } from 'vite'
+import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { resolve } from 'path'
 
 export default defineConfig({
     plugins: [react()],
+    define: {
+        "process.env.IS_PREACT": JSON.stringify("false"),
+    },
     resolve: {
         alias: {
             '@': resolve(__dirname, './src'),
@@ -23,6 +26,7 @@ export default defineConfig({
         }
     },
     optimizeDeps: {
-        include: ['lucide-react']
+        include: ['lucide-react'],
+        exclude: ['@excalidraw/excalidraw'],
     }
 })
