@@ -1,0 +1,11 @@
+/* Ocultar footer de marca en el menú hamburger */
+.App-menu__footer,
+.App-menu_bottom--transition-left {
+    display: none !important;
+}
+
+/* Ocultar links a excalidraw.com o github/excalidraw */
+a[href*="excalidraw.com"],
+a[href*="github.com/excalidraw"] {
+    display: none !important;
+}
