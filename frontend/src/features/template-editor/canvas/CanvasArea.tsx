@@ -479,6 +479,15 @@ export function CanvasArea({
             if (state.mode !== 'drag-pending' || !state.elementId) return;
 
             const dragIds = state.dragIds.length > 0 ? state.dragIds : [state.elementId];
+            const pointerId = activeDragPointerIdRef.current;
+            const pointerTarget = activeDragPointerTargetRef.current;
+            if (
+                pointerId !== null &&
+                pointerTarget &&
+                !pointerTarget.hasPointerCapture(pointerId)
+            ) {
+                pointerTarget.setPointerCapture(pointerId);
+            }
             refreshDocumentSnapLines();
             activeSnapLinesRef.current = collectSnapLines(documentSnapLinesRef.current, dragIds);
             pendingDragPointRef.current = point;
@@ -1071,9 +1080,7 @@ export function CanvasArea({
                 height: maxY - minY,
             };
 
-            e.preventDefault();
             const pointerTarget = e.currentTarget as HTMLElement;
-            pointerTarget.setPointerCapture(e.pointerId);
             activeDragPointerIdRef.current = e.pointerId;
             activeDragPointerTargetRef.current = pointerTarget;
 
@@ -1513,11 +1520,3 @@ export function CanvasArea({
         </div>
     );
 }
-
-
-
-
-
-
-
-

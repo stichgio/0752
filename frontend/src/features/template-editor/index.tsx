@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState, memo } from 'react';
 import {
   FileCode2, FileJson, Plus, Printer,
-  Redo2, Save, Send, Undo2, X, Eye, Download, Upload, History, ShieldAlert,
+  Redo2, Save, Send, Undo2, X, Eye, Download, Upload, History,
   MoreHorizontal,
 } from 'lucide-react';
 import type { CanvasDocument, PageSettings } from './canvasTypes';
@@ -14,7 +14,7 @@ import {
 import { buildDataPreviewFromReport } from './dataPreview';
 import CanvasEditor from './CanvasEditor';
 import { exportToJinja2, exportToJSON, importFromJSON, generatePreviewHtml } from './exportUtils';
-import { applyVariantToDocument, ensureCanvasDocument, validateCanvasDocument } from './documentModel';
+import { ensureCanvasDocument } from './documentModel';
 import { useUndoableState } from './hooks/useUndoableState';
 import type { CanvasChangeOptions } from './historyTypes';
 import { templateEditorApi, canvasDocumentToTemplateJson } from './api';
@@ -143,10 +143,7 @@ export default function TemplateEditor() {
   const [showPreview, setShowPreview] = useState(false);
   const [previewHtml, setPreviewHtml] = useState('');
   const [showGenerator, setShowGenerator] = useState(false);
-  const [showPreviewMatrix, setShowPreviewMatrix] = useState(false);
-  const [previewMatrixEntries, setPreviewMatrixEntries] = useState<Array<{ id: string; label: string; previewHtml: string }>>([]);
   const [dataPreview, setDataPreview] = useState<Record<string, unknown> | undefined>(undefined);
-  const [validationIssues, setValidationIssues] = useState<Array<{ level: 'error' | 'warning'; code: string; message: string; path?: string }>>([]);
   const [versionHistory, setVersionHistory] = useState<Array<{ version: number; status: string; author: string; createdAt: string }>>([]);
   const [leftWidth, setLeftWidth] = useState(320);
   const [rightWidth, setRightWidth] = useState(320);
@@ -462,10 +459,9 @@ export default function TemplateEditor() {
       if (validationTemplateJson) {
         const validation = await templateEditorApi.validateTemplate(resolvedTemplateId, validationTemplateJson, 'editor');
         const issues = Array.isArray(validation.issues) ? validation.issues : [];
-        setValidationIssues(issues);
-        const hasErrors = issues.some((issue) => issue.level === 'error');
-        if (hasErrors) {
-          toast('No se pudo publicar: hay errores críticos de validación', 'err');
+        const firstError = issues.find((issue) => issue.level === 'error');
+        if (firstError) {
+          toast(firstError.message || 'No se pudo publicar por un error de validacion', 'err');
           return;
         }
       }
@@ -536,42 +532,6 @@ export default function TemplateEditor() {
     }
   }, [serverTemplateId]);
 
-  const runValidation = useCallback(async () => {
-    const localIssues = validateCanvasDocument(normalizeDocument(doc));
-    if (!serverTemplateId) {
-      setValidationIssues(localIssues);
-      return localIssues;
-    }
-    const templateJson = canvasDocumentToTemplateJson(doc, effectiveReportType);
-    const payload = templateJson || undefined;
-    if (!payload) return localIssues;
-    const result = await templateEditorApi.validateTemplate(serverTemplateId, payload, 'editor');
-    const remoteIssues = Array.isArray(result.issues) ? result.issues : [];
-    const merged = [...remoteIssues, ...localIssues.filter((issue) => !remoteIssues.some((remote) => remote.code === issue.code && remote.path === issue.path))];
-    setValidationIssues(merged);
-    return merged;
-  }, [doc, effectiveReportType, serverTemplateId]);
-
-  const runPreviewMatrix = useCallback(() => {
-    const normalizedDoc = normalizeDocument(doc);
-    const entries = [
-      {
-        id: 'base',
-        label: 'Base',
-        previewHtml: generatePreviewHtml(normalizedDoc, (dataPreview || {}) as Record<string, string>),
-      },
-      ...((normalizedDoc.variants || []).map((variant) => ({
-        id: variant.id,
-        label: variant.name,
-        previewHtml: generatePreviewHtml(
-          applyVariantToDocument(normalizedDoc, variant.id),
-          { ...((dataPreview || {}) as Record<string, string>), ...((variant.sampleData || {}) as Record<string, string>) },
-        ),
-      }))),
-    ];
-    setPreviewMatrixEntries(entries);
-    setShowPreviewMatrix(true);
-  }, [dataPreview, doc]);
 
   const rollbackToVersion = useCallback(async (version: number) => {
     if (!serverTemplateId) return;
@@ -609,16 +569,16 @@ export default function TemplateEditor() {
     <div className="template-editor-root h-full w-full flex flex-col bg-neutral-50">
       {/* Header */}
       <header className="border-b border-neutral-200 bg-white px-4 py-2 z-50 flex-shrink-0">
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Logo */}
-          <img
-            src="https://res.cloudinary.com/dzhp64paw/image/upload/v1771449784/logo_xipfod.png"
-            alt="Logo"
-            className="h-7 w-auto object-contain flex-shrink-0 opacity-95"
-          />
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3 md:flex-nowrap">
+            {/* Logo */}
+            <img
+              src="https://res.cloudinary.com/dzhp64paw/image/upload/v1771449784/logo_xipfod.png"
+              alt="Logo"
+              className="h-7 w-auto object-contain flex-shrink-0 opacity-95"
+            />
 
-          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2">
-            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-2 py-1.5">
+            <div className="flex min-w-0 w-full max-w-[560px] flex-wrap items-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-2 py-1.5">
               <button
                 onClick={newTemplate}
                 title="Nueva plantilla en blanco"
@@ -628,7 +588,7 @@ export default function TemplateEditor() {
                 Nuevo
               </button>
 
-              <div className="min-w-[180px] flex-1">
+              <div className="min-w-[180px] flex-1 md:max-w-[340px]">
                 <input
                   className="h-8 w-full min-w-0 rounded-xl border-0 bg-transparent px-2 text-sm font-medium text-neutral-700 outline-none transition focus:bg-white focus:ring-2 focus:ring-violet-200"
                   value={doc.name}
@@ -637,9 +597,10 @@ export default function TemplateEditor() {
                   title="Nombre de plantilla"
                 />
               </div>
-
             </div>
+          </div>
 
+          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2">
             <div className="inline-flex h-8 items-center gap-2 rounded-full border border-neutral-200 bg-white px-2.5">
               <StatusPill status={status} />
               {dirty && (
@@ -660,6 +621,10 @@ export default function TemplateEditor() {
               <ToolbarBtn onClick={preview} title="Vista previa" className="text-neutral-700">
                 <Eye size={15} />
                 Vista previa
+              </ToolbarBtn>
+              <ToolbarBtn onClick={() => setShowGenerator(true)} title="Generar reporte" className="text-neutral-700">
+                <Printer size={15} />
+                Generar reporte
               </ToolbarBtn>
               <ToolbarBtn onClick={saveTemplate} disabled={!dirty} title="Guardar en la nube" className="text-neutral-700">
                 <Save size={15} />
@@ -745,48 +710,6 @@ export default function TemplateEditor() {
                         <span className="text-xs text-neutral-500">Revisa versiones guardadas</span>
                       </span>
                     </button>
-
-                    <button
-                      onClick={() => {
-                        closeUtilitiesMenu();
-                        runPreviewMatrix();
-                      }}
-                      className={OVERFLOW_MENU_ITEM_CLASS}
-                    >
-                      <Eye size={16} className="mt-0.5 flex-shrink-0 text-neutral-500" />
-                      <span className="flex flex-col items-start leading-tight">
-                        <span className="font-medium text-neutral-800">Preview matrix</span>
-                        <span className="text-xs text-neutral-500">Compara base y variantes</span>
-                      </span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        closeUtilitiesMenu();
-                        void runValidation();
-                      }}
-                      className={OVERFLOW_MENU_ITEM_CLASS}
-                    >
-                      <ShieldAlert size={16} className="mt-0.5 flex-shrink-0 text-neutral-500" />
-                      <span className="flex flex-col items-start leading-tight">
-                        <span className="font-medium text-neutral-800">Validar</span>
-                        <span className="text-xs text-neutral-500">Ejecuta chequeos de consistencia</span>
-                      </span>
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        closeUtilitiesMenu();
-                        setShowGenerator(true);
-                      }}
-                      className={OVERFLOW_MENU_ITEM_CLASS}
-                    >
-                      <Printer size={16} className="mt-0.5 flex-shrink-0 text-neutral-500" />
-                      <span className="flex flex-col items-start leading-tight">
-                        <span className="font-medium text-neutral-800">Generar reporte</span>
-                        <span className="text-xs text-neutral-500">Usa una plantilla publicada</span>
-                      </span>
-                    </button>
                   </div>
                 )}
               </div>
@@ -828,21 +751,11 @@ export default function TemplateEditor() {
         />
       </div>
 
-      {(validationIssues.length > 0 || versionHistory.length > 0) && (
-        <section className="border-t border-neutral-200 bg-white px-4 py-2 text-xs grid grid-cols-2 gap-4">
-          <div>
-            <h4 className="font-semibold text-neutral-700">Validación</h4>
-            <ul className="max-h-24 overflow-auto mt-1">
-              {validationIssues.map((issue, idx) => (
-                <li key={`${issue.code}-${idx}`} className={issue.level === 'error' ? 'text-red-600' : 'text-amber-600'}>
-                  [{issue.level}] {issue.message} {issue.path ? `(${issue.path})` : ''}
-                </li>
-              ))}
-            </ul>
-          </div>
+      {versionHistory.length > 0 && (
+        <section className="border-t border-neutral-200 bg-white px-4 py-2 text-xs">
           <div>
             <h4 className="font-semibold text-neutral-700">Historial</h4>
-            <ul className="max-h-24 overflow-auto mt-1">
+            <ul className="mt-1 max-h-24 overflow-auto">
               {versionHistory.map((v) => (
                 <li key={v.version} className="flex items-center justify-between gap-2 text-neutral-600">
                   <span>v{v.version} - {v.status} - {v.author}</span>
@@ -860,27 +773,6 @@ export default function TemplateEditor() {
             </ul>
           </div>
         </section>
-      )}
-
-      {showPreviewMatrix && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={() => setShowPreviewMatrix(false)}>
-          <div className="flex h-[92vh] w-[min(1280px,96vw)] flex-col rounded-xl bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>
-            <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
-              <h3 className="text-sm font-semibold text-neutral-800">Preview matrix</h3>
-              <button type="button" onClick={() => setShowPreviewMatrix(false)} className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-neutral-200 bg-white text-neutral-500 hover:bg-neutral-50">
-                <X size={14} />
-              </button>
-            </div>
-            <div className="grid min-h-0 flex-1 gap-3 overflow-y-auto p-4 md:grid-cols-2">
-              {previewMatrixEntries.map((entry) => (
-                <div key={entry.id} className="overflow-hidden rounded-xl border border-neutral-200 bg-neutral-50">
-                  <div className="border-b border-neutral-200 bg-white px-3 py-2 text-xs font-semibold text-neutral-700">{entry.label}</div>
-                  <iframe title={entry.label} srcDoc={entry.previewHtml} className="h-[72vh] w-full bg-white" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
       )}
 
       {/* Preview Modal */}
@@ -959,3 +851,7 @@ export default function TemplateEditor() {
     </div>
   );
 }
+
+
+
+
