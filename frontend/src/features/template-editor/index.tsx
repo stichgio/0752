@@ -18,10 +18,12 @@ import { applyVariantToDocument, ensureCanvasDocument, validateCanvasDocument } 
 import { useUndoableState } from './hooks/useUndoableState';
 import type { CanvasChangeOptions } from './historyTypes';
 import { templateEditorApi, canvasDocumentToTemplateJson } from './api';
+import { apiClient } from '@/utils/apiClient';
 import { downloadBlob } from '@/utils/downloadBlob';
 import ReportGenerator from './ReportGenerator';
 
 const SESSION_KEY = 'canvas-editor-session-v1';
+const DEFAULT_REPORT_TYPE = 'technical-report';
 
 function isSamePageSettings(a: PageSettings, b: PageSettings): boolean {
   return (
@@ -40,7 +42,7 @@ function isSamePageSettings(a: PageSettings, b: PageSettings): boolean {
 function normalizeDocument(doc: CanvasDocument): CanvasDocument {
   return ensureCanvasDocument({
     ...doc,
-    reportType: doc.reportType || 'technical-report',
+    reportType: doc.reportType || DEFAULT_REPORT_TYPE,
     pageSettings: normalizePageSettings(doc.pageSettings),
     variables: normalizeVariableRegistry(doc.variables),
   });
@@ -78,17 +80,6 @@ const STATUS_LABEL: Record<PublishStatus, string> = {
   published: 'Publicada',
   archived: 'Archivada',
 };
-
-const REPORT_TYPE_OPTIONS = [
-  { value: 'technical-report', label: 'Reporte tecnico' },
-  { value: 'generic', label: 'Generico' },
-] as const;
-
-const SCENARIO_OPTIONS = [
-  { value: 'first', label: '1er reporte' },
-  { value: 'recent', label: 'Reciente' },
-  { value: 'custom', label: 'JSON custom' },
-] as const;
 
 const OVERFLOW_MENU_ITEM_CLASS = 'flex w-full items-start gap-3 rounded-2xl px-3 py-2.5 text-left text-sm text-neutral-700 transition-colors hover:bg-neutral-100';
 
@@ -154,9 +145,6 @@ export default function TemplateEditor() {
   const [showPreviewMatrix, setShowPreviewMatrix] = useState(false);
   const [previewMatrixEntries, setPreviewMatrixEntries] = useState<Array<{ id: string; label: string; previewHtml: string }>>([]);
   const [dataPreview, setDataPreview] = useState<Record<string, unknown> | undefined>(undefined);
-  const [reportType, setReportType] = useState<string>('technical-report');
-  const [availableReports, setAvailableReports] = useState<unknown[]>([]);
-  const [activeScenario, setActiveScenario] = useState<'first' | 'recent' | 'custom'>('first');
   const [validationIssues, setValidationIssues] = useState<Array<{ level: 'error' | 'warning'; code: string; message: string; path?: string }>>([]);
   const [versionHistory, setVersionHistory] = useState<Array<{ version: number; status: string; author: string; createdAt: string }>>([]);
   const [leftWidth, setLeftWidth] = useState(320);
@@ -165,6 +153,7 @@ export default function TemplateEditor() {
   const [showUtilitiesMenu, setShowUtilitiesMenu] = useState(false);
   const importRef = useRef<HTMLInputElement>(null);
   const utilitiesMenuRef = useRef<HTMLDivElement>(null);
+  const effectiveReportType = doc.reportType || DEFAULT_REPORT_TYPE;
 
   const toast = useCallback((msg: string, type: Toast['type'] = 'info') => {
     const id = Date.now();
@@ -205,7 +194,6 @@ export default function TemplateEditor() {
             ? s.serverTemplateId
             : (typeof s.templateId === 'string' ? s.templateId : '');
           setServerTemplateId(storedTemplateId || null);
-          setReportType((s?.doc?.reportType as string) || 'technical-report');
         }
       }
     } catch {
@@ -224,27 +212,25 @@ export default function TemplateEditor() {
 
     const loadDataPreview = async () => {
       try {
-        const response = await fetch('/api/technical-reports/reports', {
-          method: 'GET',
+        const response = await apiClient.get<{ reports?: unknown[] }>('/api/technical-reports/reports', {
           signal: controller.signal,
         });
-        if (!response.ok) return;
-
-        const payload = (await response.json()) as { reports?: unknown[] };
-        const reports = Array.isArray(payload.reports) ? payload.reports : [];
+        const reports = Array.isArray(response.data?.reports) ? response.data.reports : [];
         if (!isActive) return;
 
-        setAvailableReports(reports.slice(0, 10));
         const firstReport = reports[0] || null;
         if (!firstReport) {
           setDataPreview(undefined);
           return;
         }
+
+        const preview = buildDataPreviewFromReport(firstReport, effectiveReportType);
+        setDataPreview(Object.keys(preview).length ? preview : undefined);
       } catch (error) {
-        if ((error as { name?: string })?.name === 'AbortError') return;
+        const requestError = error as { name?: string; code?: string };
+        if (requestError?.name === 'AbortError' || requestError?.code === 'ERR_CANCELED') return;
         if (isActive) {
           setDataPreview(undefined);
-          setAvailableReports([]);
         }
       }
     };
@@ -254,28 +240,16 @@ export default function TemplateEditor() {
       isActive = false;
       controller.abort();
     };
-  }, []);
-
-  useEffect(() => {
-    if (activeScenario === 'custom') return;
-    if (availableReports.length === 0) {
-      setDataPreview(undefined);
-      return;
-    }
-    const report = activeScenario === 'recent' ? availableReports[1] || availableReports[0] : availableReports[0];
-    if (!report) return;
-    const preview = buildDataPreviewFromReport(report, reportType);
-    setDataPreview(Object.keys(preview).length ? preview : undefined);
-  }, [activeScenario, availableReports, reportType]);
+  }, [effectiveReportType]);
 
   // ── Auto-save ─────────────────────────────────────────────────────────────
 
   useEffect(() => {
     const t = setTimeout(() => {
-      localStorage.setItem(SESSION_KEY, JSON.stringify({ doc: { ...doc, reportType }, status, serverTemplateId }));
+      localStorage.setItem(SESSION_KEY, JSON.stringify({ doc, status, serverTemplateId }));
     }, 1000);
     return () => clearTimeout(t);
-  }, [doc, reportType, status, serverTemplateId]);
+  }, [doc, status, serverTemplateId]);
 
   // ── Warn on close ─────────────────────────────────────────────────────────
 
@@ -436,7 +410,7 @@ export default function TemplateEditor() {
         doc,
         author: 'editor',
         role: 'editor',
-        reportType,
+        reportType: effectiveReportType,
         featureFlag: true,
       });
 
@@ -457,7 +431,7 @@ export default function TemplateEditor() {
       const msg = error instanceof Error ? error.message : 'Error al guardar en la nube';
       toast(msg, 'err');
     }
-  }, [doc, reportType, serverTemplateId, status, setDocHistory, toast]);
+  }, [doc, effectiveReportType, serverTemplateId, status, setDocHistory, toast]);
 
   const publish = useCallback(async () => {
     if (!doc.elements.length) {
@@ -472,11 +446,11 @@ export default function TemplateEditor() {
         doc,
         author: 'editor',
         role: 'editor',
-        reportType,
+        reportType: effectiveReportType,
         featureFlag: true,
       });
 
-      const validationTemplateJson = canvasDocumentToTemplateJson(doc, reportType);
+      const validationTemplateJson = canvasDocumentToTemplateJson(doc, effectiveReportType);
       if (validationTemplateJson) {
         const validation = await templateEditorApi.validateTemplate(resolvedTemplateId, validationTemplateJson, 'editor');
         const issues = Array.isArray(validation.issues) ? validation.issues : [];
@@ -511,7 +485,7 @@ export default function TemplateEditor() {
       const msg = error instanceof Error ? error.message : 'No se pudo publicar la plantilla';
       toast(msg, 'err');
     }
-  }, [doc, reportType, serverTemplateId, setDocHistory, toast]);
+  }, [doc, effectiveReportType, serverTemplateId, setDocHistory, toast]);
 
   const handleUnpublishTemplate = useCallback(async (templateId: string) => {
     await templateEditorApi.updateStatus(templateId, 'draft', 'editor');
@@ -560,7 +534,7 @@ export default function TemplateEditor() {
       setValidationIssues(localIssues);
       return localIssues;
     }
-    const templateJson = canvasDocumentToTemplateJson(doc, reportType);
+    const templateJson = canvasDocumentToTemplateJson(doc, effectiveReportType);
     const payload = templateJson || undefined;
     if (!payload) return localIssues;
     const result = await templateEditorApi.validateTemplate(serverTemplateId, payload, 'editor');
@@ -568,7 +542,7 @@ export default function TemplateEditor() {
     const merged = [...remoteIssues, ...localIssues.filter((issue) => !remoteIssues.some((remote) => remote.code === issue.code && remote.path === issue.path))];
     setValidationIssues(merged);
     return merged;
-  }, [doc, reportType, serverTemplateId]);
+  }, [doc, effectiveReportType, serverTemplateId]);
 
   const runPreviewMatrix = useCallback(() => {
     const normalizedDoc = normalizeDocument(doc);
@@ -656,37 +630,6 @@ export default function TemplateEditor() {
                 />
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <label className="min-w-[132px]">
-                  <select
-                    className="h-8 w-full rounded-xl border-0 bg-white px-3 text-sm font-medium text-neutral-700 outline-none transition focus:ring-2 focus:ring-violet-200"
-                    value={reportType}
-                    onChange={(e) => setReportType(e.target.value)}
-                    title="Tipo de reporte"
-                  >
-                    {REPORT_TYPE_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="min-w-[132px]">
-                  <select
-                    className="h-8 w-full rounded-xl border-0 bg-white px-3 text-sm font-medium text-neutral-700 outline-none transition focus:ring-2 focus:ring-violet-200"
-                    value={activeScenario}
-                    onChange={(e) => setActiveScenario(e.target.value as 'first' | 'recent' | 'custom')}
-                    title="Escenario de datos"
-                  >
-                    {SCENARIO_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-              </div>
             </div>
 
             <div className="inline-flex h-8 items-center gap-2 rounded-full border border-neutral-200 bg-white px-2.5">

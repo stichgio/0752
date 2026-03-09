@@ -457,8 +457,10 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
             return;
         }
 
+        let cancelled = false;
+        const objectUrls = [];
+
         const analyzeImages = async () => {
-            const objectUrls = [];
             const orientations = await Promise.all(
                 images.map(img => new Promise(resolve => {
                     const el = new window.Image();
@@ -471,6 +473,8 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
             );
             // Revoke all object URLs after analysis
             objectUrls.forEach(url => URL.revokeObjectURL(url));
+
+            if (cancelled) return;
 
             const count = images.length;
             const majorityLandscape = orientations.filter(Boolean).length > orientations.length / 2;
@@ -486,6 +490,10 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
         };
 
         analyzeImages();
+        return () => {
+            cancelled = true;
+            objectUrls.forEach(url => URL.revokeObjectURL(url));
+        };
     }, [images]);
 
     // Logos (Clear by default)

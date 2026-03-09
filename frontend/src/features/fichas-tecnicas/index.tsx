@@ -34,7 +34,6 @@ export default function FichasTecnicas() {
     const loadFichas = async () => {
         await run(async () => {
             const data = await fichasTecnicasApi.getAllFichas(undefined, true);
-            console.log('[FichasTecnicas] Loaded fichas:', data.fichas?.length, 'total:', data.total);
             setFichas(data.fichas || []);
         });
     };
@@ -76,9 +75,7 @@ export default function FichasTecnicas() {
     const handleImportFile = async (file: File) => {
         await run(async () => {
             const result = await fichasTecnicasApi.importFile(file);
-            console.log('[FichasTecnicas] Import result:', result);
             const freshData = await fichasTecnicasApi.getAllFichas(undefined, true);
-            console.log('[FichasTecnicas] Fresh fichas count:', freshData.fichas?.length);
             setFichas(freshData.fichas || []);
             alert(`${result.imported_count} fichas importadas`);
         }, {

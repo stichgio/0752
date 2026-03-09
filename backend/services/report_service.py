@@ -12,6 +12,8 @@ import jinja2
 from fastapi import HTTPException
 from config import settings
 
+logger = logging.getLogger(__name__)
+
 
 def _configure_windows_gtk_runtime() -> None:
     """Optionally add GTK runtime directory on Windows for WeasyPrint dependencies."""
@@ -27,8 +29,8 @@ def _configure_windows_gtk_runtime() -> None:
     if callable(add_dll_directory):
         try:
             add_dll_directory(gtk_path)
-        except Exception:
-            pass
+        except Exception as _dll_err:
+            logger.debug("GTK add_dll_directory failed (non-critical): %s", _dll_err)
 
 
 _configure_windows_gtk_runtime()
@@ -37,7 +39,7 @@ try:
     from weasyprint import HTML
     WEASYPRINT_AVAILABLE = True
 except (OSError, ImportError) as e:
-    print(f"WARNING: WeasyPrint not available: {e}")
+    logger.warning("WeasyPrint not available: %s", e)
     HTML = None
     WEASYPRINT_AVAILABLE = False
 
@@ -54,7 +56,7 @@ if not WEASYPRINT_AVAILABLE:
     for _p in _browser_candidates:
         if os.path.isfile(_p):
             CHROME_PATH = _p
-            print(f"INFO: Using browser fallback for PDF: {_p}")
+            logger.info("Using browser fallback for PDF: %s", _p)
             break
 
 PDF_ENGINE_AVAILABLE = WEASYPRINT_AVAILABLE or (CHROME_PATH is not None)
@@ -212,7 +214,7 @@ def _compress_pdf_with_ghostscript(input_path, output_path=None, quality="printe
 
     gs_cmd = _check_ghostscript_available()
     if not gs_cmd:
-        print("[GS] Ghostscript no disponible, omitiendo compresión")
+        logger.warning("[GS] Ghostscript no disponible, omitiendo compresión")
         return False, input_path, {"error": "Ghostscript not available"}
 
     if output_path is None:
@@ -254,13 +256,13 @@ def _compress_pdf_with_ghostscript(input_path, output_path=None, quality="printe
         )
 
         if result.returncode != 0:
-            print(f"[GS] Error: {result.stderr}")
+            logger.error("[GS] Error: %s", result.stderr)
             if replace_original and os.path.exists(output_path):
                 os.remove(output_path)
             return False, input_path, {"error": result.stderr}
 
         if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
-            print("[GS] Error: Archivo comprimido inválido")
+            logger.error("[GS] Error: Archivo comprimido inválido")
             return False, input_path, {"error": "Invalid output file"}
 
         compressed_size = os.path.getsize(output_path)
@@ -277,24 +279,26 @@ def _compress_pdf_with_ghostscript(input_path, output_path=None, quality="printe
             if replace_original:
                 os.remove(input_path)
                 shutil.move(output_path, input_path)
-                print(f"[GS] Comprimido: {original_size/1024/1024:.1f}MB → {compressed_size/1024/1024:.1f}MB ({reduction:.1f}% reducción)")
+                logger.info("[GS] Comprimido: %.1fMB → %.1fMB (%.1f%% reducción)",
+                            original_size/1024/1024, compressed_size/1024/1024, reduction)
                 return True, input_path, stats
             else:
-                print(f"[GS] Comprimido: {original_size/1024/1024:.1f}MB → {compressed_size/1024/1024:.1f}MB ({reduction:.1f}% reducción)")
+                logger.info("[GS] Comprimido: %.1fMB → %.1fMB (%.1f%% reducción)",
+                            original_size/1024/1024, compressed_size/1024/1024, reduction)
                 return True, output_path, stats
         else:
             if os.path.exists(output_path):
                 os.remove(output_path)
-            print(f"[GS] Sin mejora de compresión, usando original ({original_size/1024/1024:.1f}MB)")
+            logger.info("[GS] Sin mejora de compresión, usando original (%.1fMB)", original_size/1024/1024)
             return True, input_path, {"skipped": True, "reason": "No improvement"}
 
     except subprocess.TimeoutExpired:
-        print("[GS] Error: Timeout en compresión")
+        logger.error("[GS] Error: Timeout en compresión")
         if replace_original and os.path.exists(output_path):
             os.remove(output_path)
         return False, input_path, {"error": "Timeout"}
     except Exception as e:
-        print(f"[GS] Error: {e}")
+        logger.error("[GS] Error: %s", e)
         if replace_original and os.path.exists(output_path):
             try:
                 os.remove(output_path)
@@ -348,16 +352,14 @@ class ReportService:
                 self._template_cache[template_name] = loaded_template
                 return loaded_template
             except Exception as e:
-                print(f"Error loading template {template_name}: {e}")
-                logging.warning("template '%s' not found in strict mode", template_name)
+                logger.warning("Error loading template %s: %s", template_name, e)
                 raise HTTPException(status_code=404, detail=f"Template '{template_name}' not found")
 
         if template_name not in self._template_cache:
             try:
                 self._template_cache[template_name] = self.env.get_template(template_name)
             except Exception as e:
-                print(f"Error loading template {template_name}: {e}")
-                logging.warning("template '%s' not found, using default fallback", template_name)
+                logger.warning("template '%s' not found, using default fallback: %s", template_name, e)
                 self._template_cache[template_name] = self.template
 
         return self._template_cache[template_name]
@@ -389,7 +391,7 @@ class ReportService:
                     if gps[piexif.GPSIFD.GPSLongitudeRef] == b'W': lon = -lon
                     metadata["coords"] = f"{lat:.6f}, {lon:.6f}"
         except Exception as e:
-            print(f"[report_service] Warning: could not extract EXIF from file path: {e}")
+            logger.debug("[report_service] Could not extract EXIF from file path: %s", e)
         return metadata
 
     @staticmethod
@@ -412,7 +414,7 @@ class ReportService:
                         lon = -lon
                     metadata["coords"] = f"{lat:.6f}, {lon:.6f}"
         except Exception as e:
-            print(f"[report_service] Warning: could not extract EXIF from image bytes: {e}")
+            logger.debug("[report_service] Could not extract EXIF from image bytes: %s", e)
         return metadata
 
     @staticmethod
@@ -487,7 +489,7 @@ class ReportService:
                     "metadata": metadata,
                 }
         except Exception as e:
-            print(f"Error preparing image: {e}")
+            logger.warning("Error preparing image: %s", e)
             return None
 
     @staticmethod
@@ -540,7 +542,7 @@ class ReportService:
                 )
                 return buffer.getvalue(), "image/jpeg"
         except Exception as e:
-            print(f"Error optimizing logo: {e}")
+            logger.warning("Error optimizing logo: %s", e)
             return None, mime_type
 
     def _convert_to_degrees(self, value):
@@ -596,7 +598,7 @@ class ReportService:
             self._logo_cache.put(cache_key, data_uri)
             return data_uri
         except Exception as e:
-            print(f"Error processing logo: {e}")
+            logger.warning("Error processing logo: %s", e)
             return logo_data
 
     @staticmethod
@@ -638,7 +640,7 @@ class ReportService:
                             resp.raise_for_status()
                             content = resp.content
                         except Exception as e:
-                            print(f"Error downloading {f_path}: {e}")
+                            logger.warning("Error downloading %s: %s", f_path, e)
                             return None
                     elif f_path and os.path.exists(f_path):
                         def read_file():
@@ -709,9 +711,7 @@ class ReportService:
                     return result
 
                 except Exception as e:
-                    print(f"Error processing file {file_obj}: {e}")
-                    import traceback
-                    traceback.print_exc()
+                    logger.warning("Error processing file %s: %s", file_obj, e, exc_info=True)
                     return None
 
         tasks = [process_single_file(idx, f) for idx, f in enumerate(files)]
@@ -761,7 +761,7 @@ class ReportService:
 
         total_reports = len(reports_list)
         start_time = time.time()
-        print(f"[PDF] Starting BATCHED generation: {total_reports} reports (batch_size={PDF_BATCH_SIZE})")
+        logger.info("[PDF] Starting BATCHED generation: %d reports (batch_size=%d)", total_reports, PDF_BATCH_SIZE)
 
         logo_left_uri = self._process_logo(logo_left, "left")
         logo_right_uri = self._process_logo(logo_right, "right")
@@ -783,7 +783,7 @@ class ReportService:
                     backend_template_name = os.path.basename(template_name)
                     use_single_pass_render = True
                 except Exception as e:
-                    print(f"Template {template_name} not found, falling back to default: {e}")
+                    logger.warning("Template %s not found, falling back to default: %s", template_name, e)
                     template = self.template
                     backend_template_name = "report.html"
                     use_single_pass_render = True
@@ -841,9 +841,7 @@ class ReportService:
                 return {"html": html_out, "index": i}
 
             except Exception as e:
-                print(f"[PDF] Error preparing report {i}: {e}")
-                import traceback
-                traceback.print_exc()
+                logger.warning("[PDF] Error preparing report %d: %s", i, e, exc_info=True)
                 return None
 
         prepared_items = []
@@ -871,7 +869,7 @@ class ReportService:
                         f"Documento {prepared_count} de {total_reports} preparado",
                     )
 
-            print(f"[PDF] Reports prepared: {prepared_count}/{total_reports}")
+            logger.info("[PDF] Reports prepared: %d/%d", prepared_count, total_reports)
 
             if batch_end % GC_INTERVAL == 0:
                 gc.collect()
@@ -889,7 +887,7 @@ class ReportService:
 
             try:
                 loop = asyncio.get_running_loop()
-                print(f"[PDF] Rendering combined HTML for {len(prepared_items)} reports...")
+                logger.info("[PDF] Rendering combined HTML for %d reports...", len(prepared_items))
                 combined_reports = [item["report"] for item in prepared_items]
                 combined_html = template.render(
                     reports=combined_reports,
@@ -916,7 +914,7 @@ class ReportService:
                     single_pdf_path = None
 
                 if GHOSTSCRIPT_ENABLED and total_reports > 1 and not original_quality:
-                    print(f"[PDF] Applying Ghostscript compression (quality={GHOSTSCRIPT_QUALITY})...")
+                    logger.info("[PDF] Applying Ghostscript compression (quality=%s)...", GHOSTSCRIPT_QUALITY)
                     if on_progress:
                         await on_progress("compressing", 0, 1, "")
                     compress_start = time.time()
@@ -927,7 +925,7 @@ class ReportService:
                     )
 
                     compress_time = time.time() - compress_start
-                    print(f"[PDF]    - Compression time: {compress_time:.1f}s")
+                    logger.info("[PDF]    - Compression time: %.1fs", compress_time)
 
                 if output_path:
                     result = output_path
@@ -938,11 +936,12 @@ class ReportService:
 
                 total_time = time.time() - start_time
                 gen_time = total_time - merge_time
-                print(f"[PDF] Complete! {total_reports} reports in {total_time:.1f}s ({total_reports/total_time:.1f} reports/sec)")
-                print(f"[PDF]    - Generation + HTML: {gen_time:.1f}s")
-                print("[PDF]    - Merge skipped: single-pass render")
+                logger.info("[PDF] Complete! %d reports in %.1fs (%.1f reports/sec)",
+                            total_reports, total_time, total_reports / total_time)
+                logger.info("[PDF]    - Generation + HTML: %.1fs", gen_time)
+                logger.info("[PDF]    - Merge skipped: single-pass render")
                 if compression_stats and "reduction_percent" in compression_stats:
-                    print(f"[PDF]    - Compression: {compression_stats['reduction_percent']}% size reduction")
+                    logger.info("[PDF]    - Compression: %s%% size reduction", compression_stats['reduction_percent'])
 
                 return result
             finally:
@@ -959,7 +958,7 @@ class ReportService:
         # =====================================================================
         render_batch_size = 1 if (not WEASYPRINT_AVAILABLE and CHROME_PATH) else PDF_BATCH_SIZE
         render_engine = "browser" if (not WEASYPRINT_AVAILABLE and CHROME_PATH) else "weasyprint"
-        print(f"[PDF] Starting PDF generation in batches of {render_batch_size} (engine={render_engine})...")
+        logger.info("[PDF] Starting PDF generation in batches of %d (engine=%s)...", render_batch_size, render_engine)
 
         all_pdf_paths = []
         failed_pdf_indices = []
@@ -990,10 +989,10 @@ class ReportService:
                                 batch_results.append((original_index, pdf_path))
                             else:
                                 failed_pdf_indices.append(original_index)
-                                print(f"[PDF] Render returned no PDF for report {original_index}")
+                                logger.warning("[PDF] Render returned no PDF for report %d", original_index)
                         except Exception as e:
                             failed_pdf_indices.append(original_index)
-                            print(f"[PDF] Error generating PDF {original_index}: {e}")
+                            logger.warning("[PDF] Error generating PDF %d: %s", original_index, e)
                         finally:
                             rendered_count += 1
                             if on_progress:
@@ -1013,7 +1012,7 @@ class ReportService:
                 processed_count = rendered_count
                 elapsed = time.time() - start_time
                 rate = processed_count / elapsed if elapsed > 0 else 0
-                print(f"[PDF] Generated: {processed_count}/{len(prepared_items)} PDFs ({rate:.1f} PDFs/sec)")
+                logger.info("[PDF] Generated: %d/%d PDFs (%.1f PDFs/sec)", processed_count, len(prepared_items), rate)
 
                 gc.collect()
 
@@ -1030,7 +1029,7 @@ class ReportService:
             # =====================================================================
             # FASE 3: Merge con STREAMING - Escribe directamente a disco
             # =====================================================================
-            print(f"[PDF] Streaming merge of {len(all_pdf_paths)} PDFs...")
+            logger.info("[PDF] Streaming merge of %d PDFs...", len(all_pdf_paths))
             if on_progress:
                 await on_progress("merging", 0, len(all_pdf_paths), "")
             merge_start = time.time()
@@ -1054,7 +1053,7 @@ class ReportService:
                         final_writer.append(pdf_path)
                         os.remove(pdf_path)
                     except Exception as e:
-                        print(f"[PDF] Error merging {pdf_path}: {e}")
+                        logger.warning("[PDF] Error merging %s: %s", pdf_path, e)
                         try:
                             if os.path.exists(pdf_path):
                                 os.remove(pdf_path)
@@ -1085,7 +1084,7 @@ class ReportService:
             # FASE 4: Compresion Ghostscript (opcional)
             # =====================================================================
             if GHOSTSCRIPT_ENABLED and total_reports > 1 and not original_quality:
-                print(f"[PDF] Applying Ghostscript compression (quality={GHOSTSCRIPT_QUALITY})...")
+                logger.info("[PDF] Applying Ghostscript compression (quality=%s)...", GHOSTSCRIPT_QUALITY)
                 if on_progress:
                     await on_progress("compressing", 0, 1, "")
                 compress_start = time.time()
@@ -1096,7 +1095,7 @@ class ReportService:
                 )
 
                 compress_time = time.time() - compress_start
-                print(f"[PDF]    - Compression time: {compress_time:.1f}s")
+                logger.info("[PDF]    - Compression time: %.1fs", compress_time)
 
             if output_path:
                 result = output_path
@@ -1108,11 +1107,12 @@ class ReportService:
 
             total_time = time.time() - start_time
             gen_time = total_time - merge_time
-            print(f"[PDF] Complete! {total_reports} reports in {total_time:.1f}s ({total_reports/total_time:.1f} reports/sec)")
-            print(f"[PDF]    - Generation + HTML: {gen_time:.1f}s")
-            print(f"[PDF]    - Streaming merge: {merge_time:.1f}s")
+            logger.info("[PDF] Complete! %d reports in %.1fs (%.1f reports/sec)",
+                        total_reports, total_time, total_reports / total_time)
+            logger.info("[PDF]    - Generation + HTML: %.1fs", gen_time)
+            logger.info("[PDF]    - Streaming merge: %.1fs", merge_time)
             if compression_stats and "reduction_percent" in compression_stats:
-                print(f"[PDF]    - Compression: {compression_stats['reduction_percent']}% size reduction")
+                logger.info("[PDF]    - Compression: %s%% size reduction", compression_stats['reduction_percent'])
 
             completed = True
             return result
@@ -1128,7 +1128,7 @@ class ReportService:
                 try:
                     final_writer.close()
                 except Exception as e:
-                    print(f"[report_service] Warning: could not close PDF writer: {e}")
+                    logger.warning("[report_service] Could not close PDF writer: %s", e)
             if not completed and final_output_path is not None:
                 try:
                     if os.path.exists(final_output_path):
@@ -1165,9 +1165,7 @@ def _render_pdf_to_file_safe(html_string, original_quality=False):
             return temp_pdf.name
 
         except Exception as e:
-            print(f"[ERROR] WeasyPrint PDF rendering failed: {e}")
-            import traceback
-            traceback.print_exc()
+            logger.error("[ERROR] WeasyPrint PDF rendering failed: %s", e, exc_info=True)
             if not CHROME_PATH:
                 return None
 
@@ -1235,18 +1233,14 @@ def _render_pdf_with_chrome(html_string):
         if result.returncode == 0 and os.path.exists(pdf_path) and os.path.getsize(pdf_path) > 0:
             return pdf_path
 
-        print(
-            f"[ERROR] Chrome PDF generation failed. rc={result.returncode}, "
-            f"stderr: {result.stderr}, stdout: {result.stdout}"
-        )
+        logger.error("[ERROR] Chrome PDF generation failed. rc=%d, stderr: %s, stdout: %s",
+                     result.returncode, result.stderr, result.stdout)
         if pdf_path and os.path.exists(pdf_path):
             os.unlink(pdf_path)
         return None
 
     except Exception as e:
-        print(f"[ERROR] Chrome PDF rendering failed: {e}")
-        import traceback
-        traceback.print_exc()
+        logger.error("[ERROR] Chrome PDF rendering failed: %s", e, exc_info=True)
         if pdf_path and os.path.exists(pdf_path):
             try:
                 os.unlink(pdf_path)

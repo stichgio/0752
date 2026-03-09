@@ -1,9 +1,10 @@
 """
 Endpoints API REST para Fichas Técnicas de Evaluación de Actividades
 """
-from fastapi import APIRouter, UploadFile, File, HTTPException, Form, BackgroundTasks  
-from fastapi.responses import Response, FileResponse, StreamingResponse  
+from fastapi import APIRouter, UploadFile, File, HTTPException, Form, BackgroundTasks
+from fastapi.responses import Response, FileResponse, StreamingResponse
 from typing import Optional, List, Dict, Any
+import asyncio
 import io
 import csv
 import logging
@@ -607,7 +608,7 @@ async def generate_consolidated_pdf_progress(
                     await progress_queue.put({"phase": "error", "detail": str(e)})
                 except Exception:
                     progress_queue.put_nowait({"phase": "error", "detail": str(e)})
-            except BaseException as e:
+            except asyncio.CancelledError:
                 progress_queue.put_nowait({"phase": "error", "detail": "La generación fue interrumpida"})
                 raise
             finally:

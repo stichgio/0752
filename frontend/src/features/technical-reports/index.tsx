@@ -35,7 +35,6 @@ export default function TechnicalReports() {
     const loadReports = async () => {
         await run(async () => {
             const data = await technicalReportsApi.getAllReports(undefined, true);
-            console.log('[TechReports] Loaded reports:', data.reports?.length, 'total:', data.total);
             setReports(data.reports || []);
         });
     };
@@ -77,9 +76,7 @@ export default function TechnicalReports() {
     const handleImportCSV = async (file: File) => {
         await run(async () => {
             const result = await technicalReportsApi.importCSV(file);
-            console.log('[TechReports] Import result:', result);
             const freshData = await technicalReportsApi.getAllReports(undefined, true);
-            console.log('[TechReports] Fresh reports count:', freshData.reports?.length);
             setReports(freshData.reports || []);
             alert(`${result.imported_count} informes importados`);
         }, { onError: msg => alert(`Error importando archivo: ${msg}`) });

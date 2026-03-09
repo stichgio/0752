@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useEffect, memo } from 'react';
+import { useState, useRef, useMemo, useEffect, memo } from 'react';
 import { Zap, RotateCcw, Play, Pause } from 'lucide-react';
 
 const STORAGE_KEY = 'pomodoro-state';
@@ -158,7 +158,7 @@ const PomodoroTimer = () => {
             }
             alarmAudio.loop = true;
             pomodoroAlarmRef.current = alarmAudio;
-            alarmAudio.play().catch(err => console.log('Audio playback failed:', err));
+            alarmAudio.play().catch(err => console.warn('Audio playback failed:', err));
         }
     }, [pomodoroTime]);
 

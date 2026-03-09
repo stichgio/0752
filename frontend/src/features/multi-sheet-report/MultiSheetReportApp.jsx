@@ -56,6 +56,7 @@ const API_BASE = `${getApiBase()}/api/multi-sheet`;
  * Evita que el ID "1" coincida con "11_1.jpeg" o "12_2.jpg".
  */
 const matchesRecordId = (imageName, recordId) => {
+    if (recordId == null) return false;
     const id = String(recordId).trim();
     const name = imageName.toLowerCase();
     const regex = new RegExp(
@@ -1065,12 +1066,10 @@ export default function MultiSheetReportApp() {
                 const res = await fetch(`${API_BASE}/templates`);
                 if (!res.ok) throw new Error('Error al obtener plantillas');
                 const json = await res.json();
-                console.log('[MultiSheet] Templates response:', json);
                 const templates = Array.isArray(json.templates)
                     ? Array.from(new Set(json.templates.map(t => String(t || '').trim()).filter(Boolean)))
                     : [];
                 const sections = normalizeTemplateSections(json.sections);
-                console.log('[MultiSheet] Normalized sections:', sections);
                 const sectionTemplates = sections.flatMap(section => section.templates);
                 const finalTemplates = templates.length > 0
                     ? templates

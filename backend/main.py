@@ -1,4 +1,4 @@
-from dotenv import load_dotenv  
+from dotenv import load_dotenv
 try:
     load_dotenv(encoding='utf-8')
 except (UnicodeDecodeError, ValueError):
@@ -7,20 +7,25 @@ except (UnicodeDecodeError, ValueError):
 
 from contextlib import asynccontextmanager
 from pathlib import Path
-from fastapi import FastAPI, UploadFile, File, Form, BackgroundTasks, HTTPException, APIRouter, Request, Query  
-from fastapi.exceptions import RequestValidationError  
-from fastapi.staticfiles import StaticFiles  
-from fastapi.middleware.cors import CORSMiddleware  
-from fastapi.responses import FileResponse, JSONResponse  
-from pydantic import BaseModel, Field  
+from fastapi import FastAPI, UploadFile, File, Form, BackgroundTasks, HTTPException, APIRouter, Request, Query
+from fastapi.exceptions import RequestValidationError
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, JSONResponse
+from pydantic import BaseModel, Field
+import asyncio
+import logging
 import os
 import json
 import tempfile
 import traceback
 import re
 import unicodedata
+import uuid
 from typing import Any, Dict, List, Literal, Optional, TypedDict
 from urllib.parse import quote
+
+logger = logging.getLogger(__name__)
 from services.report_service import ReportService
 from pdf_tools import merge_pdfs_interleaved, merge_pdfs_sequential, split_pdf, split_pdf_by_ranges, organize_pdf, extract_pages  
 from pdf_tools.utils import PDFValidationError  
@@ -89,7 +94,7 @@ def _cleanup_file(path: str):
         if os.path.exists(path):
             os.remove(path)
     except Exception as e:
-        print(f"Error removing temp file {path}: {e}")
+        logger.warning("Error removing temp file %s: %s", path, e)
 
 
 _TEMPLATE_FILENAME_ALIASES = {
@@ -419,10 +424,10 @@ def _validate_pdf_uploads(files: List[UploadFile], min_files: int = 2) -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.report_service = ReportService()
-    print("[App] ReportService initialized (singleton)")
+    logger.info("[App] ReportService initialized (singleton)")
     yield
     await app.state.report_service.close()
-    print("[App] ReportService closed")
+    logger.info("[App] ReportService closed")
 
 app = FastAPI(lifespan=lifespan)
 
@@ -629,7 +634,8 @@ async def generate_single_pdf(
     originalQuality: Optional[str] = Form(None),
 ):
     use_original_quality = (originalQuality or "").lower() in ("true", "1", "yes")
-    print(f"Received request: data len={len(data)}, files={len(files)}, customTemplate={'yes' if customTemplate else 'no'}, templateName={templateName}, originalQuality={use_original_quality}")
+    logger.info("Received request: data len=%d, files=%d, customTemplate=%s, templateName=%s, originalQuality=%s",
+                len(data), len(files), 'yes' if customTemplate else 'no', templateName, use_original_quality)
     try:
         # Parse JSON data
         row_data = json.loads(data)
@@ -654,7 +660,7 @@ async def generate_single_pdf(
                 validated = TechnicalReport(**row_data)
                 row_data = validated.model_dump()
         except Exception as e:
-            print(f"Warning: Model validation failed (continuing with raw data): {e}")
+            logger.warning("Model validation failed (continuing with raw data): %s", e)
 
         async def read_logo_bytes(logo_file):
             if not logo_file:
@@ -742,14 +748,14 @@ async def generate_single_pdf(
         raise
     except Exception as e:
         error_trace = traceback.format_exc()
-        print(f"PDF Generation Error:\n{error_trace}")
+        logger.error("PDF Generation Error:\n%s", error_trace)
 
         # Try to provide a user-friendly message for common errors
         error_msg = str(e)
         if "weasyprint" in error_trace.lower():
             error_msg = f"Error del motor de generación PDF (WeasyPrint): {str(e)}"
         elif "No such file" in error_msg:
-             error_msg = f"Recurso de archivo no encontrado: {str(e)}"
+            error_msg = f"Recurso de archivo no encontrado: {str(e)}"
 
         # Return 500 with clear details
         raise HTTPException(
@@ -782,8 +788,6 @@ async def generate_pdf_with_progress(
 ):
     """SSE version of /generate-pdf with real-time progress events."""
     use_original_quality = (originalQuality or "").lower() in ("true", "1", "yes")
-    import asyncio
-    import uuid
 
     # --- Same data preparation as generate_single_pdf ---
     row_data = json.loads(data)
@@ -873,8 +877,8 @@ async def generate_pdf_with_progress(
                     await progress_queue.put({"phase": "error", "detail": str(e)})
                 except Exception:
                     progress_queue.put_nowait({"phase": "error", "detail": str(e)})
-            except BaseException as e:
-                # CancelledError / KeyboardInterrupt: signal the frontend before re-raising
+            except asyncio.CancelledError:
+                # Task was cancelled (e.g. client disconnect): signal the frontend before re-raising
                 progress_queue.put_nowait({"phase": "error", "detail": "La generación fue interrumpida"})
                 raise
             finally:
@@ -940,7 +944,7 @@ async def tool_merge_pdfs(
     files: List[UploadFile] = File(...),
     strict: bool = Form(False)
 ):
-    print(f"Tool Merge Request: {len(files)} files, strict={strict}")
+    logger.info("Tool Merge Request: %d files, strict=%s", len(files), strict)
     _validate_pdf_uploads(files)
 
     try:
@@ -977,7 +981,7 @@ async def tool_merge_pdfs(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Merge Error: {e}")
+        logger.error("Merge Error: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.post("/tools/merge-pdfs-normal")
@@ -988,7 +992,7 @@ async def tool_merge_pdfs_normal(
     """
     Merge normal (secuencial) - Une PDFs uno después del otro sin intercalar.
     """
-    print(f"Tool Merge Normal Request: {len(files)} files")
+    logger.info("Tool Merge Normal Request: %d files", len(files))
     _validate_pdf_uploads(files)
 
     try:
@@ -1000,7 +1004,7 @@ async def tool_merge_pdfs_normal(
                 file_path = build_safe_upload_path(temp_dir, safe_filename, prefix=f"{idx:04d}_", default_name="document.pdf")
                 file_size = await save_upload(file, file_path)
                 input_paths.append(file_path)
-                print(f"  Saved file {idx}: {file.filename} -> {safe_filename} ({file_size} bytes)")
+                logger.debug("  Saved file %d: %s -> %s (%d bytes)", idx, file.filename, safe_filename, file_size)
 
             # Output to persistent temp file
             tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
@@ -1023,7 +1027,7 @@ async def tool_merge_pdfs_normal(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Merge Normal Error: {e}")
+        logger.error("Merge Normal Error: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.post("/tools/split-pdf")
@@ -1034,7 +1038,7 @@ async def tool_split_pdf(
     pages_per_file: int = Form(1, ge=1, le=500),  # FIX: BUG-009 prevent zero/negative pages per split file
     ranges: Optional[str] = Form(None)  # JSON string e.g. "[[1,2], [3,5]]"
 ):
-    print(f"Tool Split Request: {file.filename}, mode={mode}, pages={pages_per_file}, ranges={ranges}")
+    logger.info("Tool Split Request: %s, mode=%s, pages=%d, ranges=%s", file.filename, mode, pages_per_file, ranges)
 
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -1089,8 +1093,7 @@ async def tool_split_pdf(
     except (PDFValidationError, ValueError) as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        print(f"Split Error: {e}")
-        traceback.print_exc()
+        logger.error("Split Error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.post("/tools/organize-pdf")
@@ -1177,8 +1180,7 @@ async def tool_organize_pdf(
     except (PDFValidationError, ValueError) as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        print(f"Organize Error: {e}")
-        traceback.print_exc()
+        logger.error("Organize Error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1236,8 +1238,7 @@ async def tool_extract_pages(
     except (PDFValidationError, ValueError) as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
-        print(f"Extract Pages Error: {e}")
-        traceback.print_exc()
+        logger.error("Extract Pages Error: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))
 
 # Include the API router
