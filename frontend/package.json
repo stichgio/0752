@@ -10,6 +10,7 @@
         "test": "vitest run"
     },
     "dependencies": {
+        "@excalidraw/excalidraw": "^0.18.0",
         "axios": "^1.5.1",
         "browser-image-compression": "^2.0.2",
         "framer-motion": "^10.16.4",
