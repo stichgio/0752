@@ -595,10 +595,10 @@ function ColumnMappingModal({
 function MainHeaderPreview({ title, subtitle, logoLeft, logoRight }) {
     return (
         <div className="flex items-center justify-between border-b-2 border-neutral-300 pb-2 mb-3 bg-white px-3 py-2 rounded-t">
-            <div className="w-16 h-10 flex items-center justify-start">
+            <div className="w-[108px] h-16 flex items-center justify-start">
                 {logoLeft
-                    ? <img src={logoLeft} className="max-h-10 max-w-[64px] object-contain" alt="logo-left" />
-                    : <div className="w-12 h-8 bg-neutral-100 rounded border border-dashed border-neutral-300 flex items-center justify-center">
+                    ? <img src={logoLeft} className="max-h-14 max-w-[108px] object-contain" alt="logo-left" />
+                    : <div className="w-20 h-11 bg-neutral-100 rounded border border-dashed border-neutral-300 flex items-center justify-center">
                         <ImageIcon size={12} className="text-neutral-300" />
                     </div>
                 }
@@ -611,10 +611,10 @@ function MainHeaderPreview({ title, subtitle, logoLeft, logoRight }) {
                     <div className="text-[9px] text-neutral-500 mt-0.5">{subtitle}</div>
                 )}
             </div>
-            <div className="w-16 h-10 flex items-center justify-end">
+            <div className="w-[108px] h-16 flex items-center justify-end">
                 {logoRight
-                    ? <img src={logoRight} className="max-h-10 max-w-[64px] object-contain" alt="logo-right" />
-                    : <div className="w-12 h-8 bg-neutral-100 rounded border border-dashed border-neutral-300 flex items-center justify-center">
+                    ? <img src={logoRight} className="max-h-14 max-w-[108px] object-contain" alt="logo-right" />
+                    : <div className="w-20 h-11 bg-neutral-100 rounded border border-dashed border-neutral-300 flex items-center justify-center">
                         <ImageIcon size={12} className="text-neutral-300" />
                     </div>
                 }

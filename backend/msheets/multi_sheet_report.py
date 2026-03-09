@@ -151,15 +151,15 @@ def _build_main_header_html(header_config: dict[str, Any]) -> str:
 
     logo_left_html = (
         f'<img src="{logo_left}" '
-        f'style="max-height:55px;max-width:110px;object-fit:contain;display:block;" />'
+        f'style="max-height:62px;max-width:126px;object-fit:contain;display:block;" />'
         if logo_left
-        else '<div style="width:110px;"></div>'
+        else '<div style="width:126px;"></div>'
     )
     logo_right_html = (
         f'<img src="{logo_right}" '
-        f'style="max-height:55px;max-width:110px;object-fit:contain;display:block;" />'
+        f'style="max-height:62px;max-width:126px;object-fit:contain;display:block;" />'
         if logo_right
-        else '<div style="width:110px;"></div>'
+        else '<div style="width:126px;"></div>'
     )
     subtitle_html = (
         f'<div style="font-size:9pt;color:#555;margin-top:3px;">{subtitle}</div>'
@@ -170,14 +170,14 @@ def _build_main_header_html(header_config: dict[str, Any]) -> str:
     return (
         '<div style="display:table;width:100%;border-bottom:2px solid #222;'
         'padding-bottom:8px;margin-bottom:6px;font-family:Arial,sans-serif;">'
-        f'<div style="display:table-cell;vertical-align:middle;width:120px;'
+        f'<div style="display:table-cell;vertical-align:middle;width:132px;'
         f'text-align:left;">{logo_left_html}</div>'
         '<div style="display:table-cell;vertical-align:middle;text-align:center;">'
         f'<div style="font-size:14pt;font-weight:bold;text-transform:uppercase;'
         f'letter-spacing:0.5pt;color:#111;">{title}</div>'
         f"{subtitle_html}"
         "</div>"
-        f'<div style="display:table-cell;vertical-align:middle;width:120px;'
+        f'<div style="display:table-cell;vertical-align:middle;width:132px;'
         f'text-align:right;">{logo_right_html}</div>'
         "</div>\n"
     )

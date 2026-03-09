@@ -1,21 +1,55 @@
-let intervalId = null;
+﻿let timeoutId = null;
+let activeEndTime = null;
 
-self.onmessage = function (e) {
-    const { type } = e.data;
+const clearTimer = () => {
+    if (timeoutId !== null) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+    }
+};
+
+const scheduleNextTick = () => {
+    clearTimer();
+
+    if (!Number.isFinite(activeEndTime)) {
+        activeEndTime = null;
+        return;
+    }
+
+    const now = Date.now();
+    const remainingMilliseconds = Math.max(0, activeEndTime - now);
+    const remainingSeconds = Math.ceil(remainingMilliseconds / 1000);
+
+    self.postMessage({
+        type: 'tick',
+        remainingSeconds,
+    });
+
+    if (remainingMilliseconds <= 0) {
+        activeEndTime = null;
+        self.postMessage({ type: 'done' });
+        return;
+    }
+
+    const nextDelay = Math.max(
+        50,
+        remainingMilliseconds - ((remainingSeconds - 1) * 1000)
+    );
+
+    timeoutId = setTimeout(scheduleNextTick, nextDelay);
+};
+
+self.onmessage = (event) => {
+    const { type, endTime } = event.data;
 
     if (type === 'start') {
-        if (intervalId !== null) {
-            clearInterval(intervalId);
-        }
-        intervalId = setInterval(() => {
-            self.postMessage({ type: 'tick' });
-        }, 500);
+        activeEndTime = Number(endTime);
+        scheduleNextTick();
+        return;
     }
 
     if (type === 'stop') {
-        if (intervalId !== null) {
-            clearInterval(intervalId);
-            intervalId = null;
-        }
+        activeEndTime = null;
+        clearTimer();
     }
 };
