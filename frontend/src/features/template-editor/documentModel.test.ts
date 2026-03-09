@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { createElement, createEmptyDocument } from './canvasTypes';
+import { createElement, createEmptyDocument, generateId } from './canvasTypes';
+import type { TemplateElement } from './canvasTypes';
 import {
   addElementToPage,
   alignElements,
@@ -10,6 +11,15 @@ import {
   saveSelectionAsComponent,
   validateCanvasDocument,
 } from './documentModel';
+
+// Helper that mirrors the duplicate logic in CanvasEditor.handleDuplicate
+function duplicateElement(el: TemplateElement, offsetMm = 8): TemplateElement {
+  const clone: TemplateElement = JSON.parse(JSON.stringify(el));
+  clone.id = generateId();
+  clone.name = `${el.name} (copia)`;
+  clone.position = { x: el.position.x + offsetMm, y: el.position.y + offsetMm };
+  return clone;
+}
 
 describe('documentModel', () => {
   it('normalizes legacy documents with page membership', () => {
@@ -198,5 +208,45 @@ describe('distributeElements', () => {
     expect(result.find((el) => el.id === 'a')?.position.x).toBe(0);
     expect(result.find((el) => el.id === 'b')?.position.x).toBe(50);
     expect(result.find((el) => el.id === 'c')?.position.x).toBe(100);
+  });
+});
+
+describe('duplicate element (Ctrl+D contract)', () => {
+  it('generates a new unique ID different from the original', () => {
+    const original = createElement('text', { x: 10, y: 20 });
+    const clone = duplicateElement(original);
+    expect(clone.id).not.toBe(original.id);
+  });
+
+  it('offsets position by 8mm on both axes', () => {
+    const original = createElement('rectangle', { x: 30, y: 50 });
+    const clone = duplicateElement(original, 8);
+    expect(clone.position.x).toBe(38);
+    expect(clone.position.y).toBe(58);
+  });
+
+  it('preserves all other element properties', () => {
+    const original = createElement('heading', { x: 5, y: 5 });
+    original.style.fontSize = 24;
+    original.content = 'Hello';
+    const clone = duplicateElement(original);
+    expect(clone.type).toBe(original.type);
+    expect(clone.style.fontSize).toBe(24);
+    expect(clone.content).toBe('Hello');
+    expect(clone.size).toEqual(original.size);
+  });
+
+  it('duplicates both locked and unlocked elements (locked state does not block Ctrl+D)', () => {
+    const locked = { ...createElement('text', { x: 0, y: 0 }), locked: true };
+    const unlocked = { ...createElement('text', { x: 0, y: 0 }), locked: false };
+    const cloneLocked = duplicateElement(locked);
+    const cloneUnlocked = duplicateElement(unlocked);
+    expect(cloneLocked.id).not.toBe(locked.id);
+    expect(cloneUnlocked.id).not.toBe(unlocked.id);
+  });
+
+  it('generateId produces unique IDs on each call', () => {
+    const ids = new Set(Array.from({ length: 100 }, () => generateId()));
+    expect(ids.size).toBe(100);
   });
 });

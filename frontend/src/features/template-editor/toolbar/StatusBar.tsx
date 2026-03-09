@@ -1,5 +1,7 @@
 import React from 'react';
-import { ZoomIn, ZoomOut, Mouse } from 'lucide-react';
+import { ZoomIn, ZoomOut, Mouse, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
+
+export type SaveState = 'saved' | 'saving' | 'unsaved';
 
 interface StatusBarProps {
     zoom: number;
@@ -13,6 +15,7 @@ interface StatusBarProps {
     onSnapEnabledChange: (enabled: boolean) => void;
     onSnapGridSizeChange: (size: number) => void;
     onShowGridChange: (show: boolean) => void;
+    saveState?: SaveState;
 }
 
 const ZOOM_PRESETS = [25, 50, 75, 100, 150, 200];
@@ -30,6 +33,7 @@ export function StatusBar({
     onSnapEnabledChange,
     onSnapGridSizeChange,
     onShowGridChange,
+    saveState,
 }: StatusBarProps) {
     return (
         <div className="h-8 bg-white/90 backdrop-blur-sm border-t border-neutral-200 flex items-center justify-between px-3 text-[11px] text-neutral-500 select-none shrink-0 gap-3">
@@ -137,6 +141,25 @@ export function StatusBar({
                     <span className="font-mono text-[10px]">
                         <Mouse size={10} className="inline mr-0.5" />
                         {Math.round(mousePos.x)}, {Math.round(mousePos.y)}
+                    </span>
+                )}
+
+                {saveState === 'saved' && (
+                    <span className="text-green-600 text-xs flex items-center gap-1">
+                        <CheckCircle size={12} />
+                        Guardado
+                    </span>
+                )}
+                {saveState === 'saving' && (
+                    <span className="text-gray-400 text-xs flex items-center gap-1">
+                        <Loader2 size={12} className="animate-spin" />
+                        Guardando…
+                    </span>
+                )}
+                {saveState === 'unsaved' && (
+                    <span className="text-amber-500 text-xs flex items-center gap-1">
+                        <AlertCircle size={12} />
+                        Sin guardar
                     </span>
                 )}
             </div>

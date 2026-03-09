@@ -22,6 +22,7 @@ import { SidebarRoot } from './sidebar/SidebarRoot';
 import { CanvasArea } from './canvas/CanvasArea';
 import { InspectorRoot } from './inspector/InspectorRoot';
 import { StatusBar } from './toolbar/StatusBar';
+import type { SaveState } from './toolbar/StatusBar';
 import { ContextToolbar } from './toolbar/ContextToolbar';
 import { AlignmentToolbar } from './toolbar/AlignmentToolbar';
 import { TextFormatToolbar } from './toolbar/TextFormatToolbar';
@@ -171,6 +172,7 @@ interface CanvasEditorProps {
   onUnpublishTemplate?: (templateId: string) => Promise<void> | void;
   onEditPublishedTemplate?: (templateId: string) => Promise<void> | void;
   onDeletePublishedTemplate?: (templateId: string) => Promise<void> | void;
+  saveState?: SaveState;
 }
 
 export default function CanvasEditor({
@@ -190,6 +192,7 @@ export default function CanvasEditor({
   onUnpublishTemplate,
   onEditPublishedTemplate,
   onDeletePublishedTemplate,
+  saveState,
 }: CanvasEditorProps) {
   const doc = useMemo(() => ensureCanvasDocument(incomingDoc), [incomingDoc]);
   const activePageId = useMemo(() => getActivePageId(doc), [doc]);
@@ -1230,6 +1233,7 @@ export default function CanvasEditor({
             onSnapEnabledChange={handleSnapEnabledChange}
             onSnapGridSizeChange={handleSnapGridSizeChange}
             onShowGridChange={handleShowGridChange}
+            saveState={saveState}
           />
         </div>
 

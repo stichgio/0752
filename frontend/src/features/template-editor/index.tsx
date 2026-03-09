@@ -138,6 +138,7 @@ export default function TemplateEditor() {
   const [status, setStatus] = useState<PublishStatus>('draft');
   const [serverTemplateId, setServerTemplateId] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
+  const [saveState, setSaveState] = useState<'saved' | 'saving' | 'unsaved'>('saved');
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [previewHtml, setPreviewHtml] = useState('');
@@ -245,8 +246,15 @@ export default function TemplateEditor() {
   // ── Auto-save ─────────────────────────────────────────────────────────────
 
   useEffect(() => {
+    setSaveState('unsaved');
     const t = setTimeout(() => {
-      localStorage.setItem(SESSION_KEY, JSON.stringify({ doc, status, serverTemplateId }));
+      setSaveState('saving');
+      try {
+        localStorage.setItem(SESSION_KEY, JSON.stringify({ doc, status, serverTemplateId }));
+        setSaveState('saved');
+      } catch {
+        setSaveState('unsaved');
+      }
     }, 1000);
     return () => clearTimeout(t);
   }, [doc, status, serverTemplateId]);
@@ -816,6 +824,7 @@ export default function TemplateEditor() {
           onUnpublishTemplate={handleUnpublishTemplate}
           onEditPublishedTemplate={handleEditPublishedTemplate}
           onDeletePublishedTemplate={handleDeletePublishedTemplate}
+          saveState={saveState}
         />
       </div>
 
