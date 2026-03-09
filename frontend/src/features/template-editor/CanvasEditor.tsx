@@ -20,9 +20,13 @@ import {
 import { PRESET_BLOCKS } from './utils/presetBlocks';
 import { SidebarRoot } from './sidebar/SidebarRoot';
 import { CanvasArea } from './canvas/CanvasArea';
+import { Ruler, RulerCorner, RULER_THICKNESS } from './canvas/Ruler';
 import { InspectorRoot } from './inspector/InspectorRoot';
 import { StatusBar } from './toolbar/StatusBar';
+import type { SaveState } from './toolbar/StatusBar';
 import { ContextToolbar } from './toolbar/ContextToolbar';
+import { AlignmentToolbar } from './toolbar/AlignmentToolbar';
+import { TextFormatToolbar } from './toolbar/TextFormatToolbar';
 import { migrateToCanvas } from './utils/elementDefaults';
 import {
   addElementToPage,
@@ -55,7 +59,10 @@ import {
   updateVariant,
   upsertBinding,
   duplicatePage,
+  alignElements,
+  distributeElements,
 } from './documentModel';
+import type { AlignAxis } from './documentModel';
 import type { CanvasChangeOptions } from './historyTypes';
 
 const CLIPBOARD_STORAGE_KEY = 'canvas_clipboard';
@@ -166,6 +173,7 @@ interface CanvasEditorProps {
   onUnpublishTemplate?: (templateId: string) => Promise<void> | void;
   onEditPublishedTemplate?: (templateId: string) => Promise<void> | void;
   onDeletePublishedTemplate?: (templateId: string) => Promise<void> | void;
+  saveState?: SaveState;
 }
 
 export default function CanvasEditor({
@@ -185,6 +193,7 @@ export default function CanvasEditor({
   onUnpublishTemplate,
   onEditPublishedTemplate,
   onDeletePublishedTemplate,
+  saveState,
 }: CanvasEditorProps) {
   const doc = useMemo(() => ensureCanvasDocument(incomingDoc), [incomingDoc]);
   const activePageId = useMemo(() => getActivePageId(doc), [doc]);
@@ -198,8 +207,11 @@ export default function CanvasEditor({
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   const [activeResizer, setActiveResizer] = useState<'left' | 'right' | null>(null);
   const [snapConfig, setSnapConfig] = useState<SnapConfig>(() => loadSnapConfig());
+  const [showRulers, setShowRulers] = useState(true);
   const hasMigrated = useRef(false);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const canvasWrapperRef = useRef<HTMLDivElement>(null);
+  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const variableRegistry = useMemo(() => normalizeVariableRegistry(doc.variables), [doc.variables]);
 
   useEffect(() => {
@@ -223,6 +235,21 @@ export default function CanvasEditor({
       window.clearTimeout(timeoutId);
     };
   }, [isLeftSidebarOpen, isRightSidebarOpen, leftSidebarWidth, rightSidebarWidth]);
+
+  // Track canvas wrapper dimensions for ruler sizing
+  useEffect(() => {
+    const el = canvasWrapperRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        setCanvasSize({ width: entry.contentRect.width, height: entry.contentRect.height });
+      }
+    });
+    observer.observe(el);
+    setCanvasSize({ width: el.clientWidth, height: el.clientHeight });
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const visibleIds = new Set(currentPageElements.map((element) => element.id));
@@ -434,6 +461,13 @@ export default function CanvasEditor({
       el.id === id ? { ...el, ...updates } : el
     );
     onChange({ ...doc, elements: newElements });
+  }, [doc, onChange]);
+
+  const handleTextFormatUpdate = useCallback((id: string, patch: Partial<TemplateElement>) => {
+    const newElements = doc.elements.map(el =>
+      el.id === id ? { ...el, ...patch } : el
+    );
+    onChange({ ...doc, elements: newElements }, { commitToHistory: true });
   }, [doc, onChange]);
 
   const handleUpdateElements = useCallback((updates: Map<string, Partial<TemplateElement>>) => {
@@ -754,7 +788,15 @@ export default function CanvasEditor({
     setSelectedIds(restoredChildren.map((child) => child.id));
   }, [doc, selectedIds, onChange]);
 
-  // Alignment
+  // --- Alignment helpers for ContextToolbar ---
+  // NOTE: handleAlign and handleDistribute below are used exclusively by ContextToolbar.
+  // They differ from handleAlignElements / handleDistributeElements (used by AlignmentToolbar) in two ways:
+  //   1. handleAlign handles the single-element case by aligning to the PAGE bounds (not the selection
+  //      bounding box), which AlignmentToolbar never needs because it only appears with 2+ elements.
+  //   2. Neither handleAlign nor handleDistribute respect the `locked` property on elements; the
+  //      documentModel helpers used by AlignmentToolbar do.
+  // Do NOT unify these two code paths until ContextToolbar is either removed or updated to use
+  // documentModel.alignElements / distributeElements with proper locked-element awareness.
   const handleAlign = useCallback((type: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
     const selected = currentPageElements.filter(el => selectedIds.includes(el.id));
     if (selected.length === 0) return;
@@ -822,6 +864,19 @@ export default function CanvasEditor({
     handleUpdateElements(updates);
   }, [currentPageElements, handleUpdateElements, selectedIds]);
 
+  // --- Alignment helpers for AlignmentToolbar ---
+  // These delegate to documentModel helpers that correctly skip locked elements.
+  // They are separate from handleAlign / handleDistribute above intentionally — see comment there.
+  const handleAlignElements = useCallback((ids: string[], axis: AlignAxis) => {
+    const newElements = alignElements(doc.elements, ids, axis);
+    onChange({ ...doc, elements: newElements }, { commitToHistory: true });
+  }, [doc, onChange]);
+
+  const handleDistributeElements = useCallback((ids: string[], direction: 'horizontal' | 'vertical') => {
+    const newElements = distributeElements(doc.elements, ids, direction);
+    onChange({ ...doc, elements: newElements }, { commitToHistory: true });
+  }, [doc, onChange]);
+
   const handleApplyPrimaryStyle = useCallback(() => {
     const selected = currentPageElements.filter((element) => selectedIds.includes(element.id));
     if (selected.length < 2) return;
@@ -866,6 +921,13 @@ export default function CanvasEditor({
       el.id === id ? { ...el, visible: el.visible === false ? true : false } : el
     );
     onChange({ ...doc, elements: newElements });
+  }, [doc, onChange]);
+
+  const handleRenameElement = useCallback((id: string, name: string) => {
+    const newElements = doc.elements.map(el =>
+      el.id === id ? { ...el, name } : el
+    );
+    onChange({ ...doc, elements: newElements }, { commitToHistory: true });
   }, [doc, onChange]);
 
   // Layers reorder (change z-index based on new order)
@@ -1018,6 +1080,11 @@ export default function CanvasEditor({
 
   const selectedElements = currentPageElements.filter((element) => selectedIds.includes(element.id));
   const selectedElement = selectedElements.length === 1 ? selectedElements[0] : null;
+  const selectedTextElement =
+    selectedElement !== null &&
+    (selectedElement.type === 'text' || selectedElement.type === 'heading' || selectedElement.type === 'variable')
+      ? selectedElement
+      : null;
   const canGroup =
     selectedElements.length >= 2 && selectedElements.every((element) => element.type !== 'group');
   const canUngroup = selectedElement?.type === 'group';
@@ -1079,6 +1146,7 @@ export default function CanvasEditor({
               onToggleLock={handleToggleLock}
               onToggleVisible={handleToggleVisible}
               onReorder={handleReorder}
+              onRenameElement={handleRenameElement}
               onLoadTemplate={onLoadTemplate}
               currentDocName={doc.name}
               isDirty={isDirty}
@@ -1125,22 +1193,83 @@ export default function CanvasEditor({
 
         {/* Canvas Area */}
         <div className="flex-1 relative flex flex-col min-w-0 overflow-hidden">
-          <CanvasArea
-            document={doc}
-            activePageId={activePageId}
-            pageSettings={pageSettings}
-            onChange={onChange}
-            selectedIds={selectedIds}
-            onSelect={setSelectedIds}
-            onAddElement={handleAddElement}
-            onAddBlock={handleAddBlock}
-            zoom={zoom}
-            onZoomChange={setZoom}
-            snapEnabled={snapConfig.enabled}
-            gridSize={snapConfig.gridSize}
-            showGrid={snapConfig.showGrid}
-            dataPreview={dataPreview}
-          />
+          {/* Alignment Toolbar — shown above canvas when 2+ elements selected */}
+          {selectedIds.length >= 2 && (
+            <div className="flex-none flex items-center px-3 py-1 border-b border-neutral-200 bg-white gap-2">
+              <span className="select-none text-[10px] font-medium text-neutral-400 pr-1">
+                {selectedIds.length} sel
+              </span>
+              <AlignmentToolbar
+                selectedIds={selectedIds}
+                onAlign={handleAlignElements}
+                onDistribute={handleDistributeElements}
+                canDistribute={
+                  currentPageElements
+                    .filter((el) => selectedIds.includes(el.id) && !el.locked)
+                    .length >= 3
+                }
+              />
+            </div>
+          )}
+
+          {/* Text Format Toolbar — shown above canvas when exactly 1 text element selected */}
+          {selectedTextElement !== null && (
+            <div className="flex-none flex items-center px-3 py-1 border-b border-neutral-200 bg-white gap-2">
+              <span className="select-none text-[10px] font-medium text-neutral-400 pr-1">
+                Texto
+              </span>
+              <TextFormatToolbar
+                element={selectedTextElement}
+                onUpdate={(patch) => handleTextFormatUpdate(selectedTextElement.id, patch)}
+              />
+            </div>
+          )}
+
+          {/* Canvas wrapper with ruler overlays */}
+          <div
+            ref={canvasWrapperRef}
+            className="flex-1 relative min-w-0 overflow-hidden"
+            style={showRulers ? { paddingTop: RULER_THICKNESS, paddingLeft: RULER_THICKNESS } : undefined}
+          >
+            <CanvasArea
+              document={doc}
+              activePageId={activePageId}
+              pageSettings={pageSettings}
+              onChange={onChange}
+              selectedIds={selectedIds}
+              onSelect={setSelectedIds}
+              onAddElement={handleAddElement}
+              onAddBlock={handleAddBlock}
+              zoom={zoom}
+              onZoomChange={setZoom}
+              snapEnabled={snapConfig.enabled}
+              gridSize={snapConfig.gridSize}
+              showGrid={snapConfig.showGrid}
+              dataPreview={dataPreview}
+            />
+            {showRulers && (
+              <>
+                {/* Horizontal ruler along the top */}
+                <Ruler
+                  orientation="horizontal"
+                  zoom={zoom}
+                  pageOffsetPx={0}
+                  lengthPx={canvasSize.width - RULER_THICKNESS}
+                  thickness={RULER_THICKNESS}
+                />
+                {/* Vertical ruler along the left */}
+                <Ruler
+                  orientation="vertical"
+                  zoom={zoom}
+                  pageOffsetPx={32}
+                  lengthPx={canvasSize.height - RULER_THICKNESS}
+                  thickness={RULER_THICKNESS}
+                />
+                {/* Corner square at intersection of rulers */}
+                <RulerCorner thickness={RULER_THICKNESS} />
+              </>
+            )}
+          </div>
 
           <StatusBar
             zoom={zoom}
@@ -1153,6 +1282,9 @@ export default function CanvasEditor({
             onSnapEnabledChange={handleSnapEnabledChange}
             onSnapGridSizeChange={handleSnapGridSizeChange}
             onShowGridChange={handleShowGridChange}
+            saveState={saveState}
+            showRulers={showRulers}
+            onShowRulersChange={setShowRulers}
           />
         </div>
 

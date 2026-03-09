@@ -694,6 +694,117 @@ export function resolvePreviewExpression(expression: string, dataPreview?: Recor
   return raw;
 }
 
+// ─── Alignment helpers ────────────────────────────────────────────────────────
+
+export type AlignAxis = 'left' | 'center-h' | 'right' | 'top' | 'center-v' | 'bottom';
+
+/**
+ * Align multiple elements relative to their collective bounding box.
+ * Locked elements are excluded from changes.
+ * Returns a new elements array with positions updated for the selected ids.
+ */
+export function alignElements(
+  elements: TemplateElement[],
+  ids: string[],
+  axis: AlignAxis,
+): TemplateElement[] {
+  const idSet = new Set(ids);
+  const targets = elements.filter((el) => idSet.has(el.id) && !el.locked);
+  if (targets.length === 0) return elements;
+
+  const minX = Math.min(...targets.map((el) => el.position.x));
+  const maxX = Math.max(...targets.map((el) => el.position.x + el.size.width));
+  const minY = Math.min(...targets.map((el) => el.position.y));
+  const maxY = Math.max(...targets.map((el) => el.position.y + el.size.height));
+
+  const targetIds = new Set(targets.map((el) => el.id));
+
+  return elements.map((el) => {
+    if (!targetIds.has(el.id)) return el;
+
+    let x = el.position.x;
+    let y = el.position.y;
+
+    switch (axis) {
+      case 'left':
+        x = minX;
+        break;
+      case 'center-h':
+        x = minX + (maxX - minX) / 2 - el.size.width / 2;
+        break;
+      case 'right':
+        x = maxX - el.size.width;
+        break;
+      case 'top':
+        y = minY;
+        break;
+      case 'center-v':
+        y = minY + (maxY - minY) / 2 - el.size.height / 2;
+        break;
+      case 'bottom':
+        y = maxY - el.size.height;
+        break;
+    }
+
+    return { ...el, position: { x, y } };
+  });
+}
+
+/**
+ * Distribute elements equidistantly along an axis (requires 3+ unlocked elements).
+ * Returns a new elements array with positions updated for the selected ids.
+ */
+export function distributeElements(
+  elements: TemplateElement[],
+  ids: string[],
+  direction: 'horizontal' | 'vertical',
+): TemplateElement[] {
+  const idSet = new Set(ids);
+  const targets = elements.filter((el) => idSet.has(el.id) && !el.locked);
+  if (targets.length < 3) return elements;
+
+  const sorted = [...targets].sort((a, b) =>
+    direction === 'horizontal'
+      ? a.position.x - b.position.x
+      : a.position.y - b.position.y,
+  );
+
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
+
+  const totalElementSize = sorted.reduce(
+    (sum, el) => sum + (direction === 'horizontal' ? el.size.width : el.size.height),
+    0,
+  );
+
+  const span =
+    direction === 'horizontal'
+      ? last.position.x + last.size.width - first.position.x
+      : last.position.y + last.size.height - first.position.y;
+
+  const gap = (span - totalElementSize) / Math.max(1, sorted.length - 1);
+
+  let cursor = direction === 'horizontal' ? first.position.x : first.position.y;
+
+  const updatedPositions = new Map<string, { x: number; y: number }>();
+  sorted.forEach((el) => {
+    if (direction === 'horizontal') {
+      updatedPositions.set(el.id, { x: cursor, y: el.position.y });
+      cursor += el.size.width + gap;
+    } else {
+      updatedPositions.set(el.id, { x: el.position.x, y: cursor });
+      cursor += el.size.height + gap;
+    }
+  });
+
+  return elements.map((el) => {
+    const pos = updatedPositions.get(el.id);
+    return pos ? { ...el, position: pos } : el;
+  });
+}
+
+// ─── Validation ───────────────────────────────────────────────────────────────
+
 export function validateCanvasDocument(doc: CanvasDocument): TemplateValidationIssue[] {
   const normalized = ensureCanvasDocument(doc);
   const issues: TemplateValidationIssue[] = [];

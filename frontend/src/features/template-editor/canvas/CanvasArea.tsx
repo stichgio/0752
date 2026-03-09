@@ -1458,6 +1458,16 @@ export function CanvasArea({
                         />
                     ))}
 
+                    {sortedVisibleElements.length === 0 && !dragSession.active && (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none select-none">
+                            <div className="text-center">
+                                <div className="text-5xl mb-3">📄</div>
+                                <p className="text-gray-400 text-sm font-medium">Esta página está vacía</p>
+                                <p className="text-gray-300 text-xs mt-1">Arrastra un elemento desde el panel izquierdo</p>
+                            </div>
+                        </div>
+                    )}
+
                     {marquee && (
                         <div
                             className="pointer-events-none"
