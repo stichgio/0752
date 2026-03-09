@@ -233,12 +233,12 @@ function CanvasElementComponent({
         zIndex: style.zIndex || 1,
         opacity: effectiveOpacity,
         cursor: elementCursor,
-        outline: isSelected ? `2px solid ${accentColor}` : 'none',
+        outline: isSelected ? '1.5px solid #2563eb' : 'none',
         outlineOffset: '1px',
         pointerEvents: (disableInteraction || suppressPointerEvents) ? 'none' as const : 'auto' as const,
         boxShadow: isDragging ? '0 8px 18px rgba(15, 23, 42, 0.18)' : style.boxShadow,
         willChange: isDragging ? 'transform, box-shadow' : undefined,
-        transition: isDragging ? undefined : 'box-shadow 120ms ease, opacity 120ms ease',
+        transition: isDragging ? undefined : 'box-shadow 120ms ease, opacity 120ms ease, outline-color 150ms ease',
     }), [
         x,
         y,
@@ -253,7 +253,6 @@ function CanvasElementComponent({
         suppressPointerEvents,
         isDragging,
         isSelected,
-        accentColor,
     ]);
 
     const innerStyle: React.CSSProperties = useMemo(() => ({
@@ -747,10 +746,12 @@ function CanvasElementComponent({
                                 height: handleSz,
                                 backgroundColor: 'white',
                                 border: `${1.5 / scale}px solid ${accentColor}`,
-                                borderRadius: dir === 'n' || dir === 's' || dir === 'e' || dir === 'w' ? handleSz / 4 : '50%',
+                                borderRadius: dir === 'n' || dir === 's' || dir === 'e' || dir === 'w' ? `${2 / scale}px` : '50%',
                                 zIndex: 10,
                                 cursor: getCursorForDirection(dir),
-                                boxShadow: `0 0 ${2 / scale}px rgba(0,0,0,0.15)`,
+                                boxShadow: dir === 'n' || dir === 's' || dir === 'e' || dir === 'w'
+                                    ? `0 ${1 / scale}px ${2 / scale}px rgba(0,0,0,0.2)`
+                                    : `0 ${1 / scale}px ${3 / scale}px rgba(0,0,0,0.3)`,
                                 ...getHandlePosition(dir, width, height, handleSz),
                             }}
                             onPointerDown={(e) => {

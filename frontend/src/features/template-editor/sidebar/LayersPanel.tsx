@@ -115,7 +115,7 @@ export function LayersPanel({
                 return (
                     <div key={el.id} className="space-y-0.5">
                         <div
-                            className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs cursor-pointer transition-all ${isSelected
+                            className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs cursor-pointer transition-colors duration-100 ${isSelected
                                 ? 'bg-violet-50 ring-1 ring-violet-200 text-violet-800'
                                 : 'hover:bg-neutral-50 text-neutral-600'
                                 } ${isHidden ? 'opacity-40' : ''}`}

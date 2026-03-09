@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   TemplateElement,
   PageSettings,
@@ -13,7 +13,7 @@ import { TransformPanel } from './TransformPanel.tsx';
 import { StylePanel } from './StylePanel.tsx';
 import { PageSettingsPanel } from './PageSettingsPanel.tsx';
 import { resolvePreviewExpression } from '../documentModel';
-import { Sliders, Unplug } from 'lucide-react';
+import { Sliders, Unplug, ChevronDown } from 'lucide-react';
 
 const PHOTO_COUNT_OPTIONS: Array<{ value: PhotoGridCount; label: string }> = [
   { value: 2, label: '2 (compatibilidad)' },
@@ -107,6 +107,9 @@ export function InspectorRoot({
   onUpsertBinding,
   onRemoveBinding,
 }: InspectorRootProps) {
+  const [transformOpen, setTransformOpen] = useState(true);
+  const [styleOpen, setStyleOpen] = useState(true);
+
   const selectedElementId = selectedIds[0] ?? null;
 
   if (selectedElementId === null) {
@@ -180,8 +183,27 @@ export function InspectorRoot({
         </div>
       </div>
 
-      <TransformPanel element={primaryElement} onUpdate={onUpdateElement} />
-      <StylePanel element={primaryElement} onUpdate={onUpdateElement} theme={theme} />
+      <div>
+        <button
+          onClick={() => setTransformOpen((o) => !o)}
+          className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide hover:bg-gray-50 border-b border-neutral-100"
+        >
+          <span>Posición y tamaño</span>
+          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${transformOpen ? '' : '-rotate-90'}`} />
+        </button>
+        {transformOpen && <TransformPanel element={primaryElement} onUpdate={onUpdateElement} />}
+      </div>
+
+      <div>
+        <button
+          onClick={() => setStyleOpen((o) => !o)}
+          className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide hover:bg-gray-50 border-b border-neutral-100"
+        >
+          <span>Estilo</span>
+          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${styleOpen ? '' : '-rotate-90'}`} />
+        </button>
+        {styleOpen && <StylePanel element={primaryElement} onUpdate={onUpdateElement} theme={theme} />}
+      </div>
 
       {(primaryElement.type === 'variable' || primaryElement.type === 'logo' || primaryElement.type === 'image' || primaryElement.type === 'qr') && (
         <div className="px-3 py-3 border-b border-neutral-100 space-y-2">
