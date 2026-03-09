@@ -1,9 +1,16 @@
 from dotenv import load_dotenv  
-try:
-    load_dotenv(encoding='utf-8')
-except (UnicodeDecodeError, ValueError):
-    import os
-    os.environ.setdefault('PYTHONPATH', './backend')
+import os
+
+# Cargar variables de entorno
+load_dotenv(encoding='utf-8')
+
+# Asegurar PYTHONPATH correcto para importaciones locales
+if not os.environ.get('PYTHONPATH'):
+    # Detectar si estamos en el contenedor de HF (app en root) o local (carpeta backend)
+    if os.path.exists('backend'):
+        os.environ['PYTHONPATH'] = './backend'
+    else:
+        os.environ['PYTHONPATH'] = '.'
 
 from contextlib import asynccontextmanager
 from pathlib import Path
