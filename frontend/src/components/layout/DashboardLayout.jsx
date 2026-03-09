@@ -11,6 +11,7 @@ import {
     FileCode,
     BookOpen,
     Scissors,
+    PenTool,
 } from 'lucide-react';
 import PomodoroTimer from '../PomodoroTimer';
 
@@ -19,20 +20,20 @@ const DashboardLayoutContext = createContext(false);
 const navItems = [
     {
         icon: <LayoutDashboard size={20} />,
-        label: 'Reportes Fotográficos',
+        label: 'Reportes Fotograficos',
         to: '/',
         match: (pathname) => pathname === '/',
         end: true,
     },
     {
         icon: <ClipboardList size={20} />,
-        label: 'Informes Técnicos',
+        label: 'Informes Tecnicos',
         to: '/reportes-tecnicos',
         match: (pathname) => pathname.startsWith('/reportes-tecnicos'),
     },
     {
         icon: <FileText size={20} />,
-        label: 'Fichas Técnicas',
+        label: 'Fichas Tecnicas',
         to: '/fichas-tecnicas',
         match: (pathname) => pathname.startsWith('/fichas-tecnicas'),
     },
@@ -55,6 +56,12 @@ const navItems = [
         match: (pathname) => pathname.startsWith('/template-editor'),
     },
     {
+        icon: <PenTool size={20} />,
+        label: 'GioBoard',
+        to: '/whiteboard',
+        match: (pathname) => pathname.startsWith('/whiteboard'),
+    },
+    {
         icon: <BookOpen size={20} />,
         label: 'Informe Multi-Hoja',
         to: '/msheets',
@@ -72,6 +79,7 @@ const DashboardLayout = ({ children }) => {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
     const isNestedLayout = useContext(DashboardLayoutContext);
     const location = useLocation();
+    const isWhiteboardRoute = location.pathname.startsWith('/whiteboard');
 
     if (isNestedLayout) {
         return children ?? <Outlet />;
@@ -80,11 +88,9 @@ const DashboardLayout = ({ children }) => {
     return (
         <DashboardLayoutContext.Provider value={true}>
             <div className="flex h-screen w-full bg-neutral-950 text-neutral-200 font-sans selection:bg-white selection:text-black overflow-hidden">
-
                 <aside
                     style={{ viewTransitionName: 'dashboard-sidebar' }}
-                    className={`${isSidebarCollapsed ? 'w-16' : 'w-64'
-                        } bg-black border-r border-neutral-800 flex flex-col transition-all duration-300 relative z-50`}
+                    className={`${isSidebarCollapsed ? 'w-16' : 'w-64'} bg-black border-r border-neutral-800 flex flex-col transition-all duration-300 relative z-50`}
                 >
                     <div className="h-14 flex items-center justify-center border-b border-neutral-800">
                         <div className="flex items-center gap-2 font-mono tracking-tighter">
@@ -118,7 +124,7 @@ const DashboardLayout = ({ children }) => {
                                     )}
 
                                     {isActive && (
-                                        <div className="absolute left-0 w-1 h-full bg-white rounded-r shadow-[0_0_10px_white]"></div>
+                                        <div className="absolute left-0 w-1 h-full bg-white rounded-r shadow-[0_0_10px_white]" />
                                     )}
                                 </NavLink>
                             );
@@ -136,13 +142,14 @@ const DashboardLayout = ({ children }) => {
                 </aside>
 
                 <div style={{ viewTransitionName: 'dashboard-content' }} className="flex-1 flex flex-col h-full overflow-hidden bg-neutral-950 relative">
-                    <main className="flex-1 overflow-auto relative bg-[radial-gradient(#1a1a1a_1px,transparent_1px)] [background-size:20px_20px]">
-                        <div className="absolute inset-0 bg-neutral-950/50 pointer-events-none"></div>
+                    <main className={`flex-1 ${isWhiteboardRoute ? 'overflow-hidden' : 'overflow-auto'} relative ${isWhiteboardRoute ? 'bg-[#121212]' : 'bg-[radial-gradient(#1a1a1a_1px,transparent_1px)] [background-size:20px_20px]'}`}>
+                        {!isWhiteboardRoute && (
+                            <div className="absolute inset-0 bg-neutral-950/50 pointer-events-none" />
+                        )}
                         <div className="relative z-10 w-full h-full">
                             {children ?? <Outlet />}
                         </div>
                     </main>
-
                 </div>
             </div>
         </DashboardLayoutContext.Provider>
@@ -150,3 +157,5 @@ const DashboardLayout = ({ children }) => {
 };
 
 export default DashboardLayout;
+
+

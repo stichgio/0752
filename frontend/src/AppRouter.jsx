@@ -1,4 +1,4 @@
-﻿import { Navigate, Route, Routes } from 'react-router-dom';
+import { Navigate, Route, Routes } from 'react-router-dom';
 import App from './App.jsx';
 import DashboardLayout from './components/layout/DashboardLayout';
 import Compressor from './features/compressor';
@@ -9,6 +9,7 @@ import TechnicalReports from './features/technical-reports';
 import PageDocument from './components/layout/PageDocument';
 import MultiSheetReportPage from './features/multi-sheet-report/page';
 import TemplateEditorPage from './features/template-editor/page';
+import GioBoardPage from './features/whiteboard/page';
 
 const legacyRoutes = [
     { path: 'index.html', to: '/' },
@@ -19,6 +20,7 @@ const legacyRoutes = [
     { path: 'pdf-tools.html', to: '/pdf-tools' },
     { path: 'reportes-tecnicos.html', to: '/reportes-tecnicos' },
     { path: 'template-editor.html', to: '/template-editor' },
+    { path: 'whiteboard.html', to: '/whiteboard' },
 ];
 
 export default function AppRouter() {
@@ -66,12 +68,20 @@ export default function AppRouter() {
                         </PageDocument>
                     }
                 />
+                <Route
+                    path="whiteboard"
+                    element={
+                        <PageDocument title="GioBoard" bodyClassName="bg-neutral-950 text-neutral-200 min-h-screen">
+                            <GioBoardPage />
+                        </PageDocument>
+                    }
+                />
             </Route>
 
             <Route
                 path="reportes-tecnicos"
                 element={
-                    <PageDocument title="Informes Técnicos" bodyClassName="technical-theme bg-[#0d0d0d] text-[#eee]">
+                    <PageDocument title="Informes Tecnicos" bodyClassName="technical-theme bg-[#0d0d0d] text-[#eee]">
                         <TechnicalReports />
                     </PageDocument>
                 }
@@ -79,7 +89,7 @@ export default function AppRouter() {
             <Route
                 path="fichas-tecnicas"
                 element={
-                    <PageDocument title="Fichas Técnicas" bodyClassName="technical-theme bg-[#0d0d0d] text-[#eee]">
+                    <PageDocument title="Fichas Tecnicas" bodyClassName="technical-theme bg-[#0d0d0d] text-[#eee]">
                         <FichasTecnicas />
                     </PageDocument>
                 }
