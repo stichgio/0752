@@ -23,6 +23,7 @@ import { CanvasArea } from './canvas/CanvasArea';
 import { InspectorRoot } from './inspector/InspectorRoot';
 import { StatusBar } from './toolbar/StatusBar';
 import { ContextToolbar } from './toolbar/ContextToolbar';
+import { AlignmentToolbar } from './toolbar/AlignmentToolbar';
 import { migrateToCanvas } from './utils/elementDefaults';
 import {
   addElementToPage,
@@ -55,7 +56,10 @@ import {
   updateVariant,
   upsertBinding,
   duplicatePage,
+  alignElements,
+  distributeElements,
 } from './documentModel';
+import type { AlignAxis } from './documentModel';
 import type { CanvasChangeOptions } from './historyTypes';
 
 const CLIPBOARD_STORAGE_KEY = 'canvas_clipboard';
@@ -822,6 +826,16 @@ export default function CanvasEditor({
     handleUpdateElements(updates);
   }, [currentPageElements, handleUpdateElements, selectedIds]);
 
+  const handleAlignElements = useCallback((ids: string[], axis: AlignAxis) => {
+    const newElements = alignElements(doc.elements, ids, axis);
+    onChange({ ...doc, elements: newElements }, { commitToHistory: true });
+  }, [doc, onChange]);
+
+  const handleDistributeElements = useCallback((ids: string[], direction: 'horizontal' | 'vertical') => {
+    const newElements = distributeElements(doc.elements, ids, direction);
+    onChange({ ...doc, elements: newElements }, { commitToHistory: true });
+  }, [doc, onChange]);
+
   const handleApplyPrimaryStyle = useCallback(() => {
     const selected = currentPageElements.filter((element) => selectedIds.includes(element.id));
     if (selected.length < 2) return;
@@ -1125,6 +1139,21 @@ export default function CanvasEditor({
 
         {/* Canvas Area */}
         <div className="flex-1 relative flex flex-col min-w-0 overflow-hidden">
+          {/* Alignment Toolbar — shown above canvas when 2+ elements selected */}
+          {selectedIds.length >= 2 && (
+            <div className="flex-none flex items-center px-3 py-1 border-b border-neutral-200 bg-white gap-2">
+              <span className="select-none text-[10px] font-medium text-neutral-400 pr-1">
+                {selectedIds.length} sel
+              </span>
+              <AlignmentToolbar
+                selectedIds={selectedIds}
+                elements={currentPageElements}
+                onAlign={handleAlignElements}
+                onDistribute={handleDistributeElements}
+                canDistribute={selectedIds.length >= 3}
+              />
+            </div>
+          )}
           <CanvasArea
             document={doc}
             activePageId={activePageId}
