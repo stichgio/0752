@@ -24,6 +24,7 @@ import { InspectorRoot } from './inspector/InspectorRoot';
 import { StatusBar } from './toolbar/StatusBar';
 import { ContextToolbar } from './toolbar/ContextToolbar';
 import { AlignmentToolbar } from './toolbar/AlignmentToolbar';
+import { TextFormatToolbar } from './toolbar/TextFormatToolbar';
 import { migrateToCanvas } from './utils/elementDefaults';
 import {
   addElementToPage,
@@ -438,6 +439,13 @@ export default function CanvasEditor({
       el.id === id ? { ...el, ...updates } : el
     );
     onChange({ ...doc, elements: newElements });
+  }, [doc, onChange]);
+
+  const handleTextFormatUpdate = useCallback((id: string, patch: Partial<TemplateElement>) => {
+    const newElements = doc.elements.map(el =>
+      el.id === id ? { ...el, ...patch } : el
+    );
+    onChange({ ...doc, elements: newElements }, { commitToHistory: true });
   }, [doc, onChange]);
 
   const handleUpdateElements = useCallback((updates: Map<string, Partial<TemplateElement>>) => {
@@ -1043,6 +1051,11 @@ export default function CanvasEditor({
 
   const selectedElements = currentPageElements.filter((element) => selectedIds.includes(element.id));
   const selectedElement = selectedElements.length === 1 ? selectedElements[0] : null;
+  const selectedTextElement =
+    selectedElement !== null &&
+    (selectedElement.type === 'text' || selectedElement.type === 'heading' || selectedElement.type === 'variable')
+      ? selectedElement
+      : null;
   const canGroup =
     selectedElements.length >= 2 && selectedElements.every((element) => element.type !== 'group');
   const canUngroup = selectedElement?.type === 'group';
@@ -1165,6 +1178,19 @@ export default function CanvasEditor({
                     .filter((el) => selectedIds.includes(el.id) && !el.locked)
                     .length >= 3
                 }
+              />
+            </div>
+          )}
+
+          {/* Text Format Toolbar — shown above canvas when exactly 1 text element selected */}
+          {selectedTextElement !== null && (
+            <div className="flex-none flex items-center px-3 py-1 border-b border-neutral-200 bg-white gap-2">
+              <span className="select-none text-[10px] font-medium text-neutral-400 pr-1">
+                Texto
+              </span>
+              <TextFormatToolbar
+                element={selectedTextElement}
+                onUpdate={(patch) => handleTextFormatUpdate(selectedTextElement.id, patch)}
               />
             </div>
           )}
