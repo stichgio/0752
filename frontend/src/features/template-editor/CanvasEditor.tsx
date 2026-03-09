@@ -20,6 +20,7 @@ import {
 import { PRESET_BLOCKS } from './utils/presetBlocks';
 import { SidebarRoot } from './sidebar/SidebarRoot';
 import { CanvasArea } from './canvas/CanvasArea';
+import { Ruler, RulerCorner, RULER_THICKNESS } from './canvas/Ruler';
 import { InspectorRoot } from './inspector/InspectorRoot';
 import { StatusBar } from './toolbar/StatusBar';
 import type { SaveState } from './toolbar/StatusBar';
@@ -206,8 +207,11 @@ export default function CanvasEditor({
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   const [activeResizer, setActiveResizer] = useState<'left' | 'right' | null>(null);
   const [snapConfig, setSnapConfig] = useState<SnapConfig>(() => loadSnapConfig());
+  const [showRulers, setShowRulers] = useState(true);
   const hasMigrated = useRef(false);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const canvasWrapperRef = useRef<HTMLDivElement>(null);
+  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
   const variableRegistry = useMemo(() => normalizeVariableRegistry(doc.variables), [doc.variables]);
 
   useEffect(() => {
@@ -231,6 +235,21 @@ export default function CanvasEditor({
       window.clearTimeout(timeoutId);
     };
   }, [isLeftSidebarOpen, isRightSidebarOpen, leftSidebarWidth, rightSidebarWidth]);
+
+  // Track canvas wrapper dimensions for ruler sizing
+  useEffect(() => {
+    const el = canvasWrapperRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        setCanvasSize({ width: entry.contentRect.width, height: entry.contentRect.height });
+      }
+    });
+    observer.observe(el);
+    setCanvasSize({ width: el.clientWidth, height: el.clientHeight });
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const visibleIds = new Set(currentPageElements.map((element) => element.id));
@@ -1205,22 +1224,52 @@ export default function CanvasEditor({
               />
             </div>
           )}
-          <CanvasArea
-            document={doc}
-            activePageId={activePageId}
-            pageSettings={pageSettings}
-            onChange={onChange}
-            selectedIds={selectedIds}
-            onSelect={setSelectedIds}
-            onAddElement={handleAddElement}
-            onAddBlock={handleAddBlock}
-            zoom={zoom}
-            onZoomChange={setZoom}
-            snapEnabled={snapConfig.enabled}
-            gridSize={snapConfig.gridSize}
-            showGrid={snapConfig.showGrid}
-            dataPreview={dataPreview}
-          />
+
+          {/* Canvas wrapper with ruler overlays */}
+          <div
+            ref={canvasWrapperRef}
+            className="flex-1 relative min-w-0 overflow-hidden"
+            style={showRulers ? { paddingTop: RULER_THICKNESS, paddingLeft: RULER_THICKNESS } : undefined}
+          >
+            <CanvasArea
+              document={doc}
+              activePageId={activePageId}
+              pageSettings={pageSettings}
+              onChange={onChange}
+              selectedIds={selectedIds}
+              onSelect={setSelectedIds}
+              onAddElement={handleAddElement}
+              onAddBlock={handleAddBlock}
+              zoom={zoom}
+              onZoomChange={setZoom}
+              snapEnabled={snapConfig.enabled}
+              gridSize={snapConfig.gridSize}
+              showGrid={snapConfig.showGrid}
+              dataPreview={dataPreview}
+            />
+            {showRulers && (
+              <>
+                {/* Horizontal ruler along the top */}
+                <Ruler
+                  orientation="horizontal"
+                  zoom={zoom}
+                  pageOffsetPx={0}
+                  lengthPx={canvasSize.width - RULER_THICKNESS}
+                  thickness={RULER_THICKNESS}
+                />
+                {/* Vertical ruler along the left */}
+                <Ruler
+                  orientation="vertical"
+                  zoom={zoom}
+                  pageOffsetPx={32}
+                  lengthPx={canvasSize.height - RULER_THICKNESS}
+                  thickness={RULER_THICKNESS}
+                />
+                {/* Corner square at intersection of rulers */}
+                <RulerCorner thickness={RULER_THICKNESS} />
+              </>
+            )}
+          </div>
 
           <StatusBar
             zoom={zoom}
@@ -1234,6 +1283,8 @@ export default function CanvasEditor({
             onSnapGridSizeChange={handleSnapGridSizeChange}
             onShowGridChange={handleShowGridChange}
             saveState={saveState}
+            showRulers={showRulers}
+            onShowRulersChange={setShowRulers}
           />
         </div>
 

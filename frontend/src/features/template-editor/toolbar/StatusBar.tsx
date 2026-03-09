@@ -16,6 +16,8 @@ interface StatusBarProps {
     onSnapGridSizeChange: (size: number) => void;
     onShowGridChange: (show: boolean) => void;
     saveState?: SaveState;
+    showRulers?: boolean;
+    onShowRulersChange?: (show: boolean) => void;
 }
 
 const ZOOM_PRESETS = [25, 50, 75, 100, 150, 200];
@@ -34,6 +36,8 @@ export function StatusBar({
     onSnapGridSizeChange,
     onShowGridChange,
     saveState,
+    showRulers,
+    onShowRulersChange,
 }: StatusBarProps) {
     return (
         <div className="h-8 bg-white/90 backdrop-blur-sm border-t border-neutral-200 flex items-center justify-between px-3 text-[11px] text-neutral-500 select-none shrink-0 gap-3">
@@ -122,6 +126,19 @@ export function StatusBar({
                 >
                     Grid
                 </button>
+
+                {onShowRulersChange !== undefined && (
+                    <button
+                        onClick={() => onShowRulersChange(!showRulers)}
+                        className={`px-2 h-6 rounded border text-[10px] transition-colors ${showRulers
+                            ? 'border-violet-200 bg-violet-50 text-violet-700'
+                            : 'border-neutral-200 hover:bg-neutral-100 text-neutral-600'
+                            }`}
+                        title={showRulers ? 'Ocultar reglas' : 'Mostrar reglas'}
+                    >
+                        Reglas
+                    </button>
+                )}
 
                 <div className="w-px h-3 bg-neutral-200" />
 
