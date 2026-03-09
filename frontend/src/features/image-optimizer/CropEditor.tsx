@@ -170,7 +170,7 @@ export default function CropEditor({ image, aspectRatio, onClose, onSave }: Crop
                         </button>
                         <button
                             onClick={handleSave}
-                            className="inline-flex items-center gap-2 rounded-lg bg-white px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-black transition-colors hover:bg-neutral-200"
+                            className="inline-flex items-center gap-2 rounded-lg bg-neutral-200 px-4 py-2 text-[11px] font-bold uppercase tracking-widest text-black transition-colors hover:bg-white"
                         >
                             <Check size={14} />
                             Aplicar
