@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ZoomIn, ZoomOut, Mouse, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
 
 export type SaveState = 'saved' | 'saving' | 'unsaved';
@@ -41,6 +41,8 @@ export function StatusBar({
     showRulers,
     onShowRulersChange,
 }: StatusBarProps) {
+    const [editingZoom, setEditingZoom] = useState<string | null>(null);
+
     return (
         <div className="h-8 bg-white/90 backdrop-blur-sm border-t border-neutral-200 flex items-center justify-between px-3 text-[11px] text-neutral-500 select-none shrink-0 gap-3">
             <div className="flex items-center gap-1.5 min-w-0">
@@ -69,13 +71,28 @@ export function StatusBar({
                     <ZoomIn size={13} />
                 </button>
 
-                <button
-                    className="px-1.5 py-0.5 rounded font-medium hover:bg-neutral-100 hover:text-neutral-800 transition-colors tabular-nums min-w-[40px] text-center"
-                    onClick={() => onZoomChange(100)}
-                    title="Ajustar a 100%"
-                >
-                    {Math.round(zoom)}%
-                </button>
+                <input
+                    type="text"
+                    className="w-12 text-center text-[11px] bg-transparent border-none outline-none
+                               focus:bg-white focus:border focus:border-blue-400 focus:rounded px-1 cursor-text"
+                    value={editingZoom !== null ? editingZoom : `${Math.round(zoom)}%`}
+                    onChange={(e) => setEditingZoom(e.target.value)}
+                    onFocus={() => setEditingZoom(String(Math.round(zoom)))}
+                    onBlur={() => {
+                        if (editingZoom !== null) {
+                            const parsed = parseInt(editingZoom, 10);
+                            if (!isNaN(parsed) && parsed > 0) onZoomChange(parsed);
+                            setEditingZoom(null);
+                        }
+                    }}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
+                        if (e.key === 'Escape') {
+                            setEditingZoom(null);
+                            (e.target as HTMLInputElement).blur();
+                        }
+                    }}
+                />
 
                 {onFitPage && (
                     <button
