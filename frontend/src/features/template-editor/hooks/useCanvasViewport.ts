@@ -69,9 +69,7 @@ export interface UseCanvasViewportReturn {
     isPanning: boolean;
     containerRef: RefObject<HTMLDivElement>;
     zoomTo: (newZoom: number) => void;
-    zoomToward: (clientX: number, clientY: number, deltaZoom: number) => void;
     fitPage: () => void;
-    startPan: (e: ReactPointerEvent | PointerEvent) => void;
     handleContainerPointerDown: (e: ReactPointerEvent) => void;
 }
 
@@ -261,9 +259,7 @@ export function useCanvasViewport({
         isPanning,
         containerRef,
         zoomTo,
-        zoomToward,
         fitPage,
-        startPan,
         handleContainerPointerDown,
     };
 }

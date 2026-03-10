@@ -1202,6 +1202,7 @@ export function CanvasArea({
 
     const handleCanvasMouseDown = useCallback(
         (e: React.MouseEvent) => {
+            if (e.button !== 0) return; // ignore middle/right clicks — handled by onPointerDown
             if ((e.target as HTMLElement).closest('.canvas-element-wrapper')) return;
 
             if (!pageRef.current) {
