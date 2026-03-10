@@ -97,7 +97,7 @@ describe('CanvasArea drag activation', () => {
           selectedIds={[tableElement.id]}
           onSelect={vi.fn()}
           onAddElement={vi.fn()}
-          zoom={100}
+          viewport={{ zoom: 100, panX: 0, panY: 32 }}
           onZoomChange={vi.fn()}
           snapEnabled
           gridSize={5}

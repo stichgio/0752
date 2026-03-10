@@ -39,8 +39,10 @@ interface CanvasAreaProps {
         overrides?: Partial<TemplateElement>,
     ) => void;
     onAddBlock?: (blockId: BlockPreset, position: { x: number; y: number }) => void;
-    zoom: number;
+    viewport: { zoom: number; panX: number; panY: number };
     onZoomChange: (z: number) => void;
+    isPanning?: boolean;
+    onContainerPointerDown?: (e: React.PointerEvent) => void;
     snapEnabled: boolean;
     gridSize: number;
     showGrid: boolean;
@@ -139,13 +141,16 @@ export function CanvasArea({
     onSelect,
     onAddElement,
     onAddBlock,
-    zoom,
+    viewport,
     onZoomChange,
+    isPanning,
+    onContainerPointerDown,
     snapEnabled,
     gridSize,
     showGrid,
     dataPreview,
 }: CanvasAreaProps) {
+    const { zoom, panX, panY } = viewport;
     const containerRef = useRef<HTMLDivElement>(null);
     const pageRef = useRef<HTMLDivElement>(null);
     const interactionRef = useRef<InteractionState>({ ...defaultInteraction });
@@ -1328,22 +1333,6 @@ export function CanvasArea({
         e.dataTransfer.dropEffect = 'copy';
     }, []);
 
-    useEffect(() => {
-        const container = containerRef.current;
-        if (!container) return;
-
-        const handleWheel = (e: WheelEvent) => {
-            if (e.ctrlKey || e.metaKey) {
-                e.preventDefault();
-                const delta = e.deltaY > 0 ? -5 : 5;
-                onZoomChange(Math.max(10, Math.min(300, zoom + delta)));
-            }
-        };
-
-        container.addEventListener('wheel', handleWheel, { passive: false });
-        return () => container.removeEventListener('wheel', handleWheel);
-    }, [zoom, onZoomChange]);
-
     const pageWidthPx = mmToCanvasPx(pageSettings.width);
     const pageHeightPx = mmToCanvasPx(pageSettings.height);
     const gridSpacingPx = mmToCanvasPx(normalizedGridSize);
@@ -1351,22 +1340,26 @@ export function CanvasArea({
     return (
         <div
             ref={containerRef}
-            className="relative w-full h-full overflow-auto flex items-start justify-center"
+            className="relative w-full h-full overflow-hidden"
             style={{
                 background: 'linear-gradient(135deg, #f0f0f3 0%, #e8e8ed 50%, #f0f0f3 100%)',
                 backgroundImage: 'radial-gradient(circle at 20px 20px, rgba(0,0,0,0.02) 1px, transparent 0)',
                 backgroundSize: '40px 40px',
-                cursor: dragSession.active ? 'grabbing' : undefined,
+                cursor: isPanning ? 'grab' : dragSession.active ? 'grabbing' : undefined,
             }}
             onMouseDown={handleCanvasMouseDown}
+            onPointerDown={onContainerPointerDown}
             onDrop={onDrop}
             onDragOver={onDragOver}
         >
             <div
-                className="relative my-8 shrink-0"
+                className="relative shrink-0"
                 style={{
-                    transform: `scale(${scale})`,
-                    transformOrigin: 'top center',
+                    transform: `translate(${panX}px, ${panY}px) scale(${scale})`,
+                    transformOrigin: '0 0',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
                 }}
             >
                 <div
