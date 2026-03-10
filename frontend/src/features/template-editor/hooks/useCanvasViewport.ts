@@ -186,6 +186,76 @@ export function useCanvasViewport({
         }
     }, [startPan]);
 
+    // Keyboard shortcuts: Ctrl/Cmd + =, -, 0, 1
+    useEffect(() => {
+        const onKeyDown = (e: KeyboardEvent) => {
+            const mod = e.ctrlKey || e.metaKey;
+            if (!mod) return;
+            if (e.key === '=' || e.key === '+') {
+                e.preventDefault();
+                setViewport((prev) => {
+                    const el = containerRef.current;
+                    if (!el) return { ...prev, zoom: clampZoom(prev.zoom + ZOOM_STEP) };
+                    const { width, height } = el.getBoundingClientRect();
+                    return calcZoomToward(width / 2, height / 2, prev.zoom, clampZoom(prev.zoom + ZOOM_STEP), prev.panX, prev.panY);
+                });
+            } else if (e.key === '-') {
+                e.preventDefault();
+                setViewport((prev) => {
+                    const el = containerRef.current;
+                    if (!el) return { ...prev, zoom: clampZoom(prev.zoom - ZOOM_STEP) };
+                    const { width, height } = el.getBoundingClientRect();
+                    return calcZoomToward(width / 2, height / 2, prev.zoom, clampZoom(prev.zoom - ZOOM_STEP), prev.panX, prev.panY);
+                });
+            } else if (e.key === '0') {
+                e.preventDefault();
+                fitPage();
+            } else if (e.key === '1') {
+                e.preventDefault();
+                setViewport((prev) => {
+                    const el = containerRef.current;
+                    if (!el) return { ...prev, zoom: 100 };
+                    const { width, height } = el.getBoundingClientRect();
+                    return calcZoomToward(width / 2, height / 2, prev.zoom, 100, prev.panX, prev.panY);
+                });
+            }
+        };
+        window.addEventListener('keydown', onKeyDown);
+        return () => window.removeEventListener('keydown', onKeyDown);
+    }, [fitPage]);
+
+    // Wheel: Ctrl+wheel → zoom toward cursor; plain wheel → pan
+    useEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
+
+        const onWheel = (e: WheelEvent) => {
+            e.preventDefault();
+            if (e.ctrlKey || e.metaKey) {
+                // Ctrl+wheel or trackpad pinch → zoom toward cursor
+                const delta = e.deltaY > 0 ? -ZOOM_STEP / 2 : ZOOM_STEP / 2;
+                setViewport((prev) => {
+                    const rect = el.getBoundingClientRect();
+                    const cx = e.clientX - rect.left;
+                    const cy = e.clientY - rect.top;
+                    const newZoom = clampZoom(prev.zoom + delta);
+                    if (prev.zoom === 0) return { ...prev, zoom: newZoom };
+                    return calcZoomToward(cx, cy, prev.zoom, newZoom, prev.panX, prev.panY);
+                });
+            } else {
+                // Two-finger scroll → pan
+                setViewport((prev) => ({
+                    ...prev,
+                    panX: prev.panX - e.deltaX,
+                    panY: prev.panY - e.deltaY,
+                }));
+            }
+        };
+
+        el.addEventListener('wheel', onWheel, { passive: false });
+        return () => el.removeEventListener('wheel', onWheel);
+    }, []); // containerRef.current is stable after mount
+
     return {
         viewport,
         isPanning,
