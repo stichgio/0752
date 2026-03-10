@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState, useEffect, RefObject } from 'react';
+import type { PointerEvent as ReactPointerEvent } from 'react';
 
 export const ZOOM_MIN = 10;
 export const ZOOM_MAX = 400;
@@ -70,8 +71,8 @@ export interface UseCanvasViewportReturn {
     zoomTo: (newZoom: number) => void;
     zoomToward: (clientX: number, clientY: number, deltaZoom: number) => void;
     fitPage: () => void;
-    startPan: (e: React.PointerEvent | PointerEvent) => void;
-    handleContainerPointerDown: (e: React.PointerEvent) => void;
+    startPan: (e: ReactPointerEvent | PointerEvent) => void;
+    handleContainerPointerDown: (e: ReactPointerEvent) => void;
 }
 
 export function useCanvasViewport({
@@ -86,8 +87,6 @@ export function useCanvasViewport({
         panY: INITIAL_PAN_Y,
     }));
     const [isPanning, setIsPanning] = useState(false);
-    const viewportRef = useRef(viewport);
-    viewportRef.current = viewport;
     const isSpaceDownRef = useRef(false);
 
     // Center page on first mount when container dimensions are known
@@ -131,7 +130,7 @@ export function useCanvasViewport({
         setViewport(calcFitPage(width, height, pageWidthPx, pageHeightPx));
     }, [pageWidthPx, pageHeightPx]);
 
-    const startPan = useCallback((e: React.PointerEvent | PointerEvent) => {
+    const startPan = useCallback((e: ReactPointerEvent | PointerEvent) => {
         const nativeEvent = 'nativeEvent' in e ? e.nativeEvent : e;
         const target = nativeEvent.target as HTMLElement;
         target.setPointerCapture(nativeEvent.pointerId);
@@ -149,9 +148,11 @@ export function useCanvasViewport({
             setIsPanning(false);
             target.removeEventListener('pointermove', onMove);
             target.removeEventListener('pointerup', onUp);
+            target.removeEventListener('pointercancel', onUp);
         };
         target.addEventListener('pointermove', onMove);
         target.addEventListener('pointerup', onUp);
+        target.addEventListener('pointercancel', onUp);
     }, []);
 
     // Space key → pan mode
@@ -178,7 +179,7 @@ export function useCanvasViewport({
         };
     }, []);
 
-    const handleContainerPointerDown = useCallback((e: React.PointerEvent) => {
+    const handleContainerPointerDown = useCallback((e: ReactPointerEvent) => {
         if (isSpaceDownRef.current || e.button === 1) {
             e.preventDefault();
             startPan(e);
