@@ -319,15 +319,35 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                 html = html.replaceAll(key, replacements[key]);
             });
 
-            // Replace {{ report.data.get('KEY', '-') }}
-            // Regex to match {{ report.data.get('KEY', 'DEFAULT') }}
-            html = html.replace(/\{\{\s*report\.data\.get\('([^']+)',\s*'([^']*)'\)\s*\}\}/g, (match, key, def) => {
-                return reportData[key] || def || '-';
-            });
-            html = html.replace(/\{\{\s*report\.data\.get\('([^']+)',\s*([^)]+)\)\s*\}\}/g, (match, key, def) => {
-                // handle non-quoted default like report.data.get('OT', '-')
-                return reportData[key] || '-';
-            });
+            // Replace {{ report.data.get(...) }} progressively to support nesting
+            let previousHtml = '';
+            while (html !== previousHtml) {
+                previousHtml = html;
+                // Matches {{ report.data.get('KEY', 'VALUE') }} or {{ report.data.get('KEY', <nested>) }}
+                // We use a more permissive regex that handles newlines and doesn't get trapped by inner parentheses.
+                html = html.replace(/\{\{\s*report\.data\.get\(\s*'([^']+)'\s*,\s*([\s\S]+?)\s*\)\s*\}\}/g, (match, key, defBlock) => {
+                    const cleanKey = key.replace(/\s+/g, ' ').trim();
+                    if (reportData[cleanKey] && reportData[cleanKey] !== '-') {
+                        return reportData[cleanKey];
+                    }
+                    // If no valid data is found for this key, return the default block.
+                    // The default block might be a nested report.data.get(...) 
+                    // or a simple string like '-'
+                    let fallback = defBlock.trim();
+                    // Strip quotes from fallback if it's a simple string literal
+                    if ((fallback.startsWith("'") && fallback.endsWith("'")) ||
+                        (fallback.startsWith('"') && fallback.endsWith('"'))) {
+                        fallback = fallback.substring(1, fallback.length - 1);
+                    }
+
+                    // If the fallback itself is another report.data.get expression, keep it wrapped so the while loop processes it again
+                    if (fallback.includes("report.data.get")) {
+                        return `{{ ${fallback} }}`;
+                    }
+
+                    return fallback;
+                });
+            }
 
             // Handle direct image access by index: {{ report.images[0].path }}
             const directImageRegex = /\{\{\s*report\.images\[(\d+)\]\.(path|name)\s*\}\}/g;
