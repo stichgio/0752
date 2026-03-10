@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Save, Settings } from 'lucide-react';
 import { FichaTecnica, ProductoQuimico, SatisfaccionType } from './types';
 

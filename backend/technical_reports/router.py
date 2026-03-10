@@ -1231,9 +1231,14 @@ async def generate_consolidated_pdf(
         if report_ids:
             try:
                 ids_list = json.loads(report_ids)
-                all_reports = [r for r in all_reports if r.id in ids_list]
-            except (json.JSONDecodeError, TypeError):
-                pass  # Usar todos si hay error en el parsing
+            except (json.JSONDecodeError, TypeError) as exc:
+                raise HTTPException(status_code=400, detail=f"Formato de report_ids inválido: {exc}")
+
+            if not isinstance(ids_list, list):
+                raise HTTPException(status_code=400, detail="report_ids debe ser un arreglo JSON de IDs")
+
+            report_id_set = {str(report_id) for report_id in ids_list}
+            all_reports = [r for r in all_reports if str(r.id) in report_id_set]
 
         print(f"[PDF Consolidado] Generando PDF con {len(all_reports)} informes...")
 

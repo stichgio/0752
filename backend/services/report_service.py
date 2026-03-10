@@ -1,6 +1,5 @@
 import os
 import base64
-import re
 import shutil
 import io
 import gc

@@ -64,6 +64,11 @@ def _value_error_status(exc: ValueError) -> int:
     return 404 if "no encontrada" in str(exc).lower() else 400
 
 
+def _is_duplicate_template_error(exc: Exception) -> bool:
+    message = str(exc).lower()
+    return "duplicate key" in message or "unique constraint" in message or "23505" in message
+
+
 def _model_dump(model: Any) -> Dict[str, Any]:
     if hasattr(model, "model_dump"):
         return model.model_dump()
@@ -110,6 +115,8 @@ async def create_template_endpoint(payload: CreateTemplatePayload):
         print(f"[TemplateEditor] Supabase error creating template: {exc}")
         raise HTTPException(status_code=502, detail=f"Error del backend de almacenamiento: {exc}")
     except Exception as exc:
+        if _is_duplicate_template_error(exc):
+            raise HTTPException(status_code=409, detail="Ya existe una plantilla con el mismo nombre y tipo de reporte")
         print(f"[TemplateEditor] Unexpected error creating template: {exc}")
         raise HTTPException(status_code=500, detail=f"Error interno: {type(exc).__name__}: {exc}")
     return _model_dump(created)

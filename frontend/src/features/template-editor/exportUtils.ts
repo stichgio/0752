@@ -375,24 +375,24 @@ function generateElementContent(el: TemplateElement): string | null {
 
     case 'variable':
       // variableName holds a full Jinja2 expression, e.g. report.data.get('CENTRO', '-')
-      return `{ { ${el.variableName || 'variable'} } } `;
+      return `{{ ${el.variableName || 'variable'} }}`;
 
     case 'logo': {
       /* fix: imagen-cortada */
       const logoCss = generateImageCss('contain', el.size.width, el.size.height);
       if (el.imageUrl) {
-        return `< img src = "${escapeHtml(el.imageUrl)}" style = "${logoCss}" /> `;
+        return `<img src="${escapeHtml(el.imageUrl)}" style="${logoCss}" />`;
       }
       // Use variableName as Jinja2 var (defaults to logo_left)
       const logoVar = el.variableName || 'logo_left';
-      return `{% if ${logoVar} %} <img src="{{ ${logoVar} }}" style = "${logoCss}" /> {% endif %} `;
+      return `{% if ${logoVar} %}<img src="{{ ${logoVar} }}" style="${logoCss}" />{% endif %}`;
     }
 
     case 'image': {
       if (el.imageUrl) {
         /* fix: imagen-cortada — default to contain instead of cover */
         const imgCss = generateImageCss(el.style.objectFit || 'contain', el.size.width, el.size.height);
-        return `< img src = "${escapeHtml(el.imageUrl)}" style = "${imgCss}" /> `;
+        return `<img src="${escapeHtml(el.imageUrl)}" style="${imgCss}" />`;
       }
       return '';
     }
@@ -404,7 +404,7 @@ function generateElementContent(el: TemplateElement): string | null {
       const labels = el.photoConfig?.labels || [];
       let gridHtml = '';
       if (el.content) {
-        gridHtml += `< div style = "font-weight: bold; font-size: 7.5pt; margin-bottom: 1mm; text-transform: uppercase;" > ${escapeHtml(el.content)} </div>`;
+        gridHtml += `<div style="font-weight: bold; font-size: 7.5pt; margin-bottom: 1mm; text-transform: uppercase;">${escapeHtml(el.content)}</div>`;
       }
       gridHtml += buildPhotoGrid(count, oddPosition, labels, showLabels);
       return gridHtml;

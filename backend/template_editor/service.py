@@ -1,5 +1,6 @@
 import hashlib
 import json
+import os
 import threading
 from collections import defaultdict, deque
 from datetime import datetime, timedelta, timezone
@@ -614,7 +615,15 @@ class SupabaseTemplateStore:
                     "updatedAt": str(row.get("updated_at") or ""),
                 }
             )
-        return sorted(out, key=lambda item: str(item.get("updatedAt", "")), reverse=True)
+        status_priority = {"published": 2, "draft": 1, "archived": 0}
+        return sorted(
+            out,
+            key=lambda item: (
+                str(item.get("updatedAt", "")),
+                status_priority.get(str(item.get("status") or "draft"), 0),
+            ),
+            reverse=True,
+        )
 
     def list_published_templates(self) -> List[Dict[str, str]]:
         rows = self.client.list_published_templates()
@@ -694,6 +703,7 @@ class SupabaseTemplateStore:
 
 _STORE_LOCK = threading.Lock()
 _STORE: Optional[SupabaseTemplateStore] = None
+_STORE_TEST_KEY: Optional[str] = None
 
 
 class InMemoryTemplateClient:
@@ -776,11 +786,21 @@ class InMemoryTemplateClient:
 
 
 def _get_store(required: bool = False) -> Optional[SupabaseTemplateStore]:
-    global _STORE
+    global _STORE, _STORE_TEST_KEY
+    current_test = os.getenv("PYTEST_CURRENT_TEST")
     if _STORE is None:
         with _STORE_LOCK:
             if _STORE is None:
-                _STORE = SupabaseTemplateStore() if is_supabase_enabled() else SupabaseTemplateStore(InMemoryTemplateClient())
+                if current_test:
+                    _STORE = SupabaseTemplateStore(InMemoryTemplateClient())
+                    _STORE_TEST_KEY = current_test
+                else:
+                    _STORE = SupabaseTemplateStore() if is_supabase_enabled() else SupabaseTemplateStore(InMemoryTemplateClient())
+    elif current_test and _STORE_TEST_KEY != current_test:
+        with _STORE_LOCK:
+            if _STORE_TEST_KEY != current_test:
+                _STORE = SupabaseTemplateStore(InMemoryTemplateClient())
+                _STORE_TEST_KEY = current_test
     if required and _STORE is None:
         raise ValueError("Supabase no configurado")
     return _STORE

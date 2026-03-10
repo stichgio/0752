@@ -770,7 +770,7 @@ async def generate_single_pdf(
 # --- SSE Progress Endpoints ---
 
 from fastapi.responses import StreamingResponse  
-from core.progress import format_sse_event, ProgressCallback  
+from core.progress import format_sse_event  
 
 
 @api_router.post("/generate-pdf-progress")
@@ -789,8 +789,11 @@ async def generate_pdf_with_progress(
     """SSE version of /generate-pdf with real-time progress events."""
     use_original_quality = (originalQuality or "").lower() in ("true", "1", "yes")
 
-    # --- Same data preparation as generate_single_pdf ---
-    row_data = json.loads(data)
+    try:
+        row_data = json.loads(data)
+    except json.JSONDecodeError as exc:
+        raise HTTPException(status_code=400, detail=f"Formato JSON inválido en el campo 'data': {str(exc)}")
+
     download_filename = _build_pdf_download_filename(templateName, row_data, exportScope, idColumn)
 
     resolved_custom_template = customTemplate

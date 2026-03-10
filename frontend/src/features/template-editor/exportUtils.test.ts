@@ -20,4 +20,21 @@ describe('exportUtils multipage', () => {
     expect(html).toContain('Pagina 1');
     expect(html).toContain('Pagina 2');
   });
+
+  it('exports valid html tags for image-based elements', () => {
+    let doc = createEmptyDocument();
+    const firstPageId = doc.pages?.[0]?.id || 'page-1';
+
+    doc = addElementToPage(
+      doc,
+      createElement('image', { x: 10, y: 10 }, { imageUrl: 'data:image/png;base64,abc123' }),
+      firstPageId,
+    );
+
+    const html = exportToJinja2(doc);
+
+    expect(html).toContain('<img src="data:image/png;base64,abc123"');
+    expect(html).not.toContain('< img');
+    expect(html).not.toContain('< div');
+  });
 });
