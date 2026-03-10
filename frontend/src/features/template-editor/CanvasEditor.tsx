@@ -16,7 +16,9 @@ import {
   PageSettings,
   normalizeVariableRegistry,
   deriveVariableDefinitionsFromElements,
+  mmToPx,
 } from './canvasTypes';
+import { useCanvasViewport } from './hooks/useCanvasViewport';
 import { PRESET_BLOCKS } from './utils/presetBlocks';
 import { SidebarRoot } from './sidebar/SidebarRoot';
 import { CanvasArea } from './canvas/CanvasArea';
@@ -202,7 +204,22 @@ export default function CanvasEditor({
   const MAX_SIDEBAR_WIDTH = 500;
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [zoom, setZoom] = useState(75);
+
+  // Calculate page dimensions in px (needed for fitPage)
+  const pageWidthPx = mmToPx(pageSettings.width);
+  const pageHeightPx = mmToPx(pageSettings.height);
+
+  const {
+    viewport,
+    isPanning,
+    containerRef: viewportContainerRef,
+    zoomTo,
+    fitPage,
+    handleContainerPointerDown,
+  } = useCanvasViewport({ pageWidthPx, pageHeightPx });
+
+  const { zoom } = viewport; // used by existing code that references zoom
+
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
   const [activeResizer, setActiveResizer] = useState<'left' | 'right' | null>(null);
@@ -1240,8 +1257,11 @@ export default function CanvasEditor({
               onSelect={setSelectedIds}
               onAddElement={handleAddElement}
               onAddBlock={handleAddBlock}
-              zoom={zoom}
-              onZoomChange={setZoom}
+              viewport={viewport}
+              onZoomChange={zoomTo}
+              isPanning={isPanning}
+              onContainerPointerDown={handleContainerPointerDown}
+              viewportRef={viewportContainerRef}
               snapEnabled={snapConfig.enabled}
               gridSize={snapConfig.gridSize}
               showGrid={snapConfig.showGrid}
@@ -1253,7 +1273,7 @@ export default function CanvasEditor({
                 <Ruler
                   orientation="horizontal"
                   zoom={zoom}
-                  pageOffsetPx={0}
+                  pageOffsetPx={viewport.panX}
                   lengthPx={canvasSize.width - RULER_THICKNESS}
                   thickness={RULER_THICKNESS}
                 />
@@ -1261,7 +1281,7 @@ export default function CanvasEditor({
                 <Ruler
                   orientation="vertical"
                   zoom={zoom}
-                  pageOffsetPx={32}
+                  pageOffsetPx={viewport.panY}
                   lengthPx={canvasSize.height - RULER_THICKNESS}
                   thickness={RULER_THICKNESS}
                 />
@@ -1273,7 +1293,8 @@ export default function CanvasEditor({
 
           <StatusBar
             zoom={zoom}
-            onZoomChange={setZoom}
+            onZoomChange={zoomTo}
+            onFitPage={fitPage}
             selectionCount={selectedIds.length}
             selectedElementMetrics={selectedElementMetrics}
             snapEnabled={snapConfig.enabled}

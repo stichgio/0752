@@ -6,6 +6,7 @@ export type SaveState = 'saved' | 'saving' | 'unsaved';
 interface StatusBarProps {
     zoom: number;
     onZoomChange: (z: number) => void;
+    onFitPage?: () => void;
     mousePos?: { x: number; y: number };
     selectionCount: number;
     selectedElementMetrics?: { x: number; y: number; width: number; height: number } | null;
@@ -26,6 +27,7 @@ const SNAP_GRID_OPTIONS = [1, 2, 5, 10];
 export function StatusBar({
     zoom,
     onZoomChange,
+    onFitPage,
     mousePos,
     selectionCount,
     selectedElementMetrics,
@@ -74,6 +76,16 @@ export function StatusBar({
                 >
                     {Math.round(zoom)}%
                 </button>
+
+                {onFitPage && (
+                    <button
+                        className="px-1.5 py-0.5 rounded text-[10px] hover:bg-neutral-100 hover:text-neutral-800 transition-colors"
+                        onClick={onFitPage}
+                        title="Ajustar página al área (Ctrl+0)"
+                    >
+                        Fit
+                    </button>
+                )}
 
                 <div className="w-px h-3 bg-neutral-200 mx-1" />
 

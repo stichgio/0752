@@ -47,6 +47,7 @@ interface CanvasAreaProps {
     gridSize: number;
     showGrid: boolean;
     dataPreview?: Record<string, unknown>;
+    viewportRef?: React.Ref<HTMLDivElement>;
 }
 
 interface InteractionState {
@@ -149,6 +150,7 @@ export function CanvasArea({
     gridSize,
     showGrid,
     dataPreview,
+    viewportRef,
 }: CanvasAreaProps) {
     const { zoom, panX, panY } = viewport;
     const containerRef = useRef<HTMLDivElement>(null);
@@ -1339,7 +1341,13 @@ export function CanvasArea({
 
     return (
         <div
-            ref={containerRef}
+            ref={(el) => {
+                (containerRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+                if (viewportRef) {
+                    if (typeof viewportRef === 'function') viewportRef(el);
+                    else (viewportRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+                }
+            }}
             className="relative w-full h-full overflow-hidden"
             style={{
                 background: 'linear-gradient(135deg, #f0f0f3 0%, #e8e8ed 50%, #f0f0f3 100%)',
