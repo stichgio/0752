@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { ZoomIn, ZoomOut, Mouse, CheckCircle, Loader2, AlertCircle } from 'lucide-react';
 
 export type SaveState = 'saved' | 'saving' | 'unsaved';
@@ -42,6 +42,7 @@ export function StatusBar({
     onShowRulersChange,
 }: StatusBarProps) {
     const [editingZoom, setEditingZoom] = useState<string | null>(null);
+    const escapeRef = useRef(false);
 
     return (
         <div className="h-8 bg-white/90 backdrop-blur-sm border-t border-neutral-200 flex items-center justify-between px-3 text-[11px] text-neutral-500 select-none shrink-0 gap-3">
@@ -79,6 +80,11 @@ export function StatusBar({
                     onChange={(e) => setEditingZoom(e.target.value)}
                     onFocus={() => setEditingZoom(String(Math.round(zoom)))}
                     onBlur={() => {
+                        if (escapeRef.current) {
+                            escapeRef.current = false;
+                            setEditingZoom(null);
+                            return;
+                        }
                         if (editingZoom !== null) {
                             const parsed = parseInt(editingZoom, 10);
                             if (!isNaN(parsed) && parsed > 0) onZoomChange(parsed);
@@ -88,6 +94,7 @@ export function StatusBar({
                     onKeyDown={(e) => {
                         if (e.key === 'Enter') (e.target as HTMLInputElement).blur();
                         if (e.key === 'Escape') {
+                            escapeRef.current = true;
                             setEditingZoom(null);
                             (e.target as HTMLInputElement).blur();
                         }
