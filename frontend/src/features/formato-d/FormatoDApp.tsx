@@ -342,24 +342,6 @@ export default function FormatoDApp() {
 
                 {/* viewer area */}
                 <div className="relative flex-1 overflow-hidden">
-                    {previewBlob && previewTotal > 1 && (
-                        <div className="absolute left-6 top-4 z-10 pointer-events-none">
-                            <div
-                                className="rounded-md border border-amber-400/20 bg-black/70 px-3 py-2"
-                                style={{ fontFamily: "'Roboto Mono', monospace" }}
-                            >
-                                <p className="text-[9px] tracking-wider text-neutral-500 uppercase">
-                                    Vista actual
-                                </p>
-                                <p className="mt-1 text-[10px] text-amber-400/85 tracking-wide">
-                                    La primera hoja conserva {pad(previewDesde)}.
-                                </p>
-                                <p className="text-[10px] text-neutral-400 tracking-wide">
-                                    Desplázate para ver hasta {pad(previewDesde + previewTotal - 1)}.
-                                </p>
-                            </div>
-                        </div>
-                    )}
                     {previewBlob ? (
                         <PdfMultiViewer
                             blob={previewBlob}
