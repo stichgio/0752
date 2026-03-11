@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { startTransition, useState, useEffect, useRef } from 'react';
 import { FileDown, Loader2, ScanLine, ChevronRight, AlertCircle, RefreshCw, Layers } from 'lucide-react';
 
 declare global {
@@ -54,7 +54,13 @@ function PdfMultiViewer({ blob, desde, total }: { blob: Blob | null; desde: numb
 
             for (let i = 1; i <= numPages; i++) {
                 if (cancelled) break;
-                setRenderingPage(i);
+                // Yield between pages so the shell/sidebar can repaint smoothly while pdf.js works.
+                await new Promise<void>((resolve) => {
+                    requestAnimationFrame(() => resolve());
+                });
+                startTransition(() => {
+                    setRenderingPage(i);
+                });
 
                 const page = await pdf.getPage(i);
                 if (cancelled) break;
@@ -80,15 +86,25 @@ function PdfMultiViewer({ blob, desde, total }: { blob: Blob | null; desde: numb
                 createdUrls.push(url);
                 if (cancelled) break;
 
-                setPageImgs(prev => [...prev, { url, pageNum: i }]);
+                startTransition(() => {
+                    setPageImgs(prev => [...prev, { url, pageNum: i }]);
+                });
             }
 
-            if (!cancelled) setRenderingPage(0);
+            if (!cancelled) {
+                startTransition(() => {
+                    setRenderingPage(0);
+                });
+            }
         }
 
         renderAll().catch(e => {
             if (e?.name !== 'RenderingCancelledException') console.warn('render error', e);
-            if (!cancelled) setRenderingPage(0);
+            if (!cancelled) {
+                startTransition(() => {
+                    setRenderingPage(0);
+                });
+            }
         });
 
         return () => {

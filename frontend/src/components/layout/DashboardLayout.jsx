@@ -97,7 +97,7 @@ const DashboardLayout = ({ children }) => {
             <div className="flex h-screen w-full bg-neutral-950 text-neutral-200 font-sans selection:bg-white selection:text-black overflow-hidden">
                 <aside
                     style={{ viewTransitionName: 'dashboard-sidebar' }}
-                    className={`${isSidebarCollapsed ? 'w-16' : 'w-64'} bg-black border-r border-neutral-800 flex flex-col transition-all duration-300 relative z-50`}
+                    className={`${isSidebarCollapsed ? 'w-16' : 'w-64'} shrink-0 bg-black border-r border-neutral-800 flex flex-col transition-[width] duration-300 relative z-50 [contain:layout_paint] [transform:translateZ(0)]`}
                 >
                     <div className="h-14 flex items-center justify-center border-b border-neutral-800">
                         <div className="flex items-center gap-2 font-mono tracking-tighter">
@@ -114,20 +114,22 @@ const DashboardLayout = ({ children }) => {
                                     key={index}
                                     to={item.to}
                                     end={item.end}
-                                    className={`flex items-center gap-3 p-3 rounded-md transition-all group relative
+                                    className={`relative flex w-full items-center rounded-md p-3 group
+                                        ${isSidebarCollapsed ? 'justify-center' : 'gap-3'}
                                         ${isActive
                                             ? 'bg-neutral-900/100 text-white shadow-[0_0_15px_rgba(255,255,255,0.1)] border border-neutral-800'
                                             : 'text-neutral-500 hover:text-white hover:bg-neutral-900'
                                         }
+                                        transition-colors duration-200
                                     `}
                                     title={isSidebarCollapsed ? item.label : ''}
                                 >
-                                    <div className={`${isActive ? 'text-white' : 'text-neutral-500 group-hover:text-white'}`}>
+                                    <div className={`flex h-5 w-5 shrink-0 items-center justify-center ${isActive ? 'text-white' : 'text-neutral-500 group-hover:text-white'}`}>
                                         {item.icon}
                                     </div>
 
                                     {!isSidebarCollapsed && (
-                                        <span className="text-sm font-medium tracking-wide">{item.label}</span>
+                                        <span className="min-w-0 text-sm font-medium tracking-wide">{item.label}</span>
                                     )}
 
                                     {isActive && (
@@ -164,5 +166,4 @@ const DashboardLayout = ({ children }) => {
 };
 
 export default DashboardLayout;
-
 
