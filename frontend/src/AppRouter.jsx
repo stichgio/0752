@@ -10,6 +10,7 @@ import PageDocument from './components/layout/PageDocument';
 import MultiSheetReportPage from './features/multi-sheet-report/page';
 import TemplateEditorPage from './features/template-editor/page';
 import GioBoardPage from './features/whiteboard/page';
+import FormatoDApp from './features/formato-d/FormatoDApp';
 
 const legacyRoutes = [
     { path: 'index.html', to: '/' },
@@ -21,6 +22,7 @@ const legacyRoutes = [
     { path: 'reportes-tecnicos.html', to: '/reportes-tecnicos' },
     { path: 'template-editor.html', to: '/template-editor' },
     { path: 'whiteboard.html', to: '/whiteboard' },
+    { path: 'formato-d.html', to: '/formato-d' },
 ];
 
 export default function AppRouter() {
@@ -73,6 +75,14 @@ export default function AppRouter() {
                     element={
                         <PageDocument title="GioBoard" bodyClassName="bg-neutral-950 text-neutral-200 min-h-screen">
                             <GioBoardPage />
+                        </PageDocument>
+                    }
+                />
+                <Route
+                    path="formato-d"
+                    element={
+                        <PageDocument title="Formato D - SEDAPAL" bodyClassName="bg-[#0d0d0d] text-[#eee]">
+                            <FormatoDApp />
                         </PageDocument>
                     }
                 />

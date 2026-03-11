@@ -12,6 +12,7 @@ import {
     BookOpen,
     Scissors,
     PenTool,
+    FileSpreadsheet,
 } from 'lucide-react';
 import PomodoroTimer from '../PomodoroTimer';
 
@@ -72,6 +73,12 @@ const navItems = [
         label: 'PDF Tools',
         to: '/pdf-tools',
         match: (pathname) => pathname.startsWith('/pdf-tools'),
+    },
+    {
+        icon: <FileSpreadsheet size={20} />,
+        label: 'Formato D',
+        to: '/formato-d',
+        match: (pathname) => pathname.startsWith('/formato-d'),
     },
 ];
 
