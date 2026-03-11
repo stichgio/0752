@@ -6,9 +6,9 @@ import CropEditor from './CropEditor';
 import PreviewWorkspace from './PreviewWorkspace';
 import QueuePanel from './QueuePanel';
 import SettingsPanel from './SettingsPanel';
-import { ModeToggle, PillPreset, ToastContainer } from './ui';
+import { PillPreset, ToastContainer } from './ui';
 import { createImageItem, processImageItem } from './pipeline';
-import { DEFAULT_BATCH_SETTINGS, IMAGE_OPTIMIZER_PRESETS, PRESET_BY_ID, cloneBatchSettings } from './presets';
+import { DEFAULT_BATCH_SETTINGS, IMAGE_OPTIMIZER_PRESETS, cloneBatchSettings } from './presets';
 import { BatchSettings, CropOffset, ImageItem, PresetId, Toast } from './types';
 import {
     buildDownloadNameMap,
@@ -27,7 +27,6 @@ import {
     syncStaleState,
 } from './utils';
 import { downloadBlob } from '@/utils/downloadBlob';
-const RENAME_ONLY_PILL_CLASSNAME = PRESET_BY_ID['rename-only']?.accentClassName ?? 'border-amber-500/25 bg-amber-500/10 text-amber-300';
 
 export default function ImageOptimizer() {
     const [items, setItems] = useState<ImageItem[]>([]);

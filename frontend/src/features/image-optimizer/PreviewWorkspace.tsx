@@ -1,4 +1,3 @@
-﻿import React from 'react';
 import { CheckCircle2, Crop, Download, Eye, Loader2, Sparkles, Trash2, Wand2 } from 'lucide-react';
 import { formatBytes } from '@/utils/formatBytes';
 import { BatchSettings, CropRectangle, ImageItem, PreviewTab, PresetId } from './types';

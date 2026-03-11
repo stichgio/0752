@@ -1,4 +1,3 @@
-import React from 'react';
 import { Crop, Download, FileImage, Gauge, Maximize2, Tag } from 'lucide-react';
 import { ASPECT_RATIO_OPTIONS, BatchSettings, ImageItem } from './types';
 import { OperationSection, SegmentedControl } from './ui';

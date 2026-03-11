@@ -1,4 +1,3 @@
-import React from 'react';
 import { Crop, FileDown, Image as ImageIcon, Loader2, Trash2 } from 'lucide-react';
 import { BatchSettings, ImageItem } from './types';
 import { formatBytes } from '@/utils/formatBytes';
