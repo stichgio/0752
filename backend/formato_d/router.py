@@ -72,6 +72,10 @@ def _ensure_number_font(xobject) -> None:
 def _update_number_xobject(page, padded_number: str) -> None:
     xobject = _find_number_xobject(page)
     _ensure_number_font(xobject)
+    from pypdf.generic import ArrayObject, NumberObject
+    xobject[NameObject("/BBox")] = ArrayObject(
+        [NumberObject(0), NumberObject(0), NumberObject(200), NumberObject(42)]
+    )
     escaped_number = _escape_pdf_text(padded_number)
     xobject.set_data(
         (
@@ -84,6 +88,7 @@ def _update_number_xobject(page, padded_number: str) -> None:
             "/NonStruct <<>> BDC\n"
             "BT\n"
             f"{_NUMBER_FONT_NAME} {_NUMBER_FONT_SIZE} Tf\n"
+            "-0.98 Tc\n"
             "1 0 0 -1 0 9 Tm\n"
             f"({escaped_number}) Tj\n"
             "ET\n"
