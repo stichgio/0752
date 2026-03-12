@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Layers, Shuffle, Scissors, LayoutGrid, FileOutput } from 'lucide-react';
@@ -31,23 +31,12 @@ export default function PdfToolsApp() {
     const location = useLocation();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
-    const requestedTab = getRequestedTab(searchParams, location.hash);
-    const [activeTab, setActiveTab] = useState(requestedTab);
+    const activeTab = getRequestedTab(searchParams, location.hash);
 
-    useEffect(() => {
-        if (requestedTab !== activeTab) {
-            setActiveTab(requestedTab);
-        }
-    }, [activeTab, requestedTab]);
-
-    useEffect(() => {
-        const currentQueryTab = (searchParams.get('tab') || '').toLowerCase();
-        if (currentQueryTab === activeTab) {
-            return;
-        }
-
+    const setActiveTab = (newTab) => {
+        if (newTab === activeTab) return;
         const nextParams = new URLSearchParams(searchParams);
-        nextParams.set('tab', activeTab);
+        nextParams.set('tab', newTab);
 
         navigate(
             {
@@ -57,6 +46,22 @@ export default function PdfToolsApp() {
             },
             { replace: true },
         );
+    };
+
+    useEffect(() => {
+        const currentQueryTab = (searchParams.get('tab') || '').toLowerCase();
+        if (currentQueryTab !== activeTab) {
+            const nextParams = new URLSearchParams(searchParams);
+            nextParams.set('tab', activeTab);
+            navigate(
+                {
+                    pathname: location.pathname,
+                    search: `?${nextParams.toString()}`,
+                    hash: location.hash,
+                },
+                { replace: true },
+            );
+        }
     }, [activeTab, location.hash, location.pathname, navigate, searchParams]);
 
     const ActiveComponent = TABS.find((tab) => tab.id === activeTab)?.component;
