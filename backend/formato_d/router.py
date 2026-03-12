@@ -19,8 +19,12 @@ router = APIRouter(prefix="/api/formato-d", tags=["formato-d"])
 
 _TEMPLATE_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "formato_d", "template-d.b64")
 _TEMPLATE_NUMBER_TEXT = "0000001"
-_NUMBER_XOBJECT_FONT = b"/F29 "
 _NUMBER_XOBJECT_DRAW_COUNT = 7
+_NUMBER_XOBJECT_MARKERS = (
+    b"3.7440772 0 0 3.7440772",
+    b"1 0 0 rg",
+    b"/H2 <</MCID 93 >> BDC",
+)
 _NUMBER_FONT_NAME = "/FZD"
 _NUMBER_FONT_SIZE = 10.6599998
 _MAX_PAGES = 500  # hard cap to avoid memory abuse
@@ -45,7 +49,9 @@ def _find_number_xobject(page):
         if xobject.get("/Subtype") != "/Form":
             continue
         data = xobject.get_data()
-        if _NUMBER_XOBJECT_FONT in data and data.count(b"Tj") == _NUMBER_XOBJECT_DRAW_COUNT:
+        if data.count(b"Tj") != _NUMBER_XOBJECT_DRAW_COUNT:
+            continue
+        if all(marker in data for marker in _NUMBER_XOBJECT_MARKERS):
             return xobject
 
     raise ValueError("No se encontro el XObject del correlativo en el template")
