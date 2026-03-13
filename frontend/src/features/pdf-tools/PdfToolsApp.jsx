@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Layers, Shuffle, Scissors, LayoutGrid, FileOutput } from 'lucide-react';
@@ -48,8 +48,17 @@ export default function PdfToolsApp() {
         );
     };
 
+    const isFirstRender = useRef(true);
+
     useEffect(() => {
         const currentQueryTab = (searchParams.get('tab') || '').toLowerCase();
+
+        // Skip navigate on first render if the URL already reflects the active tab
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            if (currentQueryTab === activeTab) return;
+        }
+
         if (currentQueryTab !== activeTab) {
             const nextParams = new URLSearchParams(searchParams);
             nextParams.set('tab', activeTab);
@@ -121,8 +130,8 @@ export default function PdfToolsApp() {
                 </div>
 
                 <div className="flex-1 overflow-auto px-4 md:px-8 xl:px-12 py-6">
-                    <div className={`${WORKSPACE_WIDTH} mx-auto min-h-[calc(100vh-12rem)]`}>
-                        <AnimatePresence mode="wait">
+                    <div className={`${WORKSPACE_WIDTH} mx-auto min-h-[calc(100vh-12rem)] bg-neutral-950`}>
+                        <AnimatePresence mode="sync">
                             <motion.div
                                 key={activeTab}
                                 initial={{ opacity: 0, y: 8 }}
