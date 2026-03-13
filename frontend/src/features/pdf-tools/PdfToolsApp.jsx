@@ -130,7 +130,7 @@ export default function PdfToolsApp() {
                 </div>
 
                 <div className="flex-1 overflow-auto px-4 md:px-8 xl:px-12 py-6">
-                    <div className={`${WORKSPACE_WIDTH} mx-auto min-h-[calc(100vh-12rem)] bg-neutral-950`}>
+                    <div className={`${WORKSPACE_WIDTH} mx-auto min-h-[calc(100vh-12rem)] bg-neutral-950 grid`}>
                         <AnimatePresence mode="sync">
                             <motion.div
                                 key={activeTab}
@@ -138,7 +138,7 @@ export default function PdfToolsApp() {
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -8 }}
                                 transition={{ duration: 0.2 }}
-                                className="min-h-full"
+                                className="col-start-1 row-start-1 min-h-full w-full"
                             >
                                 {ActiveComponent && <ActiveComponent />}
                             </motion.div>
