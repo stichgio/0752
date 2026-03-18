@@ -316,8 +316,8 @@ class ReportService:
 
         self.env = Environment(
             loader=FileSystemLoader(templates_dir),
-            auto_reload=False,
-            cache_size=400,
+            auto_reload=True,
+            cache_size=0 if settings.environment in ("dev", "development", "local") else 400,
             bytecode_cache=jinja2.FileSystemBytecodeCache(cache_dir)
         )
 
@@ -353,6 +353,15 @@ class ReportService:
             except Exception as e:
                 logger.warning("Error loading template %s: %s", template_name, e)
                 raise HTTPException(status_code=404, detail=f"Template '{template_name}' not found")
+
+        # Skip self-managed caching in dev mode so Jinja auto-reloads templates from disk
+        is_dev = settings.environment in ("dev", "development", "local")
+        if is_dev:
+            try:
+                return self.env.get_template(template_name)
+            except Exception as e:
+                logger.warning("template '%s' not found, using default fallback: %s", template_name, e)
+                return self.template
 
         if template_name not in self._template_cache:
             try:

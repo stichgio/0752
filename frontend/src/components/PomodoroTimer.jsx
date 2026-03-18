@@ -1,4 +1,5 @@
-﻿import { useState, useRef, useMemo, useEffect, memo } from 'react';
+import { useState, useRef, useMemo, useEffect, useCallback, memo } from 'react';
+import { createPortal } from 'react-dom';
 import {
     Zap,
     RotateCcw,
@@ -8,6 +9,8 @@ import {
     BellOff,
     Volume2,
     VolumeX,
+    Move,
+    Pin,
 } from 'lucide-react';
 import {
     POMODORO_STORAGE_KEY,
@@ -86,6 +89,12 @@ const PomodoroTimer = () => {
     const restoredState = useMemo(() => resolveRestoredPomodoroState(loadSavedState()), []);
     const [timerState, setTimerState] = useState(restoredState);
     const [isOpen, setIsOpen] = useState(false);
+    const [isFloating, setIsFloating] = useState(false);
+    const [isDragging, setIsDragging] = useState(false);
+    const [floatingPos, setFloatingPos] = useState(() => ({
+        x: Math.round(window.innerWidth / 2 - 160),
+        y: Math.round(window.innerHeight / 2 - 200),
+    }));
 
     const workerRef = useRef(null);
     const timerStateRef = useRef(restoredState);
@@ -93,6 +102,9 @@ const PomodoroTimer = () => {
     const pomodoroAlarmRef = useRef(null);
     const audioUnlockedRef = useRef(false);
     const preloadedAudioRef = useRef([]);
+    const triggerRef = useRef(null);
+    const panelRef = useRef(null);
+    const floatingPosRef = useRef({ x: 200, y: 100 });
 
     useEffect(() => {
         timerStateRef.current = timerState;
@@ -432,17 +444,126 @@ const PomodoroTimer = () => {
 
     const statusLabel = getPomodoroStatusLabel(timerState.status);
 
+    useEffect(() => {
+        floatingPosRef.current = floatingPos;
+    }, [floatingPos]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        const handleClickOutside = (e) => {
+            if (isFloating) return;
+            if (triggerRef.current?.contains(e.target)) return;
+            if (panelRef.current?.contains(e.target)) return;
+            setIsOpen(false);
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isOpen, isFloating]);
+
+    const handleDragStart = useCallback((e) => {
+        e.preventDefault();
+        setIsDragging(true);
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const startPos = { ...floatingPosRef.current };
+        let rafId;
+
+        const onMove = (me) => {
+            if (rafId) cancelAnimationFrame(rafId);
+            rafId = requestAnimationFrame(() => {
+                setFloatingPos({
+                    x: Math.max(0, Math.min(window.innerWidth - 320, startPos.x + me.clientX - startX)),
+                    y: Math.max(0, Math.min(window.innerHeight - 100, startPos.y + me.clientY - startY)),
+                });
+            });
+        };
+        const onUp = () => {
+            if (rafId) cancelAnimationFrame(rafId);
+            setIsDragging(false);
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+        };
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+    }, []);
+
+    const toggleFloating = (e) => {
+        e.stopPropagation();
+        setIsFloating((prev) => {
+            if (!prev) {
+                setFloatingPos({
+                    x: Math.round(window.innerWidth / 2 - 160),
+                    y: Math.round(window.innerHeight / 2 - 200),
+                });
+            }
+            return !prev;
+        });
+    };
+
+    const getPanelPosition = () => {
+        if (isFloating) {
+            return { 
+                position: 'fixed', 
+                left: 0, 
+                top: 0, 
+                transform: `translate3d(${floatingPos.x}px, ${floatingPos.y}px, 0)`,
+                willChange: isDragging ? 'transform' : 'auto'
+            };
+        }
+        if (triggerRef.current) {
+            const rect = triggerRef.current.getBoundingClientRect();
+            const top = Math.min(rect.top, window.innerHeight - 500);
+            return { 
+                position: 'fixed', 
+                left: 0, 
+                top: 0, 
+                transform: `translate3d(${rect.right + 8}px, ${Math.max(8, top)}px, 0)` 
+            };
+        }
+        return { 
+            position: 'fixed', 
+            left: 0, 
+            top: 0, 
+            transform: `translate3d(72px, 8px, 0)` 
+        };
+    };
+
     return (
-        <div className="relative cursor-pointer group z-[100]">
-            <div
-                className={`p-2 transition-all duration-300 rounded-lg ${timerState.status === 'running' ? 'text-red-500 bg-red-500/10' : 'text-white hover:text-red-500'}`}
-                onClick={() => setIsOpen((previousValue) => !previousValue)}
-            >
-                <Zap size={20} className={timerState.status === 'running' ? 'fill-red-500 animate-pulse' : 'fill-white'} />
+        <>
+            <div className="relative cursor-pointer z-[100]">
+                <div
+                    ref={triggerRef}
+                    className={`p-2 transition-all duration-300 rounded-lg ${timerState.status === 'running' ? 'text-red-500 bg-red-500/10' : 'text-white hover:text-red-500'}`}
+                    onClick={() => setIsOpen((previousValue) => !previousValue)}
+                >
+                    <Zap size={20} className={timerState.status === 'running' ? 'fill-red-500 animate-pulse' : 'fill-white'} />
+                </div>
             </div>
 
-            <div className={`absolute top-10 left-0 w-80 bg-black border border-neutral-800 shadow-2xl rounded-xl transition-all duration-300 origin-top-left flex flex-col p-4 z-[100] transform ${isOpen ? 'opacity-100 visible translate-y-2 pointer-events-auto' : 'opacity-0 invisible group-hover:opacity-100 group-hover:visible group-hover:translate-y-2 group-hover:pointer-events-auto'} pointer-events-none`}>
-                <div className={`absolute inset-0 bg-red-900/5 transition-opacity duration-1000 pointer-events-none ${timerState.status === 'running' ? 'opacity-100' : 'opacity-0'}`} />
+        {createPortal(
+            <div
+                ref={panelRef}
+                className={`w-80 bg-black border border-neutral-800 shadow-2xl rounded-xl flex flex-col p-4 z-[9999] ${isDragging ? '' : 'transition-all duration-300'} ${isOpen ? 'opacity-100 visible pointer-events-auto' : 'opacity-0 invisible pointer-events-none'}`}
+                style={getPanelPosition()}
+            >
+                <div className={`absolute inset-0 rounded-xl bg-red-900/5 transition-opacity duration-1000 pointer-events-none ${timerState.status === 'running' ? 'opacity-100' : 'opacity-0'}`} />
+
+                <div
+                    className={`relative z-10 flex items-center justify-between mb-2 ${isFloating ? 'cursor-move select-none' : ''}`}
+                    onMouseDown={isFloating ? handleDragStart : undefined}
+                >
+                    <span className="text-[9px] font-['DotGothic16'] tracking-wide text-[#555] select-none">
+                        {isFloating ? 'DRAG TO MOVE' : 'POMODORO'}
+                    </span>
+                    <button
+                        onClick={toggleFloating}
+                        className="flex items-center gap-1 rounded-md border border-neutral-800 px-2 py-1 text-[9px] font-['DotGothic16'] tracking-wide text-[#555] hover:text-white hover:border-neutral-600 transition-colors"
+                        title={isFloating ? 'Dock panel' : 'Float panel'}
+                    >
+                        {isFloating ? <Pin size={10} /> : <Move size={10} />}
+                        {isFloating ? 'DOCK' : 'FLOAT'}
+                    </button>
+                </div>
 
                 <div className="relative z-10 flex flex-col gap-4">
                     <div className="flex items-start justify-between gap-4">
@@ -577,8 +698,10 @@ const PomodoroTimer = () => {
                             : 'Idle or paused: time changes apply to this mode now.'}
                     </p>
                 </div>
-            </div>
-        </div>
+            </div>,
+            document.body
+        )}
+        </>
     );
 };
 
