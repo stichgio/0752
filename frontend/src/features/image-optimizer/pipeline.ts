@@ -1,4 +1,4 @@
-﻿import imageCompression from 'browser-image-compression';
+import imageCompression from 'browser-image-compression';
 import { BatchSettings, CropOffset, ImageItem, ProcessedArtifact } from './types';
 import {
     buildItemSignature,
@@ -68,7 +68,7 @@ function canvasToFile(canvas: HTMLCanvasElement, fileName: string, mimeType: str
 async function renderTransformedFile(source: File, settings: BatchSettings, cropOffset?: CropOffset): Promise<File> {
     const image = await loadImageElement(source);
     const cropRect = settings.operations.cropEnabled
-        ? getCropRectangle(image.naturalWidth, image.naturalHeight, settings.crop.aspectRatio, cropOffset)
+        ? getCropRectangle(image.naturalWidth, image.naturalHeight, settings.crop.aspectRatio, cropOffset, settings.crop.cropOrigin)
         : null;
 
     const sourceRect = cropRect ?? {

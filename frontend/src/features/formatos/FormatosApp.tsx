@@ -25,6 +25,8 @@ function PdfMultiViewer({ blob, desde, total, padLen }: { blob: Blob | null; des
     const containerRef = useRef<HTMLDivElement>(null);
     const [pageImgs, setPageImgs] = useState<PageImg[]>([]);
     const [renderingPage, setRenderingPage] = useState(0);
+    const [zoom, setZoom] = useState(100);
+    const zoomStep = 25;
 
     useEffect(() => {
         if (!blob) { setPageImgs([]); setRenderingPage(0); return; }
@@ -86,12 +88,18 @@ function PdfMultiViewer({ blob, desde, total, padLen }: { blob: Blob | null; des
     const previewCount = Math.min(total, MAX_PREVIEW_PAGES);
 
     return (
-        <div ref={containerRef} className="w-full h-full overflow-y-auto" style={{ scrollbarWidth: 'thin', scrollbarColor: '#2a2a2a transparent' }}>
-            <div className="px-4 py-4 space-y-4 flex flex-col items-center">
+        <div ref={containerRef} className="w-full h-full overflow-y-auto flex flex-col" style={{ scrollbarWidth: 'thin', scrollbarColor: '#2a2a2a transparent' }}>
+            <div className="flex items-center justify-center gap-3 py-2 px-4 bg-neutral-800/50 border-b border-neutral-700 flex-shrink-0">
+                <button onClick={() => setZoom(z => Math.max(50, z - zoomStep))} className="w-7 h-7 rounded bg-neutral-700 hover:bg-neutral-600 text-amber-400 text-sm font-bold flex items-center justify-center transition-colors">−</button>
+                <span className="text-[11px] text-amber-400 font-medium min-w-[40px] text-center" style={{ fontFamily: "'Roboto Mono', monospace" }}>{zoom}%</span>
+                <button onClick={() => setZoom(z => Math.min(200, z + zoomStep))} className="w-7 h-7 rounded bg-neutral-700 hover:bg-neutral-600 text-amber-400 text-sm font-bold flex items-center justify-center transition-colors">+</button>
+                <button onClick={() => setZoom(100)} className="ml-1 text-[10px] text-neutral-500 hover:text-neutral-300 transition-colors">reset</button>
+            </div>
+            <div className="px-4 py-6 space-y-6 flex flex-col items-center flex-1">
                 {pageImgs.map((p) => (
-                    <div key={p.pageNum} className="relative w-full">
-                        <img src={p.url} alt={`Página ${p.pageNum}`} className="w-full rounded shadow-2xl shadow-black/60 block" draggable={false} style={{ imageRendering: 'auto' }} />
-                        <div className="absolute bottom-2.5 right-2.5 flex items-center gap-1.5 bg-black/80 border border-amber-400/25 rounded px-2 py-1" style={{ fontFamily: "'Roboto Mono', monospace" }}>
+                    <div key={p.pageNum} className="relative mx-auto bg-neutral-50 rounded-xl shadow-2xl shadow-black/50" style={{ width: `${(zoom / 100) * 100}%`, maxWidth: '100%' }}>
+                        <img src={p.url} alt={`Página ${p.pageNum}`} className="w-full object-contain rounded-lg block" draggable={false} style={{ imageRendering: 'auto' }} />
+                        <div className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-black/80 border border-amber-400/25 rounded px-2 py-1" style={{ fontFamily: "'Roboto Mono', monospace" }}>
                             <span className="text-[8px] text-neutral-600">N°</span>
                             <span className="text-[10px] font-medium text-amber-400 tracking-widest">{pad(desde + p.pageNum - 1, padLen)}</span>
                         </div>

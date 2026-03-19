@@ -45,6 +45,19 @@ export default function SettingsPanel({
                         ))}
                     </select>
                 </label>
+                {settings.crop.aspectRatio !== 'original' && (
+                    <label className="block space-y-1.5">
+                        <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Dirección</span>
+                        <SegmentedControl
+                            value={settings.crop.cropOrigin}
+                            options={[
+                                { value: 'top', label: 'Arriba → Abajo' },
+                                { value: 'bottom', label: 'Abajo → Arriba' },
+                            ]}
+                            onChange={(value) => onUpdateSettings((draft) => { draft.crop.cropOrigin = value as 'top' | 'bottom'; })}
+                        />
+                    </label>
+                )}
                 <button
                     onClick={onOpenCropEditor}
                     disabled={!activeItem || !settings.operations.cropEnabled || settings.crop.aspectRatio === 'original'}

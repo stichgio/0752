@@ -174,7 +174,7 @@ export default function ImageOptimizer() {
     const activeCropPreview = useMemo(() => {
         if (!activeItem || !activeItem.sourceWidth || !activeItem.sourceHeight) return null;
         if (!activeItemSettings.operations.cropEnabled) return null;
-        return getCropRectangle(activeItem.sourceWidth, activeItem.sourceHeight, activeItemSettings.crop.aspectRatio, activeItem.overrides.customCropOffset);
+        return getCropRectangle(activeItem.sourceWidth, activeItem.sourceHeight, activeItemSettings.crop.aspectRatio, activeItem.overrides.customCropOffset, activeItemSettings.crop.cropOrigin);
     }, [activeItem, activeItemSettings]);
 
     const stats = useMemo(() => getStats(items, settings), [items, settings]);
@@ -563,6 +563,7 @@ export default function ImageOptimizer() {
                         <CropEditor
                             image={cropEditorItem}
                             aspectRatio={resolveSettingsForItem(settings, cropEditorItem).crop.aspectRatio}
+                            cropOrigin={resolveSettingsForItem(settings, cropEditorItem).crop.cropOrigin}
                             onClose={() => setCropEditorItemId(null)}
                             onSave={handleSaveCropOffset}
                         />

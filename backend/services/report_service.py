@@ -372,35 +372,7 @@ class ReportService:
 
         return self._template_cache[template_name]
 
-    def get_image_dimensions(self, img_path):
-        """Returns (width, height, is_landscape) for an image"""
-        try:
-            with Image.open(img_path) as img:
-                width, height = img.size
-                is_landscape = width >= height
-                return width, height, is_landscape
-        except Exception:
-            return 0, 0, True
 
-    def get_image_metadata(self, img_path):
-        metadata = {"date": "N/A", "coords": "N/A"}
-        try:
-            exif_dict = piexif.load(img_path)
-            if piexif.ImageIFD.DateTime in exif_dict["0th"]:
-                date_str = exif_dict["0th"][piexif.ImageIFD.DateTime].decode("utf-8")
-                metadata["date"] = date_str
-
-            if "GPS" in exif_dict and exif_dict["GPS"]:
-                gps = exif_dict["GPS"]
-                if piexif.GPSIFD.GPSLatitude in gps and piexif.GPSIFD.GPSLongitude in gps:
-                    lat = self._convert_to_degrees(gps[piexif.GPSIFD.GPSLatitude])
-                    lon = self._convert_to_degrees(gps[piexif.GPSIFD.GPSLongitude])
-                    if gps[piexif.GPSIFD.GPSLatitudeRef] == b'S': lat = -lat
-                    if gps[piexif.GPSIFD.GPSLongitudeRef] == b'W': lon = -lon
-                    metadata["coords"] = f"{lat:.6f}, {lon:.6f}"
-        except Exception as e:
-            logger.debug("[report_service] Could not extract EXIF from file path: %s", e)
-        return metadata
 
     @staticmethod
     def _extract_metadata_from_image_bytes(image_content):
@@ -500,16 +472,7 @@ class ReportService:
             logger.warning("Error preparing image: %s", e)
             return None
 
-    @staticmethod
-    def optimize_image_for_pdf(image_content, max_size=MAX_IMAGE_SIZE, quality=JPEG_QUALITY, original_quality=False):
-        """Optimización de imágenes con resolución adaptativa"""
-        prepared = ReportService.prepare_image_for_pdf(
-            image_content,
-            max_size=max_size,
-            quality=quality,
-            original_quality=original_quality,
-        )
-        return prepared.get("bytes") if prepared else None
+
 
     @staticmethod
     def optimize_logo_for_pdf(logo_content, max_size=DEFAULT_LOGO_MAX_SIZE, mime_type="image/png"):

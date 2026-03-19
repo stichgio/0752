@@ -5,7 +5,6 @@ Todos los modulos del backend deben importar desde aqui:
     from config import settings
 """
 
-from pathlib import Path
 from typing import List
 
 from pydantic import AliasChoices, Field  
@@ -78,15 +77,5 @@ class Settings(BaseSettings):
         return []
 
 
-# ── Module-level paths ─────────────────────────────────────────────────────────
-BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = BASE_DIR / "data"
-DATA_DIR.mkdir(exist_ok=True)
-
 # ── Singleton settings object ──────────────────────────────────────────────────
 settings = Settings()
-
-# ── Backward-compat aliases ────────────────────────────────────────────────────
-# Allow legacy `from config import SUPABASE_URL, SUPABASE_KEY` imports to work.
-SUPABASE_URL = settings.supabase_url
-SUPABASE_KEY = settings.effective_supabase_key

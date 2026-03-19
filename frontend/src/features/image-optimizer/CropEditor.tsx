@@ -1,40 +1,43 @@
-﻿import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { Check, Crop, Move, RotateCw, X } from 'lucide-react';
-import { CropOffset, ImageItem, AspectRatio } from './types';
+import { CropOffset, CropOrigin, ImageItem, AspectRatio } from './types';
 import { getCropRectangle } from './utils';
 
 interface CropEditorProps {
     image: ImageItem;
     aspectRatio: AspectRatio;
+    cropOrigin: CropOrigin;
     onClose: () => void;
     onSave: (imageId: string, offset: CropOffset) => void;
 }
 
-export default function CropEditor({ image, aspectRatio, onClose, onSave }: CropEditorProps) {
+export default function CropEditor({ image, aspectRatio, cropOrigin, onClose, onSave }: CropEditorProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
 
+    const defaultY = cropOrigin === 'top' ? 0 : 1;
+
     const cropInfo = useMemo(() => {
         if (!image.sourceWidth || !image.sourceHeight) return null;
-        return getCropRectangle(image.sourceWidth, image.sourceHeight, aspectRatio, image.overrides.customCropOffset);
-    }, [aspectRatio, image]);
+        return getCropRectangle(image.sourceWidth, image.sourceHeight, aspectRatio, image.overrides.customCropOffset, cropOrigin);
+    }, [aspectRatio, image, cropOrigin]);
 
     const [offset, setOffset] = useState<CropOffset>(() => {
         if (image.overrides.customCropOffset) {
             return image.overrides.customCropOffset;
         }
         if (!cropInfo || cropInfo.cropType === 'none') {
-            return { x: 0.5, y: 1 };
+            return { x: 0.5, y: defaultY };
         }
-        return cropInfo.cropType === 'vertical' ? { x: 0.5, y: 0 } : { x: 0, y: 1 };
+        return cropInfo.cropType === 'vertical' ? { x: 0.5, y: 0 } : { x: 0, y: defaultY };
     });
 
     const currentCrop = useMemo(() => {
         if (!image.sourceWidth || !image.sourceHeight || !cropInfo || cropInfo.cropType === 'none') {
             return null;
         }
-        return getCropRectangle(image.sourceWidth, image.sourceHeight, aspectRatio, offset);
-    }, [aspectRatio, cropInfo, image.sourceHeight, image.sourceWidth, offset]);
+        return getCropRectangle(image.sourceWidth, image.sourceHeight, aspectRatio, offset, cropOrigin);
+    }, [aspectRatio, cropInfo, image.sourceHeight, image.sourceWidth, offset, cropOrigin]);
 
     const cropBoxStyle = useMemo(() => {
         if (!currentCrop || !image.sourceWidth || !image.sourceHeight) return {};
@@ -79,8 +82,8 @@ export default function CropEditor({ image, aspectRatio, onClose, onSave }: Crop
 
     const handleReset = useCallback(() => {
         if (!cropInfo || cropInfo.cropType === 'none') return;
-        setOffset(cropInfo.cropType === 'vertical' ? { x: 0.5, y: 0 } : { x: 0, y: 1 });
-    }, [cropInfo]);
+        setOffset(cropInfo.cropType === 'vertical' ? { x: 0.5, y: 0 } : { x: 0, y: defaultY });
+    }, [cropInfo, defaultY]);
 
     const handleSave = useCallback(() => {
         onSave(image.id, offset);

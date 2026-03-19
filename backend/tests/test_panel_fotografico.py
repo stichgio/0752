@@ -1,6 +1,6 @@
-"""
-Tests para el módulo panel_fotografico.
-Patrón: monkeypatch sobre _render_html_to_pdf para no requerir WeasyPrint en CI.
+﻿"""
+Tests para el mÃ³dulo panel_fotografico.
+PatrÃ³n: monkeypatch sobre _render_html_to_pdf para no requerir WeasyPrint en CI.
 """
 
 from __future__ import annotations
@@ -13,6 +13,7 @@ import sys
 
 import pytest
 from fastapi.testclient import TestClient
+from pypdf import PdfReader
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
@@ -20,7 +21,7 @@ from main import app
 from panel_fotografico import router as panel_foto_module
 
 
-# ── helpers ───────────────────────────────────────────────────────────────────
+# â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def _make_blank_pdf() -> bytes:
@@ -46,7 +47,7 @@ def _fake_render(captured: list[str]):
 
 
 def _tiny_png() -> bytes:
-    """1×1 transparent PNG — minimal valid image."""
+    """1Ã—1 transparent PNG â€” minimal valid image."""
     return base64.b64decode(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="
     )
@@ -60,7 +61,6 @@ HEADER = {
     "FECHA_CORTE": "2026-03-18",
     "DIRECCIONES_AFECTADAS": "Av. Lima 100",
     "DISTRITO": "Los Olivos",
-    "CODIGO_COMPONENTE": "CC-001",
     "ESTADO": "Ejecutado",
 }
 
@@ -71,11 +71,11 @@ def client():
         yield c
 
 
-# ── tests ─────────────────────────────────────────────────────────────────────
+# â”€â”€ tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
 def test_render_pdf_no_images_returns_400(client, monkeypatch):
-    """0 imágenes → 400 con mensaje claro."""
+    """0 imÃ¡genes â†’ 400 con mensaje claro."""
     monkeypatch.setattr(panel_foto_module, "_render_html_to_pdf", _fake_render([]))
 
     response = client.post(
@@ -88,7 +88,7 @@ def test_render_pdf_no_images_returns_400(client, monkeypatch):
 
 
 def test_render_pdf_1_to_4_images_produces_one_page(client, monkeypatch):
-    """1-4 imágenes → 1 página, con placeholders para los slots restantes."""
+    """1-4 imÃ¡genes â†’ 1 pÃ¡gina, con placeholders para los slots restantes."""
     captured: list[str] = []
     monkeypatch.setattr(panel_foto_module, "_render_html_to_pdf", _fake_render(captured))
 
@@ -108,15 +108,17 @@ def test_render_pdf_1_to_4_images_produces_one_page(client, monkeypatch):
     html = captured[0]
     # placeholder appears for the 4th missing slot
     assert "Sin imagen" in html
+    assert 'class="photo-grid"' in html
+    assert 'class="photo-cell"' in html
+    assert "photo-table" not in html
     # header fields visible
     assert "CS Lima Norte" in html
-    assert "CC-001" in html
     # exactly 1 render call (1 page)
     assert len(captured) == 1
 
 
 def test_render_pdf_5_to_8_images_produces_two_pages(client, monkeypatch):
-    """5-8 imágenes → 2 renders (2 páginas), sin duplicados."""
+    """5-8 imÃ¡genes â†’ 2 renders (2 pÃ¡ginas), sin duplicados."""
     captured: list[str] = []
     monkeypatch.setattr(panel_foto_module, "_render_html_to_pdf", _fake_render(captured))
 
@@ -139,7 +141,7 @@ def test_render_pdf_5_to_8_images_produces_two_pages(client, monkeypatch):
 
 
 def test_render_pdf_9_images_produces_three_pages(client, monkeypatch):
-    """9 imágenes → 3 páginas, última con 1 foto + 3 placeholders."""
+    """9 imÃ¡genes â†’ 3 pÃ¡ginas, Ãºltima con 1 foto + 3 placeholders."""
     captured: list[str] = []
     monkeypatch.setattr(panel_foto_module, "_render_html_to_pdf", _fake_render(captured))
 
@@ -161,7 +163,7 @@ def test_render_pdf_9_images_produces_three_pages(client, monkeypatch):
 
 
 def test_render_pdf_header_fields_present_in_all_pages(client, monkeypatch):
-    """Los campos de cabecera deben aparecer en todas las páginas del HTML generado."""
+    """Los campos de cabecera deben aparecer en todas las pÃ¡ginas del HTML generado."""
     captured: list[str] = []
     monkeypatch.setattr(panel_foto_module, "_render_html_to_pdf", _fake_render(captured))
 
@@ -176,11 +178,10 @@ def test_render_pdf_header_fields_present_in_all_pages(client, monkeypatch):
     html = captured[0]
     # Both page divs contain the header data
     assert html.count("CS Lima Norte") == 2
-    assert html.count("CC-001") == 2
 
 
 def test_render_pdf_invalid_header_json_returns_400(client):
-    """header_config con JSON inválido → 400."""
+    """header_config con JSON invÃ¡lido â†’ 400."""
     response = client.post(
         "/api/panel-fotografico/render-pdf",
         data={"header_config": "not-json"},
@@ -208,6 +209,26 @@ def test_render_pdf_with_logo_embeds_logo_in_html(client, monkeypatch):
     assert expected_b64 in captured[0]
 
 
+def test_render_pdf_falls_back_to_pillow_when_html_engines_unavailable(client, monkeypatch):
+    png = _tiny_png()
+    monkeypatch.setattr(panel_foto_module, "WEASYPRINT_AVAILABLE", False)
+    monkeypatch.setattr(panel_foto_module, "WEASYPRINT_HTML", None)
+    monkeypatch.setattr(panel_foto_module, "_WEASYPRINT_IMPORT_ERROR", RuntimeError("missing gtk"))
+    monkeypatch.setattr(panel_foto_module, "CHROME_PATH", None)
+
+    response = client.post(
+        "/api/panel-fotografico/render-pdf",
+        data={"header_config": json.dumps(HEADER)},
+        files=[("images", ("foto1.png", png, "image/png"))],
+    )
+
+    assert response.status_code == 200
+    assert "application/pdf" in response.headers.get("content-type", "")
+    reader = PdfReader(io.BytesIO(response.content))
+    assert len(reader.pages) == 1
+
+
+
 def test_chunk_images_helper():
     """Unit test for the _chunk_images helper (no HTTP)."""
     from panel_fotografico.router import _chunk_images
@@ -219,3 +240,5 @@ def test_chunk_images_helper():
     result = _chunk_images(list(range(9)), 4)
     assert len(result) == 3
     assert result[2] == [8]
+
+

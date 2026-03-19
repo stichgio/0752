@@ -9,10 +9,11 @@ import './technical-theme.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
-        <BrowserRouter>
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <MissingApiConfigBanner />
             <Toaster richColors position="bottom-right" />
             <AppRouter />
         </BrowserRouter>
     </React.StrictMode>,
 )
+

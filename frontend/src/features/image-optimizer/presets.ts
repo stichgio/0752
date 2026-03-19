@@ -1,4 +1,4 @@
-﻿import { BatchSettings, PresetDefinition } from './types';
+import { BatchSettings, PresetDefinition } from './types';
 
 export const DEFAULT_BATCH_SETTINGS: BatchSettings = {
     operations: {
@@ -10,6 +10,7 @@ export const DEFAULT_BATCH_SETTINGS: BatchSettings = {
     },
     crop: {
         aspectRatio: 'original',
+        cropOrigin: 'bottom',
     },
     resize: {
         maxWidth: 1920,
@@ -73,7 +74,7 @@ export const IMAGE_OPTIMIZER_PRESETS: PresetDefinition[] = [
         accentClassName: 'border-sky-500/25 bg-sky-500/10 text-sky-300',
         settings: withPatch(DEFAULT_BATCH_SETTINGS, {
             operations: { cropEnabled: true, resizeEnabled: true, formatEnabled: true, compressionEnabled: true, renameEnabled: false },
-            crop: { aspectRatio: '4:5' },
+            crop: { aspectRatio: '4:5', cropOrigin: 'bottom' },
             resize: { maxWidth: 1080, maxHeight: 1350, noUpscale: true },
             compression: { maxSizeMB: 0.8, quality: 0.82, useWebWorker: true },
             export: { mode: 'zip', zipName: 'social-media' },
@@ -92,7 +93,7 @@ export const IMAGE_OPTIMIZER_PRESETS: PresetDefinition[] = [
                 compressionEnabled: false,
                 renameEnabled: true,
             },
-            crop: { aspectRatio: 'original' },
+            crop: { aspectRatio: 'original', cropOrigin: 'bottom' },
             format: { outputFormat: 'original' },
             export: { mode: 'zip', zipName: 'imagenes_renombradas' },
         }),
@@ -116,7 +117,7 @@ export const IMAGE_OPTIMIZER_PRESETS: PresetDefinition[] = [
         accentClassName: 'border-violet-500/25 bg-violet-500/10 text-violet-300',
         settings: withPatch(DEFAULT_BATCH_SETTINGS, {
             operations: { cropEnabled: true, resizeEnabled: false, formatEnabled: false, compressionEnabled: false, renameEnabled: false },
-            crop: { aspectRatio: '1:1' },
+            crop: { aspectRatio: '1:1', cropOrigin: 'bottom' },
             format: { outputFormat: 'original' },
             export: { mode: 'zip', zipName: 'recortes' },
         }),

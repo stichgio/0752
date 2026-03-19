@@ -13,6 +13,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import functools
+import io
 import json
 import logging
 import os
@@ -29,11 +30,11 @@ from config import settings
 
 logger = logging.getLogger("panel_fotografico")
 
-# ── Router ────────────────────────────────────────────────────────────────────
+# â”€â”€ Router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 router = APIRouter(prefix="/api/panel-fotografico", tags=["panel-fotografico"])
 
-# ── PDF engine (same pattern as multi_sheet_report.py) ───────────────────────
+# â”€â”€ PDF engine (same pattern as multi_sheet_report.py) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _configure_windows_gtk_runtime() -> None:
     if os.name != "nt":
@@ -82,9 +83,20 @@ except (ImportError, OSError) as exc:
     _WEASYPRINT_IMPORT_ERROR = exc
     logger.warning("WeasyPrint no disponible para panel-fotografico: %s", exc)
 
+_PILLOW_IMPORT_ERROR: Optional[Exception] = None
+try:
+    from PIL import Image, ImageDraw, ImageFont, ImageOps
+
+    PILLOW_AVAILABLE = True
+except ImportError as exc:
+    Image = ImageDraw = ImageFont = ImageOps = None
+    PILLOW_AVAILABLE = False
+    _PILLOW_IMPORT_ERROR = exc
+    logger.warning("Pillow no disponible para panel-fotografico: %s", exc)
+
 CHROME_PATH = _detect_browser_pdf_path()
 
-# ── MIME helper ───────────────────────────────────────────────────────────────
+# â”€â”€ MIME helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 _MIME_MAP: dict[str, str] = {
     "jpg": "image/jpeg",
@@ -110,7 +122,7 @@ async def _upload_to_b64(upload_file: UploadFile) -> Optional[str]:
         return None
 
 
-# ── HTML builder ──────────────────────────────────────────────────────────────
+# â”€â”€ HTML builder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _safe(value: Any, fallback: str = "-") -> str:
     if value is None:
@@ -153,7 +165,7 @@ def _build_panel_page_html(
     # page indicator
     page_label = f"Hoja {page_num}/{total_pages}" if total_pages > 1 else ""
 
-    # photo grid — always 4 slots
+    # photo grid â€” always 4 slots
     cells_html = ""
     for idx in range(4):
         if idx < len(image_uris):
@@ -253,26 +265,40 @@ html, body {{
     -ms-flex-direction: column; flex-direction: column;
     min-height: 0; overflow: hidden;
 }}
-/* Use a TABLE for the 2x2 grid — WeasyPrint supports tables reliably */
-.photo-table {{
-    width: 100%; height: 100%;
-    border-collapse: separate; border-spacing: 2mm;
+/* 2x2 grid aligned with the backend/templates panel layout */
+.photo-grid {{
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: 2mm;
+    width: 100%;
+    height: 100%;
     border: 1px solid #0066cc;
+    padding: 2mm;
     -webkit-box-flex: 1; -ms-flex: 1; flex: 1;
     min-height: 0;
-}}
-.photo-table td {{
-    width: 50%; height: 50%;
-    background: #f5f5f5; border: 1px solid #ddd;
-    text-align: center; vertical-align: middle;
     overflow: hidden;
+    -webkit-box-sizing: border-box; box-sizing: border-box;
 }}
-.photo-table td img {{
+.photo-cell {{
+    background: #f5f5f5; border: 1px solid #ddd;
+    width: 100%; height: 100%;
+    min-width: 0; min-height: 0;
+    overflow: hidden;
+    display: -webkit-box; display: -ms-flexbox; display: flex;
+    -webkit-box-align: center; -ms-flex-align: center; align-items: center;
+    -webkit-box-pack: center; -ms-flex-pack: center; justify-content: center;
+    -webkit-box-sizing: border-box; box-sizing: border-box;
+}}
+.photo-cell img {{
     max-width: 100%; max-height: 100%;
     object-fit: contain; object-position: center; display: block;
-    margin: 0 auto;
 }}
 .photo-placeholder {{
+    width: 100%; height: 100%;
+    display: -webkit-box; display: -ms-flexbox; display: flex;
+    -webkit-box-align: center; -ms-flex-align: center; align-items: center;
+    -webkit-box-pack: center; -ms-flex-pack: center; justify-content: center;
     color: #999; font-size: 10px; font-style: italic;
 }}
 </style>
@@ -335,27 +361,13 @@ html, body {{
 
     <section class="panel-fotografico">
         <div class="section-title">3.0 Panel Fotográfico</div>
-        <table class="photo-table">
-            <tr>
-                <td>{_cell_content(image_uris, 0)}</td>
-                <td>{_cell_content(image_uris, 1)}</td>
-            </tr>
-            <tr>
-                <td>{_cell_content(image_uris, 2)}</td>
-                <td>{_cell_content(image_uris, 3)}</td>
-            </tr>
-        </table>
+        <div class="photo-grid">
+            {cells_html}
+        </div>
     </section>
 </div>
 </body>
 </html>"""
-
-
-def _cell_content(image_uris: list[str], idx: int) -> str:
-    if idx < len(image_uris):
-        safe_uri = escape(str(image_uris[idx]), quote=True)
-        return f'<img src="{safe_uri}" alt="Foto {idx + 1}">'
-    return '<div class="photo-placeholder">Sin imagen</div>'
 
 
 def _chunk_images(images: list[str], size: int = 4) -> list[list[str]]:
@@ -363,10 +375,257 @@ def _chunk_images(images: list[str], size: int = 4) -> list[list[str]]:
     return [images[i : i + size] for i in range(0, len(images), size)]
 
 
-# ── PDF rendering engine (same fallback chain as multi_sheet_report.py) ────────
+# â”€â”€ PDF rendering engine (same fallback chain as multi_sheet_report.py) â”€â”€â”€â”€â”€â”€â”€â”€
 
 import shutil
 import subprocess
+
+
+def _load_font(size: int, bold: bool = False):
+    if not PILLOW_AVAILABLE or ImageFont is None:
+        raise RuntimeError("Pillow no esta disponible.")
+    font_candidates = (
+        ("arialbd.ttf", "DejaVuSans-Bold.ttf", "DejaVuSans.ttf")
+        if bold
+        else ("arial.ttf", "DejaVuSans.ttf", "DejaVuSans-Bold.ttf")
+    )
+    for candidate in font_candidates:
+        try:
+            return ImageFont.truetype(candidate, size=size)
+        except Exception:
+            continue
+    return ImageFont.load_default()
+
+
+def _text_size(draw, text: str, font) -> tuple[int, int]:
+    bbox = draw.textbbox((0, 0), text, font=font)
+    return bbox[2] - bbox[0], bbox[3] - bbox[1]
+
+
+def _wrap_text(draw, text: str, font, max_width: int, max_lines: int = 2) -> list[str]:
+    normalized = " ".join(str(text or "-").split()) or "-"
+    words = normalized.split(" ")
+    lines: list[str] = []
+    current = ""
+
+    for word in words:
+        trial = word if not current else f"{current} {word}"
+        if _text_size(draw, trial, font)[0] <= max_width:
+            current = trial
+            continue
+        if current:
+            lines.append(current)
+            current = word
+        else:
+            clipped = word
+            while clipped and _text_size(draw, clipped, font)[0] > max_width:
+                clipped = clipped[:-1]
+            lines.append((clipped or word[:1]).rstrip() + "...")
+            current = ""
+        if len(lines) >= max_lines:
+            break
+
+    if len(lines) < max_lines and current:
+        lines.append(current)
+
+    if len(lines) > max_lines:
+        lines = lines[:max_lines]
+    if lines and len(lines) == max_lines:
+        consumed = " ".join(lines)
+        if consumed != normalized and not lines[-1].endswith("..."):
+            trimmed = lines[-1]
+            while trimmed and _text_size(draw, trimmed + "...", font)[0] > max_width:
+                trimmed = trimmed[:-1]
+            lines[-1] = (trimmed or lines[-1][:1]).rstrip() + "..."
+    return lines or ["-"]
+
+
+def _draw_wrapped_text(draw, text: str, font, fill: str, x: int, y: int, max_width: int, line_gap: int = 4, max_lines: int = 2) -> int:
+    lines = _wrap_text(draw, text, font, max_width=max_width, max_lines=max_lines)
+    current_y = y
+    for line in lines:
+        draw.text((x, current_y), line, font=font, fill=fill)
+        current_y += _text_size(draw, line, font)[1] + line_gap
+    return current_y
+
+
+def _decode_data_uri_image(data_uri: str):
+    if not PILLOW_AVAILABLE or Image is None or ImageOps is None:
+        raise RuntimeError("Pillow no esta disponible.")
+    if "," not in data_uri:
+        raise ValueError("Data URI invalida.")
+    payload = data_uri.split(",", 1)[1]
+    raw = base64.b64decode(payload)
+    image = Image.open(io.BytesIO(raw))
+    image = ImageOps.exif_transpose(image)
+    return image.convert("RGBA")
+
+
+def _paste_contained(canvas, image, box: tuple[int, int, int, int]) -> None:
+    x0, y0, x1, y1 = box
+    target_w = max(1, x1 - x0)
+    target_h = max(1, y1 - y0)
+    fitted = image.copy()
+    fitted.thumbnail((target_w, target_h), Image.Resampling.LANCZOS)
+    paste_x = x0 + max(0, (target_w - fitted.width) // 2)
+    paste_y = y0 + max(0, (target_h - fitted.height) // 2)
+    if fitted.mode == "RGBA":
+        canvas.paste(fitted, (paste_x, paste_y), fitted)
+    else:
+        canvas.paste(fitted, (paste_x, paste_y))
+
+
+def _render_panel_pdf_with_pillow(
+    header: dict[str, Any],
+    logo_left_uri: Optional[str],
+    logo_right_uri: Optional[str],
+    image_uris: list[str],
+    output_path: str,
+) -> None:
+    if not PILLOW_AVAILABLE or Image is None or ImageDraw is None:
+        reason = f": {_PILLOW_IMPORT_ERROR}" if _PILLOW_IMPORT_ERROR is not None else "."
+        raise RuntimeError("Pillow no esta disponible para el fallback PDF" + reason)
+
+    page_width = 1240
+    page_height = 1754
+    margin = 48
+    blue = "#0066cc"
+    border = "#d4d4d8"
+    placeholder_bg = "#f5f5f5"
+    text_color = "#111827"
+    muted = "#6b7280"
+
+    title_font = _load_font(34, bold=True)
+    section_font = _load_font(24, bold=True)
+    label_font = _load_font(16, bold=True)
+    value_font = _load_font(18, bold=False)
+    page_font = _load_font(16, bold=False)
+    placeholder_font = _load_font(22, bold=False)
+
+    chunks = _chunk_images(image_uris, size=4)
+    pages = []
+
+    for page_num, chunk in enumerate(chunks, start=1):
+        page = Image.new("RGB", (page_width, page_height), "white")
+        draw = ImageDraw.Draw(page)
+
+        y = margin
+        header_bottom = y + 118
+        draw.line((margin, header_bottom, page_width - margin, header_bottom), fill="#2f2f2f", width=3)
+
+        logo_box_w = 260
+        logo_box_h = 90
+        logo_left_box = (margin, y + 10, margin + logo_box_w, y + 10 + logo_box_h)
+        logo_right_box = (page_width - margin - logo_box_w, y + 10, page_width - margin, y + 10 + logo_box_h)
+        title_left = logo_left_box[2] + 20
+        title_right = logo_right_box[0] - 20
+        title_text = _safe(header.get("titulo"), "Panel Fotografico")
+        title_w, title_h = _text_size(draw, title_text, title_font)
+        title_x = title_left + max(0, (title_right - title_left - title_w) // 2)
+        title_y = y + 20
+        draw.text((title_x, title_y), title_text, font=title_font, fill=text_color)
+
+        if len(chunks) > 1:
+            page_label = f"Hoja {page_num}/{len(chunks)}"
+            label_w, _ = _text_size(draw, page_label, page_font)
+            label_x = title_left + max(0, (title_right - title_left - label_w) // 2)
+            draw.text((label_x, title_y + title_h + 8), page_label, font=page_font, fill=muted)
+
+        for box, uri in ((logo_left_box, logo_left_uri), (logo_right_box, logo_right_uri)):
+            draw.rounded_rectangle(box, radius=8, outline=border, width=1)
+            if uri:
+                try:
+                    _paste_contained(page, _decode_data_uri_image(uri), (box[0] + 6, box[1] + 6, box[2] - 6, box[3] - 6))
+                except Exception:
+                    pass
+
+        y = header_bottom + 22
+
+        info_items = [
+            ("Centro de Servicios", _safe(header.get("CENTRO"))),
+            ("NIS", _safe(header.get("NIS"))),
+            ("Fecha de Trabajo", _safe(header.get("FECHA_TRABAJO"))),
+        ]
+        info_top = y
+        info_bottom = info_top + 84
+        info_width = page_width - (margin * 2)
+        col_width = info_width // len(info_items)
+        for idx, (label, value) in enumerate(info_items):
+            x0 = margin + idx * col_width
+            x1 = margin + info_width if idx == len(info_items) - 1 else x0 + col_width
+            draw.rectangle((x0, info_top, x1, info_bottom), outline=border, width=1)
+            draw.text((x0 + 14, info_top + 12), label.upper(), font=label_font, fill=muted)
+            _draw_wrapped_text(draw, value, value_font, text_color, x0 + 14, info_top + 38, x1 - x0 - 28, max_lines=2)
+        y = info_bottom + 28
+
+        draw.text((margin, y), "1.0 LOCALIZACION", font=section_font, fill=blue)
+        y += 34
+        draw.line((margin, y, page_width - margin, y), fill=blue, width=2)
+        y += 14
+        localizacion = [
+            ("Direcciones Afectadas:", _safe(header.get("DIRECCIONES_AFECTADAS"))),
+            ("Distrito:", _safe(header.get("DISTRITO"))),
+            ("Estado:", _safe(header.get("ESTADO"))),
+        ]
+        for label, value in localizacion:
+            draw.text((margin, y), label.upper(), font=label_font, fill="#374151")
+            y = _draw_wrapped_text(draw, value, value_font, text_color, margin + 220, y - 2, page_width - margin * 2 - 220, max_lines=2)
+            y += 8
+
+        y += 10
+        draw.text((margin, y), "2.0 DETALLES DE ORDEN DE TRABAJO", font=section_font, fill=blue)
+        y += 34
+        draw.line((margin, y, page_width - margin, y), fill=blue, width=2)
+        y += 14
+        draw.text((margin, y), "ACTIVIDAD:", font=label_font, fill="#374151")
+        _draw_wrapped_text(draw, _safe(header.get("ACTIVIDAD")), value_font, text_color, margin + 140, y - 2, 520, max_lines=2)
+        draw.text((margin + 700, y), "CUADRILLA:", font=label_font, fill="#374151")
+        _draw_wrapped_text(draw, _safe(header.get("CUADRILLA")), value_font, text_color, margin + 830, y - 2, page_width - margin - (margin + 830), max_lines=2)
+
+        y += 68
+        draw.text((margin, y), "3.0 PANEL FOTOGRAFICO", font=section_font, fill=blue)
+        y += 34
+        draw.line((margin, y, page_width - margin, y), fill=blue, width=2)
+        y += 16
+
+        grid_left = margin
+        grid_top = y
+        grid_right = page_width - margin
+        grid_bottom = page_height - margin
+        draw.rectangle((grid_left, grid_top, grid_right, grid_bottom), outline=blue, width=2)
+
+        cell_gap = 20
+        inner_pad = 18
+        cell_width = (grid_right - grid_left - inner_pad * 2 - cell_gap) // 2
+        cell_height = (grid_bottom - grid_top - inner_pad * 2 - cell_gap) // 2
+
+        for idx in range(4):
+            row = idx // 2
+            col = idx % 2
+            x0 = grid_left + inner_pad + col * (cell_width + cell_gap)
+            y0 = grid_top + inner_pad + row * (cell_height + cell_gap)
+            x1 = x0 + cell_width
+            y1 = y0 + cell_height
+            draw.rectangle((x0, y0, x1, y1), fill=placeholder_bg, outline=border, width=1)
+            if idx < len(chunk):
+                try:
+                    _paste_contained(page, _decode_data_uri_image(chunk[idx]), (x0 + 10, y0 + 10, x1 - 10, y1 - 10))
+                except Exception:
+                    placeholder_w, placeholder_h = _text_size(draw, "Imagen invalida", placeholder_font)
+                    draw.text((x0 + (cell_width - placeholder_w) // 2, y0 + (cell_height - placeholder_h) // 2), "Imagen invalida", font=placeholder_font, fill=muted)
+            else:
+                placeholder = "Sin imagen"
+                placeholder_w, placeholder_h = _text_size(draw, placeholder, placeholder_font)
+                draw.text((x0 + (cell_width - placeholder_w) // 2, y0 + (cell_height - placeholder_h) // 2), placeholder, font=placeholder_font, fill=muted)
+
+        pages.append(page)
+
+    if not pages:
+        raise RuntimeError("No hay paginas para exportar.")
+
+    first_page = pages[0]
+    remaining_pages = pages[1:]
+    first_page.save(output_path, "PDF", resolution=150.0, save_all=bool(remaining_pages), append_images=remaining_pages)
 
 
 def _render_html_to_pdf_with_browser(html_string: str, base_url: str, output_path: str) -> None:
@@ -468,7 +727,28 @@ async def _render_html_to_pdf_async(html_string: str, base_url: str, output_path
     )
 
 
-# ── Cleanup helper ────────────────────────────────────────────────────────────
+async def _render_panel_pdf_with_pillow_async(
+    header: dict[str, Any],
+    logo_left_uri: Optional[str],
+    logo_right_uri: Optional[str],
+    image_uris: list[str],
+    output_path: str,
+) -> None:
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(
+        _pdf_executor,
+        functools.partial(
+            _render_panel_pdf_with_pillow,
+            header,
+            logo_left_uri,
+            logo_right_uri,
+            image_uris,
+            output_path,
+        ),
+    )
+
+
+# â”€â”€ Cleanup helper â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _safe_remove(path: str) -> None:
     try:
@@ -478,11 +758,11 @@ def _safe_remove(path: str) -> None:
         logger.warning("Error removing temp file %s: %s", path, err)
 
 
-# ── Endpoint ──────────────────────────────────────────────────────────────────
+# â”€â”€ Endpoint â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @router.post(
     "/render-pdf",
-    summary="Genera un PDF de panel fotográfico manual",
+summary="Genera un PDF de panel fotográfico manual",
     response_description="PDF con 4 imágenes por hoja (A4)",
 )
 async def render_pdf(
@@ -494,7 +774,7 @@ async def render_pdf(
 ):
     """
     Recibe `header_config` (JSON), una lista de `images` y logos opcionales.
-    Genera y devuelve un PDF A4 con 4 fotos por hoja, placeholders para slots vacíos,
+Genera y devuelve un PDF A4 con 4 fotos por hoja, placeholders para slots vacíos,
     y la cabecera global repetida en todas las páginas.
     """
     # 1. Validar cabecera
@@ -579,7 +859,23 @@ async def render_pdf(
         with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
             output_path = tmp.name
 
-        await _render_html_to_pdf_async(full_html, "", output_path)
+        try:
+            await _render_html_to_pdf_async(full_html, "", output_path)
+        except Exception as html_exc:
+            logger.warning("HTML PDF engines failed for panel-fotografico; trying Pillow fallback", exc_info=True)
+            try:
+                await _render_panel_pdf_with_pillow_async(
+                    header_dict,
+                    logo_left_uri,
+                    logo_right_uri,
+                    image_uris,
+                    output_path,
+                )
+            except Exception as pillow_exc:
+                raise RuntimeError(
+                    "No se pudo generar el PDF. "
+                    f"HTML render: {html_exc} | Pillow: {pillow_exc}"
+                ) from pillow_exc
 
         if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
             raise RuntimeError("El PDF generado está vacío o no existe.")
@@ -616,3 +912,9 @@ async def render_pdf(
             "X-Filename": "panel_fotografico.pdf",
         },
     )
+
+
+
+
+
+

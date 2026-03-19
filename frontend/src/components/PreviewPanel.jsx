@@ -526,16 +526,17 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
         const count = images.length;
         const baseStyle = {
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr',
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
             gap: '2mm',
             width: '100%',
             height: '100%',
+            minHeight: 0,
         };
 
         if (count === 2) {
             return { ...baseStyle, gridTemplateRows: '1fr', alignItems: 'center' };
         } else if (count === 3 || count === 4) {
-            return { ...baseStyle, gridTemplateRows: '1fr 1fr' };
+            return { ...baseStyle, gridTemplateRows: 'repeat(2, minmax(0, 1fr))' };
         }
         return { ...baseStyle, gridAutoRows: '7cm' };
     };
@@ -551,12 +552,12 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
             justifyContent: 'center',
             overflow: 'hidden',
             padding: '2mm',
+            minHeight: 0,
         };
 
         if (count === 2) {
             return { ...baseStyle, height: '100%' };
         } else if (count === 3 && index === 2) {
-            // Third image spans both columns and is centered
             return {
                 ...baseStyle,
                 gridColumn: '1 / 3',
@@ -566,7 +567,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                 height: '100%',
             };
         } else if (count === 4) {
-            return { ...baseStyle, height: '100%' };
+            return { ...baseStyle, height: '100%', minHeight: 0 };
         }
         return { ...baseStyle, height: '7cm' };
     };
@@ -683,7 +684,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                             /* Special layout for 3 images - matching PDF template */
                             <div className="flex-1 flex flex-col gap-[2mm]" style={{ minHeight: 0 }}>
                                 {/* Top row: 2 images side by side */}
-                                <div className="flex flex-row gap-[2mm]" style={{ height: 'calc(50% - 1mm)' }}>
+                                <div className="flex flex-row gap-[2mm] min-h-0" style={{ height: 'calc(50% - 1mm)' }}>
                                     <div style={{
                                         flex: 1,
                                         border: '1px solid #ddd',
@@ -693,6 +694,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                                         justifyContent: 'center',
                                         overflow: 'hidden',
                                         padding: '2mm',
+                                        minHeight: 0,
                                     }}>
                                         <img
                                             src={imageUrls[0] || ''}
@@ -709,6 +711,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                                         justifyContent: 'center',
                                         overflow: 'hidden',
                                         padding: '2mm',
+                                        minHeight: 0,
                                     }}>
                                         <img
                                             src={imageUrls[1] || ''}
@@ -718,7 +721,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                                     </div>
                                 </div>
                                 {/* Bottom row: 1 image centered */}
-                                <div className="flex justify-center" style={{ height: 'calc(50% - 1mm)' }}>
+                                <div className="flex justify-center min-h-0" style={{ height: 'calc(50% - 1mm)' }}>
                                     <div style={{
                                         width: 'calc(50% - 1mm)',
                                         height: '100%',
@@ -729,6 +732,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                                         justifyContent: 'center',
                                         overflow: 'hidden',
                                         padding: '2mm',
+                                        minHeight: 0,
                                     }}>
                                         <img
                                             src={imageUrls[2] || ''}

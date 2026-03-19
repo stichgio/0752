@@ -1,8 +1,9 @@
-﻿import {
+import {
     ASPECT_RATIO_OPTIONS,
     AspectRatio,
     BatchSettings,
     CropOffset,
+    CropOrigin,
     CropRectangle,
     ImageItem,
     ImageStats,
@@ -99,6 +100,7 @@ export function getCropRectangle(
     height: number,
     aspectRatio: AspectRatio,
     offset?: CropOffset,
+    cropOrigin: CropOrigin = 'bottom',
 ): CropRectangle | null {
     const ratio = getAspectRatioValue(aspectRatio);
     if (!ratio || width <= 0 || height <= 0) {
@@ -135,7 +137,8 @@ export function getCropRectangle(
 
     const cropHeight = Math.round(width / ratio);
     const maxOffsetY = height - cropHeight;
-    const normalizedY = offset ? Math.max(0, Math.min(1, offset.y)) : 1;
+    const defaultY = cropOrigin === 'top' ? 0 : 1;
+    const normalizedY = offset ? Math.max(0, Math.min(1, offset.y)) : defaultY;
     return {
         cropType: 'horizontal',
         width,
@@ -197,7 +200,7 @@ export function resolveSettingsForItem(baseSettings: BatchSettings, item: ImageI
 export function getProcessingPlan(item: ImageItem, settings: BatchSettings): ProcessingPlan {
     const cropRect =
         hasCropOperation(settings) && item.sourceWidth && item.sourceHeight
-            ? getCropRectangle(item.sourceWidth, item.sourceHeight, settings.crop.aspectRatio, item.overrides.customCropOffset)
+            ? getCropRectangle(item.sourceWidth, item.sourceHeight, settings.crop.aspectRatio, item.overrides.customCropOffset, settings.crop.cropOrigin)
             : null;
     const effectiveCrop = cropRect && cropRect.cropType !== 'none' ? cropRect : null;
     const sourceWidth = effectiveCrop?.width ?? item.sourceWidth ?? 0;

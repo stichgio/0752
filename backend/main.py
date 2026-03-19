@@ -1,4 +1,4 @@
-from dotenv import load_dotenv
+﻿from dotenv import load_dotenv
 try:
     load_dotenv(encoding='utf-8')
 except (UnicodeDecodeError, ValueError):
@@ -544,15 +544,25 @@ async def list_templates():
     else:
         file_templates = [f for f in os.listdir(templates_dir) if f.endswith(".html") and f != "report.html"]
 
-    # Include published templates from the block editor
-    editor_templates = get_all_published_templates()
+    # Keep the legacy template list working even if the optional editor
+    # backend cannot reach Supabase right now.
+    try:
+        editor_templates = get_all_published_templates()
+    except Exception as exc:
+        logger.warning("Unable to load published editor templates for /api/templates: %s", exc, exc_info=True)
+        editor_templates = []
 
     return {"templates": file_templates, "editorTemplates": editor_templates}
 
 
 @api_router.get("/templates/published")
 async def list_published_templates():
-    return {"templates": get_all_published_templates()}
+    try:
+        templates = get_all_published_templates()
+    except Exception as exc:
+        logger.warning("Unable to load published editor templates for /api/templates/published: %s", exc, exc_info=True)
+        templates = []
+    return {"templates": templates}
 
 
 @api_router.patch("/templates/{template_id}")
@@ -1288,5 +1298,6 @@ if os.path.exists("static"):
 if __name__ == "__main__":
     import uvicorn  
     uvicorn.run(app, host="0.0.0.0", port=7860)
+
 
 

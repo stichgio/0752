@@ -49,7 +49,7 @@ _BUILTIN_FORMATS: list[FormatEntry] = [
         strategy=MappingStrategy.visual_overlay,
         mapping=VisualMapping(
             page=0,
-            x=547,
+            x=545,
             y=20,
             width=140,
             height=20,
@@ -59,13 +59,13 @@ _BUILTIN_FORMATS: list[FormatEntry] = [
             color_g=0.2275,
             color_b=0.5412,
             padding=5,
-            blank_x=507,
-            blank_y=12,
-            blank_width=88,
-            blank_height=31,
+            blank_x=None,
+            blank_y=None,
+            blank_width=None,
+            blank_height=None,
             redraw_top_border=False,
-            redraw_ot_badge=True,
-            blank_mcids=[88, 89],
+            redraw_ot_badge=False,
+            blank_mcids=[89],
         ),
         filename_pattern="maquina_{desde}.pdf",
         max_pages=500,
@@ -82,23 +82,23 @@ _BUILTIN_FORMATS: list[FormatEntry] = [
         strategy=MappingStrategy.visual_overlay,
         mapping=VisualMapping(
             page=0,
-            x=548,
-            y=31,
-            width=140,
-            height=20,
-            font_size=13,
+            x=534,
+            y=25,
+            width=150,
+            height=24,
+            font_size=15,
             font_name="Helvetica-Bold",
             color_r=0.1176,
             color_g=0.2275,
             color_b=0.5412,
             padding=5,
-            blank_x=506,
-            blank_y=26,
-            blank_width=94,
-            blank_height=31,
+            blank_x=None,
+            blank_y=None,
+            blank_width=None,
+            blank_height=None,
             redraw_top_border=False,
-            redraw_ot_badge=True,
-            blank_mcids=[4, 63],
+            redraw_ot_badge=False,
+            blank_mcids=[63],
         ),
         filename_pattern="televisiva_{desde}.pdf",
         max_pages=500,
@@ -130,8 +130,10 @@ class FormatCatalog:
                         if entry.mapping is not None:
                             builtin_mapping = self._formats[entry.id].mapping
                             self._formats[entry.id].mapping = entry.mapping
-                            if builtin_mapping and builtin_mapping.blank_mcids and not entry.mapping.blank_mcids:
-                                self._formats[entry.id].mapping.blank_mcids = builtin_mapping.blank_mcids
+                            new_mapping = entry.mapping
+                            builtin_blank_mcids = getattr(builtin_mapping, 'blank_mcids', None) if builtin_mapping else None
+                            if builtin_blank_mcids and not new_mapping.blank_mcids:
+                                new_mapping.blank_mcids = builtin_blank_mcids
                     else:
                         self._formats[entry.id] = entry
             except Exception:
@@ -217,4 +219,3 @@ class FormatCatalog:
 
 
 catalog = FormatCatalog()
-

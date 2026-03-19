@@ -12,7 +12,7 @@ import {
     X,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { apiClient } from '../../utils/apiClient';
+import { postBlob } from '../../utils/apiClient';
 
 // ─── types ───────────────────────────────────────────────────────────────────
 
@@ -218,7 +218,7 @@ function SheetPreview({
             </div>
 
             {/* Photo Grid */}
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
                 <div style={{ fontSize: '9pt', fontWeight: 'bold', color: '#0066cc', textTransform: 'uppercase', marginBottom: '2mm', paddingBottom: '2px', borderBottom: '1px solid #0066cc' }}>
                     3.0 Panel Fotográfico
                 </div>
@@ -226,12 +226,16 @@ function SheetPreview({
                     style={{
                         flex: 1,
                         display: 'grid',
-                        gridTemplateColumns: '1fr 1fr',
-                        gridTemplateRows: '1fr 1fr',
+                        gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                        gridTemplateRows: 'repeat(2, minmax(0, 1fr))',
                         gap: '2mm',
+                        width: '100%',
+                        height: '100%',
                         border: '1px solid #0066cc',
                         padding: '2mm',
                         minHeight: 0,
+                        overflow: 'hidden',
+                        boxSizing: 'border-box',
                     }}
                 >
                     {slots.map((photo, idx) => (
@@ -240,21 +244,44 @@ function SheetPreview({
                             style={{
                                 background: '#f5f5f5',
                                 border: '1px solid #ddd',
+                                width: '100%',
+                                height: '100%',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
                                 overflow: 'hidden',
-                                minHeight: '80px',
+                                minWidth: 0,
+                                minHeight: 0,
+                                boxSizing: 'border-box',
                             }}
                         >
                             {photo ? (
                                 <img
                                     src={photo.previewUrl}
                                     alt={`Foto ${idx + 1}`}
-                                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                                    style={{
+                                        maxWidth: '100%',
+                                        maxHeight: '100%',
+                                        objectFit: 'contain',
+                                        objectPosition: 'center',
+                                        display: 'block',
+                                    }}
                                 />
                             ) : (
-                                <span style={{ color: '#bbb', fontSize: '10px', fontStyle: 'italic' }}>Sin imagen</span>
+                                <span
+                                    style={{
+                                        width: '100%',
+                                        height: '100%',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: '#bbb',
+                                        fontSize: '10px',
+                                        fontStyle: 'italic',
+                                    }}
+                                >
+                                    Sin imagen
+                                </span>
                             )}
                         </div>
                     ))}
@@ -355,11 +382,7 @@ export default function PanelFotograficoApp() {
             if (logoLeft) formData.append('logoLeft', logoLeft.file, logoLeft.file.name);
             if (logoRight) formData.append('logoRight', logoRight.file, logoRight.file.name);
 
-            const response = await apiClient.post('/panel-fotografico/render-pdf', formData, {
-                responseType: 'blob',
-            });
-
-            const blob = new Blob([response.data], { type: 'application/pdf' });
+            const blob = await postBlob('/api/panel-fotografico/render-pdf', formData, 120000);
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;

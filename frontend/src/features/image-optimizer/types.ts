@@ -1,4 +1,4 @@
-﻿export interface CropOffset {
+export interface CropOffset {
     x: number;
     y: number;
 }
@@ -6,6 +6,8 @@
 export type OutputFormat = 'original' | 'jpeg' | 'png' | 'webp';
 
 export type AspectRatio = 'original' | '1:1' | '4:3' | '4:5' | '3:2' | '16:9' | '9:16' | '3:4' | '2:3';
+
+export type CropOrigin = 'top' | 'bottom';
 
 export type ExportMode = 'zip' | 'individual';
 
@@ -31,6 +33,7 @@ export interface OperationToggles {
 
 export interface CropSettings {
     aspectRatio: AspectRatio;
+    cropOrigin: CropOrigin;
 }
 
 export interface ResizeSettings {

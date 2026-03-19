@@ -11,7 +11,7 @@ import MultiSheetReportPage from './features/multi-sheet-report/page';
 import TemplateEditorPage from './features/template-editor/page';
 import GioBoardPage from './features/whiteboard/page';
 import FormatosApp from './features/formatos/FormatosApp';
-import PanelFotografico from './features/panel-fotografico';
+import PanelFotografico from './features/panel-fotografico/PanelFotograficoApp.tsx';
 
 const legacyRoutes = [
     { path: 'index.html', to: '/' },
