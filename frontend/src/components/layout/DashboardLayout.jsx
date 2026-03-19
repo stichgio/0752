@@ -14,6 +14,7 @@ import {
     PenTool,
     FileSpreadsheet,
     Camera,
+    Calculator,
 } from 'lucide-react';
 import PomodoroTimer from '../PomodoroTimer';
 
@@ -87,6 +88,12 @@ const navItems = [
         to: '/panel-fotografico',
         match: (pathname) => pathname.startsWith('/panel-fotografico'),
     },
+    {
+        icon: <Calculator size={20} />,
+        label: 'Calculadora',
+        href: '/calculator.html',
+        match: () => false,
+    },
 ];
 
 const DashboardLayout = ({ children }) => {
@@ -114,13 +121,14 @@ const DashboardLayout = ({ children }) => {
 
                     <nav className="flex-1 py-6 flex flex-col gap-2 px-2">
                         {navItems.map((item, index) => {
-                            const isActive = item.match(location.pathname);
+                            const isActive = item.to ? item.match(location.pathname) : false;
+                            const Component = item.href ? 'a' : NavLink;
+                            const linkProps = item.href ? { href: item.href, target: "_blank", rel: "noopener noreferrer" } : { to: item.to, end: item.end };
 
                             return (
-                                <NavLink
+                                <Component
                                     key={index}
-                                    to={item.to}
-                                    end={item.end}
+                                    {...linkProps}
                                     className={`relative flex w-full items-center rounded-md p-3 group
                                         ${isSidebarCollapsed ? 'justify-center' : 'gap-3'}
                                         ${isActive
@@ -142,7 +150,7 @@ const DashboardLayout = ({ children }) => {
                                     {isActive && (
                                         <div className="absolute left-0 w-1 h-full bg-white rounded-r shadow-[0_0_10px_white]" />
                                     )}
-                                </NavLink>
+                                </Component>
                             );
                         })}
                     </nav>
