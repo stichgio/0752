@@ -13,6 +13,7 @@ import {
     Scissors,
     PenTool,
     FileSpreadsheet,
+    Camera,
 } from 'lucide-react';
 import PomodoroTimer from '../PomodoroTimer';
 
@@ -76,9 +77,15 @@ const navItems = [
     },
     {
         icon: <FileSpreadsheet size={20} />,
-        label: 'Formato D',
-        to: '/formato-d',
-        match: (pathname) => pathname.startsWith('/formato-d'),
+        label: 'Formatos',
+        to: '/formatos',
+        match: (pathname) => pathname.startsWith('/formatos'),
+    },
+    {
+        icon: <Camera size={20} />,
+        label: 'Panel Fotográfico',
+        to: '/panel-fotografico',
+        match: (pathname) => pathname.startsWith('/panel-fotografico'),
     },
 ];
 

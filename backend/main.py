@@ -38,7 +38,8 @@ from compressor.router import router as compressor_router
 from template_editor.router import router as template_editor_router  
 from msheets.multi_sheet_report import router as msheets_router
 # Multi-Sheet Report router imported and added below for production compatibility.
-from formato_d.router import router as formato_d_router  # noqa
+from formatos.router import router as formatos_router  # noqa
+from panel_fotografico.router import router as panel_fotografico_router  # noqa
 from config import settings  
 from template_editor.service import (  
     get_all_published_templates,
@@ -532,7 +533,8 @@ app.include_router(image_optimizer_router)
 app.include_router(compressor_router)
 app.include_router(template_editor_router)
 app.include_router(msheets_router, prefix="/api/multi-sheet")
-app.include_router(formato_d_router)
+app.include_router(formatos_router)
+app.include_router(panel_fotografico_router)
 
 @api_router.get("/templates")
 async def list_templates():
@@ -1090,7 +1092,7 @@ async def tool_split_pdf(
         return FileResponse(
             final_zip,
             media_type="application/zip",
-            filename=f"{os.path.splitext(file.filename)[0]}_split.zip"
+            filename=f"{os.path.splitext(file.filename or 'document')[0]}_split.zip"
         )
 
     except HTTPException:

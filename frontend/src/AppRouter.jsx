@@ -10,7 +10,8 @@ import PageDocument from './components/layout/PageDocument';
 import MultiSheetReportPage from './features/multi-sheet-report/page';
 import TemplateEditorPage from './features/template-editor/page';
 import GioBoardPage from './features/whiteboard/page';
-import FormatoDApp from './features/formato-d/FormatoDApp';
+import FormatosApp from './features/formatos/FormatosApp';
+import PanelFotografico from './features/panel-fotografico';
 
 const legacyRoutes = [
     { path: 'index.html', to: '/' },
@@ -22,7 +23,8 @@ const legacyRoutes = [
     { path: 'reportes-tecnicos.html', to: '/reportes-tecnicos' },
     { path: 'template-editor.html', to: '/template-editor' },
     { path: 'whiteboard.html', to: '/whiteboard' },
-    { path: 'formato-d.html', to: '/formato-d' },
+    { path: 'formato-d.html', to: '/formatos' },
+    { path: 'formato-d', to: '/formatos' },
 ];
 
 export default function AppRouter() {
@@ -79,10 +81,18 @@ export default function AppRouter() {
                     }
                 />
                 <Route
-                    path="formato-d"
+                    path="formatos"
                     element={
-                        <PageDocument title="Formato D - SEDAPAL" bodyClassName="bg-[#0d0d0d] text-[#eee]">
-                            <FormatoDApp />
+                        <PageDocument title="Formatos - Glitch" bodyClassName="bg-[#0d0d0d] text-[#eee]">
+                            <FormatosApp />
+                        </PageDocument>
+                    }
+                />
+                <Route
+                    path="panel-fotografico"
+                    element={
+                        <PageDocument title="Panel Fotográfico - Glitch" bodyClassName="bg-[#0d0d0d] text-[#eee]">
+                            <PanelFotografico />
                         </PageDocument>
                     }
                 />

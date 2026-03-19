@@ -5,7 +5,7 @@ import { isApiConfigMissing } from '@/utils/apiBase';
  * non-localhost environment.  Renders nothing when the config is OK.
  */
 export default function MissingApiConfigBanner() {
-    if (!isApiConfigMissing) return null;
+    if (!isApiConfigMissing()) return null;
 
     return (
         <div
@@ -35,3 +35,4 @@ export default function MissingApiConfigBanner() {
         </div>
     );
 }
+
