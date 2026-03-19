@@ -12,6 +12,7 @@ import TemplateEditorPage from './features/template-editor/page';
 import GioBoardPage from './features/whiteboard/page';
 import FormatosApp from './features/formatos/FormatosApp';
 import PanelFotografico from './features/panel-fotografico/PanelFotograficoApp.tsx';
+import CalculatorWrapper from './features/calculator/CalculatorWrapper';
 
 const legacyRoutes = [
     { path: 'index.html', to: '/' },
@@ -93,6 +94,14 @@ export default function AppRouter() {
                     element={
                         <PageDocument title="Panel Fotográfico - Glitch" bodyClassName="bg-[#0d0d0d] text-[#eee]">
                             <PanelFotografico />
+                        </PageDocument>
+                    }
+                />
+                <Route
+                    path="calculator"
+                    element={
+                        <PageDocument title="Calculadora - Glitch" bodyClassName="bg-[#0d0d0d] text-[#eee]">
+                            <CalculatorWrapper />
                         </PageDocument>
                     }
                 />

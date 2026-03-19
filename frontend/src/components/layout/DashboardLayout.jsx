@@ -91,8 +91,8 @@ const navItems = [
     {
         icon: <Calculator size={20} />,
         label: 'Calculadora',
-        href: '/calculator.html',
-        match: () => false,
+        to: '/calculator',
+        match: (pathname) => pathname.startsWith('/calculator'),
     },
 ];
 
