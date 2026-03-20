@@ -197,9 +197,12 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
 
             const imageCount = images.length;
 
-            // Handle specific logic for photos and logos before generic stripping
-            const photosIfRegex = /\{%\s*if\s+report\.images\s+and\s+report\.images\|length\s*>\s*0\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
-            html = html.replace(photosIfRegex, (match, ifContent, elseContent) => imageCount > 0 ? ifContent : elseContent);
+            // -----------------------------------------------------------
+            // IMPORTANT: Process inner image-count conditionals FIRST,
+            // before outer report.images presence blocks.
+            // This prevents nested {% if %}...{% endif %} from breaking
+            // the lazy regex matching of outer blocks.
+            // -----------------------------------------------------------
 
             // Handle nested if/elif/else blocks based on image count (for adaptive grids)
             // Pattern: {% if report.images|length == X %}...{% elif report.images|length == Y %}...{% else %}...{% endif %}
@@ -220,6 +223,13 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
             const imageCountIfOnlyRegex = /\{%\s*if\s+report\.images\|length\s*==\s*(\d+)\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
             html = html.replace(imageCountIfOnlyRegex, (match, count, content) => {
                 return imageCount === parseInt(count, 10) ? content : '';
+            });
+
+            // Handle if image count != X and != Y patterns (for else-like conditions)
+            // e.g. {% if report.images|length != 5 and report.images|length != 6 %}...{% endif %}
+            const imageCountNotAndRegex = /\{%\s*if\s+report\.images\|length\s*!=\s*(\d+)\s+and\s+report\.images\|length\s*!=\s*(\d+)\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            html = html.replace(imageCountNotAndRegex, (match, count1, count2, content) => {
+                return (imageCount !== parseInt(count1, 10) && imageCount !== parseInt(count2, 10)) ? content : '';
             });
 
             // Handle if image count > X with else: {% if report.images|length > X %}...{% else %}...{% endif %}
@@ -252,13 +262,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                 return imageCount < parseInt(count, 10) ? content : '';
             });
 
-            // Handle if image count != X and != Y patterns (for else-like conditions)
-            const imageCountNotAndRegex = /\{%\s*if\s+report\.images\|length\s*!=\s*(\d+)\s+and\s+report\.images\|length\s*!=\s*(\d+)\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
-            html = html.replace(imageCountNotAndRegex, (match, count1, count2, content) => {
-                return (imageCount !== parseInt(count1, 10) && imageCount !== parseInt(count2, 10)) ? content : '';
-            });
-
-            // Handle templates that comp ute image count in a variable:
+            // Handle templates that compute image count in a variable:
             // {% set img_count = report.images|length %}
             // {% if img_count == 3 %}...{% else %}...{% endif %}
             html = html.replace(/\{%\s*set\s+img_count\s*=\s*report\.images\|length\s*%\}/g, '');
@@ -290,7 +294,16 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                 return allowed.includes(imageCount) ? String(imageCount) : fallback;
             });
 
-            // Resolve outer image presence block after inner img_count conditions are resolved.
+            // -----------------------------------------------------------
+            // NOW process outer image presence blocks (after inner
+            // image-count conditionals have been resolved/removed).
+            // -----------------------------------------------------------
+
+            // Handle {% if report.images and report.images|length > 0 %}...{% else %}...{% endif %}
+            const photosIfRegex = /\{%\s*if\s+report\.images\s+and\s+report\.images\|length\s*>\s*0\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            html = html.replace(photosIfRegex, (match, ifContent, elseContent) => imageCount > 0 ? ifContent : elseContent);
+
+            // Resolve outer image presence block: {% if report.images %}...{% else %}...{% endif %}
             const reportImagesIfElseRegex = /\{%\s*if\s+report\.images\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
             html = html.replace(reportImagesIfElseRegex, (match, ifContent, elseContent) => (imageCount > 0 ? ifContent : elseContent));
 
