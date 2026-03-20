@@ -1,4 +1,4 @@
-import React, { forwardRef, useState, useEffect, useRef, useCallback } from 'react';
+import React, { forwardRef, useState, useEffect, useRef } from 'react';
 import { formatDateValue } from '../utils';
 
 const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, customTemplate, customColumns = [], isFocusMode = false }, ref) => {
@@ -586,28 +586,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
         return { ...baseStyle, height: '7cm' };
     };
 
-    // Scale iframe to fit in the available panel space
-    const iframeContainerRef = useRef(null);
-    const [iframeScale, setIframeScale] = useState(0.5);
-
-    const recalcScale = useCallback(() => {
-        const container = iframeContainerRef.current;
-        if (!container) return;
-        // A4 in px at 96dpi: 794 x 1122
-        const A4_WIDTH_PX = 794;
-        const availableWidth = container.clientWidth - 32; // 16px padding each side
-        const scale = Math.min(availableWidth / A4_WIDTH_PX, 1);
-        setIframeScale(scale > 0.2 ? scale : 0.5);
-    }, []);
-
-    useEffect(() => {
-        recalcScale();
-        window.addEventListener('resize', recalcScale);
-        return () => window.removeEventListener('resize', recalcScale);
-    }, [recalcScale]);
-
     // Auto-resize iframe to match its content height
-    const [iframeContentHeight, setIframeContentHeight] = useState(1122);
     const handleIframeLoad = (e) => {
         const iframe = e.target;
         try {
@@ -616,9 +595,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                 // Wait a tick for images/layout to settle
                 setTimeout(() => {
                     const contentHeight = doc.documentElement.scrollHeight || doc.body.scrollHeight;
-                    const h = Math.max(contentHeight, 1122);
-                    iframe.style.height = h + 'px';
-                    setIframeContentHeight(h);
+                    iframe.style.height = Math.max(contentHeight, 1122) + 'px'; // 1122px ≈ 297mm
                 }, 150);
             }
         } catch {
@@ -628,35 +605,22 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
 
     if (customTemplate && renderedHtml) {
         return (
-            <div
-                ref={iframeContainerRef}
-                className={`flex-1 p-4 overflow-auto flex justify-center items-start ${isFocusMode ? 'bg-neutral-100' : 'bg-neutral-300'}`}
-            >
-                <div
+            <div className={`flex-1 p-4 overflow-auto flex justify-center items-start ${isFocusMode ? 'bg-neutral-100' : 'bg-neutral-300'}`}>
+                <iframe
+                    ref={ref}
+                    srcDoc={renderedHtml}
+                    sandbox="allow-same-origin"
+                    title="Custom Template Preview"
+                    className="bg-white text-black shadow-2xl"
+                    onLoad={handleIframeLoad}
                     style={{
                         width: '210mm',
-                        height: iframeContentHeight * iframeScale + 'px',
-                        position: 'relative',
+                        height: '297mm',
+                        border: 'none',
+                        display: 'block',
                         flexShrink: 0,
                     }}
-                >
-                    <iframe
-                        ref={ref}
-                        srcDoc={renderedHtml}
-                        sandbox="allow-same-origin"
-                        title="Custom Template Preview"
-                        className="bg-white text-black shadow-2xl"
-                        onLoad={handleIframeLoad}
-                        style={{
-                            width: '210mm',
-                            minHeight: '297mm',
-                            border: 'none',
-                            display: 'block',
-                            transformOrigin: 'top left',
-                            transform: `scale(${iframeScale})`,
-                        }}
-                    />
-                </div>
+                />
             </div>
         );
     }
