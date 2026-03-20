@@ -1,4 +1,4 @@
-﻿let timeoutId = null;
+let timeoutId = null;
 let activeEndTime = null;
 
 const clearTimer = () => {

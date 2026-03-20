@@ -1,4 +1,5 @@
 """
+# -*- coding: utf-8 -*-
 PDF Merger - Combina múltiples PDFs con estrategia intercalada.
 
 Este módulo proporciona funcionalidades para combinar archivos PDF

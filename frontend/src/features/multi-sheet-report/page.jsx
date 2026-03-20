@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import MultiSheetReportApp from './MultiSheetReportApp';
 import PageDocument from '../../components/layout/PageDocument';
 

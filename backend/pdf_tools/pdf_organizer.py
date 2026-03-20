@@ -1,4 +1,5 @@
 """
+# -*- coding: utf-8 -*-
 PDF Organizer - Reorganiza, rota y divide páginas de un PDF.
 
 Este módulo proporciona funcionalidades para reorganizar las páginas

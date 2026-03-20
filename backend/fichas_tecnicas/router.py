@@ -1,4 +1,5 @@
 """
+# -*- coding: utf-8 -*-
 Endpoints API REST para Fichas Técnicas de Evaluación de Actividades
 """
 from fastapi import APIRouter, UploadFile, File, HTTPException, Form, BackgroundTasks

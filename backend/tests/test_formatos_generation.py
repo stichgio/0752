@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import io
 
 from pypdf import PdfReader
@@ -56,6 +57,18 @@ def test_televisiva_keeps_original_badge_and_overlays_only_the_number():
     assert b"h\nB\n" not in content and b"h\r\nB\r\n" not in content
 
 
+def test_televisiva_preserves_hora_final_label_when_overlaying_number():
+    entry = catalog.get("televisiva")
+    assert entry is not None
+    assert entry.mapping is not None
+
+    pdf_bytes = _generate_visual(_load_template_bytes(entry), 123, 123, entry.mapping)
+    text = PdfReader(io.BytesIO(pdf_bytes)).pages[0].extract_text() or ""
+
+    assert "HORA FINAL:" in text
+    assert "00123" in text
+
+
 def test_maquina_keeps_original_badge_and_overlays_only_the_number():
     entry = catalog.get("maquina")
     assert entry is not None
@@ -71,6 +84,18 @@ def test_maquina_keeps_original_badge_and_overlays_only_the_number():
     assert b"h\nB\n" not in content and b"h\r\nB\r\n" not in content
 
 
+def test_maquina_preserves_longitud_label_when_overlaying_number():
+    entry = catalog.get("maquina")
+    assert entry is not None
+    assert entry.mapping is not None
+
+    pdf_bytes = _generate_visual(_load_template_bytes(entry), 1, 1, entry.mapping)
+    text = PdfReader(io.BytesIO(pdf_bytes)).pages[0].extract_text() or ""
+
+    assert "L O N G I T U D :" in text
+    assert "00001" in text
+
+
 def test_visual_formats_have_the_adjusted_ot_mapping():
     maquina = catalog.get("maquina")
     televisiva = catalog.get("televisiva")
@@ -83,7 +108,7 @@ def test_visual_formats_have_the_adjusted_ot_mapping():
     assert maquina.mapping.blank_width is None
     assert maquina.mapping.blank_height is None
     assert maquina.mapping.redraw_ot_badge is False
-    assert maquina.mapping.blank_mcids == [89]
+    assert maquina.mapping.blank_mcids is None
 
     assert televisiva is not None and televisiva.mapping is not None
     assert televisiva.mapping.font_name == "Helvetica-Bold"

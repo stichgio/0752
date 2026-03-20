@@ -1,4 +1,5 @@
 """
+# -*- coding: utf-8 -*-
 verify_template_integration.py
 ──────────────────────────────
 Script E2E para verificar la integración completa del flujo de plantillas:

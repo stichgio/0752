@@ -1,4 +1,5 @@
 """
+# -*- coding: utf-8 -*-
 Configuracion centralizada del backend usando pydantic-settings.
 Todos los modulos del backend deben importar desde aqui:
 

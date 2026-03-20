@@ -39,9 +39,7 @@
       "blank_height": null,
       "redraw_top_border": false,
       "redraw_ot_badge": false,
-      "blank_mcids": [
-        89
-      ]
+      "blank_mcids": null
     },
     "filename_pattern": "maquina_{desde}.pdf",
     "max_pages": 500,

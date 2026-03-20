@@ -1,4 +1,5 @@
 """
+# -*- coding: utf-8 -*-
 Base JSON database with atomic writes and thread-safe operations.
 """
 import json

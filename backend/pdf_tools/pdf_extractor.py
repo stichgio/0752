@@ -1,4 +1,5 @@
-﻿"""
+"""
+# -*- coding: utf-8 -*-
 PDF Extractor - Extract specific pages from a PDF into a new document.
 """
 from __future__ import annotations

@@ -1,4 +1,5 @@
 """
+# -*- coding: utf-8 -*-
 Gestor de Base de Datos en JSON para Fichas Técnicas
 """
 import os

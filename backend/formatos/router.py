@@ -1,4 +1,5 @@
 """
+# -*- coding: utf-8 -*-
 Router for the Formatos module with multiple format support.
 Preserves the legacy XObject strategy for template-d.b64 and
 uses visual overlay for the other builtin formats.

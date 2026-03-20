@@ -319,3 +319,6 @@ Los siguientes módulos **ya existen** — no crear nuevos con funcionalidad equ
 | `image_optimizer` | ✅ Activo | Optimización cliente + ZIP backend |
 | `pdf_tools` | ✅ Activo | Merge (interleaved/normal), split, organize, extract |
 | `api_router` (core) | ✅ Activo | Templates globales + PDF tools en `/api/tools/*` |
+
+
+Está extrictament la codificacion en UTF-8..

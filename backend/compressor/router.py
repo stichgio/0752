@@ -1,4 +1,5 @@
 """
+# -*- coding: utf-8 -*-
 PDF Compressor Backend Router
 Provides endpoints for PDF file compression using Ghostscript.
 Falls back to pypdf-based compression when Ghostscript is not available.

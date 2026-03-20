@@ -1,4 +1,5 @@
 """
+# -*- coding: utf-8 -*-
 Modelos Pydantic para Informes Técnicos
 """
 from pydantic import BaseModel, model_validator

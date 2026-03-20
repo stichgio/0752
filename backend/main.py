@@ -1,4 +1,5 @@
-﻿from dotenv import load_dotenv
+# -*- coding: utf-8 -*-
+from dotenv import load_dotenv
 try:
     load_dotenv(encoding='utf-8')
 except (UnicodeDecodeError, ValueError):

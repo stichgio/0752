@@ -1,4 +1,5 @@
 """
+# -*- coding: utf-8 -*-
 Pydantic models for the Formatos module.
 """
 from __future__ import annotations

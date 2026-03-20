@@ -1,4 +1,5 @@
 """
+# -*- coding: utf-8 -*-
 Servidor FastAPI independiente para Multi-Sheet Report.
 
 Corre en puerto 7861 separado del backend principal (7860).

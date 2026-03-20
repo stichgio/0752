@@ -1,4 +1,4 @@
-﻿import React, { useRef, useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useRef, useCallback, useEffect, useMemo, useState } from 'react';
 import {
     CanvasDocument,
     TemplateElement,

@@ -1,4 +1,5 @@
 """
+# -*- coding: utf-8 -*-
 Catalog service: loads builtin formats, persists uploaded formats to JSON,
 manages CRUD operations on the format catalog.
 """
@@ -65,7 +66,7 @@ _BUILTIN_FORMATS: list[FormatEntry] = [
             blank_height=None,
             redraw_top_border=False,
             redraw_ot_badge=False,
-            blank_mcids=[89],
+            blank_mcids=None,
         ),
         filename_pattern="maquina_{desde}.pdf",
         max_pages=500,

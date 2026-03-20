@@ -1,4 +1,5 @@
 """
+# -*- coding: utf-8 -*-
 Tests for BaseJsonDB - atomic writes, thread safety, CRUD operations.
 """
 import json

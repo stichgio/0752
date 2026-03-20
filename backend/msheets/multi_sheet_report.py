@@ -1,4 +1,5 @@
 """
+# -*- coding: utf-8 -*-
 Router independiente para la herramienta "Informe Multi-Hoja".
 
 Genera un PDF multi-sección con grillas de imágenes en formato A4.

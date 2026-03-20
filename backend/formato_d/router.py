@@ -1,4 +1,5 @@
 """
+# -*- coding: utf-8 -*-
 Generacion de PDFs del Formato D (C.P. 052-2024-SEDAPAL).
 Solo el numero de 7 digitos (ej. 0000001) cambia entre paginas.
 """

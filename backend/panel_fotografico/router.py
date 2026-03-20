@@ -1,4 +1,5 @@
 """
+# -*- coding: utf-8 -*-
 Router independiente para la herramienta "Panel Fotográfico Manual".
 
 Genera un PDF A4 multi-página con 4 imágenes por hoja a partir de datos de
@@ -142,11 +143,10 @@ def _build_panel_page_html(
     """Build one A4 HTML page with header + 4-slot photo grid."""
     titulo = _safe(header.get("titulo"), "Panel Fotográfico")
     centro = _safe(header.get("CENTRO"))
-    nis = _safe(header.get("NIS"))
     fecha_trabajo = _safe(header.get("FECHA_TRABAJO"))
+    estado = _safe(header.get("ESTADO"))
     direcciones = _safe(header.get("DIRECCIONES_AFECTADAS"))
     distrito = _safe(header.get("DISTRITO"))
-    estado = _safe(header.get("ESTADO"))
     actividad = _safe(header.get("ACTIVIDAD"))
     cuadrilla = _safe(header.get("CUADRILLA"))
 
@@ -165,22 +165,34 @@ def _build_panel_page_html(
     # page indicator
     page_label = f"Hoja {page_num}/{total_pages}" if total_pages > 1 else ""
 
-    # photo grid â€” always 4 slots
+    # photo grid â€” responsive if exactly 3 photos
     cells_html = ""
-    for idx in range(4):
-        if idx < len(image_uris):
+    valid_count = len(image_uris)
+    
+    if valid_count == 3:
+        for idx in range(3):
             safe_uri = escape(str(image_uris[idx]), quote=True)
+            extra_style = ' style="grid-column: span 2; justify-self: center; width: calc(50% - 1mm);"' if idx == 2 else ' style="width: 100%;"'
             cells_html += (
-                f'<div class="photo-cell">'
+                f'<div class="photo-cell"{extra_style}>'
                 f'<img src="{safe_uri}" alt="Foto {idx + 1}">'
                 f"</div>"
             )
-        else:
-            cells_html += (
-                '<div class="photo-cell">'
-                '<div class="photo-placeholder">Sin imagen</div>'
-                "</div>"
-            )
+    else:
+        for idx in range(4):
+            if idx < valid_count:
+                safe_uri = escape(str(image_uris[idx]), quote=True)
+                cells_html += (
+                    f'<div class="photo-cell">'
+                    f'<img src="{safe_uri}" alt="Foto {idx + 1}">'
+                    f"</div>"
+                )
+            else:
+                cells_html += (
+                    '<div class="photo-cell">'
+                    '<div class="photo-placeholder">Sin imagen</div>'
+                    "</div>"
+                )
 
     return f"""<!DOCTYPE html>
 <html lang="es">
@@ -231,19 +243,21 @@ html, body {{
 }}
 .info-bar {{
     display: -webkit-box; display: -ms-flexbox; display: flex;
-    -webkit-box-pack: justify; -ms-flex-pack: justify; justify-content: space-between;
-    border: 1px solid #ccc; margin-bottom: 2mm; -ms-flex-negative: 0; flex-shrink: 0;
+    border: 1px solid #ccc; background: #f5f5f5;
+    margin-bottom: 2mm; -ms-flex-negative: 0; flex-shrink: 0;
 }}
 .info-item {{
     -webkit-box-flex: 1; -ms-flex: 1; flex: 1;
     display: -webkit-box; display: -ms-flexbox; display: flex;
-    -webkit-box-orient: vertical; -webkit-box-direction: normal;
-    -ms-flex-direction: column; flex-direction: column;
-    padding: 1.5mm 2mm; border-right: 1px solid #ccc; line-height: 1.2;
+    -webkit-box-align: center; -ms-flex-align: center; align-items: center;
+    padding: 1.5mm 2mm; border-right: 1px solid #ccc;
+    gap: 1mm;
+    white-space: nowrap;
 }}
 .info-item:last-child {{ border-right: none; }}
-.info-label {{ font-size: 8pt; font-weight: bold; text-transform: uppercase; color: #666; }}
-.info-value {{ font-size: 9pt; font-weight: 600; color: #000; }}
+.info-label {{ font-size: 9pt; font-weight: bold; text-transform: uppercase; color: #000; }}
+.info-value {{ font-size: 9pt; font-weight: normal; color: #000; }}
+.info-value-bold {{ font-size: 9pt; font-weight: bold; color: #000; }}
 .section-title {{
     font-size: 10pt; font-weight: bold; color: #0066cc;
     text-transform: uppercase; margin-bottom: 3mm;
@@ -254,10 +268,10 @@ html, body {{
 .loc-table {{ width: 100%; border-collapse: collapse; }}
 .loc-table td {{ padding: 1.5px 0; vertical-align: baseline; }}
 .loc-label {{
-    font-size: 8pt; font-weight: bold; text-transform: uppercase;
-    color: #333; white-space: nowrap; padding-right: 6px;
+    font-size: 9pt; font-weight: bold; text-transform: uppercase;
+    color: #000; white-space: nowrap; padding-right: 6px;
 }}
-.loc-value {{ font-size: 8pt; color: #000; word-break: break-word; }}
+.loc-value {{ font-size: 9pt; color: #000; word-break: break-word; }}
 .panel-fotografico {{
     -webkit-box-flex: 1; -ms-flex: 1; flex: 1;
     display: -webkit-box; display: -ms-flexbox; display: flex;
@@ -281,7 +295,7 @@ html, body {{
     -webkit-box-sizing: border-box; box-sizing: border-box;
 }}
 .photo-cell {{
-    background: #f5f5f5; border: 1px solid #ddd;
+    background: #ffffff; border: 1px solid #ddd;
     width: 100%; height: 100%;
     min-width: 0; min-height: 0;
     overflow: hidden;
@@ -316,16 +330,16 @@ html, body {{
 
     <div class="info-bar">
         <div class="info-item">
-            <div class="info-label">Centro de Servicios:</div>
-            <div class="info-value">{centro}</div>
+            <span class="info-label">Centro de Servicios:</span>
+            <span class="info-value">{centro}</span>
         </div>
         <div class="info-item">
-            <div class="info-label">NIS:</div>
-            <div class="info-value">{nis}</div>
+            <span class="info-label">Fecha de Trabajo:</span>
+            <span class="info-value">{fecha_trabajo}</span>
         </div>
         <div class="info-item">
-            <div class="info-label">Fecha de Trabajo:</div>
-            <div class="info-value">{fecha_trabajo}</div>
+            <span class="info-label">Estado:</span>
+            <span class="info-value">{estado}</span>
         </div>
     </div>
 
@@ -339,10 +353,6 @@ html, body {{
             <tr>
                 <td class="loc-label">Distrito:</td>
                 <td class="loc-value" colspan="3">{distrito}</td>
-            </tr>
-            <tr>
-                <td class="loc-label">Estado:</td>
-                <td class="loc-value" colspan="3">{estado}</td>
             </tr>
         </table>
     </section>
@@ -491,13 +501,13 @@ def _render_panel_pdf_with_pillow(
     margin = 48
     blue = "#0066cc"
     border = "#d4d4d8"
-    placeholder_bg = "#f5f5f5"
+    placeholder_bg = "#ffffff"
     text_color = "#111827"
     muted = "#6b7280"
 
     title_font = _load_font(34, bold=True)
     section_font = _load_font(24, bold=True)
-    label_font = _load_font(16, bold=True)
+    label_font = _load_font(18, bold=True)
     value_font = _load_font(18, bold=False)
     page_font = _load_font(16, bold=False)
     placeholder_font = _load_font(22, bold=False)
@@ -532,7 +542,6 @@ def _render_panel_pdf_with_pillow(
             draw.text((label_x, title_y + title_h + 8), page_label, font=page_font, fill=muted)
 
         for box, uri in ((logo_left_box, logo_left_uri), (logo_right_box, logo_right_uri)):
-            draw.rounded_rectangle(box, radius=8, outline=border, width=1)
             if uri:
                 try:
                     _paste_contained(page, _decode_data_uri_image(uri), (box[0] + 6, box[1] + 6, box[2] - 6, box[3] - 6))
@@ -542,21 +551,33 @@ def _render_panel_pdf_with_pillow(
         y = header_bottom + 22
 
         info_items = [
-            ("Centro de Servicios", _safe(header.get("CENTRO"))),
-            ("NIS", _safe(header.get("NIS"))),
-            ("Fecha de Trabajo", _safe(header.get("FECHA_TRABAJO"))),
+            ("Centro de Servicios", _safe(header.get("CENTRO")), False),
+            ("Fecha de Trabajo", _safe(header.get("FECHA_TRABAJO")), False),
+            ("Estado", _safe(header.get("ESTADO")), False),
         ]
         info_top = y
-        info_bottom = info_top + 84
+        info_bottom = info_top + 34
         info_width = page_width - (margin * 2)
         col_width = info_width // len(info_items)
-        for idx, (label, value) in enumerate(info_items):
+        
+        draw.rectangle((margin, info_top, page_width - margin, info_bottom), fill="#f5f5f5", outline="#cccccc", width=1)
+        
+        for idx, (label, value, bold_value) in enumerate(info_items):
             x0 = margin + idx * col_width
-            x1 = margin + info_width if idx == len(info_items) - 1 else x0 + col_width
-            draw.rectangle((x0, info_top, x1, info_bottom), outline=border, width=1)
-            draw.text((x0 + 14, info_top + 12), label.upper(), font=label_font, fill=muted)
-            _draw_wrapped_text(draw, value, value_font, text_color, x0 + 14, info_top + 38, x1 - x0 - 28, max_lines=2)
-        y = info_bottom + 28
+            if idx > 0:
+                draw.line((x0, info_top, x0, info_bottom), fill="#cccccc", width=1)
+            
+            lbl_txt = f"{label.upper()}:"
+            lbl_w, _ = _text_size(draw, lbl_txt, font=label_font)
+            
+            text_y = info_top + 10
+            draw.text((x0 + 10, text_y), lbl_txt, font=label_font, fill="#000000")
+            
+            val_txt = value if value else "-"
+            val_font = label_font if bold_value else value_font
+            draw.text((x0 + 10 + lbl_w + 5, text_y - 2), val_txt, font=val_font, fill="#000000")
+            
+        y = info_bottom + 20
 
         draw.text((margin, y), "1.0 LOCALIZACION", font=section_font, fill=blue)
         y += 34
@@ -565,10 +586,9 @@ def _render_panel_pdf_with_pillow(
         localizacion = [
             ("Direcciones Afectadas:", _safe(header.get("DIRECCIONES_AFECTADAS"))),
             ("Distrito:", _safe(header.get("DISTRITO"))),
-            ("Estado:", _safe(header.get("ESTADO"))),
         ]
         for label, value in localizacion:
-            draw.text((margin, y), label.upper(), font=label_font, fill="#374151")
+            draw.text((margin, y), label.upper(), font=label_font, fill="#000000")
             y = _draw_wrapped_text(draw, value, value_font, text_color, margin + 220, y - 2, page_width - margin * 2 - 220, max_lines=2)
             y += 8
 
@@ -577,9 +597,9 @@ def _render_panel_pdf_with_pillow(
         y += 34
         draw.line((margin, y, page_width - margin, y), fill=blue, width=2)
         y += 14
-        draw.text((margin, y), "ACTIVIDAD:", font=label_font, fill="#374151")
+        draw.text((margin, y), "ACTIVIDAD:", font=label_font, fill="#000000")
         _draw_wrapped_text(draw, _safe(header.get("ACTIVIDAD")), value_font, text_color, margin + 140, y - 2, 520, max_lines=2)
-        draw.text((margin + 700, y), "CUADRILLA:", font=label_font, fill="#374151")
+        draw.text((margin + 700, y), "CUADRILLA:", font=label_font, fill="#000000")
         _draw_wrapped_text(draw, _safe(header.get("CUADRILLA")), value_font, text_color, margin + 830, y - 2, page_width - margin - (margin + 830), max_lines=2)
 
         y += 68
@@ -599,24 +619,33 @@ def _render_panel_pdf_with_pillow(
         cell_width = (grid_right - grid_left - inner_pad * 2 - cell_gap) // 2
         cell_height = (grid_bottom - grid_top - inner_pad * 2 - cell_gap) // 2
 
-        for idx in range(4):
+        valid_count = len(chunk)
+        slots_to_draw = 3 if valid_count == 3 else 4
+
+        for idx in range(slots_to_draw):
             row = idx // 2
-            col = idx % 2
-            x0 = grid_left + inner_pad + col * (cell_width + cell_gap)
+            if valid_count == 3 and idx == 2:
+                x0 = grid_left + inner_pad + (cell_width + cell_gap) // 2
+                x1 = x0 + cell_width
+            else:
+                col = idx % 2
+                x0 = grid_left + inner_pad + col * (cell_width + cell_gap)
+                x1 = x0 + cell_width
+                
             y0 = grid_top + inner_pad + row * (cell_height + cell_gap)
-            x1 = x0 + cell_width
             y1 = y0 + cell_height
+            
             draw.rectangle((x0, y0, x1, y1), fill=placeholder_bg, outline=border, width=1)
-            if idx < len(chunk):
+            if idx < valid_count:
                 try:
                     _paste_contained(page, _decode_data_uri_image(chunk[idx]), (x0 + 10, y0 + 10, x1 - 10, y1 - 10))
                 except Exception:
                     placeholder_w, placeholder_h = _text_size(draw, "Imagen invalida", placeholder_font)
-                    draw.text((x0 + (cell_width - placeholder_w) // 2, y0 + (cell_height - placeholder_h) // 2), "Imagen invalida", font=placeholder_font, fill=muted)
+                    draw.text((x0 + ((x1 - x0) - placeholder_w) // 2, y0 + (cell_height - placeholder_h) // 2), "Imagen invalida", font=placeholder_font, fill=muted)
             else:
                 placeholder = "Sin imagen"
                 placeholder_w, placeholder_h = _text_size(draw, placeholder, placeholder_font)
-                draw.text((x0 + (cell_width - placeholder_w) // 2, y0 + (cell_height - placeholder_h) // 2), placeholder, font=placeholder_font, fill=muted)
+                draw.text((x0 + ((x1 - x0) - placeholder_w) // 2, y0 + (cell_height - placeholder_h) // 2), placeholder, font=placeholder_font, fill=muted)
 
         pages.append(page)
 

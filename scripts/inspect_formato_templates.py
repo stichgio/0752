@@ -1,4 +1,5 @@
 """
+# -*- coding: utf-8 -*-
 Inspect televisiva.b64 and maquina.b64 to find OT number location in PDF structure.
 Goal: determine if we can use direct content stream manipulation instead of visual overlay.
 """

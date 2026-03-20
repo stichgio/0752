@@ -1,4 +1,5 @@
 """
+# -*- coding: utf-8 -*-
 Modelos Pydantic para Fichas Técnicas de Evaluación de Actividades
 """
 from pydantic import BaseModel  

@@ -1,4 +1,5 @@
 """
+# -*- coding: utf-8 -*-
 Image Optimizer Backend Router
 Provides endpoints for image compression and ZIP download functionality.
 The actual image compression is done client-side using browser-image-compression.

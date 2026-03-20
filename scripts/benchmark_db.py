@@ -1,4 +1,5 @@
 """
+# -*- coding: utf-8 -*-
 Benchmark script for JSON DB performance.
 Run from project root: python scripts/benchmark_db.py
 """

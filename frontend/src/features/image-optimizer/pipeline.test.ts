@@ -1,4 +1,4 @@
-﻿import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { DEFAULT_BATCH_SETTINGS, cloneBatchSettings } from './presets';
 import { ImageItem } from './types';
 import { computeResizeDimensions, createImageOverrides, getProcessingPlan, resolveSettingsForItem } from './utils';

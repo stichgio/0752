@@ -1,4 +1,5 @@
 """
+# -*- coding: utf-8 -*-
 Modelos Pydantic para el módulo Panel Fotográfico Manual.
 """
 from pydantic import BaseModel

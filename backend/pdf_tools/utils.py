@@ -1,4 +1,5 @@
 """
+# -*- coding: utf-8 -*-
 Utilidades y helpers para manipulación de PDFs.
 
 Este módulo contiene funciones de validación y utilidades

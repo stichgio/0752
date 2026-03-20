@@ -1,4 +1,5 @@
 """
+# -*- coding: utf-8 -*-
 Compiler: converts canonical JSON editor model to production Jinja2 HTML.
 
 The generated HTML must be fully compatible with the existing PDF pipeline

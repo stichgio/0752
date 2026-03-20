@@ -19,7 +19,6 @@ import { postBlob } from '../../utils/apiClient';
 interface HeaderConfig {
     titulo: string;
     CENTRO: string;
-    NIS: string;
     FECHA_TRABAJO: string;
     DIRECCIONES_AFECTADAS: string;
     DISTRITO: string;
@@ -49,7 +48,6 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
 const DEFAULT_HEADER: HeaderConfig = {
     titulo: 'Panel Fotográfico',
     CENTRO: '',
-    NIS: '',
     FECHA_TRABAJO: '',
     DIRECCIONES_AFECTADAS: '',
     DISTRITO: '',
@@ -63,7 +61,6 @@ const DEFAULT_HEADER: HeaderConfig = {
 const HEADER_FIELDS: Array<{ key: keyof HeaderConfig; label: string; wide?: boolean }> = [
     { key: 'titulo', label: 'Título del Reporte', wide: true },
     { key: 'CENTRO', label: 'Centro de Servicios' },
-    { key: 'NIS', label: 'NIS' },
     { key: 'FECHA_TRABAJO', label: 'Fecha de Trabajo' },
     { key: 'DIRECCIONES_AFECTADAS', label: 'Direcciones Afectadas', wide: true },
     { key: 'DISTRITO', label: 'Distrito' },
@@ -90,20 +87,22 @@ function SheetPreview({
     pageNum: number;
     totalPages: number;
 }) {
-    const slots = Array.from({ length: CHUNK_SIZE }, (_, i) => images[i] ?? null);
+    const validCount = images.length;
+    const slots = validCount === 3 ? images : Array.from({ length: CHUNK_SIZE }, (_, i) => images[i] ?? null);
 
     return (
         <div
             className="bg-white text-black shadow-2xl"
             style={{
                 width: '210mm',
-                minHeight: '297mm',
+                height: '297mm',
                 padding: '8mm',
                 fontFamily: 'Arial, Helvetica, sans-serif',
                 fontSize: '10px',
                 display: 'flex',
                 flexDirection: 'column',
                 boxSizing: 'border-box',
+                overflow: 'hidden',
             }}
         >
             {/* Header */}
@@ -123,7 +122,7 @@ function SheetPreview({
                     {logoLeft ? (
                         <img src={logoLeft} alt="Logo Izquierdo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
                     ) : (
-                        <div style={{ width: '55mm', height: '18mm', background: '#f3f4f6', borderRadius: '4px' }} />
+                        <div style={{ width: '55mm', height: '18mm' }} />
                     )}
                 </div>
                 <div style={{ flex: 1, textAlign: 'center' }}>
@@ -140,7 +139,7 @@ function SheetPreview({
                     {logoRight ? (
                         <img src={logoRight} alt="Logo Derecho" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
                     ) : (
-                        <div style={{ width: '55mm', height: '18mm', background: '#f3f4f6', borderRadius: '4px' }} />
+                        <div style={{ width: '55mm', height: '18mm' }} />
                     )}
                 </div>
             </div>
@@ -152,12 +151,13 @@ function SheetPreview({
                     border: '1px solid #ccc',
                     marginBottom: '2mm',
                     flexShrink: 0,
+                    background: '#f5f5f5',
                 }}
             >
                 {[
-                    { label: 'Centro de Servicios', value: header.CENTRO },
-                    { label: 'NIS', value: header.NIS },
-                    { label: 'Fecha de Trabajo', value: header.FECHA_TRABAJO },
+                    { label: 'Centro de Servicios', value: header.CENTRO, boldValue: false },
+                    { label: 'Fecha de Trabajo', value: header.FECHA_TRABAJO, boldValue: false },
+                    { label: 'Estado', value: header.ESTADO, boldValue: false },
                 ].map((item, idx, arr) => (
                     <div
                         key={item.label}
@@ -165,14 +165,18 @@ function SheetPreview({
                             flex: 1,
                             padding: '1.5mm 2mm',
                             borderRight: idx < arr.length - 1 ? '1px solid #ccc' : 'none',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '1mm',
+                            whiteSpace: 'nowrap'
                         }}
                     >
-                        <div style={{ fontSize: '8pt', fontWeight: 'bold', textTransform: 'uppercase', color: '#666' }}>
+                        <span style={{ fontSize: '9pt', fontWeight: 'bold', textTransform: 'uppercase', color: '#000' }}>
                             {item.label}:
-                        </div>
-                        <div style={{ fontSize: '9pt', fontWeight: 600, color: '#000' }}>
+                        </span>
+                        <span style={{ fontSize: '9pt', fontWeight: item.boldValue ? 'bold' : 'normal', color: '#000' }}>
                             {item.value || '-'}
-                        </div>
+                        </span>
                     </div>
                 ))}
             </div>
@@ -182,19 +186,15 @@ function SheetPreview({
                 <div style={{ fontSize: '9pt', fontWeight: 'bold', color: '#0066cc', textTransform: 'uppercase', marginBottom: '2mm', paddingBottom: '2px', borderBottom: '1px solid #0066cc' }}>
                     1.0 Localización
                 </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8pt' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9pt' }}>
                     <tbody>
                         <tr>
-                            <td style={{ fontWeight: 'bold', textTransform: 'uppercase', color: '#333', paddingRight: '6px', whiteSpace: 'nowrap' }}>Direcciones Afectadas:</td>
+                            <td style={{ fontWeight: 'bold', textTransform: 'uppercase', color: '#000', paddingRight: '6px', whiteSpace: 'nowrap' }}>Direcciones Afectadas:</td>
                             <td colSpan={3}>{header.DIRECCIONES_AFECTADAS || '-'}</td>
                         </tr>
                         <tr>
-                            <td style={{ fontWeight: 'bold', textTransform: 'uppercase', color: '#333', paddingRight: '6px', whiteSpace: 'nowrap' }}>Distrito:</td>
+                            <td style={{ fontWeight: 'bold', textTransform: 'uppercase', color: '#000', paddingRight: '6px', whiteSpace: 'nowrap' }}>Distrito:</td>
                             <td colSpan={3}>{header.DISTRITO || '-'}</td>
-                        </tr>
-                        <tr>
-                            <td style={{ fontWeight: 'bold', textTransform: 'uppercase', color: '#333', paddingRight: '6px', whiteSpace: 'nowrap' }}>Estado:</td>
-                            <td colSpan={3}>{header.ESTADO || '-'}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -205,12 +205,12 @@ function SheetPreview({
                 <div style={{ fontSize: '9pt', fontWeight: 'bold', color: '#0066cc', textTransform: 'uppercase', marginBottom: '2mm', paddingBottom: '2px', borderBottom: '1px solid #0066cc' }}>
                     2.0 Detalles de Orden de Trabajo
                 </div>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '8pt' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9pt' }}>
                     <tbody>
                         <tr>
-                            <td style={{ fontWeight: 'bold', textTransform: 'uppercase', color: '#333', paddingRight: '6px', whiteSpace: 'nowrap', width: '20%' }}>Actividad:</td>
+                            <td style={{ fontWeight: 'bold', textTransform: 'uppercase', color: '#000', paddingRight: '6px', whiteSpace: 'nowrap', width: '20%' }}>Actividad:</td>
                             <td style={{ width: '30%' }}>{header.ACTIVIDAD || '-'}</td>
-                            <td style={{ fontWeight: 'bold', textTransform: 'uppercase', color: '#333', paddingRight: '6px', whiteSpace: 'nowrap', paddingLeft: '8px', width: '20%' }}>Cuadrilla:</td>
+                            <td style={{ fontWeight: 'bold', textTransform: 'uppercase', color: '#000', paddingRight: '6px', whiteSpace: 'nowrap', paddingLeft: '8px', width: '20%' }}>Cuadrilla:</td>
                             <td>{header.CUADRILLA || '-'}</td>
                         </tr>
                     </tbody>
@@ -242,9 +242,8 @@ function SheetPreview({
                         <div
                             key={idx}
                             style={{
-                                background: '#f5f5f5',
+                                background: '#ffffff',
                                 border: '1px solid #ddd',
-                                width: '100%',
                                 height: '100%',
                                 display: 'flex',
                                 alignItems: 'center',
@@ -253,6 +252,7 @@ function SheetPreview({
                                 minWidth: 0,
                                 minHeight: 0,
                                 boxSizing: 'border-box',
+                                ...(validCount === 3 && idx === 2 ? { gridColumn: 'span 2', width: 'calc(50% - 1mm)', justifySelf: 'center' } : { width: '100%' })
                             }}
                         >
                             {photo ? (
@@ -404,9 +404,9 @@ export default function PanelFotograficoApp() {
     // ── render ────────────────────────────────────────────────────────────────
 
     return (
-        <div className="flex w-full min-h-[calc(100vh)] bg-neutral-950 text-neutral-200">
+        <div className="flex w-full h-screen overflow-hidden bg-neutral-950 text-neutral-200">
             {/* ── Sidebar ── */}
-            <aside className="w-72 shrink-0 bg-neutral-900 border-r border-neutral-800 flex flex-col sticky top-0 h-[calc(100vh)] z-20">
+            <aside className="w-72 shrink-0 bg-neutral-900 border-r border-neutral-800 flex flex-col h-full z-20">
                 {/* title */}
                 <div className="h-14 flex items-center gap-3 px-4 border-b border-neutral-800">
                     <Camera size={18} className="text-white" />
@@ -640,7 +640,7 @@ export default function PanelFotograficoApp() {
             </aside>
 
             {/* ── Preview workspace ── */}
-            <main className="flex-1 flex flex-col bg-neutral-950 min-h-[calc(100vh)]">
+            <main className="flex-1 flex flex-col h-full overflow-hidden relative">
                 {/* Toolbar */}
                 <div className="h-14 flex items-center justify-between px-6 border-b border-neutral-800 shrink-0 sticky top-0 bg-neutral-950 z-10">
                     <div className="flex items-center gap-3">
@@ -672,7 +672,7 @@ export default function PanelFotograficoApp() {
                 </div>
 
                 {/* Sheet canvas */}
-                <div className="flex-1 flex items-start justify-center py-8 px-8">
+                <div className="flex-1 p-4 overflow-auto flex justify-center items-start bg-neutral-300">
                     <AnimatePresence mode="wait">
                         {totalPages === 0 ? (
                             <motion.div

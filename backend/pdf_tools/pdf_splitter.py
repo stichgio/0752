@@ -1,4 +1,5 @@
 """
+# -*- coding: utf-8 -*-
 PDF Splitter - Divide archivos PDF en múltiples partes.
 
 Este módulo proporciona funcionalidades para dividir un archivo PDF

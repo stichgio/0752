@@ -1,4 +1,5 @@
-﻿"""
+"""
+# -*- coding: utf-8 -*-
 Integration tests for PDF Tools and DB endpoints using FastAPI TestClient.
 """
 import json

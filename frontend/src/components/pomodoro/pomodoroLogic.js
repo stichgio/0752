@@ -1,4 +1,4 @@
-﻿export const POMODORO_STORAGE_KEY = 'pomodoro-state';
+export const POMODORO_STORAGE_KEY = 'pomodoro-state';
 
 export const DEFAULT_POMODORO_SETTINGS = Object.freeze({
     workMinutes: 25,

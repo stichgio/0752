@@ -1,4 +1,5 @@
 """
+# -*- coding: utf-8 -*-
 Utilities for the template editor module.
 
 fix: imagen-cortada — url_to_base64 converts remote image URLs to base64

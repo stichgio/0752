@@ -1,4 +1,4 @@
-﻿import {
+import {
     DEFAULT_POMODORO_SETTINGS,
     applyPomodoroSettings,
     createNextPhaseState,

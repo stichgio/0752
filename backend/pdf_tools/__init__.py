@@ -1,4 +1,5 @@
 """
+# -*- coding: utf-8 -*-
 PDF Tools - Sistema de Merge y Split de PDFs
 =============================================
 
