@@ -1,4 +1,4 @@
-import React, { forwardRef, useState, useEffect, useRef } from 'react';
+import React, { forwardRef, useState, useEffect, useRef, useCallback } from 'react';
 import { formatDateValue } from '../utils';
 
 const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, customTemplate, customColumns = [], isFocusMode = false }, ref) => {
@@ -449,24 +449,25 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
             // 4. Remove Outer Loop (report_list)
             html = html.replace(/\{%\s*for\s+report\s+in\s+.*%\}/g, '');
 
-            // 5. Clean up other Jinja2 tags (Aggressive)
-            // Remove any remaining control blocks that weren't processed
-            html = html.replace(/\{%\s*[\s\S]*?\s*%\}/g, '');
-            html = html.replace(/\{#.*?#\}/g, '');
-
-            // 6. Remove "Sin imagen" placeholder divs when images are present
-            if (images.length > 0) {
-                html = html.replace(/<div class="photo-placeholder">Sin imagen<\/div>/g, '');
-                html = html.replace(/<div class="photo-placeholder">\s*Sin imagen\s*<\/div>/g, '');
-            }
-
-            // 6. Fill remaining loop (range-based) logic
+            // 5. Fill range-based loops BEFORE aggressive cleanup removes them
+            // e.g. {% for i in range(report.images|length, 9) %}...{% endfor %}
             const rangeRegex = /\{%\s*for\s+i\s+in\s+range\(report\.images\|length,\s*(\d+)\)\s*%\}([\s\S]*?)(?:\{%\s*endfor\s*%\}|$)/g;
             html = html.replace(rangeRegex, (match, max, content) => {
                 const remaining = parseInt(max) - images.length;
                 if (remaining <= 0) return '';
                 return content.repeat(remaining);
             });
+
+            // 6. Clean up other Jinja2 tags (Aggressive)
+            // Remove any remaining control blocks that weren't processed
+            html = html.replace(/\{%\s*[\s\S]*?\s*%\}/g, '');
+            html = html.replace(/\{#.*?#\}/g, '');
+
+            // 7. Remove "Sin imagen" placeholder divs when images are present
+            if (images.length > 0) {
+                html = html.replace(/<div class="photo-placeholder">Sin imagen<\/div>/g, '');
+                html = html.replace(/<div class="photo-placeholder">\s*Sin imagen\s*<\/div>/g, '');
+            }
 
 
             templateObjUrlsRef.current = newObjUrls;
@@ -585,7 +586,28 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
         return { ...baseStyle, height: '7cm' };
     };
 
+    // Scale iframe to fit in the available panel space
+    const iframeContainerRef = useRef(null);
+    const [iframeScale, setIframeScale] = useState(0.5);
+
+    const recalcScale = useCallback(() => {
+        const container = iframeContainerRef.current;
+        if (!container) return;
+        // A4 in px at 96dpi: 794 x 1122
+        const A4_WIDTH_PX = 794;
+        const availableWidth = container.clientWidth - 32; // 16px padding each side
+        const scale = Math.min(availableWidth / A4_WIDTH_PX, 1);
+        setIframeScale(scale > 0.2 ? scale : 0.5);
+    }, []);
+
+    useEffect(() => {
+        recalcScale();
+        window.addEventListener('resize', recalcScale);
+        return () => window.removeEventListener('resize', recalcScale);
+    }, [recalcScale]);
+
     // Auto-resize iframe to match its content height
+    const [iframeContentHeight, setIframeContentHeight] = useState(1122);
     const handleIframeLoad = (e) => {
         const iframe = e.target;
         try {
@@ -594,7 +616,9 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                 // Wait a tick for images/layout to settle
                 setTimeout(() => {
                     const contentHeight = doc.documentElement.scrollHeight || doc.body.scrollHeight;
-                    iframe.style.height = Math.max(contentHeight, 1122) + 'px'; // 1122px ≈ 297mm
+                    const h = Math.max(contentHeight, 1122);
+                    iframe.style.height = h + 'px';
+                    setIframeContentHeight(h);
                 }, 150);
             }
         } catch {
@@ -604,21 +628,35 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
 
     if (customTemplate && renderedHtml) {
         return (
-            <div className={`flex-1 p-4 overflow-auto flex justify-center items-start ${isFocusMode ? 'bg-neutral-100' : 'bg-neutral-300'}`}>
-                <iframe
-                    ref={ref}
-                    srcDoc={renderedHtml}
-                    sandbox="allow-same-origin"
-                    title="Custom Template Preview"
-                    className="bg-white text-black shadow-2xl"
-                    onLoad={handleIframeLoad}
+            <div
+                ref={iframeContainerRef}
+                className={`flex-1 p-4 overflow-auto flex justify-center items-start ${isFocusMode ? 'bg-neutral-100' : 'bg-neutral-300'}`}
+            >
+                <div
                     style={{
                         width: '210mm',
-                        minHeight: '297mm',
-                        border: 'none',
-                        display: 'block',
+                        height: iframeContentHeight * iframeScale + 'px',
+                        position: 'relative',
+                        flexShrink: 0,
                     }}
-                />
+                >
+                    <iframe
+                        ref={ref}
+                        srcDoc={renderedHtml}
+                        sandbox="allow-same-origin"
+                        title="Custom Template Preview"
+                        className="bg-white text-black shadow-2xl"
+                        onLoad={handleIframeLoad}
+                        style={{
+                            width: '210mm',
+                            minHeight: '297mm',
+                            border: 'none',
+                            display: 'block',
+                            transformOrigin: 'top left',
+                            transform: `scale(${iframeScale})`,
+                        }}
+                    />
+                </div>
             </div>
         );
     }
