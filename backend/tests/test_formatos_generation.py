@@ -77,6 +77,8 @@ def test_visual_formats_have_the_adjusted_ot_mapping():
 
     assert maquina is not None and maquina.mapping is not None
     assert maquina.mapping.font_name == "Helvetica-Bold"
+    assert maquina.mapping.x == 535
+    assert maquina.mapping.y == 26
     assert maquina.mapping.blank_x is None
     assert maquina.mapping.blank_width is None
     assert maquina.mapping.blank_height is None
@@ -86,6 +88,7 @@ def test_visual_formats_have_the_adjusted_ot_mapping():
     assert televisiva is not None and televisiva.mapping is not None
     assert televisiva.mapping.font_name == "Helvetica-Bold"
     assert televisiva.mapping.x == 534
+    assert televisiva.mapping.y == 25
     assert televisiva.mapping.blank_x is None
     assert televisiva.mapping.blank_width is None
     assert televisiva.mapping.blank_height is None
