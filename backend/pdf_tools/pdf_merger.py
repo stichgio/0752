@@ -27,68 +27,75 @@ from .utils import (
 
 logger = logging.getLogger(__name__)
 
+MAX_INTERLEAVE_CHUNK = 1000
+
+
+def _normalize_chunk_sizes(n_files: int, chunk_sizes: list[int] | None) -> list[int]:
+    if chunk_sizes is None:
+        return [1] * n_files
+    if len(chunk_sizes) != n_files:
+        raise ValueError(
+            f"chunk_sizes debe tener {n_files} elementos (uno por PDF), recibido: {len(chunk_sizes)}"
+        )
+    out: list[int] = []
+    for i, c in enumerate(chunk_sizes):
+        if type(c) is not int or isinstance(c, bool):
+            raise ValueError(
+                f"chunk_sizes[{i}] debe ser un entero, recibido: {type(c).__name__}"
+            )
+        if c < 1:
+            raise ValueError(f"chunk_sizes[{i}] debe ser >= 1, recibido: {c}")
+        if c > MAX_INTERLEAVE_CHUNK:
+            raise ValueError(
+                f"chunk_sizes[{i}] no puede superar {MAX_INTERLEAVE_CHUNK}"
+            )
+        out.append(c)
+    return out
+
 
 def merge_pdfs_interleaved(
     input_paths: list[str],
     output_path: str,
-    strict: bool = False
+    strict: bool = False,
+    chunk_sizes: list[int] | None = None,
 ) -> dict[str, Any]:
     """
-    Combina múltiples PDFs intercalando páginas por índice.
-    
-    Esta función toma N archivos PDF y genera un único PDF donde
-    las páginas se intercalan por número de página. Es ideal para
-    combinar documentos que deben leerse en paralelo (ej: reportes
-    trimestrales, versiones de un documento).
-    
+    Combina múltiples PDFs intercalando páginas por bloques.
+
+    En cada vuelta se recorren los PDFs en orden; de cada uno se toman
+    hasta chunk_sizes[i] páginas consecutivas. Con chunk_sizes=[1,...,1]
+    (default) reproduce el intercalado clásico 1:1:1.
+
     Args:
-        input_paths: Lista de rutas a los PDFs de entrada.
-                    Mínimo 2 archivos requeridos.
+        input_paths: Lista de rutas a los PDFs de entrada (mínimo 2).
         output_path: Ruta donde guardar el PDF resultante.
-                    El directorio se creará si no existe.
-        strict: Si True, requiere que todos los PDFs tengan igual
-                número de páginas (lanza error si difieren).
-                Si False, permite longitudes variables:
-                - Intercala hasta el PDF más corto
-                - Añade páginas restantes al final
-                - Registra warnings informativos
-    
+        strict: Si True, exige igual número de páginas en todos los PDFs.
+        chunk_sizes: Opcional. Lista de enteros >= 1, uno por PDF.
+                     None equivale a [1, 1, ...] (intercalado clásico).
+
     Returns:
-        Diccionario con metadata de la operación:
-        {
-            'total_pages': int - Total de páginas en el PDF output
-            'source_files': int - Cantidad de archivos procesados
-            'status': str - 'success' o 'partial'
-            'warnings': list[str] - Lista de advertencias
-            'output_path': str - Ruta absoluta del archivo generado
-            'pages_per_source': list[int] - Páginas de cada archivo fuente
-        }
-    
+        Diccionario con metadata: total_pages, source_files, status,
+        warnings, output_path, pages_per_source.
+
     Raises:
-        PDFValidationError: Si algún archivo de entrada no es válido
-        PDFProcessingError: Si ocurre un error durante el merge
-        ValueError: Si input_paths tiene menos de 2 elementos
-    
-    Example:
-        >>> resultado = merge_pdfs_interleaved(
-        ...     input_paths=["q1.pdf", "q2.pdf", "q3.pdf"],
-        ...     output_path="output/consolidado.pdf",
-        ...     strict=True
-        ... )
-        >>> print(f"Generado: {resultado['total_pages']} páginas")
-        Generado: 30 páginas
+        PDFValidationError: Archivo inválido o strict con longitudes distintas.
+        PDFProcessingError: Error durante el merge.
+        ValueError: Menos de 2 archivos o chunk_sizes inválido.
     """
     warnings: list[str] = []
-    
-    # === VALIDACIONES INICIALES ===
-    
-    # Verificar cantidad mínima de archivos
+
     if len(input_paths) < 2:
         raise ValueError(
             f"Se requieren al menos 2 archivos PDF. Recibidos: {len(input_paths)}"
         )
-    
-    logger.info(f"Iniciando merge intercalado de {len(input_paths)} archivos")
+
+    sizes = _normalize_chunk_sizes(len(input_paths), chunk_sizes)
+
+    logger.info(
+        "Iniciando merge intercalado de %d archivos (bloques por turno: %s)",
+        len(input_paths),
+        sizes,
+    )
     
     # Validar todos los archivos de entrada
     readers: list[PdfReader] = []
@@ -138,58 +145,38 @@ def merge_pdfs_interleaved(
         else:
             warnings.append(diff_message)
             logger.warning(f"⚠️ {diff_message}")
-            logger.info(
-                f"  → Se intercalarán las primeras {min_pages} páginas, "
-                f"luego se añadirán las restantes"
-            )
-    
-    # === REALIZAR MERGE INTERCALADO ===
-    
+            logger.info("  → Se intercalará por bloques hasta agotar cada archivo")
+
+    # === REALIZAR MERGE INTERCALADO POR BLOQUES ===
+
     writer = PdfWriter()
     total_pages_added = 0
-    
+    pos = [0] * len(readers)
+
     try:
-        # Fase 1: Intercalar páginas (hasta min_pages)
-        logger.info(f"Fase 1: Intercalando {min_pages} páginas de cada archivo...")
-        
-        for page_idx in range(min_pages):
+        logger.info("Intercalando por turnos con bloques %s...", sizes)
+
+        while True:
+            added_this_round = 0
             for file_idx, reader in enumerate(readers):
-                page = reader.pages[page_idx]
-                writer.add_page(page)
-                total_pages_added += 1  
-                
-                # Log de progreso cada 10 páginas
-                if total_pages_added % 10 == 0:
-                    logger.debug(f"  Procesadas {total_pages_added} páginas...")
-        
+                if pos[file_idx] >= page_counts[file_idx]:
+                    continue
+                take = min(sizes[file_idx], page_counts[file_idx] - pos[file_idx])
+                for p in range(pos[file_idx], pos[file_idx] + take):
+                    writer.add_page(reader.pages[p])
+                    total_pages_added += 1
+                    added_this_round += 1
+                    if total_pages_added % 10 == 0:
+                        logger.debug("  Procesadas %d páginas...", total_pages_added)
+                pos[file_idx] += take
+
+            if added_this_round == 0:
+                break
+
         logger.info(
-            f"  ✓ Intercalado completado: "
-            f"{min_pages} × {len(readers)} = {min_pages * len(readers)} páginas"
+            "  ✓ Intercalado completado: %d páginas en el resultado",
+            total_pages_added,
         )
-        
-        # Fase 2: Añadir páginas restantes (si strict=False y hay diferencias)
-        if not strict and max_pages > min_pages:
-            logger.info("Fase 2: Añadiendo páginas restantes...")
-            
-            extra_pages = 0
-            for file_idx, reader in enumerate(readers):
-                remaining = page_counts[file_idx] - min_pages  
-                
-                if remaining > 0:
-                    file_name = Path(input_paths[file_idx]).name
-                    logger.info(
-                        f"  + {file_name}: añadiendo {remaining} páginas extra"
-                    )
-                    warnings.append(
-                        f"{file_name}: {remaining} páginas añadidas al final"
-                    )
-                    
-                    for page_idx in range(min_pages, page_counts[file_idx]):  
-                        writer.add_page(reader.pages[page_idx])
-                        total_pages_added += 1  
-                        extra_pages += 1  
-            
-            logger.info(f"  ✓ Páginas extra añadidas: {extra_pages}")
         
         # === GUARDAR ARCHIVO ===
         

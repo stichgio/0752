@@ -960,10 +960,26 @@ async def download_temp_file(
 async def tool_merge_pdfs(
     background_tasks: BackgroundTasks,
     files: List[UploadFile] = File(...),
-    strict: bool = Form(False)
+    strict: bool = Form(False),
+    chunk_sizes: Optional[str] = Form(None),
 ):
+    """
+    Merge intercalado por bloques. chunk_sizes es un JSON array opcional,
+    p.ej. [2,1] = 2 páginas del primer PDF por turno, 1 del segundo.
+    Sin el campo o con [1,1,...] equivale al intercalado clásico.
+    """
     logger.info("Tool Merge Request: %d files, strict=%s", len(files), strict)
     _validate_pdf_uploads(files)
+
+    parsed_chunks: Optional[List[int]] = None
+    if chunk_sizes is not None and str(chunk_sizes).strip():
+        try:
+            raw = json.loads(chunk_sizes)
+        except json.JSONDecodeError as e:
+            raise HTTPException(status_code=400, detail=f"chunk_sizes no es JSON válido: {e}")
+        if not isinstance(raw, list):
+            raise HTTPException(status_code=400, detail="chunk_sizes debe ser un array JSON de enteros")
+        parsed_chunks = raw
 
     try:
         with tempfile.TemporaryDirectory() as temp_dir:
@@ -986,7 +1002,8 @@ async def tool_merge_pdfs(
             merge_pdfs_interleaved(
                 input_paths=input_paths,
                 output_path=final_path,
-                strict=strict
+                strict=strict,
+                chunk_sizes=parsed_chunks,
             )
 
         background_tasks.add_task(_cleanup_file, final_path)
@@ -998,6 +1015,8 @@ async def tool_merge_pdfs(
 
     except HTTPException:
         raise
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         logger.error("Merge Error: %s", e)
         raise HTTPException(status_code=500, detail=str(e))
