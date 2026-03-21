@@ -135,17 +135,17 @@ export default function MergeInterleavedTab() {
             </div>
 
             {/* View toggle */}
-            <div className="flex items-center gap-1 p-0.5 bg-neutral-900 border border-neutral-800 rounded-md w-fit">
+            <div className="flex items-center gap-1 p-1 bg-neutral-900 border border-neutral-800 rounded-lg w-fit shadow-sm">
                 {['multiple', 'individual'].map((v) => (
                     <button
                         key={v}
                         onClick={() => setView(v)}
-                        className={`px-4 py-2 text-sm font-medium rounded transition-all ${view === v
-                            ? 'bg-neutral-700 text-white'
-                            : 'text-neutral-500 hover:text-neutral-300'
+                        className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${view === v
+                            ? 'bg-neutral-800 text-neutral-100 shadow-sm border border-neutral-700/50'
+                            : 'text-neutral-400 hover:text-neutral-200 hover:bg-neutral-800/50 border border-transparent'
                         }`}
                     >
-                        {v === 'multiple' ? 'Multiple' : 'Individual'}
+                        {v === 'multiple' ? 'Múltiple' : 'Individual'}
                     </button>
                 ))}
             </div>
@@ -183,51 +183,66 @@ export default function MergeInterleavedTab() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -6 }}
                     >
-                        <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-3">
+                        <div className="grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-4">
                             {slots.map((slot, idx) => (
                                 <div
                                     key={slot.id}
-                                    className="relative h-48 bg-neutral-900/60 border border-neutral-800 rounded-md flex flex-col overflow-hidden hover:border-neutral-600 transition-all"
+                                    className="relative flex flex-col h-[220px] bg-neutral-900 border border-neutral-800 rounded-xl overflow-hidden hover:border-neutral-700 transition-all shadow-sm group"
                                 >
                                     {/* Slot header */}
-                                    <div className="flex items-center justify-between px-3 py-1.5 border-b border-neutral-800/50">
-                                        <span className="text-sm text-neutral-500 uppercase tracking-wider">PDF {idx + 1}</span>
+                                    <div className="flex items-center justify-between px-3 py-2 bg-neutral-950/40 border-b border-neutral-800/60">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500/80"></div>
+                                            <span className="text-xs font-semibold text-neutral-400 tracking-wide">PDF {idx + 1}</span>
+                                        </div>
                                         {slots.length > 2 && !slot.file && (
-                                            <button onClick={() => removeSlot(idx)} className="text-neutral-600 hover:text-red-400 transition-colors">
-                                                <X size={12} />
+                                            <button onClick={() => removeSlot(idx)} className="text-neutral-500 hover:text-red-400 transition-colors p-1 rounded hover:bg-red-500/10" aria-label="Eliminar slot">
+                                                <X size={14} />
                                             </button>
                                         )}
                                         {slot.file && (
-                                            <button onClick={() => clearSlot(idx)} className="text-neutral-600 hover:text-red-400 transition-colors">
-                                                <X size={12} />
+                                            <button onClick={() => clearSlot(idx)} className="text-neutral-500 hover:text-red-400 transition-colors p-1 rounded hover:bg-red-500/10" aria-label="Limpiar archivo">
+                                                <X size={14} />
                                             </button>
                                         )}
                                     </div>
 
                                     {slot.file ? (
-                                        <div className="flex-1 flex flex-col items-center justify-center p-3 gap-1">
-                                            <FileCheck size={24} className="text-neutral-400 mb-1" />
-                                            <p className="text-sm text-neutral-300 text-center break-all line-clamp-2">{slot.file.name}</p>
-                                            <p className="text-sm text-neutral-500">{(slot.file.size / 1024).toFixed(1)} KB</p>
-                                            <div className="mt-2 w-full rounded-md border border-neutral-800 bg-neutral-950/50 p-2 text-center">
-                                                <label className="block text-xs text-neutral-500 mb-1">
-                                                    Hojas por turno
-                                                </label>
-                                                <input
-                                                    type="number"
-                                                    min={1}
-                                                    max={MAX_INTERLEAVE_CHUNK}
-                                                    value={slot.chunkSize}
-                                                    onChange={(e) => handleChunkInput(e.target.value, (n) => setSlotChunk(idx, n))}
-                                                    className="w-16 rounded border border-neutral-700 bg-neutral-900 px-2 py-1 text-center text-base font-semibold text-neutral-100 focus:border-neutral-500 focus:outline-none"
-                                                    aria-label={`Hojas a intercalar por turno para PDF ${idx + 1}`}
-                                                />
+                                        <div className="flex-1 flex flex-col p-3 relative">
+                                            <div className="absolute inset-0 bg-blue-500/[0.02] pointer-events-none"></div>
+                                            <div className="flex-1 flex flex-col items-center justify-center gap-1.5 relative z-10 w-full">
+                                                <div className="p-2 bg-blue-500/10 rounded-lg text-blue-400 mb-1">
+                                                    <FileCheck size={24} />
+                                                </div>
+                                                <p className="text-sm font-medium text-neutral-200 text-center break-words line-clamp-2 w-full px-1 leading-tight" title={slot.file.name}>
+                                                    {slot.file.name}
+                                                </p>
+                                                <p className="text-xs text-neutral-500">{(slot.file.size / 1024).toFixed(1)} KB</p>
+                                            </div>
+                                            
+                                            <div className="mt-3 relative z-10 w-full">
+                                                <div className="flex items-center justify-between border border-neutral-800 bg-neutral-950 rounded-lg p-1.5">
+                                                    <label className="text-xs text-neutral-400 ml-1 font-medium select-none">
+                                                        Hojas por turno
+                                                    </label>
+                                                    <input
+                                                        type="number"
+                                                        min={1}
+                                                        max={MAX_INTERLEAVE_CHUNK}
+                                                        value={slot.chunkSize}
+                                                        onChange={(e) => handleChunkInput(e.target.value, (n) => setSlotChunk(idx, n))}
+                                                        className="w-14 rounded-md border border-neutral-700 bg-neutral-900 px-1 py-1 text-center text-sm font-semibold text-neutral-100 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none transition-shadow"
+                                                        aria-label={`Hojas a intercalar por turno para PDF ${idx + 1}`}
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     ) : (
-                                        <label className="flex-1 flex flex-col items-center justify-center cursor-pointer hover:bg-neutral-800/30 transition-colors">
-                                            <FolderPlus size={24} className="text-neutral-600 mb-2" />
-                                            <span className="text-sm text-neutral-500">Click para cargar</span>
+                                        <label className="flex-1 flex flex-col items-center justify-center cursor-pointer hover:bg-neutral-800/40 transition-colors group/label">
+                                            <div className="p-3 bg-neutral-800/50 rounded-full text-neutral-500 group-hover/label:text-blue-400 group-hover/label:bg-blue-500/10 transition-colors mb-2">
+                                                <FolderPlus size={24} />
+                                            </div>
+                                            <span className="text-[13px] font-medium text-neutral-400 group-hover/label:text-neutral-300 transition-colors">Click para cargar</span>
                                             <input
                                                 type="file"
                                                 accept=".pdf"
@@ -242,10 +257,12 @@ export default function MergeInterleavedTab() {
                             {slots.length < 10 && (
                                 <button
                                     onClick={addSlot}
-                                    className="h-48 border border-dashed border-neutral-700 rounded-md flex flex-col items-center justify-center gap-2 text-neutral-600 hover:text-neutral-400 hover:border-neutral-500 transition-all"
+                                    className="h-[220px] bg-neutral-900/30 border border-dashed border-neutral-700 rounded-xl flex flex-col items-center justify-center gap-3 text-neutral-500 hover:text-blue-400 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all group"
                                 >
-                                    <FolderPlus size={20} />
-                                    <span className="text-sm">Agregar PDF</span>
+                                    <div className="p-3 bg-neutral-800/50 rounded-full group-hover:bg-blue-500/10 transition-colors">
+                                        <FolderPlus size={22} />
+                                    </div>
+                                    <span className="text-sm font-medium">Agregar PDF</span>
                                 </button>
                             )}
                         </div>
@@ -254,12 +271,12 @@ export default function MergeInterleavedTab() {
             </AnimatePresence>
 
             {/* Strict mode toggle */}
-            <label className="flex items-center gap-2 cursor-pointer text-sm text-neutral-500 hover:text-neutral-300 transition-colors w-fit">
+            <label className="flex items-center gap-2 cursor-pointer text-sm font-medium text-neutral-400 hover:text-neutral-200 transition-colors w-fit select-none bg-neutral-900/50 border border-neutral-800 px-3 py-2 rounded-lg">
                 <input
                     type="checkbox"
                     checked={strict}
                     onChange={(e) => setStrict(e.target.checked)}
-                    className="rounded border-neutral-600 bg-neutral-800 text-red-500 focus:ring-red-500/30"
+                    className="w-4 h-4 rounded border-neutral-700 bg-neutral-900 text-red-500 focus:ring-red-500/30 focus:ring-offset-0 transition-colors"
                 />
                 Modo Estricto (validar formato)
             </label>
