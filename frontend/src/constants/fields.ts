@@ -14,17 +14,10 @@ export const REPORT_FIELDS: ReportField[] = [
     { id: 'direccion', label: 'Dirección' },
     { id: 'localidad', label: 'Localidad' },
     { id: 'distrito', label: 'Distrito' },
-    { id: 'estado', label: 'Estado' },
-    { id: 'tipo-red', label: 'Tipo Red' },
-    { id: 'sector', label: 'Sector' },
     { id: 'actividad', label: 'Actividad' },
     { id: 'contrata', label: 'Contrata' },
     { id: 'subactividad', label: 'Subactividad' },
     { id: 'cuadrilla', label: 'Cuadrilla' },
-    { id: 'obs-sedapal', label: 'Obs. SEDAPAL' },
-    { id: 'obs-contrata', label: 'Obs. Contrata' },
-    { id: 'observaciones', label: 'Obs. Finales' },
-    { id: 'fecha-corte', label: 'Fecha Corte' },
     { id: 'direcciones-afectadas', label: 'Dir. Afectadas' }
 ];
 
@@ -49,13 +42,15 @@ export const TEMPLATE_KEY_MAP: Record<string, string> = {
     'obs-contrata': 'OBSERVACION CONTRATA',
     'fecha-corte': 'FECHA CORTE',
     'fecha_corte': 'FECHA CORTE',
+    'fecha-trabajo': 'FECHA_TRABAJO',
+    'fecha_trabajo': 'FECHA_TRABAJO',
     'direcciones-afectadas': 'DIRECCIONES AFECTADAS'
 };
 
 /**
  * Campos que son de tipo fecha
  */
-export const DATE_FIELDS = ['fecha-corte', 'fecha_corte'];
+export const DATE_FIELDS = ['fecha-corte', 'fecha_corte', 'fecha-trabajo', 'fecha_trabajo'];
 
 /**
  * Cabeceras para la plantilla de Excel descargable

@@ -1,4 +1,4 @@
-# AGENTS.md — Glitch/AutoReport
+﻿# AGENTS.md — Glitch/AutoReport
 
 ## 🧠 Descripción del proyecto
 
@@ -253,6 +253,7 @@ cd frontend && npx tsc --noEmit
 - Usar librerías externas no listadas en `package.json` o `requirements.txt`
 - Crear instancias axios adicionales fuera de `apiClient.ts`
 - Usar `fetch()` directo en el frontend
+- Codificar archivos en UTF-8 a menos que sea estrictamente necesario y el proyecto lo requiera explícitamente
 
 ---
 

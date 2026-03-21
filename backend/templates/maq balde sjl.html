@@ -13,6 +13,7 @@
         @page {
             size: A4 portrait;
             margin: 0;
+            background: #ffffff;
         }
 
         html,
@@ -23,9 +24,11 @@
             font-size: 10px;
             line-height: 1.3;
             color: #222;
-            background: #fff;
+            background: #ffffff;
             width: 210mm;
             height: 297mm;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
         }
 
         .page {
@@ -34,7 +37,7 @@
             max-height: 297mm;
             margin: 0 auto;
             padding: 8mm;
-            background: #fff;
+            background: #ffffff;
             display: -webkit-box;
             display: -ms-flexbox;
             display: flex;
@@ -123,7 +126,7 @@
             display: -ms-flexbox;
             display: flex;
             border: 1px solid #ccc;
-            background: #f5f5f5;
+            background: #ffffff;
             margin-bottom: 2mm;
             -ms-flex-negative: 0;
             flex-shrink: 0;
@@ -341,7 +344,7 @@
             </div>
             <div class="info-item">
                 <span class="info-label">Fecha de Trabajo:</span>
-                <span class="info-value">{{ row.get('FECHA_TRABAJO', row.get('fecha', row.get('fecha_trabajo', row.get('FECHA CORTE', row.get('FECHA_CORTE', row.get('fecha_corte', '-')))))) }}</span>
+                <span class="info-value">{{ row.get('FECHA_TRABAJO', row.get('FECHA DE TRABAJO', row.get('Fecha de Trabajo', row.get('fecha', row.get('fecha_trabajo', row.get('FECHA CORTE', row.get('FECHA_CORTE', row.get('fecha_corte', '-')))))))) }}</span>
             </div>
             <div class="info-item">
                 <span class="info-label">Estado:</span>
@@ -430,7 +433,7 @@
             </div>
             <div class="info-item">
                 <span class="info-label">Fecha de Trabajo:</span>
-                <span class="info-value">{{ row.get('FECHA_TRABAJO', row.get('fecha', row.get('fecha_trabajo', row.get('FECHA CORTE', row.get('FECHA_CORTE', row.get('fecha_corte', '-')))))) }}</span>
+                <span class="info-value">{{ row.get('FECHA_TRABAJO', row.get('FECHA DE TRABAJO', row.get('Fecha de Trabajo', row.get('fecha', row.get('fecha_trabajo', row.get('FECHA CORTE', row.get('FECHA_CORTE', row.get('fecha_corte', '-')))))))) }}</span>
             </div>
             <div class="info-item">
                 <span class="info-label">Estado:</span>

@@ -12,5 +12,5 @@ jobs:
     steps:
       - name: Despertar backend de Hugging Face
         run: |
-          curl https://dmongio-glitch-pdf-tools.hf.space
+          curl https://shengio-stich-0752.hf.space
           echo "Backend despertado exitosamente"

@@ -164,6 +164,8 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
         const centro = pickValue(reportData.CENTRO, reportData.cs, reportData.centro_servicio, reportData.centro);
         const fechaTrabajo = pickValue(
             reportData.FECHA_TRABAJO,
+            reportData['FECHA DE TRABAJO'],
+            reportData['Fecha de Trabajo'],
             reportData.fecha,
             reportData.fecha_trabajo,
             reportData['FECHA CORTE'],
@@ -277,35 +279,34 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
     <title>${escapeHtml(title)}</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        @page { size: A4 portrait; margin: 0; }
-        html, body { margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; font-size: 10px; line-height: 1.3; color: #1f2937; background: #eef2f7; width: 210mm; }
-        body { padding: 12px 0 18px; }
-        .page { width: 210mm; height: 297mm; max-height: 297mm; margin: 0 auto 12px; padding: 8mm; background: #fff; display: flex; flex-direction: column; page-break-after: always; page-break-inside: avoid; box-sizing: border-box; overflow: hidden; border: 1px solid #d7e0ea; }
+        @page { size: A4 portrait; margin: 0; background: #ffffff; }
+        html, body { margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; font-size: 10px; line-height: 1.3; color: #222; background: #ffffff; width: 210mm; height: 297mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .page { width: 210mm; height: 297mm; max-height: 297mm; margin: 0 auto; padding: 8mm; background: #ffffff; display: flex; flex-direction: column; page-break-after: always; page-break-inside: avoid; box-sizing: border-box; overflow: hidden; }
         .page:last-child { page-break-after: auto; }
-        .header { display: flex; justify-content: space-between; align-items: center; height: 20mm; padding-bottom: 4mm; border-bottom: 2px solid #334155; margin-bottom: 3mm; flex-shrink: 0; }
+        .header { display: flex; justify-content: space-between; align-items: center; height: 20mm; padding-bottom: 4mm; border-bottom: 2px solid #333; margin-bottom: 3mm; flex-shrink: 0; }
         .header-logo { width: 55mm; height: 18mm; display: flex; align-items: center; justify-content: center; }
         .header-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
         .header-logo-placeholder { font-size: 14px; font-weight: bold; color: #666; }
         .header-title { flex: 1; text-align: center; }
-        .header-title h1 { font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.9px; color: #0f172a; }
-        .header-title .page-label { display: inline-block; font-size: 9px; color: #64748b; margin-top: 3px; padding: 1px 7px; border: 1px solid #dbe4ee; background: #f8fafc; border-radius: 999px; }
-        .info-bar { display: flex; border: 1px solid #d7e0ea; background: #f8fafc; margin-bottom: 2mm; flex-shrink: 0; }
-        .info-item { flex: 1; display: flex; align-items: center; padding: 1.6mm 2.2mm; border-right: 1px solid #d7e0ea; gap: 1.2mm; white-space: nowrap; }
+        .header-title h1 { font-size: 16px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #000; }
+        .header-title .page-label { font-size: 9px; color: #777; margin-top: 2px; }
+        .info-bar { display: flex; border: 1px solid #ccc; background: #ffffff; margin-bottom: 2mm; flex-shrink: 0; }
+        .info-item { flex: 1; display: flex; align-items: center; padding: 1.5mm 2mm; border-right: 1px solid #ccc; gap: 1mm; white-space: nowrap; }
         .info-item:last-child { border-right: none; }
-        .info-label { font-size: 9pt; font-weight: 700; text-transform: uppercase; color: #0f172a; }
-        .info-value { font-size: 9pt; font-weight: 400; color: #1f2937; }
-        .section-title { font-size: 10pt; font-weight: 700; color: #0b63ce; text-transform: uppercase; letter-spacing: 0.2px; margin-bottom: 3mm; padding-bottom: 3px; border-bottom: 1px solid #0b63ce; flex-shrink: 0; }
+        .info-label { font-size: 9pt; font-weight: bold; text-transform: uppercase; color: #000; }
+        .info-value { font-size: 9pt; font-weight: normal; color: #000; }
+        .section-title { font-size: 10pt; font-weight: bold; color: #0066cc; text-transform: uppercase; margin-bottom: 3mm; padding-bottom: 3px; border-bottom: 1px solid #0066cc; flex-shrink: 0; }
         .localizacion { margin-bottom: 3mm; flex-shrink: 0; }
         .loc-table { width: 100%; border-collapse: collapse; }
-        .loc-table td { padding: 2px 0; vertical-align: baseline; }
-        .loc-label { font-size: 9pt; font-weight: 700; text-transform: uppercase; color: #0f172a; white-space: nowrap; padding-right: 6px; }
-        .loc-value { font-size: 9pt; color: #1f2937; word-break: break-word; }
+        .loc-table td { padding: 1.5px 0; vertical-align: baseline; }
+        .loc-label { font-size: 9pt; font-weight: bold; text-transform: uppercase; color: #000; white-space: nowrap; padding-right: 6px; }
+        .loc-value { font-size: 9pt; color: #000; word-break: break-word; }
         .panel-fotografico { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
-        .photo-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 2mm; width: 100%; height: 100%; border: 1px solid #0b63ce; padding: 2mm; flex: 1; min-height: 0; overflow: hidden; box-sizing: border-box; background: #f9fbff; }
-        .photo-cell { background: linear-gradient(180deg, #ffffff, #f8fafc); border: 1px solid #d8e1eb; width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
-        .photo-cell img { width: 100%; height: 100%; max-width: 100%; max-height: 100%; object-fit: contain; object-position: center; display: block; background: #fff; }
+        .photo-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 2mm; width: 100%; height: 100%; border: 1px solid #0066cc; padding: 2mm; flex: 1; min-height: 0; overflow: hidden; box-sizing: border-box; background: #ffffff; }
+        .photo-cell { background: #ffffff; border: 1px solid #ddd; width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+        .photo-cell img { max-width: 100%; max-height: 100%; object-fit: contain; object-position: center; display: block; }
         .photo-cell-photo-3 { grid-column: span 2; justify-self: center; width: calc(50% - 1mm); }
-        .photo-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 10px; font-style: italic; background: linear-gradient(180deg, #ffffff, #f8fafc); }
+        .photo-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #999; font-size: 10px; font-style: italic; background: #ffffff; }
     </style>
 </head>
 <body>
@@ -343,7 +344,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
             // We'll iterate the Mappings and providing values for specific Keys
             if (data && mappings) {
                 // Define which fields are date fields
-                const dateFieldKeys = ['fecha_corte', 'fecha-corte'];
+                const dateFieldKeys = ['fecha_corte', 'fecha-corte', 'fecha_trabajo', 'fecha-trabajo'];
 
                 Object.keys(mappings).forEach(key => {
                     // key is like 'centro', 'nis'
@@ -369,6 +370,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                         'subactividad': 'SUBACTIVIDAD', 'cuadrilla': 'CUADRILLA',
                         'obs-sedapal': 'OBSERVACION SEDAPAL', 'obs-contrata': 'OBSERVACION CONTRATA',
                         'fecha_corte': 'FECHA CORTE', 'fecha-corte': 'FECHA CORTE',
+                        'fecha_trabajo': 'FECHA_TRABAJO', 'fecha-trabajo': 'FECHA_TRABAJO',
                         'direcciones_afectadas': 'DIRECCIONES AFECTADAS', 'direcciones-afectadas': 'DIRECCIONES AFECTADAS',
                         // Medidas mappings
                         'medidas_diametro': 'DIAMETRO', 'medidas-diametro': 'DIAMETRO',
@@ -833,8 +835,9 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
     };
 
     if (customTemplate && renderedHtml) {
+        const previewChromeBg = isFocusMode ? 'bg-neutral-100' : 'bg-neutral-300';
         return (
-            <div className={`flex-1 p-4 overflow-auto flex justify-center items-start ${isFocusMode ? 'bg-neutral-100' : 'bg-neutral-300'}`}>
+            <div className={`flex-1 p-4 overflow-auto flex justify-center items-start ${previewChromeBg}`}>
                 <iframe
                     ref={ref}
                     srcDoc={renderedHtml}
