@@ -513,7 +513,9 @@ export default function App() {
 
         // Helper to format a single row
         const formatRowData = (row) => {
-            const rowData = {};
+            // Incluir TODAS las columnas originales para que coincida exactamente con la vista previa
+            // y permitir que plantillas (ej. maq balde sjl) accedan a columnas no mapeadas (como FECHA DE TRABAJO)
+            const rowData = { ...row }; 
             Object.keys(mappings).forEach(key => {
                 const excelHeader = mappings[key];
                 let value = row[excelHeader];
