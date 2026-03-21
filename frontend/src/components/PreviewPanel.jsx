@@ -1,11 +1,52 @@
 import React, { forwardRef, useState, useEffect, useRef } from 'react';
 import { formatDateValue } from '../utils';
 
+const MAQ_BALDE_TEMPLATE_NAME = 'maq balde sjl.html';
+const EMPTY_PIXEL = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E";
+
+const chunkItems = (items, size) => {
+    const chunks = [];
+    for (let index = 0; index < items.length; index += size) {
+        chunks.push(items.slice(index, index + size));
+    }
+    return chunks;
+};
+
+const escapeHtml = (value) => String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('\"', '&quot;')
+    .replaceAll("'", '&#39;');
+
+const normalizePreviewValue = (value, fallback = '-') => {
+    if (value === null || value === undefined) return fallback;
+    const text = String(value).trim();
+    return text ? text : fallback;
+};
+
 const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, customTemplate, customColumns = [], isFocusMode = false }, ref) => {
     const [layoutMode, setLayoutMode] = useState('grid');
     const [renderedHtml, setRenderedHtml] = useState('');
     const templateObjUrlsRef = useRef([]);
     const [imageUrls, setImageUrls] = useState([]);
+
+    const isMaqBaldeTemplate = (template) => {
+        if (!template) return false;
+
+        const normalizedName = String(template.name || template.filename || '')
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, ' ');
+        if (normalizedName === MAQ_BALDE_TEMPLATE_NAME || normalizedName.includes('maq balde sjl')) return true;
+
+        const templateContent = String(template.content || '').toLowerCase();
+        return templateContent.includes("row.get('titulo'")
+            || templateContent.includes("row.get('direcciones_afectadas'")
+            || templateContent.includes('photo-cell-photo-3');
+    };
+
+    const isFixedA4TemplatePreview = customTemplate?.name === 'report_volanteo.html' || isMaqBaldeTemplate(customTemplate);
 
     useEffect(() => {
         if (!images || images.length === 0) {
@@ -107,6 +148,172 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
         return isDateField ? formatDateValue(value) : value;
     };
 
+    // Helper isMaqBaldeTemplate has been moved to the top
+
+
+    const buildMaqBaldePreviewHtml = (reportData, imageFiles, leftLogo, rightLogo, trackObjectURL) => {
+        const pickValue = (...candidates) => {
+            for (const candidate of candidates) {
+                const normalized = normalizePreviewValue(candidate, '');
+                if (normalized && normalized !== '-') return normalized;
+            }
+            return '-';
+        };
+
+        const title = pickValue(reportData.titulo, reportData.TITULO, 'PANEL FOTOGRAFICO');
+        const centro = pickValue(reportData.CENTRO, reportData.cs, reportData.centro_servicio, reportData.centro);
+        const fechaTrabajo = pickValue(
+            reportData.FECHA_TRABAJO,
+            reportData.fecha,
+            reportData.fecha_trabajo,
+            reportData['FECHA CORTE'],
+            reportData.FECHA_CORTE,
+            reportData.fecha_corte,
+            reportData['FECHA-CORTE'],
+        );
+        const estado = pickValue(reportData.ESTADO, reportData.estado);
+        const direcciones = pickValue(
+            reportData.DIRECCIONES_AFECTADAS,
+            reportData['DIRECCIONES AFECTADAS'],
+            reportData.direcciones,
+            reportData.direccion,
+            reportData.DIRECCION,
+            reportData.ubicacion,
+        );
+        const distrito = pickValue(reportData.DISTRITO, reportData.distrito);
+        const actividad = pickValue(reportData.ACTIVIDAD, reportData.actividad);
+        const cuadrilla = pickValue(reportData.CUADRILLA, reportData.cuadrilla);
+
+        const pageChunks = imageFiles.length > 0 ? chunkItems(imageFiles, 4) : [[]];
+        const totalPages = pageChunks.length;
+
+        const pagesHtml = pageChunks.map((pageImages, pageIndex) => {
+            const pageLabel = totalPages > 1 ? `<div class="page-label">Hoja ${pageIndex + 1}/${totalPages}</div>` : '';
+            const slots = pageImages.length === 3
+                ? pageImages
+                : [...pageImages, ...Array.from({ length: Math.max(0, 4 - pageImages.length) }, () => null)];
+
+            const gridHtml = slots.map((img, slotIndex) => {
+                const extraClass = pageImages.length === 3 && slotIndex === 2 ? ' photo-cell-photo-3' : '';
+                if (!img) return `<div class="photo-cell${extraClass}"><div class="photo-placeholder">Sin imagen</div></div>`;
+
+                const imgUrl = trackObjectURL(img);
+                const altText = img.name || `Foto ${slotIndex + 1}`;
+                return `
+                <div class="photo-cell${extraClass}">
+                    <img src="${escapeHtml(imgUrl)}" alt="${escapeHtml(altText)}">
+                </div>`;
+            }).join('');
+
+            return `
+        <div class="page">
+            <header class="header">
+                <div class="header-logo">
+                    ${leftLogo ? `<img src="${escapeHtml(leftLogo)}" alt="Logo Izquierdo">` : '<span class="header-logo-placeholder"></span>'}
+                </div>
+                <div class="header-title">
+                    <h1>${escapeHtml(title)}</h1>
+                    ${pageLabel}
+                </div>
+                <div class="header-logo">
+                    ${rightLogo ? `<img src="${escapeHtml(rightLogo)}" alt="Logo Derecho">` : '<span class="header-logo-placeholder"></span>'}
+                </div>
+            </header>
+
+            <div class="info-bar">
+                <div class="info-item">
+                    <span class="info-label">Centro de Servicios:</span>
+                    <span class="info-value">${escapeHtml(centro)}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Fecha de Trabajo:</span>
+                    <span class="info-value">${escapeHtml(fechaTrabajo)}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Estado:</span>
+                    <span class="info-value">${escapeHtml(estado)}</span>
+                </div>
+            </div>
+
+            <section class="localizacion">
+                <div class="section-title">1.0 Localizacion</div>
+                <table class="loc-table">
+                    <tr>
+                        <td class="loc-label">Direcciones Afectadas:</td>
+                        <td class="loc-value" colspan="3">${escapeHtml(direcciones)}</td>
+                    </tr>
+                    <tr>
+                        <td class="loc-label">Distrito:</td>
+                        <td class="loc-value" colspan="3">${escapeHtml(distrito)}</td>
+                    </tr>
+                </table>
+            </section>
+
+            <section class="localizacion">
+                <div class="section-title">2.0 Detalles de Orden de Trabajo</div>
+                <table class="loc-table">
+                    <tr>
+                        <td class="loc-label">Actividad:</td>
+                        <td class="loc-value">${escapeHtml(actividad)}</td>
+                        <td class="loc-label" style="padding-left:8px">Cuadrilla:</td>
+                        <td class="loc-value">${escapeHtml(cuadrilla)}</td>
+                    </tr>
+                </table>
+            </section>
+
+            <section class="panel-fotografico">
+                <div class="section-title">3.0 Panel Fotografico</div>
+                <div class="photo-grid">
+                    ${gridHtml}
+                </div>
+            </section>
+        </div>`;
+        }).join('');
+
+        return `<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>${escapeHtml(title)}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @page { size: A4 portrait; margin: 0; }
+        html, body { margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; font-size: 10px; line-height: 1.3; color: #1f2937; background: #eef2f7; width: 210mm; }
+        body { padding: 12px 0 18px; }
+        .page { width: 210mm; height: 297mm; max-height: 297mm; margin: 0 auto 12px; padding: 8mm; background: #fff; display: flex; flex-direction: column; page-break-after: always; page-break-inside: avoid; box-sizing: border-box; overflow: hidden; border: 1px solid #d7e0ea; }
+        .page:last-child { page-break-after: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; height: 20mm; padding-bottom: 4mm; border-bottom: 2px solid #334155; margin-bottom: 3mm; flex-shrink: 0; }
+        .header-logo { width: 55mm; height: 18mm; display: flex; align-items: center; justify-content: center; }
+        .header-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .header-logo-placeholder { font-size: 14px; font-weight: bold; color: #666; }
+        .header-title { flex: 1; text-align: center; }
+        .header-title h1 { font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.9px; color: #0f172a; }
+        .header-title .page-label { display: inline-block; font-size: 9px; color: #64748b; margin-top: 3px; padding: 1px 7px; border: 1px solid #dbe4ee; background: #f8fafc; border-radius: 999px; }
+        .info-bar { display: flex; border: 1px solid #d7e0ea; background: #f8fafc; margin-bottom: 2mm; flex-shrink: 0; }
+        .info-item { flex: 1; display: flex; align-items: center; padding: 1.6mm 2.2mm; border-right: 1px solid #d7e0ea; gap: 1.2mm; white-space: nowrap; }
+        .info-item:last-child { border-right: none; }
+        .info-label { font-size: 9pt; font-weight: 700; text-transform: uppercase; color: #0f172a; }
+        .info-value { font-size: 9pt; font-weight: 400; color: #1f2937; }
+        .section-title { font-size: 10pt; font-weight: 700; color: #0b63ce; text-transform: uppercase; letter-spacing: 0.2px; margin-bottom: 3mm; padding-bottom: 3px; border-bottom: 1px solid #0b63ce; flex-shrink: 0; }
+        .localizacion { margin-bottom: 3mm; flex-shrink: 0; }
+        .loc-table { width: 100%; border-collapse: collapse; }
+        .loc-table td { padding: 2px 0; vertical-align: baseline; }
+        .loc-label { font-size: 9pt; font-weight: 700; text-transform: uppercase; color: #0f172a; white-space: nowrap; padding-right: 6px; }
+        .loc-value { font-size: 9pt; color: #1f2937; word-break: break-word; }
+        .panel-fotografico { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+        .photo-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 2mm; width: 100%; height: 100%; border: 1px solid #0b63ce; padding: 2mm; flex: 1; min-height: 0; overflow: hidden; box-sizing: border-box; background: #f9fbff; }
+        .photo-cell { background: linear-gradient(180deg, #ffffff, #f8fafc); border: 1px solid #d8e1eb; width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+        .photo-cell img { width: 100%; height: 100%; max-width: 100%; max-height: 100%; object-fit: contain; object-position: center; display: block; background: #fff; }
+        .photo-cell-photo-3 { grid-column: span 2; justify-self: center; width: calc(50% - 1mm); }
+        .photo-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 10px; font-style: italic; background: linear-gradient(180deg, #ffffff, #f8fafc); }
+    </style>
+</head>
+<body>
+    ${pagesHtml}
+</body>
+</html>`;
+    };
+
     // Render custom template effect
     useEffect(() => {
         // Revoke old object URLs from previous render
@@ -191,6 +398,12 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                 });
             }
 
+            if (isMaqBaldeTemplate(customTemplate)) {
+                const html = buildMaqBaldePreviewHtml(reportData, images, logoLeft, logoRight, trackObjectURL);
+                templateObjUrlsRef.current = newObjUrls;
+                setRenderedHtml(html);
+                return;
+            }
 
             // 2. Variable Replacements
             const emptyPixel = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E";
@@ -198,14 +411,32 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
             const imageCount = images.length;
 
             // -----------------------------------------------------------
-            // IMPORTANT: Process inner image-count conditionals FIRST,
-            // before outer report.images presence blocks.
-            // This prevents nested {% if %}...{% endif %} from breaking
-            // the lazy regex matching of outer blocks.
+            // STEP A: Process inner blocks WITHOUT {% else %} first.
+            // This prevents imageCountIfElseRegex from crossing inner
+            // {% endif %} boundaries to the OUTER block's {% else %}
+            // (critical for format_reservorios_2.html).
             // -----------------------------------------------------------
 
-            // Handle nested if/elif/else blocks based on image count (for adaptive grids)
-            // Pattern: {% if report.images|length == X %}...{% elif report.images|length == Y %}...{% else %}...{% endif %}
+            // A1. Handle if without else based on image count (MUST run first)
+            // Negative lookahead ensures we don't match blocks that have {% else %}
+            const imageCountIfOnlyRegex = /\{%\s*if\s+report\.images\|length\s*==\s*(\d+)\s*%\}((?:(?!\{%\s*else\s*%\})[\s\S])*?)\{%\s*endif\s*%\}/g;
+            html = html.replace(imageCountIfOnlyRegex, (match, count, content) => {
+                return imageCount === parseInt(count, 10) ? content : '';
+            });
+
+            // A2. Handle if image count != X and != Y patterns
+            // e.g. {% if report.images|length != 5 and report.images|length != 6 %}...{% endif %}
+            const imageCountNotAndRegex = /\{%\s*if\s+report\.images\|length\s*!=\s*(\d+)\s+and\s+report\.images\|length\s*!=\s*(\d+)\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            html = html.replace(imageCountNotAndRegex, (match, count1, count2, content) => {
+                return (imageCount !== parseInt(count1, 10) && imageCount !== parseInt(count2, 10)) ? content : '';
+            });
+
+            // -----------------------------------------------------------
+            // STEP B: Now process blocks WITH {% else %} / {% elif %}.
+            // Inner blocks without else have been removed/resolved above.
+            // -----------------------------------------------------------
+
+            // B1. Handle nested if/elif/else blocks based on image count
             const imageCountIfElifRegex = /\{%\s*if\s+report\.images\|length\s*==\s*(\d+)\s*%\}([\s\S]*?)\{%\s*elif\s+report\.images\|length\s*==\s*(\d+)\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
             html = html.replace(imageCountIfElifRegex, (match, count1, content1, count2, content2, elseContent) => {
                 if (imageCount === parseInt(count1, 10)) return content1;
@@ -213,23 +444,11 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                 return elseContent;
             });
 
-            // Handle simple if/else based on image count (without elif)
-            const imageCountIfElseRegex = /\{%\s*if\s+report\.images\|length\s*==\s*(\d+)\s*%\}([\s\S]*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
+            // B2. Handle simple if/else based on image count
+            // Negative lookahead prevents crossing {% endif %} boundaries
+            const imageCountIfElseRegex = /\{%\s*if\s+report\.images\|length\s*==\s*(\d+)\s*%\}((?:(?!\{%\s*endif\s*%\})[\s\S])*?)\{%\s*else\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
             html = html.replace(imageCountIfElseRegex, (match, count, ifContent, elseContent) => {
                 return imageCount === parseInt(count, 10) ? ifContent : elseContent;
-            });
-
-            // Handle if without else based on image count
-            const imageCountIfOnlyRegex = /\{%\s*if\s+report\.images\|length\s*==\s*(\d+)\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
-            html = html.replace(imageCountIfOnlyRegex, (match, count, content) => {
-                return imageCount === parseInt(count, 10) ? content : '';
-            });
-
-            // Handle if image count != X and != Y patterns (for else-like conditions)
-            // e.g. {% if report.images|length != 5 and report.images|length != 6 %}...{% endif %}
-            const imageCountNotAndRegex = /\{%\s*if\s+report\.images\|length\s*!=\s*(\d+)\s+and\s+report\.images\|length\s*!=\s*(\d+)\s*%\}([\s\S]*?)\{%\s*endif\s*%\}/g;
-            html = html.replace(imageCountNotAndRegex, (match, count1, count2, content) => {
-                return (imageCount !== parseInt(count1, 10) && imageCount !== parseInt(count2, 10)) ? content : '';
             });
 
             // Handle if image count > X with else: {% if report.images|length > X %}...{% else %}...{% endif %}
@@ -323,8 +542,8 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
 
             const replacements = {
                 '{{ title }}': 'PANEL FOTOGRÁFICO VOLANTEO',
-                '{{ logo_left }}': logoLeft || emptyPixel,
-                '{{ logo_right }}': logoRight || emptyPixel,
+                '{{ logo_left }}': logoLeft || EMPTY_PIXEL,
+                '{{ logo_right }}': logoRight || EMPTY_PIXEL,
             };
 
             // Replace simple variables
@@ -531,7 +750,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
     }, [images]);
 
     // Logos (Clear by default)
-    const emptyLogo = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E";
+    const emptyLogo = EMPTY_PIXEL;
     const defaultSedapal = emptyLogo;
     const defaultAcciona = emptyLogo;
 
@@ -592,6 +811,16 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
         try {
             const doc = iframe.contentDocument || iframe.contentWindow?.document;
             if (doc?.body) {
+                if (isFixedA4TemplatePreview) {
+                    iframe.style.width = '210mm';
+                    iframe.style.height = '297mm';
+                    iframe.style.overflow = 'hidden';
+                    iframe.setAttribute('scrolling', 'no');
+                    doc.documentElement.style.overflow = 'hidden';
+                    doc.body.style.overflow = 'hidden';
+                    return;
+                }
+
                 // Wait a tick for images/layout to settle
                 setTimeout(() => {
                     const contentHeight = doc.documentElement.scrollHeight || doc.body.scrollHeight;
@@ -612,6 +841,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                     sandbox="allow-same-origin"
                     title="Custom Template Preview"
                     className="bg-white text-black shadow-2xl"
+                    scrolling={isFixedA4TemplatePreview ? 'no' : undefined}
                     onLoad={handleIframeLoad}
                     style={{
                         width: '210mm',
@@ -619,6 +849,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                         border: 'none',
                         display: 'block',
                         flexShrink: 0,
+                        overflow: isFixedA4TemplatePreview ? 'hidden' : undefined,
                     }}
                 />
             </div>
