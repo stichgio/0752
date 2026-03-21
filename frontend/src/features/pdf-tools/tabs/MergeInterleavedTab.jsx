@@ -8,21 +8,30 @@ import ActionBar from '../shared/ActionBar';
 import { mergePdfsInterleaved } from '../api/pdfToolsApi';
 import { downloadBlob } from '../../../utils/downloadBlob';
 
+const MAX_INTERLEAVE_CHUNK = 1000;
+
 export default function MergeInterleavedTab() {
     const [view, setView] = useState('multiple'); // 'multiple' | 'individual'
     const [files, setFiles] = useState([]);
     const [slots, setSlots] = useState([
-        { id: 1, file: null },
-        { id: 2, file: null },
-        { id: 3, file: null },
+        { id: 1, file: null, chunkSize: 1 },
+        { id: 2, file: null, chunkSize: 1 },
+        { id: 3, file: null, chunkSize: 1 },
     ]);
     const [strict, setStrict] = useState(false);
     const [loading, setLoading] = useState(false);
     const dragIdx = useRef(null);
 
-    // --- Multiple view ---
+    // --- Multiple view ({ file, chunkSize }) ---
     const addFiles = useCallback((newFiles) => {
-        setFiles((prev) => [...prev, ...newFiles]);
+        setFiles((prev) => [
+            ...prev,
+            ...newFiles.map((f) => ({ file: f, chunkSize: 1 })),
+        ]);
+    }, []);
+
+    const setFileChunkAt = useCallback((idx, chunkSize) => {
+        setFiles((prev) => prev.map((e, i) => (i === idx ? { ...e, chunkSize } : e)));
     }, []);
 
     const removeFile = useCallback((idx) => {
@@ -57,12 +66,16 @@ export default function MergeInterleavedTab() {
     }
 
     function clearSlot(index) {
-        setSlots((prev) => prev.map((s, i) => i === index ? { ...s, file: null } : s));
+        setSlots((prev) => prev.map((s, i) => (i === index ? { ...s, file: null, chunkSize: 1 } : s)));
+    }
+
+    function setSlotChunk(index, chunkSize) {
+        setSlots((prev) => prev.map((s, i) => (i === index ? { ...s, chunkSize } : s)));
     }
 
     function addSlot() {
         if (slots.length >= 10) return;
-        setSlots((prev) => [...prev, { id: Date.now(), file: null }]);
+        setSlots((prev) => [...prev, { id: Date.now(), file: null, chunkSize: 1 }]);
     }
 
     function removeSlot(index) {
@@ -72,9 +85,16 @@ export default function MergeInterleavedTab() {
 
     // --- Merge ---
     async function handleMerge() {
-        const filesToUpload = view === 'multiple'
-            ? files
-            : slots.map((s) => s.file).filter(Boolean);
+        let filesToUpload;
+        let chunkSizes;
+        if (view === 'multiple') {
+            filesToUpload = files.map((e) => e.file);
+            chunkSizes = files.map((e) => e.chunkSize);
+        } else {
+            const filled = slots.filter((s) => s.file);
+            filesToUpload = filled.map((s) => s.file);
+            chunkSizes = filled.map((s) => s.chunkSize);
+        }
 
         if (filesToUpload.length < 2) {
             toast.error('Se requieren al menos 2 archivos PDF.');
@@ -82,7 +102,7 @@ export default function MergeInterleavedTab() {
         }
         setLoading(true);
         try {
-            const blob = await mergePdfsInterleaved(filesToUpload, strict);
+            const blob = await mergePdfsInterleaved(filesToUpload, strict, chunkSizes);
             downloadBlob(blob, 'merged_interleaved.pdf');
             toast.success('PDFs intercalados correctamente.');
         } catch (err) {
@@ -95,6 +115,13 @@ export default function MergeInterleavedTab() {
     const fileCount = view === 'multiple'
         ? files.length
         : slots.filter((s) => s.file).length;
+
+    function handleChunkInput(val, setter) {
+        let n = parseInt(val, 10);
+        if (!Number.isFinite(n)) n = 1;
+        n = Math.min(MAX_INTERLEAVE_CHUNK, Math.max(1, n));
+        setter(n);
+    }
 
     return (
         <div className="space-y-4">
@@ -135,13 +162,15 @@ export default function MergeInterleavedTab() {
                         <PdfDropzone onFiles={addFiles} multiple icon={Layers} />
                         <div className="space-y-1.5">
                             <AnimatePresence mode="popLayout">
-                                {files.map((file, idx) => (
+                                {files.map((entry, idx) => (
                                     <FileListItem
-                                        key={`${file.name}-${file.lastModified}-${idx}`}
-                                        file={file}
+                                        key={`${entry.file.name}-${entry.file.lastModified}-${idx}`}
+                                        file={entry.file}
                                         index={idx}
                                         onRemove={() => removeFile(idx)}
                                         dragHandlers={makeDragHandlers(idx)}
+                                        chunkSize={entry.chunkSize}
+                                        onChunkSizeChange={(n) => setFileChunkAt(idx, n)}
                                     />
                                 ))}
                             </AnimatePresence>
@@ -176,10 +205,24 @@ export default function MergeInterleavedTab() {
                                     </div>
 
                                     {slot.file ? (
-                                        <div className="flex-1 flex flex-col items-center justify-center p-3">
-                                            <FileCheck size={24} className="text-emerald-400 mb-2" />
+                                        <div className="flex-1 flex flex-col items-center justify-center p-3 gap-1">
+                                            <FileCheck size={24} className="text-neutral-400 mb-1" />
                                             <p className="text-sm text-neutral-300 text-center break-all line-clamp-2">{slot.file.name}</p>
-                                            <p className="text-sm text-neutral-500 mt-1">{(slot.file.size / 1024).toFixed(1)} KB</p>
+                                            <p className="text-sm text-neutral-500">{(slot.file.size / 1024).toFixed(1)} KB</p>
+                                            <div className="mt-2 w-full rounded-md border border-neutral-800 bg-neutral-950/50 p-2 text-center">
+                                                <label className="block text-xs text-neutral-500 mb-1">
+                                                    Hojas por turno
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min={1}
+                                                    max={MAX_INTERLEAVE_CHUNK}
+                                                    value={slot.chunkSize}
+                                                    onChange={(e) => handleChunkInput(e.target.value, (n) => setSlotChunk(idx, n))}
+                                                    className="w-16 rounded border border-neutral-700 bg-neutral-900 px-2 py-1 text-center text-base font-semibold text-neutral-100 focus:border-neutral-500 focus:outline-none"
+                                                    aria-label={`Hojas a intercalar por turno para PDF ${idx + 1}`}
+                                                />
+                                            </div>
                                         </div>
                                     ) : (
                                         <label className="flex-1 flex flex-col items-center justify-center cursor-pointer hover:bg-neutral-800/30 transition-colors">

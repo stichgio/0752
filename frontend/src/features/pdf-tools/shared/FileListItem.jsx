@@ -1,14 +1,25 @@
 import { GripVertical, X, FileText } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+const MAX_INTERLEAVE_CHUNK = 1000;
+
 /**
  * A single file row in a reorderable list.
  * @param {File} file - The file object
  * @param {number} index - Current position (0-based)
  * @param {Function} onRemove - Callback to remove this file
  * @param {Object} dragHandlers - HTML5 drag event handlers
+ * @param {number} [chunkSize] - Páginas a intercalar por turno (solo merge intercalado)
+ * @param {Function} [onChunkSizeChange] - (n: number) => void
  */
-export default function FileListItem({ file, index, onRemove, dragHandlers = {} }) {
+export default function FileListItem({
+    file,
+    index,
+    onRemove,
+    dragHandlers = {},
+    chunkSize,
+    onChunkSizeChange,
+}) {
     const sizeKB = (file.size / 1024).toFixed(1);
 
     return (
@@ -35,6 +46,28 @@ export default function FileListItem({ file, index, onRemove, dragHandlers = {} 
             <div className="flex-1 min-w-0">
                 <p className="text-base text-neutral-300 truncate font-medium">{file.name}</p>
                 <p className="text-sm text-neutral-500">{sizeKB} KB</p>
+                {onChunkSizeChange != null && chunkSize != null && (
+                    <div className="mt-2 flex flex-wrap items-center gap-2 rounded-md border border-neutral-800 bg-neutral-950/50 px-2.5 py-1.5">
+                        <span className="text-xs text-neutral-500 whitespace-nowrap">
+                            PDF {index + 1} — hojas por turno
+                        </span>
+                        <input
+                            type="number"
+                            min={1}
+                            max={MAX_INTERLEAVE_CHUNK}
+                            value={chunkSize}
+                            onChange={(e) => {
+                                let n = parseInt(e.target.value, 10);
+                                if (!Number.isFinite(n)) n = 1;
+                                n = Math.min(MAX_INTERLEAVE_CHUNK, Math.max(1, n));
+                                onChunkSizeChange(n);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-14 rounded border border-neutral-700 bg-neutral-900 px-1.5 py-0.5 text-center text-sm font-semibold text-neutral-100 focus:border-neutral-500 focus:outline-none"
+                            aria-label={`Hojas a intercalar por turno para PDF ${index + 1}`}
+                        />
+                    </div>
+                )}
             </div>
 
             {/* Remove button */}

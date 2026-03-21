@@ -40,10 +40,13 @@ async function callApi(path, formData) {
     return res;
 }
 
-export async function mergePdfsInterleaved(files, strict = false) {
+export async function mergePdfsInterleaved(files, strict = false, chunkSizes = null) {
     const fd = new FormData();
     files.forEach((f) => fd.append('files', f));
     fd.append('strict', strict);
+    if (Array.isArray(chunkSizes) && chunkSizes.length === files.length && chunkSizes.length > 0) {
+        fd.append('chunk_sizes', JSON.stringify(chunkSizes));
+    }
     const res = await callApi('/merge-pdfs', fd);
     return res.blob();
 }

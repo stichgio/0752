@@ -1,1 +1,0 @@
-Está extrictament la codificacion en UTF-8..
