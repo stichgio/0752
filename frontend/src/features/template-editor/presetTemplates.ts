@@ -11,6 +11,7 @@
  * Templates are grouped by category so the sidebar can display them in sections.
  */
 import type { CanvasDocument, TemplateElement } from './canvasTypes';
+import { normalizeTableData } from './utils/elementDefaults';
 
 function uid(prefix = 'el'): string {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 7)}`;
@@ -463,14 +464,17 @@ function makeReporteTecnico(): CanvasDocument {
         position: { x: 10, y: 49 },
         size: { width: W, height: 35 },
         style: { backgroundColor: '#ffffff', borderColor: '#cbd5e1', borderWidth: 1, fontSize: 8, zIndex: 7 },
-        tableData: {
-          headers: ['Parámetro', 'Valor', 'Parámetro', 'Valor'],
-          rows: [
-            ['Código Infraestructura', "{{ report.data.get('codigo_infraestructura', '-') }}", 'Suministro', "{{ report.data.get('suministro', '-') }}"],
-            ['Contratista', "{{ report.data.get('contratista', '-') }}", 'CS / Orden', "{{ report.data.get('cs', '-') }}"],
-            ['Fecha de Corte', "{{ report.data.get('fecha_corte', '-') }}", '', ''],
-          ],
-        },
+        tableData: normalizeTableData({
+          style: { backgroundColor: '#ffffff', borderColor: '#cbd5e1', borderWidth: 1, fontSize: 8, zIndex: 7 },
+          tableData: {
+            headers: ['Parámetro', 'Valor', 'Parámetro', 'Valor'],
+            rows: [
+              ['Código Infraestructura', "{{ report.data.get('codigo_infraestructura', '-') }}", 'Suministro', "{{ report.data.get('suministro', '-') }}"],
+              ['Contratista', "{{ report.data.get('contratista', '-') }}", 'CS / Orden', "{{ report.data.get('cs', '-') }}"],
+              ['Fecha de Corte', "{{ report.data.get('fecha_corte', '-') }}", '', ''],
+            ],
+          } as unknown as NonNullable<TemplateElement['tableData']>,
+        }),
       }),
       // Section 2: Observaciones
       el({
@@ -820,16 +824,19 @@ function makeVolanteo(): CanvasDocument {
         position: { x: 10, y: 49 },
         size: { width: W, height: 60 },
         style: { backgroundColor: '#fff', borderColor: '#cbd5e1', borderWidth: 1, fontSize: 8, zIndex: 7 },
-        tableData: {
-          headers: ['N°', 'Dirección', 'Nombre Usuario', 'Estado', 'Observación'],
-          rows: [
-            ['1', '', '', 'Visitado', ''],
-            ['2', '', '', 'Ausente', ''],
-            ['3', '', '', 'Visitado', ''],
-            ['4', '', '', '', ''],
-            ['5', '', '', '', ''],
-          ],
-        },
+        tableData: normalizeTableData({
+          style: { backgroundColor: '#fff', borderColor: '#cbd5e1', borderWidth: 1, fontSize: 8, zIndex: 7 },
+          tableData: {
+            headers: ['N°', 'Dirección', 'Nombre Usuario', 'Estado', 'Observación'],
+            rows: [
+              ['1', '', '', 'Visitado', ''],
+              ['2', '', '', 'Ausente', ''],
+              ['3', '', '', 'Visitado', ''],
+              ['4', '', '', '', ''],
+              ['5', '', '', '', ''],
+            ],
+          } as unknown as NonNullable<TemplateElement['tableData']>,
+        }),
       }),
       // Section fotos
       el({

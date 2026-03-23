@@ -24,6 +24,7 @@ import type {
   CanvasVariant,
   DocumentTheme,
   TemplateElement,
+  TemplateValidationIssue,
   VariableDefinition,
 } from '../canvasTypes';
 
@@ -82,6 +83,9 @@ interface SidebarRootProps {
   onApplyVariant: (variantId?: string | null) => void;
   onUpdateVariant: (variantId: string, updates: Partial<CanvasVariant>) => void;
   onDeleteVariant: (variantId: string) => void;
+  validationIssues?: TemplateValidationIssue[];
+  dataPreview?: Record<string, unknown>;
+  onInsertBoundField?: (fieldKey: string, label?: string) => void;
 }
 
 type TabId = 'elements' | 'assets' | 'layers' | 'document' | 'templates' | 'published';
@@ -128,35 +132,45 @@ export function SidebarRoot(props: SidebarRootProps) {
 
   return (
     <div
-      className="relative flex h-full flex-none border-r border-neutral-200 bg-white transition-[width] duration-200 ease-out"
+      className="relative flex h-full flex-none border-r border-neutral-200/70 bg-[#f9f8f7] transition-[width] duration-200 ease-out"
       style={{ width: isCollapsed ? SIDEBAR_COLLAPSED_WIDTH : sidebarWidth }}
     >
-      <div className={`w-12 flex flex-col items-center gap-1 bg-neutral-50/80 py-3 ${isCollapsed ? '' : 'border-r border-neutral-100'}`}>
+      {/* Tab rail */}
+      <div className={`w-12 flex flex-col items-center gap-0.5 py-2.5 ${isCollapsed ? '' : 'border-r border-neutral-200/50'}`}>
         {TABS.map((tab) => (
           <button
             key={tab.id}
             onClick={() => handleTabClick(tab.id)}
-            className={`flex h-10 w-10 flex-col items-center justify-center rounded-lg transition-all ${
+            className={`relative flex h-10 w-10 flex-col items-center justify-center rounded-xl transition-all ${
               activeTab === tab.id
-                ? 'bg-violet-100 text-violet-700 shadow-sm'
-                : 'text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600'
+                ? 'bg-white text-violet-600 shadow-[0_1px_3px_rgba(0,0,0,0.12)]'
+                : 'text-neutral-400 hover:bg-white/60 hover:text-neutral-600'
             }`}
             title={tab.label}
           >
+            {activeTab === tab.id && (
+              <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-r-full bg-violet-500" />
+            )}
             {tab.icon}
           </button>
         ))}
       </div>
 
       {!isCollapsed && (
-        <div className="flex h-full min-w-0 flex-1 flex-col overflow-hidden">
-          <div className="border-b border-neutral-100 px-3 py-2.5">
-            <h2 className="text-sm font-semibold text-neutral-700">
+        <div className="flex h-full min-w-0 flex-1 flex-col overflow-hidden bg-white border-r-0">
+          <div className="flex-none border-b border-neutral-100 px-3 py-2 flex items-center gap-2 bg-white/80 backdrop-blur-sm">
+            <h2 className="text-xs font-semibold text-neutral-600 tracking-wide uppercase">
               {TABS.find((tab) => tab.id === activeTab)?.label}
             </h2>
           </div>
 
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          <div
+            className="min-h-0 flex-1 overflow-y-auto"
+            style={{
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#d4d4d8 transparent',
+            }}
+          >
             {activeTab === 'elements' && (
               <ElementsPalette
                 onAddElement={(type, presetId) => props.onAddElement(type, undefined, presetId)}
@@ -213,6 +227,9 @@ export function SidebarRoot(props: SidebarRootProps) {
                 onApplyVariant={props.onApplyVariant}
                 onUpdateVariant={props.onUpdateVariant}
                 onDeleteVariant={props.onDeleteVariant}
+                validationIssues={props.validationIssues}
+                dataPreview={props.dataPreview}
+                onInsertBoundField={props.onInsertBoundField}
               />
             )}
             {activeTab === 'templates' && (
@@ -238,11 +255,11 @@ export function SidebarRoot(props: SidebarRootProps) {
       <button
         type="button"
         onClick={() => setIsCollapsed((prev) => !prev)}
-        className="absolute top-1/2 -right-3 z-10 flex h-12 w-6 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-500 shadow-sm transition-colors hover:border-violet-300 hover:text-violet-600"
+        className="absolute top-1/2 -right-2.5 z-10 flex h-10 w-5 -translate-y-1/2 items-center justify-center rounded-r-full border border-l-0 border-neutral-200/80 bg-white/90 backdrop-blur-sm text-neutral-400 shadow-sm transition-all hover:text-violet-600 hover:border-violet-200 hover:shadow-md"
         title={isCollapsed ? 'Mostrar panel (Ctrl+/)' : 'Ocultar panel (Ctrl+/)'}
         aria-label={isCollapsed ? 'Mostrar panel lateral' : 'Ocultar panel lateral'}
       >
-        {isCollapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+        {isCollapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
       </button>
     </div>
   );

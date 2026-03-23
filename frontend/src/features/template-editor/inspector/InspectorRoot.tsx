@@ -118,6 +118,7 @@ export function InspectorRoot({
         width={width}
         pageSettings={pageSettings}
         onChange={onPageSettingsChange}
+        className="bg-[#f9f8f7]"
       />
     );
   }
@@ -159,55 +160,63 @@ export function InspectorRoot({
   };
 
   return (
-    <div className="h-full flex-none border-l border-neutral-200 bg-white flex flex-col overflow-y-auto" style={{ width }}>
-      <div className="px-3 py-2.5 border-b border-neutral-100 flex items-center gap-2">
-        <Sliders size={14} className="text-neutral-400" />
-        <h2 className="text-sm font-semibold text-neutral-700">Inspector</h2>
+    <div className="h-full flex-none border-l border-neutral-200/70 bg-[#f9f8f7] flex flex-col overflow-y-auto" style={{ width, scrollbarWidth: 'thin', scrollbarColor: '#d4d4d8 transparent' }}>
+      {/* Sticky header */}
+      <div className="sticky top-0 z-10 px-3 py-2.5 border-b border-neutral-100 flex items-center gap-2 bg-white/80 backdrop-blur-sm">
+        <Sliders size={13} className="text-violet-400 flex-shrink-0" />
+        <h2 className="text-xs font-bold text-neutral-600 tracking-wide uppercase flex-1">Inspector</h2>
         {selectedIds.length > 1 && (
-          <span className="ml-auto text-xs bg-violet-100 text-violet-600 px-1.5 py-0.5 rounded font-medium">
-            {selectedIds.length}
+          <span className="text-[10px] bg-violet-100 text-violet-600 px-2 py-0.5 rounded-full font-semibold">
+            {selectedIds.length} sel.
           </span>
         )}
       </div>
 
-      <div className="px-3 py-2 border-b border-neutral-100">
-        <div className="flex items-center gap-2">
-          <span className="text-xs font-mono bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded">{primaryElement.type}</span>
-          <span className="text-xs text-neutral-600 truncate flex-1" title={primaryElement.name}>{primaryElement.name}</span>
+      {/* Element identity card */}
+      <div className="px-3 py-2.5 border-b border-neutral-100 bg-white">
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="text-[10px] font-bold font-mono bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded-md flex-shrink-0 uppercase tracking-wide">
+            {primaryElement.type}
+          </span>
+          <span className="text-xs text-neutral-600 truncate flex-1" title={primaryElement.name}>
+            {primaryElement.name}
+          </span>
           {primaryElement.componentId && (
-            <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-1 text-[10px] font-semibold text-blue-700">
-              <Unplug size={10} />
-              componente
+            <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-semibold text-blue-600 flex-shrink-0">
+              <Unplug size={9} />
+              comp.
             </span>
           )}
         </div>
       </div>
 
-      <div>
+      {/* Transform accordion */}
+      <div className="border-b border-neutral-100">
         <button
           onClick={() => setTransformOpen((o) => !o)}
-          className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide hover:bg-gray-50 border-b border-neutral-100"
+          className="w-full flex items-center justify-between px-3 py-2 text-[9px] font-bold text-neutral-400 uppercase tracking-widest hover:bg-neutral-50/80 transition-colors"
         >
           <span>Posición y tamaño</span>
-          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${transformOpen ? '' : '-rotate-90'}`} />
+          <ChevronDown className={`w-3 h-3 transition-transform text-neutral-300 ${transformOpen ? '' : '-rotate-90'}`} />
         </button>
-        {transformOpen && <TransformPanel element={primaryElement} onUpdate={onUpdateElement} />}
+        {transformOpen && <div className="bg-white"><TransformPanel element={primaryElement} onUpdate={onUpdateElement} /></div>}
       </div>
 
-      <div>
+      {/* Style accordion */}
+      <div className="border-b border-neutral-100">
         <button
           onClick={() => setStyleOpen((o) => !o)}
-          className="w-full flex items-center justify-between px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide hover:bg-gray-50 border-b border-neutral-100"
+          className="w-full flex items-center justify-between px-3 py-2 text-[9px] font-bold text-neutral-400 uppercase tracking-widest hover:bg-neutral-50/80 transition-colors"
         >
           <span>Estilo</span>
-          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${styleOpen ? '' : '-rotate-90'}`} />
+          <ChevronDown className={`w-3 h-3 transition-transform text-neutral-300 ${styleOpen ? '' : '-rotate-90'}`} />
         </button>
-        {styleOpen && <StylePanel element={primaryElement} onUpdate={onUpdateElement} theme={theme} />}
+        {styleOpen && <div className="bg-white"><StylePanel element={primaryElement} onUpdate={onUpdateElement} theme={theme} /></div>}
       </div>
 
       {(primaryElement.type === 'variable' || primaryElement.type === 'logo' || primaryElement.type === 'image' || primaryElement.type === 'qr') && (
-        <div className="px-3 py-3 border-b border-neutral-100 space-y-2">
-          <label className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 block">Binding</label>
+        <div className="px-3 py-3 border-b border-neutral-100 space-y-2 bg-white">
+          <label className="text-[9px] font-bold uppercase tracking-widest text-neutral-400 block">Binding</label>
 
           {(primaryElement.type === 'variable' || primaryElement.type === 'qr') && (
             <>
@@ -314,8 +323,8 @@ export function InspectorRoot({
       )}
 
       {isPhotoGrid && (
-        <div className="px-3 py-3 border-b border-neutral-100 space-y-2.5">
-          <label className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 block">Configuracion de Fotos</label>
+        <div className="px-3 py-3 border-b border-neutral-100 space-y-2.5 bg-white">
+          <label className="text-[9px] font-bold uppercase tracking-widest text-neutral-400 block">Configuración de Fotos</label>
           <div>
             <span className="text-[10px] font-medium text-neutral-400 block mb-1">Cantidad</span>
             <select

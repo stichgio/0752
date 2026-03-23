@@ -87,6 +87,21 @@ def test_template_editor_crud_validate_preview_publish_and_rollback(client, monk
     assert rollback_res.json()["status"] == "published"
 
 
+def test_stateless_preview_endpoint_renders_unsaved_template(client, monkeypatch):
+    monkeypatch.setenv("FEATURE_TEMPLATE_EDITOR", "true")
+
+    payload = _template_payload()["templateJson"]
+    res = client.post(
+        "/api/template-editor/preview",
+        json={"templateJson": payload, "sampleData": {"cs": "ATE", "contratista": "SEDAPAL"}},
+    )
+
+    assert res.status_code == 200
+    body = res.json()
+    assert body["templateId"] is None
+    assert "ATE" in body["previewHtml"]
+
+
 def test_legacy_template_endpoints_snapshot_baseline(client):
     list_res = client.get("/api/templates")
     assert list_res.status_code == 200
@@ -216,6 +231,35 @@ def test_saving_published_template_moves_it_back_to_draft_until_republished(clie
     published_after = client.get("/api/template-editor/published")
     assert published_after.status_code == 200
     assert all(t["id"] != template_id for t in published_after.json().get("templates", []))
+
+
+def test_versions_endpoints_expose_published_metadata_and_preserve_feature_flag(client, monkeypatch):
+    monkeypatch.setenv("FEATURE_TEMPLATE_EDITOR", "true")
+
+    create_res = client.post("/api/template-editor/templates", json=_template_payload(name="versions-feature-flag-template"))
+    assert create_res.status_code == 200
+    template_id = create_res.json()["id"]
+    assert create_res.json()["featureFlag"] is True
+
+    update_payload = _template_payload(name="versions-feature-flag-template")
+    update_payload["templateJson"]["sections"][0]["blocks"][0]["content"] = "<p>{{cs|upper}}</p>"
+    update_res = client.put(f"/api/template-editor/templates/{template_id}", json=update_payload)
+    assert update_res.status_code == 200
+    assert update_res.json()["template"]["featureFlag"] is True
+
+    publish_res = client.post(f"/api/template-editor/templates/{template_id}/publish", json={"author": "qa"})
+    assert publish_res.status_code == 200
+
+    versions_res = client.get(f"/api/template-editor/templates/{template_id}/versions")
+    assert versions_res.status_code == 200
+    versions = versions_res.json()["versions"]
+    assert versions
+    assert any(version["diffSummary"].get("publishedAt") for version in versions if version["version"] == 1)
+
+    version_res = client.get(f"/api/template-editor/templates/{template_id}/versions/1")
+    assert version_res.status_code == 200
+    assert version_res.json()["version"]["version"] == 1
+    assert version_res.json()["version"]["diffSummary"].get("publishedAt")
 
 
 def test_generate_pdf_falls_back_to_legacy_template_resolution_when_not_in_db(client):

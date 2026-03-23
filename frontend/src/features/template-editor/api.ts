@@ -38,7 +38,7 @@ interface TemplateJsonPayload {
     editable_placeholder_by_block: Record<string, string[]>;
   };
   dataSourceDefinition?: Record<string, unknown>;
-  assetLibrary?: Array<Record<string, unknown>>;
+  assetLibrary?: CanvasDocument['assetLibrary'];
 }
 
 interface UpsertDraftInput {
@@ -252,7 +252,7 @@ export function canvasDocumentToTemplateJson(
     },
     variableBindings,
     dataSourceDefinition: normalizedDoc.dataSourceDefinition || {},
-    assetLibrary: (normalizedDoc.assetLibrary || []) as Array<Record<string, unknown>>,
+    assetLibrary: normalizedDoc.assetLibrary || [],
     protectionRules: {
       required_block_ids: [],
       editable_placeholder_by_block: {},
@@ -491,7 +491,7 @@ export const templateEditorApi = {
           metadata?: Record<string, unknown>;
           variableBindings?: Record<string, unknown>;
           dataSourceDefinition?: Record<string, unknown>;
-          assetLibrary?: Array<Record<string, unknown>>;
+          assetLibrary?: CanvasDocument['assetLibrary'];
         };
       }>;
     }>('/template-editor/templates/' + encodeURIComponent(id));
@@ -520,7 +520,10 @@ export const templateEditorApi = {
         pages,
         variables: (metadata.variables as CanvasDocument['variables']) || [],
         theme: (metadata.theme as CanvasDocument['theme']) || { textStyles: [], colorTokens: [] },
-        assetLibrary: (templateJson.assetLibrary as CanvasDocument['assetLibrary']) || (metadata.assetLibrary as CanvasDocument['assetLibrary']) || [],
+        assetLibrary:
+          templateJson.assetLibrary ||
+          (metadata.assetLibrary as unknown as CanvasDocument['assetLibrary']) ||
+          [],
         components: (metadata.components as CanvasDocument['components']) || [],
         variants: (metadata.variants as CanvasDocument['variants']) || [],
         brandKits: (metadata.brandKits as CanvasDocument['brandKits']) || [],

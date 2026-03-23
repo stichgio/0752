@@ -58,10 +58,11 @@ export function LayersPanel({
     onReorder,
     onRenameElement,
 }: LayersPanelProps) {
-    void onReorder;
     const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>({});
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editingValue, setEditingValue] = useState('');
+    const [dragIndex, setDragIndex] = useState<number | null>(null);
+    const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
     const sortedElements = useMemo(() => {
         return [...elements].sort((a, b) => (b.style.zIndex || 0) - (a.style.zIndex || 0));
@@ -106,6 +107,8 @@ export function LayersPanel({
                 const isGroup = el.type === 'group';
                 const isCollapsed = collapsedGroups[el.id] ?? false;
                 const isEditing = editingId === el.id;
+                const isDragSource = dragIndex === sortedIndex;
+                const isDragHover = hoverIndex === sortedIndex;
                 const groupChildren = isGroup
                     ? [...(el.groupChildren || [])].sort((a, b) => (b.style.zIndex || 0) - (a.style.zIndex || 0))
                     : [];
@@ -118,11 +121,43 @@ export function LayersPanel({
                             className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs cursor-pointer transition-colors duration-100 ${isSelected
                                 ? 'bg-violet-50 ring-1 ring-violet-200 text-violet-800'
                                 : 'hover:bg-neutral-50 text-neutral-600'
-                                } ${isHidden ? 'opacity-40' : ''}`}
+                                } ${isHidden ? 'opacity-40' : ''} ${isDragSource ? 'opacity-70 shadow-sm' : ''} ${isDragHover ? 'ring-1 ring-violet-300' : ''}`}
+                            draggable={!isEditing}
                             onClick={(e) => {
                                 if (isEditing) return;
                                 e.stopPropagation();
                                 onSelect(el.id, e.shiftKey || e.ctrlKey);
+                            }}
+                            onDragStart={(e) => {
+                                if (isEditing) {
+                                    e.preventDefault();
+                                    return;
+                                }
+                                setDragIndex(sortedIndex);
+                                setHoverIndex(sortedIndex);
+                                e.dataTransfer.effectAllowed = 'move';
+                                e.dataTransfer.setData('text/plain', el.id);
+                            }}
+                            onDragOver={(e) => {
+                                if (dragIndex === null) return;
+                                e.preventDefault();
+                                e.dataTransfer.dropEffect = 'move';
+                                if (hoverIndex !== sortedIndex) {
+                                    setHoverIndex(sortedIndex);
+                                }
+                            }}
+                            onDrop={(e) => {
+                                e.preventDefault();
+                                if (dragIndex === null) return;
+                                if (dragIndex !== sortedIndex) {
+                                    onReorder(dragIndex, sortedIndex);
+                                }
+                                setDragIndex(null);
+                                setHoverIndex(null);
+                            }}
+                            onDragEnd={() => {
+                                setDragIndex(null);
+                                setHoverIndex(null);
                             }}
                         >
                             <GripVertical size={12} className="text-neutral-300 cursor-grab flex-shrink-0" />

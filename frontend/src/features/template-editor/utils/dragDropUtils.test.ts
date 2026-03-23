@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { resolveDropPosition, shouldActivateDrag } from './dragDropUtils';
+import { clampToPageBounds, isPointInsideRect, resolveDropPosition, shouldActivateDrag } from './dragDropUtils';
 
 describe('dragDropUtils', () => {
   it('waits for a minimum pointer delta before activating drag', () => {
@@ -28,5 +28,22 @@ describe('dragDropUtils', () => {
     });
 
     expect(position).toEqual({ x: 80, y: 110 });
+  });
+
+  it('clamps raw positions inside page bounds before snap', () => {
+    const position = clampToPageBounds(
+      { x: 220, y: -10 },
+      { width: 210, height: 297 },
+      { width: 60, height: 20 },
+      'top-left',
+    );
+
+    expect(position).toEqual({ x: 150, y: 0 });
+  });
+
+  it('detects whether pointer is inside page rect for drop validity', () => {
+    const pageRect = { left: 10, top: 20, right: 110, bottom: 220 };
+    expect(isPointInsideRect(60, 80, pageRect)).toBe(true);
+    expect(isPointInsideRect(5, 80, pageRect)).toBe(false);
   });
 });

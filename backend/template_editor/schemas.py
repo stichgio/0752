@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 
 from pydantic import BaseModel, Field
 
-from .models import TemplateEditorRecord, TemplateJson, UserRole, ValidationResult
+from .models import TemplateEditorRecord, TemplateJson, TemplateVersion, UserRole, ValidationResult
 
 
 class CreateTemplatePayload(BaseModel):
@@ -30,6 +30,13 @@ class PreviewTemplatePayload(BaseModel):
     logo_right: Optional[str] = None  # URL or base64 data URI
 
 
+class PreviewTemplateJsonPayload(BaseModel):
+    templateJson: TemplateJson
+    sampleData: Dict[str, Any] = Field(default_factory=dict)
+    logo_left: Optional[str] = None
+    logo_right: Optional[str] = None
+
+
 class PreviewMatrixSamplePayload(BaseModel):
     id: str
     sampleData: Dict[str, Any] = Field(default_factory=dict)
@@ -51,3 +58,18 @@ class RollbackTemplatePayload(BaseModel):
 class UpdateTemplateResponse(BaseModel):
     template: TemplateEditorRecord
     validation: ValidationResult
+
+
+class TemplatePreviewResponse(BaseModel):
+    previewHtml: str
+    templateId: Optional[str] = None
+
+
+class TemplateVersionsResponse(BaseModel):
+    templateId: str
+    versions: list[TemplateVersion] = Field(default_factory=list)
+
+
+class TemplateVersionResponse(BaseModel):
+    templateId: str
+    version: TemplateVersion

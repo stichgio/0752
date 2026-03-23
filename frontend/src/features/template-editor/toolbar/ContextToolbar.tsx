@@ -31,6 +31,7 @@ interface ContextToolbarProps {
   canUngroup: boolean;
   onGroup: () => void;
   onUngroup: () => void;
+  canDistribute?: boolean;
 }
 
 export function ContextToolbar({
@@ -48,6 +49,7 @@ export function ContextToolbar({
   canUngroup,
   onGroup,
   onUngroup,
+  canDistribute,
 }: ContextToolbarProps) {
   if (selectedCount === 0) return null;
 
@@ -89,7 +91,7 @@ export function ContextToolbar({
       <ToolBtn icon={<AlignCenterVertical size={14} />} onClick={() => onAlign('middle')} title="Centro vertical" />
       <ToolBtn icon={<AlignEndVertical size={14} />} onClick={() => onAlign('bottom')} title="Abajo" />
 
-      {selectedCount >= 3 && (
+      {(canDistribute ?? selectedCount >= 3) && (
         <>
           <Divider />
           <ToolBtn icon={<Equal size={14} />} onClick={() => onDistribute('horizontal')} title="Distribuir horizontal" />

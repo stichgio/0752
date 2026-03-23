@@ -45,7 +45,7 @@ export function StatusBar({
     const escapeRef = useRef(false);
 
     return (
-        <div className="h-8 bg-white/90 backdrop-blur-sm border-t border-neutral-200 flex items-center justify-between px-3 text-[11px] text-neutral-500 select-none shrink-0 gap-3">
+        <div className="h-7 bg-white/80 backdrop-blur-sm border-t border-neutral-100 flex items-center justify-between px-3 text-[10px] text-neutral-400 select-none shrink-0 gap-3 shadow-[0_-1px_4px_rgba(0,0,0,0.03)]">
             <div className="flex items-center gap-1.5 min-w-0">
                 <button
                     className="p-0.5 hover:text-neutral-800 rounded transition-colors"

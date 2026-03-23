@@ -237,6 +237,16 @@ export interface AssetRecord {
   createdAt?: string;
   updatedAt?: string;
   missing?: boolean;
+  // Metadata de proveedor externo (ej: Pexels)
+  provider?: 'pexels';
+  providerAssetId?: string;
+  previewUrl?: string;
+  thumbnailUrl?: string;
+  sourcePageUrl?: string;
+  photographer?: string;
+  photographerUrl?: string;
+  attributionText?: string;
+  avgColor?: string;
 }
 
 export type AssetLibraryItem = AssetRecord;

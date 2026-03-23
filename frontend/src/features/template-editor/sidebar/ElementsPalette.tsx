@@ -156,35 +156,37 @@ export function ElementsPalette({ onAddElement, onAddBlock }: ElementsPalettePro
     };
 
     return (
-        <div className="p-3 space-y-5">
+        <div className="py-3 space-y-4">
             {grouped.map((group) => (
                 <div key={group.key}>
-                    <div className="flex items-center gap-2 mb-2 px-1">
-                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: group.color }} />
-                        <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">
+                    {/* Group header */}
+                    <div className="flex items-center gap-2 mb-2 px-3">
+                        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: group.color }} />
+                        <span className="text-[9px] font-bold uppercase tracking-widest text-neutral-400">
                             {group.label}
                         </span>
+                        <div className="flex-1 h-px bg-neutral-100 ml-1" />
                     </div>
-                    <div className="grid grid-cols-3 gap-1.5">
+                    <div className="grid grid-cols-3 gap-1.5 px-2">
                         {group.tools.map((tool) => (
                             <div
                                 key={tool.key}
                                 draggable
                                 onDragStart={(e) => handleDragStart(e, tool)}
                                 onClick={() => onAddElement(tool.type, tool.presetId)}
-                                className="flex flex-col items-center justify-center p-2 rounded-lg border border-transparent hover:border-violet-300 hover:bg-violet-50 cursor-grab active:cursor-grabbing transition-all group/item"
-                                title={`Arrastra para anadir ${tool.label}. ${DRAG_HINT}`}
+                                className="flex flex-col items-center justify-center gap-1.5 py-2.5 px-1 rounded-xl border border-transparent hover:border-violet-200 hover:bg-violet-50/70 hover:shadow-sm cursor-grab active:cursor-grabbing transition-all group/item select-none"
+                                title={`Arrastra para añadir ${tool.label}. ${DRAG_HINT}`}
                             >
                                 <div
-                                    className="w-8 h-8 rounded-md flex items-center justify-center mb-1 transition-colors"
+                                    className="w-8 h-8 rounded-lg flex items-center justify-center transition-transform group-hover/item:scale-110"
                                     style={{
-                                        backgroundColor: `${group.color}10`,
+                                        backgroundColor: `${group.color}14`,
                                         color: group.color,
                                     }}
                                 >
-                                    {ICON_MAP[tool.icon] || <Box size={18} />}
+                                    {ICON_MAP[tool.icon] || <Box size={16} />}
                                 </div>
-                                <span className="text-[10px] font-medium text-neutral-500 group-hover/item:text-neutral-700 text-center leading-tight">
+                                <span className="text-[9px] font-medium text-neutral-500 group-hover/item:text-violet-700 text-center leading-tight">
                                     {tool.label}
                                 </span>
                             </div>
@@ -193,48 +195,50 @@ export function ElementsPalette({ onAddElement, onAddBlock }: ElementsPalettePro
                 </div>
             ))}
 
-            <div>
+            {/* Preset blocks section */}
+            <div className="pb-1">
                 <button
                     type="button"
                     onClick={() => setBlocksExpanded((prev) => !prev)}
-                    className="flex items-center gap-2 mb-2 px-1 w-full text-left group/header"
+                    className="flex items-center gap-2 mb-2 px-3 w-full text-left group/header hover:bg-transparent"
                 >
-                    <Blocks size={10} style={{ color: BLOCK_SECTION_COLOR }} />
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 flex-1">
-                        Bloques Predisenados
+                    <Blocks size={9} style={{ color: BLOCK_SECTION_COLOR }} />
+                    <span className="text-[9px] font-bold uppercase tracking-widest text-neutral-400 flex-1">
+                        Bloques Prediseñados
                     </span>
+                    <div className="flex-1 h-px bg-neutral-100 mx-1" />
                     {blocksExpanded ? (
-                        <ChevronDown size={12} className="text-neutral-400" />
+                        <ChevronDown size={11} className="text-neutral-300 group-hover/header:text-neutral-500 flex-shrink-0" />
                     ) : (
-                        <ChevronRight size={12} className="text-neutral-400" />
+                        <ChevronRight size={11} className="text-neutral-300 group-hover/header:text-neutral-500 flex-shrink-0" />
                     )}
                 </button>
 
                 {blocksExpanded && (
-                    <div className="space-y-1.5">
+                    <div className="space-y-1 px-2">
                         {PRESET_BLOCKS.map((block) => (
                             <div
                                 key={block.id}
                                 draggable
                                 onDragStart={(e) => handleBlockDragStart(e, block)}
                                 onClick={() => onAddBlock?.(block.id)}
-                                className="flex items-center gap-3 p-2.5 rounded-lg border border-transparent hover:border-indigo-300 hover:bg-indigo-50 cursor-grab active:cursor-grabbing transition-all group/block"
-                                title={`Arrastra para anadir ${block.label}. ${DRAG_HINT}`}
+                                className="flex items-center gap-2.5 p-2 rounded-xl border border-transparent hover:border-violet-200 hover:bg-violet-50/70 hover:shadow-sm cursor-grab active:cursor-grabbing transition-all group/block select-none"
+                                title={`Arrastra para añadir ${block.label}. ${DRAG_HINT}`}
                             >
                                 <div
-                                    className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors"
+                                    className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform group-hover/block:scale-110"
                                     style={{
                                         backgroundColor: `${BLOCK_SECTION_COLOR}12`,
                                         color: BLOCK_SECTION_COLOR,
                                     }}
                                 >
-                                    {ICON_MAP[block.icon] || <Box size={18} />}
+                                    {ICON_MAP[block.icon] || <Box size={16} />}
                                 </div>
-                                <div className="min-w-0">
-                                    <div className="text-[11px] font-semibold text-neutral-600 group-hover/block:text-neutral-800 leading-tight">
+                                <div className="min-w-0 flex-1">
+                                    <div className="text-[10px] font-semibold text-neutral-600 group-hover/block:text-violet-700 leading-tight">
                                         {block.label}
                                     </div>
-                                    <div className="text-[9px] text-neutral-400 group-hover/block:text-neutral-500 leading-tight mt-0.5 truncate">
+                                    <div className="text-[9px] text-neutral-400 leading-tight mt-0.5 truncate">
                                         {block.description}
                                     </div>
                                 </div>
@@ -243,6 +247,11 @@ export function ElementsPalette({ onAddElement, onAddBlock }: ElementsPalettePro
                     </div>
                 )}
             </div>
+
+            {/* Drag hint */}
+            <p className="px-3 pb-2 text-[9px] text-neutral-300 leading-snug">
+                Haz clic para añadir · arrastra para posicionar · Shift centra
+            </p>
         </div>
     );
 }

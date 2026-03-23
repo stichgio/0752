@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     template_storage_bucket: str = Field(default="template-assets")
     feature_template_editor: bool = Field(default=False)
 
+    # ── Pexels integration ────────────────────────────────────────────────────
+    pexels_api_key: str = Field(default="")
+
     # ── GTK Runtime (Windows / WeasyPrint) ────────────────────────────────────
     gtk_runtime_bin: str = Field(default="")
 

@@ -126,6 +126,19 @@ export function buildDocumentSnapLines(
   };
 }
 
+function isSnapLineExcluded(
+  elementId: string,
+  excludedIds: ReadonlySet<string> | readonly string[] | string,
+): boolean {
+  if (typeof excludedIds === 'string') {
+    return excludedIds === elementId;
+  }
+  if (Array.isArray(excludedIds)) {
+    return excludedIds.includes(elementId);
+  }
+  return (excludedIds as ReadonlySet<string>).has(elementId);
+}
+
 export function collectSnapLines(
   source: DocumentSnapLines,
   excludedIds?: ReadonlySet<string> | readonly string[] | string,
@@ -134,14 +147,7 @@ export function collectSnapLines(
   const y = source.pageY.slice();
 
   for (const entry of source.elementLines) {
-    if (
-      excludedIds &&
-      (
-        (typeof excludedIds === 'string' && excludedIds === entry.id) ||
-        (Array.isArray(excludedIds) && excludedIds.includes(entry.id)) ||
-        (!Array.isArray(excludedIds) && typeof excludedIds !== 'string' && excludedIds.has(entry.id))
-      )
-    ) {
+    if (excludedIds && isSnapLineExcluded(entry.id, excludedIds)) {
       continue;
     }
     x.push(entry.x[0], entry.x[1], entry.x[2]);

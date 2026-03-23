@@ -1,18 +1,23 @@
 # -*- coding: utf-8 -*-
 import asyncio
-import html
 import os
-import re
 from typing import Any, Dict
 
 from fastapi import APIRouter, HTTPException, Request
 
+from config import settings
+
+from .render_service import compile_and_render_template_json, render_compiled_html
 from .schemas import (
     CreateTemplatePayload,
     PreviewMatrixPayload,
+    PreviewTemplateJsonPayload,
     PreviewTemplatePayload,
     PublishTemplatePayload,
     RollbackTemplatePayload,
+    TemplatePreviewResponse,
+    TemplateVersionResponse,
+    TemplateVersionsResponse,
     UpdateTemplatePayload,
     UpdateTemplateResponse,
     ValidateTemplatePayload,
@@ -24,6 +29,8 @@ from .service import (
     get_all_published_templates,
     get_preview_html,
     get_template,
+    get_template_version,
+    get_template_versions,
     get_variable_catalog,
     publish_template,
     rate_limiter,
@@ -32,7 +39,6 @@ from .service import (
     update_template,
 )
 from .supabase_client import SupabaseNotConfiguredError, SupabaseOperationError
-from config import settings  
 
 router = APIRouter(prefix="/api/template-editor", tags=["template-editor"])
 
@@ -147,6 +153,35 @@ def _latest_template_json_payload(record: Any) -> Dict[str, Any]:
     return {}
 
 
+@router.get(
+    "/templates/{template_id}/versions",
+    response_model=TemplateVersionsResponse,
+    summary="Listar versiones de una plantilla",
+)
+async def list_template_versions_endpoint(template_id: str):
+    _ensure_feature_enabled()
+    record = get_template(template_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="Plantilla no encontrada")
+    return TemplateVersionsResponse(templateId=template_id, versions=get_template_versions(template_id))
+
+
+@router.get(
+    "/templates/{template_id}/versions/{version_number}",
+    response_model=TemplateVersionResponse,
+    summary="Obtener una versión específica de una plantilla",
+)
+async def get_template_version_endpoint(template_id: str, version_number: int):
+    _ensure_feature_enabled()
+    record = get_template(template_id)
+    if not record:
+        raise HTTPException(status_code=404, detail="Plantilla no encontrada")
+    version = get_template_version(template_id, version_number)
+    if not version:
+        raise HTTPException(status_code=404, detail="Versión de plantilla no encontrada")
+    return TemplateVersionResponse(templateId=template_id, version=version)
+
+
 @router.put("/templates/{template_id}", response_model=UpdateTemplateResponse)
 async def update_template_endpoint(template_id: str, payload: UpdateTemplatePayload):
     _ensure_feature_enabled()
@@ -171,68 +206,39 @@ async def validate_template_endpoint(template_id: str, payload: ValidateTemplate
     return _model_dump(result)
 
 
-def _render_preview_html(compiled_html: str, sample_data: Dict[str, Any]) -> str:
-    """Regex-only fallback for simple {{ var }} substitution."""
-    rendered = compiled_html
-    for key, value in sample_data.items():
-        pattern = re.compile(r"{{\s*" + re.escape(str(key)) + r"(?:\|[a-zA-Z_][a-zA-Z0-9_]*)?\s*}}")
-        rendered = pattern.sub(html.escape(str(value), quote=True), rendered)
-    return rendered
+@router.post(
+    "/preview",
+    response_model=TemplatePreviewResponse,
+    summary="Previsualizar una plantilla sin guardarla",
+)
+async def preview_template_json_endpoint(payload: PreviewTemplateJsonPayload, request: Request):
+    _ensure_feature_enabled()
+    if not rate_limiter.check(f"preview-template-json:{request.client.host if request.client else 'local'}"):
+        raise HTTPException(status_code=429, detail="Límite de tasa de vista previa excedido")
 
-
-def _render_compiled_html(
-    compiled_html: str,
-    sample_data: Dict[str, Any],
-    logo_left: str = "",
-    logo_right: str = "",
-) -> str:
-    """Render compiled Jinja2 HTML with proper variable context.
-
-    Uses Jinja2 Template rendering to handle ``{% if logo_left %}`` conditional
-    blocks and ``{{ variable }}`` expressions.  Falls back to regex substitution
-    if Jinja2 rendering fails.
-    """
-    # Build a report context matching the PDF pipeline structure
-    report_entry: Dict[str, Any] = {
-        "data": sample_data,
-        "images": [],
-        "layout_mode": "2x2",
-        "img_count": 0,
-    }
-
-    context: Dict[str, Any] = {
-        # Top-level variables for {{ var_name }} substitution
-        **sample_data,
-        # Report list for {% for report in reports %}
-        "reports": [report_entry],
-        "report": report_entry,
-        # Legacy single-report variables
-        "data": sample_data,
-        "images": [],
-        "layout_mode": "2x2",
-        "img_count": 0,
-        "title": sample_data.get("title", ""),
-        # Logos
-        "logo_left": logo_left,
-        "logo_right": logo_right,
-    }
+    async def _build_preview() -> str:
+        return compile_and_render_template_json(
+            payload.templateJson,
+            payload.sampleData,
+            logo_left=payload.logo_left or "",
+            logo_right=payload.logo_right or "",
+        )
 
     try:
-        from jinja2.sandbox import SandboxedEnvironment
+        preview_html = await asyncio.wait_for(_build_preview(), timeout=8.0)
+    except asyncio.TimeoutError:
+        raise HTTPException(status_code=504, detail="Tiempo de espera agotado en generación de vista previa")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error en generación de vista previa: {exc}")
 
-        template = SandboxedEnvironment(autoescape=True).from_string(compiled_html)
-        return template.render(**context)
-    except Exception:
-        # Fallback to regex substitution for simple {{ var }} patterns
-        all_vars = dict(sample_data)
-        if logo_left:
-            all_vars["logo_left"] = logo_left
-        if logo_right:
-            all_vars["logo_right"] = logo_right
-        return _render_preview_html(compiled_html, all_vars)
+    return TemplatePreviewResponse(previewHtml=preview_html)
 
 
-@router.post("/templates/{template_id}/preview")
+@router.post(
+    "/templates/{template_id}/preview",
+    response_model=TemplatePreviewResponse,
+    summary="Previsualizar una plantilla guardada",
+)
 async def preview_template_endpoint(template_id: str, payload: PreviewTemplatePayload, request: Request):
     _ensure_feature_enabled()
     if not rate_limiter.check(f"preview:{request.client.host if request.client else 'local'}"):
@@ -242,7 +248,7 @@ async def preview_template_endpoint(template_id: str, payload: PreviewTemplatePa
         compiled_html = get_preview_html(template_id)
         if not compiled_html:
             raise HTTPException(status_code=404, detail="Plantilla o borrador no encontrado")
-        return _render_compiled_html(
+        return render_compiled_html(
             compiled_html,
             payload.sampleData,
             logo_left=payload.logo_left or "",
@@ -257,9 +263,7 @@ async def preview_template_endpoint(template_id: str, payload: PreviewTemplatePa
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Error en generación de vista previa: {exc}")
-    return {"templateId": template_id, "previewHtml": preview_html}
-
-
+    return TemplatePreviewResponse(templateId=template_id, previewHtml=preview_html)
 
 
 @router.post("/templates/{template_id}/preview-matrix")
@@ -274,10 +278,12 @@ async def preview_matrix_endpoint(template_id: str, payload: PreviewMatrixPayloa
 
     previews = []
     for sample in payload.samples:
-        previews.append({
-            "id": sample.id,
-            "previewHtml": _render_compiled_html(compiled_html, sample.sampleData),
-        })
+        previews.append(
+            {
+                "id": sample.id,
+                "previewHtml": render_compiled_html(compiled_html, sample.sampleData),
+            }
+        )
 
     return {"templateId": template_id, "previews": previews}
 
@@ -318,17 +324,13 @@ async def template_variants_endpoint(template_id: str):
     return {"variants": variants}
 
 
-@router.post("/templates/{template_id}/render")
+@router.post(
+    "/templates/{template_id}/render",
+    response_model=TemplatePreviewResponse,
+    summary="Renderizar HTML de una plantilla guardada",
+)
 async def render_template_endpoint(template_id: str, payload: PreviewTemplatePayload, request: Request):
-    """Compile a canvas template on-the-fly with variable substitution.
-
-    This endpoint re-compiles the template from its stored TemplateJson
-    using the canvas pipeline, ensuring the output matches the frontend's
-    exportToJinja2() layout with correct absolute positioning.
-
-    Accepts ``logo_left`` and ``logo_right`` (URL or base64 data URI) to
-    resolve logo elements whose ``variableName`` references these variables.
-    """
+    """Render a stored template with variable substitution for preview/PDF checks."""
     _ensure_feature_enabled()
     if not rate_limiter.check(f"render:{request.client.host if request.client else 'local'}"):
         raise HTTPException(status_code=429, detail="Límite de tasa de renderizado excedido")
@@ -341,14 +343,14 @@ async def render_template_endpoint(template_id: str, payload: PreviewTemplatePay
     if not compiled_html:
         raise HTTPException(status_code=404, detail="Contenido de plantilla no encontrado")
 
-    compiled_html = _render_compiled_html(
+    rendered_html = render_compiled_html(
         compiled_html,
         payload.sampleData,
         logo_left=payload.logo_left or "",
         logo_right=payload.logo_right or "",
     )
 
-    return {"templateId": template_id, "previewHtml": compiled_html}
+    return TemplatePreviewResponse(templateId=template_id, previewHtml=rendered_html)
 
 
 @router.post("/templates/{template_id}/publish")
@@ -388,3 +390,66 @@ async def delete_template_endpoint(template_id: str, author: str = "system"):
         print(f"[TemplateEditor] Supabase error deleting template: {exc}")
         raise HTTPException(status_code=502, detail=f"Error del backend de almacenamiento: {exc}")
     return _model_dump(deleted)
+
+
+# ── Pexels proxy ──────────────────────────────────────────────────────────────
+
+from .pexels_service import curated_photos, pexels_status, search_photos  # noqa: E402
+
+
+@router.get(
+    "/providers/pexels/status",
+    summary="Estado de la integración Pexels",
+    tags=["template-editor", "pexels"],
+)
+async def pexels_status_endpoint():
+    """Indica si PEXELS_API_KEY está configurada, sin exponer el secreto."""
+    return pexels_status()
+
+
+@router.get(
+    "/providers/pexels/search",
+    summary="Buscar fotos en Pexels",
+    tags=["template-editor", "pexels"],
+)
+async def pexels_search_endpoint(
+    query: str,
+    page: int = 1,
+    per_page: int = 24,
+    orientation: str | None = None,
+    size: str | None = None,
+    color: str | None = None,
+    locale: str = "es-ES",
+):
+    """
+    Proxy seguro hacia GET https://api.pexels.com/v1/search.
+
+    Responde con `items[]` normalizados al DTO interno, paginación y
+    `rateLimit` opcionales. Cachea por combinación de parámetros (TTL 60 s).
+    """
+    return await search_photos(
+        query=query,
+        page=page,
+        per_page=per_page,
+        orientation=orientation,
+        size=size,
+        color=color,
+        locale=locale,
+    )
+
+
+@router.get(
+    "/providers/pexels/curated",
+    summary="Fotos curadas de Pexels",
+    tags=["template-editor", "pexels"],
+)
+async def pexels_curated_endpoint(
+    page: int = 1,
+    per_page: int = 24,
+):
+    """
+    Proxy seguro hacia GET https://api.pexels.com/v1/curated.
+
+    Devuelve el mismo DTO que /search. Cachea por página/per_page (TTL 60 s).
+    """
+    return await curated_photos(page=page, per_page=per_page)

@@ -159,6 +159,21 @@ class SupabaseTemplateClient:
             raise SupabaseOperationError("La inserción en Supabase en template_versions devolvió una respuesta vacía")
         return row
 
+    def update_template_version(self, template_id: str, version_number: int, payload: Dict[str, Any]) -> Dict[str, Any]:
+        response = (
+            self._client.table("template_versions")
+            .update(payload)
+            .eq("template_id", template_id)
+            .eq("version_number", version_number)
+            .execute()
+        )
+        row = self._first(response)
+        if not row:
+            row = self.get_template_version(template_id, version_number)
+        if not row:
+            raise SupabaseOperationError("La actualización en Supabase en template_versions no devolvió la fila actualizada")
+        return row
+
     def _storage(self):
         return self._client.storage.from_(self._bucket)
 

@@ -6,6 +6,7 @@ interface PageSettingsPanelProps {
   width?: number;
   pageSettings: PageSettings;
   onChange: (settings: PageSettings) => void;
+  className?: string;
 }
 
 type PresetOption = 'A4' | 'Letter' | 'Legal';
@@ -69,7 +70,7 @@ function NumericInput({
   );
 }
 
-export function PageSettingsPanel({ width = 260, pageSettings, onChange }: PageSettingsPanelProps) {
+export function PageSettingsPanel({ width = 260, pageSettings, onChange, className = '' }: PageSettingsPanelProps) {
   const formatValue = resolveFormatValue(pageSettings);
 
   const handleFormatChange = (value: string) => {
@@ -109,15 +110,19 @@ export function PageSettingsPanel({ width = 260, pageSettings, onChange }: PageS
   };
 
   return (
-    <div className="h-full flex-none border-l border-neutral-200 bg-white flex flex-col overflow-y-auto" style={{ width }}>
-      <div className="px-3 py-2.5 border-b border-neutral-100 flex items-center gap-2">
-        <FileText size={14} className="text-neutral-400" />
-        <h2 className="text-sm font-semibold text-neutral-700">Pagina</h2>
+    <div
+      className={`h-full flex-none border-l border-neutral-200/70 flex flex-col overflow-y-auto ${className}`}
+      style={{ width, scrollbarWidth: 'thin', scrollbarColor: '#d4d4d8 transparent' }}
+    >
+      {/* Sticky header */}
+      <div className="sticky top-0 z-10 px-3 py-2.5 border-b border-neutral-100 flex items-center gap-2 bg-white/80 backdrop-blur-sm">
+        <FileText size={13} className="text-violet-400 flex-shrink-0" />
+        <h2 className="text-xs font-bold text-neutral-600 tracking-wide uppercase">Página</h2>
       </div>
 
-      <div className="px-3 py-3 border-b border-neutral-100 space-y-3">
+      <div className="px-3 py-3 border-b border-neutral-100 bg-white space-y-3">
         <div>
-          <label className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 block mb-1.5">
+          <label className="text-[9px] font-bold uppercase tracking-widest text-neutral-400 block mb-1.5">
             Formato
           </label>
           <select
@@ -133,8 +138,8 @@ export function PageSettingsPanel({ width = 260, pageSettings, onChange }: PageS
         </div>
 
         <div>
-          <label className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 block mb-1.5">
-            Orientacion
+          <label className="text-[9px] font-bold uppercase tracking-widest text-neutral-400 block mb-1.5">
+            Orientación
           </label>
           <div className="grid grid-cols-2 gap-1.5">
             <button
@@ -161,8 +166,8 @@ export function PageSettingsPanel({ width = 260, pageSettings, onChange }: PageS
         </div>
 
         <div>
-          <label className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400 block mb-1.5">
-            Tamano final
+          <label className="text-[9px] font-bold uppercase tracking-widest text-neutral-400 block mb-1.5">
+            Tamaño final
           </label>
           <div className="grid grid-cols-2 gap-1.5">
             <NumericInput
@@ -179,10 +184,10 @@ export function PageSettingsPanel({ width = 260, pageSettings, onChange }: PageS
         </div>
       </div>
 
-      <div className="px-3 py-3 border-b border-neutral-100 space-y-2">
+      <div className="px-3 py-3 border-b border-neutral-100 bg-white space-y-2">
         <div className="flex items-center gap-1.5">
-          <Ruler size={10} className="text-neutral-400" />
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-neutral-400">Margenes</span>
+          <Ruler size={10} className="text-violet-400" />
+          <span className="text-[9px] font-bold uppercase tracking-widest text-neutral-400">Márgenes</span>
         </div>
         <div className="grid grid-cols-2 gap-1.5">
           <NumericInput

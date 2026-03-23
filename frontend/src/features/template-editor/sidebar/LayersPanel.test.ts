@@ -1,5 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { getElementDisplayName } from './LayersPanel';
+import React, { act } from 'react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createRoot, type Root } from 'react-dom/client';
+import { getElementDisplayName, LayersPanel } from './LayersPanel';
 import type { TemplateElement } from '../canvasTypes';
 
 function makeElement(overrides: Partial<TemplateElement> = {}): TemplateElement {
@@ -74,5 +76,73 @@ describe('getElementDisplayName', () => {
         const el = makeElement({ type: 'text', name: '' });
         expect(getElementDisplayName(el, 0)).toBe('Texto 1');
         expect(getElementDisplayName(el, 9)).toBe('Texto 10');
+    });
+});
+
+describe('LayersPanel reorder interactions', () => {
+    let container: HTMLDivElement;
+    let root: Root;
+
+    beforeEach(() => {
+        container = document.createElement('div');
+        document.body.appendChild(container);
+        root = createRoot(container);
+    });
+
+    afterEach(() => {
+        act(() => {
+            root.unmount();
+        });
+        container.remove();
+    });
+
+    it('calls onReorder with drag and hover indices', () => {
+        const onReorder = vi.fn();
+        const elements = [
+            makeElement({ id: 'el_a', name: 'A', style: { zIndex: 3 } }),
+            makeElement({ id: 'el_b', name: 'B', style: { zIndex: 2 } }),
+            makeElement({ id: 'el_c', name: 'C', style: { zIndex: 1 } }),
+        ];
+
+        act(() => {
+            root.render(
+                React.createElement(LayersPanel, {
+                    elements,
+                    selectedIds: [],
+                    onSelect: vi.fn(),
+                    onToggleLock: vi.fn(),
+                    onToggleVisible: vi.fn(),
+                    onReorder,
+                }),
+            );
+        });
+
+        const rows = container.querySelectorAll('[draggable="true"]');
+        expect(rows.length).toBeGreaterThan(2);
+
+        const dragStart = new Event('dragstart', { bubbles: true, cancelable: true });
+        Object.defineProperty(dragStart, 'dataTransfer', {
+            value: { effectAllowed: '', setData: vi.fn(), dropEffect: '' },
+        });
+        const dragOver = new Event('dragover', { bubbles: true, cancelable: true });
+        Object.defineProperty(dragOver, 'dataTransfer', {
+            value: { dropEffect: '' },
+        });
+        const drop = new Event('drop', { bubbles: true, cancelable: true });
+        Object.defineProperty(drop, 'dataTransfer', {
+            value: {},
+        });
+
+        act(() => {
+            rows[0].dispatchEvent(dragStart);
+        });
+        act(() => {
+            rows[2].dispatchEvent(dragOver);
+        });
+        act(() => {
+            rows[2].dispatchEvent(drop);
+        });
+
+        expect(onReorder).toHaveBeenCalledWith(0, 2);
     });
 });

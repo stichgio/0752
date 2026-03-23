@@ -17,6 +17,7 @@ interface CanvasElementProps {
     onResizeStart: (e: React.PointerEvent, element: TemplateElement, direction: string) => void;
     onRotateStart: (e: React.PointerEvent, element: TemplateElement) => void;
     isDragging?: boolean;
+    isPrimaryDrag?: boolean;
     suppressPointerEvents?: boolean;
     onSetNodeRef?: (id: string, node: HTMLDivElement | null) => void;
     disableInteraction?: boolean;
@@ -104,6 +105,7 @@ function CanvasElementComponent({
     onResizeStart,
     onRotateStart,
     isDragging = false,
+    isPrimaryDrag = false,
     suppressPointerEvents = false,
     onSetNodeRef,
     disableInteraction = false,
@@ -233,10 +235,12 @@ function CanvasElementComponent({
         zIndex: style.zIndex || 1,
         opacity: effectiveOpacity,
         cursor: elementCursor,
-        outline: isSelected ? '1.5px solid #2563eb' : 'none',
+        outline: isSelected ? (isPrimaryDrag ? '2px solid #1d4ed8' : '1.5px solid #2563eb') : 'none',
         outlineOffset: '1px',
         pointerEvents: (disableInteraction || suppressPointerEvents) ? 'none' as const : 'auto' as const,
-        boxShadow: isDragging ? '0 8px 18px rgba(15, 23, 42, 0.18)' : style.boxShadow,
+        boxShadow: isDragging
+            ? (isPrimaryDrag ? '0 12px 24px rgba(15, 23, 42, 0.28)' : '0 8px 18px rgba(15, 23, 42, 0.18)')
+            : style.boxShadow,
         willChange: isDragging ? 'transform, box-shadow' : undefined,
         transition: isDragging ? undefined : 'box-shadow 120ms ease, opacity 120ms ease, outline-color 150ms ease',
     }), [
@@ -252,6 +256,7 @@ function CanvasElementComponent({
         disableInteraction,
         suppressPointerEvents,
         isDragging,
+        isPrimaryDrag,
         isSelected,
     ]);
 
@@ -872,6 +877,7 @@ function areCanvasElementPropsEqual(prev: CanvasElementProps, next: CanvasElemen
     if (prev.isSelected !== next.isSelected) return false;
     if (prev.disableInteraction !== next.disableInteraction) return false;
     if (prev.isDragging !== next.isDragging) return false;
+  if (prev.isPrimaryDrag !== next.isPrimaryDrag) return false;
     if (prev.suppressPointerEvents !== next.suppressPointerEvents) return false;
     if (prev.dataPreview !== next.dataPreview) return false;
     return areElementsRenderEqual(prev.element, next.element);

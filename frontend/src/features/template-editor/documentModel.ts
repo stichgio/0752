@@ -59,18 +59,33 @@ function ensureBrandKits(brandKits: CanvasDocument['brandKits']): BrandKit[] {
 
 function ensureAssets(assets: CanvasDocument['assetLibrary']): AssetLibraryItem[] {
   if (!Array.isArray(assets)) return [];
-  return assets.map((asset, index) => ({
-    id: asset?.id || `asset_${index + 1}`,
-    name: safeLabel(asset?.name || '', `Asset ${index + 1}`),
-    type: asset?.type === 'logo' ? 'logo' : 'image',
-    url: typeof asset?.url === 'string' ? asset.url : '',
-    tags: Array.isArray(asset?.tags) ? asset.tags.filter(Boolean) : [],
-    folder: typeof asset?.folder === 'string' ? asset.folder : '',
-    sourceType: asset?.sourceType === 'inline' || asset?.sourceType === 'local' ? asset.sourceType : 'remote',
-    createdAt: asset?.createdAt || nowIso(),
-    updatedAt: asset?.updatedAt || nowIso(),
-    missing: asset?.missing === true,
-  }));
+  return assets.map((asset, index) => {
+    const base: AssetLibraryItem = {
+      id: asset?.id || `asset_${index + 1}`,
+      name: safeLabel(asset?.name || '', `Asset ${index + 1}`),
+      type: asset?.type === 'logo' ? 'logo' : 'image',
+      url: typeof asset?.url === 'string' ? asset.url : '',
+      tags: Array.isArray(asset?.tags) ? asset.tags.filter(Boolean) : [],
+      folder: typeof asset?.folder === 'string' ? asset.folder : '',
+      sourceType: asset?.sourceType === 'inline' || asset?.sourceType === 'local' ? asset.sourceType : 'remote',
+      createdAt: asset?.createdAt || nowIso(),
+      updatedAt: asset?.updatedAt || nowIso(),
+      missing: asset?.missing === true,
+    };
+    // Preservar metadata de proveedor externo
+    if (asset?.provider === 'pexels') {
+      base.provider = 'pexels';
+      if (typeof asset.providerAssetId === 'string') base.providerAssetId = asset.providerAssetId;
+      if (typeof asset.previewUrl === 'string') base.previewUrl = asset.previewUrl;
+      if (typeof asset.thumbnailUrl === 'string') base.thumbnailUrl = asset.thumbnailUrl;
+      if (typeof asset.sourcePageUrl === 'string') base.sourcePageUrl = asset.sourcePageUrl;
+      if (typeof asset.photographer === 'string') base.photographer = asset.photographer;
+      if (typeof asset.photographerUrl === 'string') base.photographerUrl = asset.photographerUrl;
+      if (typeof asset.attributionText === 'string') base.attributionText = asset.attributionText;
+      if (typeof asset.avgColor === 'string') base.avgColor = asset.avgColor;
+    }
+    return base;
+  });
 }
 
 function ensureBindingMap(bindingMap: CanvasDocument['bindingMap']): Record<string, BindingDefinition> {

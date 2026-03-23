@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Focus } from 'lucide-react';
+import { useFocusMode } from './hooks/useFocusMode';
 import {
   BindingDefinition,
   BrandKit,
@@ -27,7 +28,6 @@ import { InspectorRoot } from './inspector/InspectorRoot';
 import { StatusBar } from './toolbar/StatusBar';
 import type { SaveState } from './toolbar/StatusBar';
 import { ContextToolbar } from './toolbar/ContextToolbar';
-import { AlignmentToolbar } from './toolbar/AlignmentToolbar';
 import { TextFormatToolbar } from './toolbar/TextFormatToolbar';
 import { migrateToCanvas } from './utils/elementDefaults';
 import {
@@ -63,12 +63,26 @@ import {
   duplicatePage,
   alignElements,
   distributeElements,
+  validateCanvasDocument,
 } from './documentModel';
 import type { AlignAxis } from './documentModel';
+import type { TemplateValidationIssue } from './canvasTypes';
 import type { CanvasChangeOptions } from './historyTypes';
 
 const CLIPBOARD_STORAGE_KEY = 'canvas_clipboard';
 const SNAP_CONFIG_STORAGE_KEY = 'canvas_snap_config';
+
+const CONTEXT_AXIS_MAP: Record<
+  'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom',
+  AlignAxis
+> = {
+  left:   'left',
+  center: 'center-h',
+  right:  'right',
+  top:    'top',
+  middle: 'center-v',
+  bottom: 'bottom',
+};
 const SNAP_GRID_SIZE_OPTIONS = [1, 2, 5, 10] as const;
 type SnapGridSize = (typeof SNAP_GRID_SIZE_OPTIONS)[number];
 
@@ -204,6 +218,8 @@ export default function CanvasEditor({
   const MAX_SIDEBAR_WIDTH = 500;
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  const { isFocusMode } = useFocusMode();
 
   // Calculate page dimensions in px (needed for fitPage)
   const pageWidthPx = mmToPx(pageSettings.width);
@@ -667,6 +683,19 @@ export default function CanvasEditor({
     });
   }, [handleAddElement]);
 
+  const handleInsertBoundField = useCallback((fieldKey: string, label?: string) => {
+    handleAddElement('variable', undefined, undefined, {
+      variableName: fieldKey,
+      name: label || fieldKey,
+      content: `{{${fieldKey}}}`,
+    });
+  }, [handleAddElement]);
+
+  const validationIssues: TemplateValidationIssue[] = useMemo(
+    () => validateCanvasDocument(doc),
+    [doc],
+  );
+
   const handleDelete = useCallback(() => {
     if (!selectedIds.length) return;
     onChange(removeElementsFromDocument(doc, selectedIds));
@@ -894,6 +923,24 @@ export default function CanvasEditor({
     onChange({ ...doc, elements: newElements }, { commitToHistory: true });
   }, [doc, onChange]);
 
+  const handleAlignUnified = useCallback(
+    (type: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
+      if (selectedIds.length <= 1) {
+        handleAlign(type);
+      } else {
+        handleAlignElements(selectedIds, CONTEXT_AXIS_MAP[type]);
+      }
+    },
+    [selectedIds, handleAlign, handleAlignElements],
+  );
+
+  const handleDistributeUnified = useCallback(
+    (axis: 'horizontal' | 'vertical') => {
+      handleDistributeElements(selectedIds, axis);
+    },
+    [selectedIds, handleDistributeElements],
+  );
+
   const handleApplyPrimaryStyle = useCallback(() => {
     const selected = currentPageElements.filter((element) => selectedIds.includes(element.id));
     if (selected.length < 2) return;
@@ -1115,13 +1162,19 @@ export default function CanvasEditor({
     }
     : null;
 
+  const canDistribute =
+    currentPageElements.filter(
+      (el) => selectedIds.includes(el.id) && !el.locked,
+    ).length >= 3;
+
   return (
-    <div className="flex flex-col h-full w-full bg-neutral-100 overflow-hidden relative">
+    <div className="flex flex-col h-full w-full bg-[#f0eff0] overflow-hidden relative">
       {/* Context Toolbar */}
       <ContextToolbar
         selectedCount={selectedIds.length}
-        onAlign={handleAlign}
-        onDistribute={handleDistribute}
+        onAlign={handleAlignUnified}
+        onDistribute={handleDistributeUnified}
+        canDistribute={canDistribute}
         onApplyPrimaryStyle={handleApplyPrimaryStyle}
         onDelete={handleDelete}
         onDuplicate={handleDuplicate}
@@ -1137,7 +1190,7 @@ export default function CanvasEditor({
 
       <div ref={bodyRef} className="relative flex-1 flex overflow-hidden min-w-0">
         {/* Sidebar */}
-        {isLeftSidebarOpen && (
+        {!isFocusMode && isLeftSidebarOpen && (
           <>
             <SidebarRoot
               width={leftSidebarWidth}
@@ -1192,16 +1245,19 @@ export default function CanvasEditor({
               onApplyVariant={handleApplyVariantRecord}
               onUpdateVariant={handleUpdateVariantRecord}
               onDeleteVariant={handleDeleteVariant}
+              validationIssues={validationIssues}
+              dataPreview={dataPreview}
+              onInsertBoundField={handleInsertBoundField}
             />
             <div
               role="separator"
               aria-orientation="vertical"
               aria-label="Redimensionar panel izquierdo"
-              className="group relative w-2 flex-none cursor-col-resize select-none"
+              className="group relative w-1.5 flex-none cursor-col-resize select-none"
               onMouseDown={(event) => startResize('left', event)}
             >
               <div
-                className={`absolute inset-y-0 left-1/2 w-px -translate-x-1/2 transition-colors ${activeResizer === 'left' ? 'bg-blue-500' : 'bg-neutral-200 group-hover:bg-blue-500'
+                className={`absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 rounded-full transition-colors ${activeResizer === 'left' ? 'bg-violet-400' : 'bg-neutral-200/60 group-hover:bg-violet-300'
                   }`}
               />
             </div>
@@ -1210,29 +1266,18 @@ export default function CanvasEditor({
 
         {/* Canvas Area */}
         <div className="flex-1 relative flex flex-col min-w-0 overflow-hidden">
-          {/* Alignment Toolbar — shown above canvas when 2+ elements selected */}
-          {selectedIds.length >= 2 && (
-            <div className="flex-none flex items-center px-3 py-1 border-b border-neutral-200 bg-white gap-2">
-              <span className="select-none text-[10px] font-medium text-neutral-400 pr-1">
-                {selectedIds.length} sel
-              </span>
-              <AlignmentToolbar
-                selectedIds={selectedIds}
-                onAlign={handleAlignElements}
-                onDistribute={handleDistributeElements}
-                canDistribute={
-                  currentPageElements
-                    .filter((el) => selectedIds.includes(el.id) && !el.locked)
-                    .length >= 3
-                }
-              />
+          {/* Focus mode indicator pill */}
+          {isFocusMode && (
+            <div className="absolute top-2 right-2 z-40 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-neutral-900/80 backdrop-blur-sm text-white text-[10px] font-medium select-none pointer-events-none">
+              <Focus size={10} />
+              Modo Foco · Ctrl+.
             </div>
           )}
 
           {/* Text Format Toolbar — shown above canvas when exactly 1 text element selected */}
           {selectedTextElement !== null && (
-            <div className="flex-none flex items-center px-3 py-1 border-b border-neutral-200 bg-white gap-2">
-              <span className="select-none text-[10px] font-medium text-neutral-400 pr-1">
+            <div className="flex-none flex items-center px-3 py-1 border-b border-neutral-100/80 bg-white/80 backdrop-blur-sm gap-2 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+              <span className="select-none text-[9px] font-bold uppercase tracking-widest text-neutral-300 pr-1">
                 Texto
               </span>
               <TextFormatToolbar
@@ -1245,7 +1290,7 @@ export default function CanvasEditor({
           {/* Canvas wrapper with ruler overlays */}
           <div
             ref={canvasWrapperRef}
-            className="flex-1 relative min-w-0 overflow-hidden"
+            className="flex-1 relative min-w-0 overflow-hidden bg-[#e8e8ec]"
             style={showRulers ? { paddingTop: RULER_THICKNESS, paddingLeft: RULER_THICKNESS } : undefined}
           >
             <CanvasArea
@@ -1309,29 +1354,31 @@ export default function CanvasEditor({
           />
         </div>
 
-        <button
-          type="button"
-          onClick={() => setIsRightSidebarOpen((prev) => !prev)}
-          className="absolute top-1/2 z-30 h-14 w-7 -translate-y-1/2 rounded-full border border-neutral-800 bg-white text-violet-600 shadow-sm transition-colors hover:bg-neutral-50 flex items-center justify-center"
-          style={{ right: isRightSidebarOpen ? rightSidebarWidth + 2 - 14 : 6 }}
-          title={isRightSidebarOpen ? 'Ocultar inspector' : 'Mostrar inspector'}
-          aria-label={isRightSidebarOpen ? 'Ocultar inspector' : 'Mostrar inspector'}
-        >
-          {isRightSidebarOpen ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-        </button>
+        {!isFocusMode && (
+          <button
+            type="button"
+            onClick={() => setIsRightSidebarOpen((prev) => !prev)}
+            className="absolute top-1/2 z-30 h-10 w-5 -translate-y-1/2 rounded-l-full border border-neutral-200/80 bg-white/90 backdrop-blur-sm text-neutral-400 shadow-sm transition-all hover:text-violet-600 hover:border-violet-200 hover:shadow-md flex items-center justify-center"
+            style={{ right: isRightSidebarOpen ? rightSidebarWidth - 1 : 0 }}
+            title={isRightSidebarOpen ? 'Ocultar inspector' : 'Mostrar inspector'}
+            aria-label={isRightSidebarOpen ? 'Ocultar inspector' : 'Mostrar inspector'}
+          >
+            {isRightSidebarOpen ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
+          </button>
+        )}
 
         {/* Inspector */}
-        {isRightSidebarOpen && (
+        {!isFocusMode && isRightSidebarOpen && (
           <>
             <div
               role="separator"
               aria-orientation="vertical"
               aria-label="Redimensionar panel derecho"
-              className="group relative w-2 flex-none cursor-col-resize select-none"
+              className="group relative w-1.5 flex-none cursor-col-resize select-none"
               onMouseDown={(event) => startResize('right', event)}
             >
               <div
-                className={`absolute inset-y-0 left-1/2 w-px -translate-x-1/2 transition-colors ${activeResizer === 'right' ? 'bg-blue-500' : 'bg-neutral-200 group-hover:bg-blue-500'
+                className={`absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 rounded-full transition-colors ${activeResizer === 'right' ? 'bg-violet-400' : 'bg-neutral-200/60 group-hover:bg-violet-300'
                   }`}
               />
             </div>

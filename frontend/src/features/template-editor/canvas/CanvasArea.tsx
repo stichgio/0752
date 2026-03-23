@@ -22,7 +22,7 @@ import {
     type SnapGuide,
 } from '../utils/snapUtils';
 import { Lock } from 'lucide-react';
-import { resolveDropPosition, shouldActivateDrag, type DropAnchor } from '../utils/dragDropUtils';
+import { isPointInsideRect, resolveDropPosition, shouldActivateDrag, type DropAnchor } from '../utils/dragDropUtils';
 import { getPageElements } from '../documentModel';
 
 interface CanvasAreaProps {
@@ -127,7 +127,26 @@ interface PendingDragPoint {
     bypassSnap: boolean;
 }
 
+interface DropPreviewState {
+    visible: boolean;
+    valid: boolean;
+    position: { x: number; y: number } | null;
+    size: TemplateElement['size'] | null;
+}
+
+interface DropResolveResult {
+    kind: 'element' | 'block';
+    dropPos: { x: number; y: number };
+    valid: boolean;
+    type?: ElementType;
+    presetId?: ElementPreset;
+    overrides?: Partial<TemplateElement>;
+    blockId?: BlockPreset;
+    previewSize?: TemplateElement['size'];
+}
+
 const MIN_SIZE_MM = 2;
+const DROP_PREVIEW_MIN_SIZE_MM = 12;
 
 function isSnapTemporarilyDisabled(event: { altKey?: boolean; metaKey?: boolean }) {
     return !!event.altKey || !!event.metaKey;
@@ -161,6 +180,12 @@ export function CanvasArea({
         active: false,
         primaryId: null,
         dragIds: [],
+    });
+    const [dropPreview, setDropPreview] = useState<DropPreviewState>({
+        visible: false,
+        valid: false,
+        position: null,
+        size: null,
     });
     const [aspectLockIndicator, setAspectLockIndicator] = useState<{ x: number; y: number } | null>(null);
     const gridPatternIdRef = useRef(`canvas-grid-${Math.random().toString(36).slice(2, 9)}`);
@@ -213,6 +238,15 @@ export function CanvasArea({
     const mmToCanvasPx = (mm: number) => mmToPx(mm);
     const normalizedGridSize = Math.max(1, gridSize);
     const { snapToGrid } = useSnapGrid(normalizedGridSize, snapEnabled);
+
+    const resetDropPreview = useCallback(() => {
+        setDropPreview({
+            visible: false,
+            valid: false,
+            position: null,
+            size: null,
+        });
+    }, []);
 
     const updateElement = useCallback(
         (id: string, updates: Partial<TemplateElement>) => {
@@ -528,11 +562,7 @@ export function CanvasArea({
 
         const pointerId = activeDragPointerIdRef.current;
         const pointerTarget = activeDragPointerTargetRef.current;
-        if (
-            pointerId !== null &&
-            pointerTarget &&
-            pointerTarget.hasPointerCapture(pointerId)
-        ) {
+        if (pointerId !== null && pointerTarget && pointerTarget.hasPointerCapture(pointerId)) {
             pointerTarget.releasePointerCapture(pointerId);
         }
 
@@ -544,6 +574,31 @@ export function CanvasArea({
         setDragSession({ active: false, primaryId: null, dragIds: [] });
         interactionRef.current = { ...defaultInteraction };
     }, [clearAlignmentGuideVisual, clearDragVisual]);
+
+    const releaseActivePointerCapture = useCallback(() => {
+        const pointerId = activeDragPointerIdRef.current;
+        const pointerTarget = activeDragPointerTargetRef.current;
+        if (pointerId !== null && pointerTarget && pointerTarget.hasPointerCapture(pointerId)) {
+            pointerTarget.releasePointerCapture(pointerId);
+        }
+    }, []);
+
+    const resetDragState = useCallback(
+        (draggedIds: string[]) => {
+            clearDragVisual(draggedIds);
+            clearAlignmentGuideVisual();
+            dragPointerOffsetRef.current = { x: 0, y: 0 };
+            releaseActivePointerCapture();
+            activeDragPointerIdRef.current = null;
+            activeDragPointerTargetRef.current = null;
+            pendingDragPointRef.current = null;
+            lastResolvedDragRef.current = null;
+            activeSnapLinesRef.current = null;
+            setDragSession({ active: false, primaryId: null, dragIds: [] });
+            interactionRef.current = { ...defaultInteraction };
+        },
+        [clearAlignmentGuideVisual, clearDragVisual, releaseActivePointerCapture],
+    );
 
     const commitDrag = useCallback(
         () => {
@@ -607,31 +662,22 @@ export function CanvasArea({
             commitDrag();
 
             const draggedIds = state.dragIds.length > 0 ? state.dragIds : [state.elementId];
-            clearDragVisual(draggedIds);
-            clearAlignmentGuideVisual();
-            dragPointerOffsetRef.current = { x: 0, y: 0 };
-
-            const pointerId = activeDragPointerIdRef.current;
-            const pointerTarget = activeDragPointerTargetRef.current;
-            if (
-                pointerId !== null &&
-                pointerTarget &&
-                pointerTarget.hasPointerCapture(pointerId)
-            ) {
-                pointerTarget.releasePointerCapture(pointerId);
-            }
-
-            activeDragPointerIdRef.current = null;
-            activeDragPointerTargetRef.current = null;
-            pendingDragPointRef.current = null;
-            lastResolvedDragRef.current = null;
-            activeSnapLinesRef.current = null;
-            setDragSession({ active: false, primaryId: null, dragIds: [] });
-            interactionRef.current = { ...defaultInteraction };
+            resetDragState(draggedIds);
             refreshDocumentSnapLines();
         },
-        [applyDragVisualAt, clearAlignmentGuideVisual, clearDragVisual, commitDrag, refreshDocumentSnapLines],
+        [applyDragVisualAt, commitDrag, refreshDocumentSnapLines, resetDragState],
     );
+
+    const cancelActiveDrag = useCallback(() => {
+        const state = interactionRef.current;
+        if (state.mode !== 'drag' || !state.elementId) return;
+        if (dragRafRef.current !== null) {
+            window.cancelAnimationFrame(dragRafRef.current);
+            dragRafRef.current = null;
+        }
+        const draggedIds = state.dragIds.length > 0 ? state.dragIds : [state.elementId];
+        resetDragState(draggedIds);
+    }, [resetDragState]);
 
     const handleGlobalMouseMove = useCallback(
         (e: MouseEvent) => {
@@ -973,11 +1019,7 @@ export function CanvasArea({
                 return;
             }
 
-            finishDrag({
-                clientX: e.clientX,
-                clientY: e.clientY,
-                bypassSnap: isSnapTemporarilyDisabled(e),
-            });
+            cancelActiveDrag();
         };
 
         const handleWindowBlur = () => {
@@ -987,25 +1029,35 @@ export function CanvasArea({
                 return;
             }
             if (state.mode !== 'drag' || !state.elementId) return;
-            const point = pendingDragPointRef.current ?? {
-                clientX: state.startClientX,
-                clientY: state.startClientY,
-                bypassSnap: false,
-            };
-            finishDrag(point);
+            cancelActiveDrag();
+        };
+
+        const handleLostPointerCapture = (e: Event) => {
+            const pointerEvent = e as PointerEvent;
+            const state = interactionRef.current;
+            if (state.mode !== 'drag' && state.mode !== 'drag-pending') return;
+            const activePointerId = activeDragPointerIdRef.current;
+            if (activePointerId === null || pointerEvent.pointerId !== activePointerId) return;
+            if (state.mode === 'drag-pending') {
+                cancelPendingDrag();
+                return;
+            }
+            cancelActiveDrag();
         };
 
         window.addEventListener('pointermove', handleWindowPointerMove);
         window.addEventListener('pointerup', handleWindowPointerUp);
         window.addEventListener('pointercancel', handleWindowPointerCancel);
+        window.addEventListener('lostpointercapture', handleLostPointerCapture);
         window.addEventListener('blur', handleWindowBlur);
         return () => {
             window.removeEventListener('pointermove', handleWindowPointerMove);
             window.removeEventListener('pointerup', handleWindowPointerUp);
             window.removeEventListener('pointercancel', handleWindowPointerCancel);
+            window.removeEventListener('lostpointercapture', handleLostPointerCapture);
             window.removeEventListener('blur', handleWindowBlur);
         };
-    }, [activatePendingDrag, cancelPendingDrag, finishDrag, scheduleDragFrame]);
+    }, [activatePendingDrag, cancelActiveDrag, cancelPendingDrag, finishDrag, scheduleDragFrame]);
 
     useEffect(() => {
         if (!dragSession.active) return;
@@ -1234,22 +1286,15 @@ export function CanvasArea({
         [onSelect],
     );
 
-    const onDrop = useCallback(
-        (e: React.DragEvent) => {
-            e.preventDefault();
-            if (!pageRef.current) return;
+    const resolvePaletteDrop = useCallback(
+        (e: Pick<React.DragEvent, 'clientX' | 'clientY' | 'dataTransfer' | 'shiftKey' | 'altKey' | 'metaKey'>): DropResolveResult | null => {
+            if (!pageRef.current) return null;
 
             const pageRect = pageRef.current.getBoundingClientRect();
-            const isInsidePage =
-                e.clientX >= pageRect.left &&
-                e.clientX <= pageRect.right &&
-                e.clientY >= pageRect.top &&
-                e.clientY <= pageRect.bottom;
-            if (!isInsidePage) return;
-
             const currentScale = scaleRef.current;
-            if (currentScale <= 0) return;
+            if (currentScale <= 0) return null;
 
+            const isInsidePage = isPointInsideRect(e.clientX, e.clientY, pageRect);
             const xMm = pxToMm((e.clientX - pageRect.left) / currentScale);
             const yMm = pxToMm((e.clientY - pageRect.top) / currentScale);
             const pageWidth = pageSettingsRef.current.width;
@@ -1272,16 +1317,23 @@ export function CanvasArea({
                 e.dataTransfer.getData('application/template-editor-block') ||
                 e.dataTransfer.getData('blockType')
             ) as BlockPreset;
-            if (blockId && onAddBlock) {
-                const blockDropPos = resolveDropPosition({
+            if (blockId) {
+                const previewSize = blockPayload?.dropSize || null;
+                const dropPos = resolveDropPosition({
                     point: { x: xMm, y: yMm },
                     pageSize: { width: pageWidth, height: pageHeight },
-                    elementSize: blockPayload?.dropSize,
+                    elementSize: previewSize,
                     anchor: modifierAnchor || blockPayload?.dropAnchor || 'top-left',
                     snap: dropSnap,
                 });
-                onAddBlock(blockId, blockDropPos);
-                return;
+
+                return {
+                    kind: 'block',
+                    blockId,
+                    dropPos,
+                    valid: isInsidePage,
+                    previewSize,
+                };
             }
 
             let payload: PaletteDragPayload | null = null;
@@ -1297,7 +1349,7 @@ export function CanvasArea({
 
             const fallbackType = e.dataTransfer.getData('application/react-dnd');
             const type = (payload?.type || e.dataTransfer.getData('elementType') || fallbackType) as ElementType;
-            if (!type) return;
+            if (!type) return null;
 
             const presetRaw = payload?.presetId || e.dataTransfer.getData('application/template-editor-preset');
             const presetId: ElementPreset | undefined =
@@ -1318,23 +1370,69 @@ export function CanvasArea({
                 }
             }
 
+            const previewSize = payload?.dropSize || overrides?.size || null;
             const dropPos = resolveDropPosition({
                 point: { x: xMm, y: yMm },
                 pageSize: { width: pageWidth, height: pageHeight },
-                elementSize: payload?.dropSize || overrides?.size,
+                elementSize: previewSize,
                 anchor: modifierAnchor || payload?.dropAnchor || 'top-left',
                 snap: dropSnap,
             });
 
-            onAddElement(type, dropPos, presetId, overrides);
+            return {
+                kind: 'element',
+                type,
+                presetId,
+                overrides,
+                dropPos,
+                valid: isInsidePage,
+                previewSize,
+            };
         },
-        [onAddElement, onAddBlock, snapToGrid],
+        [snapToGrid],
+    );
+
+    const onDrop = useCallback(
+        (e: React.DragEvent) => {
+            e.preventDefault();
+            const resolved = resolvePaletteDrop(e);
+            resetDropPreview();
+            if (!resolved || !resolved.valid) return;
+
+            if (resolved.kind === 'block') {
+                if (!resolved.blockId || !onAddBlock) return;
+                onAddBlock(resolved.blockId, resolved.dropPos);
+                return;
+            }
+
+            if (!resolved.type) return;
+            onAddElement(resolved.type, resolved.dropPos, resolved.presetId, resolved.overrides);
+        },
+        [onAddElement, onAddBlock, resetDropPreview, resolvePaletteDrop],
     );
 
     const onDragOver = useCallback((e: React.DragEvent) => {
         e.preventDefault();
-        e.dataTransfer.dropEffect = 'copy';
-    }, []);
+        const resolved = resolvePaletteDrop(e);
+        if (!resolved) {
+            resetDropPreview();
+            return;
+        }
+
+        e.dataTransfer.dropEffect = resolved.valid ? 'copy' : 'none';
+        setDropPreview({
+            visible: true,
+            valid: resolved.valid,
+            position: resolved.dropPos,
+            size: resolved.previewSize || { width: DROP_PREVIEW_MIN_SIZE_MM, height: DROP_PREVIEW_MIN_SIZE_MM },
+        });
+    }, [resetDropPreview, resolvePaletteDrop]);
+
+    const onDragLeave = useCallback((e: React.DragEvent) => {
+        const nextTarget = e.relatedTarget as Node | null;
+        if (nextTarget && containerRef.current?.contains(nextTarget)) return;
+        resetDropPreview();
+    }, [resetDropPreview]);
 
     const pageWidthPx = mmToCanvasPx(pageSettings.width);
     const pageHeightPx = mmToCanvasPx(pageSettings.height);
@@ -1360,6 +1458,8 @@ export function CanvasArea({
             onPointerDown={onContainerPointerDown}
             onDrop={onDrop}
             onDragOver={onDragOver}
+            onDragLeave={onDragLeave}
+            onDragEnd={resetDropPreview}
         >
             <div
                 className="relative shrink-0"
@@ -1449,6 +1549,36 @@ export function CanvasArea({
                         }}
                     />
 
+                    {dropPreview.visible && (
+                        <>
+                            <div
+                                className="absolute inset-0 pointer-events-none"
+                                style={{
+                                    border: `2px dashed ${dropPreview.valid ? 'rgba(59, 130, 246, 0.7)' : 'rgba(239, 68, 68, 0.75)'}`,
+                                    boxShadow: dropPreview.valid
+                                        ? 'inset 0 0 0 2px rgba(59, 130, 246, 0.12)'
+                                        : 'inset 0 0 0 2px rgba(239, 68, 68, 0.12)',
+                                    zIndex: 9000,
+                                }}
+                            />
+                            {dropPreview.position && dropPreview.size && (
+                                <div
+                                    className="absolute pointer-events-none"
+                                    style={{
+                                        left: mmToCanvasPx(dropPreview.position.x),
+                                        top: mmToCanvasPx(dropPreview.position.y),
+                                        width: mmToCanvasPx(dropPreview.size.width),
+                                        height: mmToCanvasPx(dropPreview.size.height),
+                                        border: `1.5px solid ${dropPreview.valid ? '#2563eb' : '#ef4444'}`,
+                                        backgroundColor: dropPreview.valid ? 'rgba(37, 99, 235, 0.10)' : 'rgba(239, 68, 68, 0.12)',
+                                        borderRadius: 3,
+                                        zIndex: 9001,
+                                    }}
+                                />
+                            )}
+                        </>
+                    )}
+
                     {sortedVisibleElements.map((el) => (
                         <CanvasElement
                             key={el.id}
@@ -1462,6 +1592,7 @@ export function CanvasArea({
                             onRotateStart={handleRotateStart}
                             dataPreview={dataPreview}
                             isDragging={dragSession.active && dragSession.dragIds.includes(el.id)}
+                            isPrimaryDrag={dragSession.active && dragSession.primaryId === el.id}
                             suppressPointerEvents={dragSession.active}
                             onSetNodeRef={setElementNodeRef}
                         />

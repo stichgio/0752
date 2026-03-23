@@ -144,6 +144,14 @@ class FakeSupabaseTemplateClient:
         self.template_versions.append(self._copy(payload))
         return self._copy(payload)
 
+    def update_template_version(self, template_id, version_number, payload):
+        for index, row in enumerate(self.template_versions):
+            if row["template_id"] == template_id and int(row["version_number"]) == int(version_number):
+                updated = {**row, **payload}
+                self.template_versions[index] = updated
+                return self._copy(updated)
+        raise ValueError("Versión de plantilla no encontrada")
+
     def upload_text(self, path, content, content_type):
         _ = content_type
         self.storage[path] = content
@@ -250,6 +258,27 @@ def test_supabase_store_update_after_publish_sets_template_back_to_draft():
     updated, validation = store.update_template(created.id, _sample_json("<p>{{cs|lower}}</p>"), author="qa", role="admin")
     assert validation.valid is True
     assert updated.status == "draft"
+
+
+def test_supabase_store_publish_marks_current_version_with_published_at():
+    fake_client = FakeSupabaseTemplateClient()
+    store = SupabaseTemplateStore(fake_client)
+    created = store.create_template(
+        name="publish-metadata-template",
+        report_type="technical-report",
+        template_json=_sample_json(),
+        author="qa",
+        feature_flag=True,
+    )
+    store.publish_template(created.id, author="qa")
+    store.update_template(created.id, _sample_json("<p>{{cs|lower}}</p>"), author="qa", role="admin")
+
+    published = store.publish_template(created.id, author="qa")
+    assert published.currentVersion == 2
+
+    current_version = fake_client.get_template_version(created.id, 2)
+    assert current_version is not None
+    assert current_version.get("published_at")
 
 
 def test_get_published_template_by_name_recompiles_canvas_templates():

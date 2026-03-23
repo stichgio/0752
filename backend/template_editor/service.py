@@ -14,10 +14,12 @@ from .compiler import _compile_canvas_template, _has_canvas_layout, compileTempl
 from .models import (
     TemplateEditorRecord,
     TemplateJson,
+    TemplateStatus,
     TemplateVersion,
     UserRole,
     ValidationResult,
 )
+from .persistence import JsonTemplateClient
 from .supabase_client import SupabaseTemplateClient, is_supabase_enabled
 from .validators import sanitizeHtml, validateCanvasMetadata, validateProtectedBlocks, validateTemplateStructure, validateVariables
 
@@ -88,6 +90,46 @@ def _template_json_to_dict(template_json: TemplateJson) -> Dict[str, Any]:
     if hasattr(template_json, "model_dump"):
         return template_json.model_dump()
     return template_json.dict()
+
+
+def _normalize_template_status(value: Any) -> TemplateStatus:
+    normalized = str(value or "draft").strip().lower()
+    if normalized == "published":
+        return "published"
+    if normalized == "archived":
+        return "archived"
+    return "draft"
+
+
+def _coerce_feature_flag(value: Any, default: bool = False) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, (int, float)):
+        return bool(value)
+    if isinstance(value, str):
+        normalized = value.strip().lower()
+        if normalized in {"1", "true", "yes", "on"}:
+            return True
+        if normalized in {"0", "false", "no", "off"}:
+            return False
+    return default
+
+
+def _extract_feature_flag(template_json: Optional[TemplateJson]) -> Optional[bool]:
+    if template_json is None:
+        return None
+    metadata = template_json.metadata or {}
+    if not isinstance(metadata, dict) or "featureFlag" not in metadata:
+        return None
+    return _coerce_feature_flag(metadata.get("featureFlag"))
+
+
+def _apply_feature_flag(template_json: TemplateJson, feature_flag: bool) -> TemplateJson:
+    updated = template_json.model_copy(deep=True) if hasattr(template_json, "model_copy") else template_json.copy(deep=True)
+    metadata = dict(updated.metadata or {})
+    metadata["featureFlag"] = bool(feature_flag)
+    updated.metadata = metadata
+    return updated
 
 
 def _empty_template_json_payload(report_type: Optional[str]) -> Dict[str, Any]:
@@ -269,11 +311,9 @@ class SupabaseTemplateStore:
         current_version: int,
         template_status: str,
         version_row: Dict[str, Any],
-    ) -> str:
+    ) -> TemplateStatus:
         if version_number == current_version:
-            if template_status in ALLOWED_TEMPLATE_STATUS:
-                return template_status
-            return "draft"
+            return _normalize_template_status(template_status)
         if version_row.get("published_at"):
             return "published"
         return "draft"
@@ -281,7 +321,7 @@ class SupabaseTemplateStore:
     def _build_versions(self, template_row: Dict[str, Any]) -> List[TemplateVersion]:
         template_id = str(template_row.get("id"))
         report_type_db = str(template_row.get("report_type") or DEFAULT_REPORT_TYPE_DB)
-        template_status = str(template_row.get("status") or "draft")
+        template_status = _normalize_template_status(template_row.get("status"))
         current_version = int(template_row.get("current_version") or template_row.get("version") or 0)
         versions: List[TemplateVersion] = []
 
@@ -292,6 +332,12 @@ class SupabaseTemplateStore:
             diff_summary: Dict[str, Any] = {}
             if version_row.get("published_at"):
                 diff_summary["publishedAt"] = str(version_row.get("published_at"))
+            if version_row.get("change_note"):
+                diff_summary["changeNote"] = str(version_row.get("change_note"))
+            if version_row.get("checksum"):
+                diff_summary["checksum"] = str(version_row.get("checksum"))
+            if version_row.get("schema_version") is not None:
+                diff_summary["schemaVersion"] = int(version_row.get("schema_version") or 0)
             versions.append(
                 TemplateVersion(
                     version=version_number,
@@ -311,7 +357,7 @@ class SupabaseTemplateStore:
                 versions.append(
                     TemplateVersion(
                         version=0,
-                        status=template_status if template_status in ALLOWED_TEMPLATE_STATUS else "draft",
+                        status=template_status,
                         author=str(template_row.get("updated_by") or template_row.get("created_by") or "system"),
                         createdAt=str(template_row.get("updated_at") or _now_iso()),
                         templateJson=draft_template_json,
@@ -332,7 +378,7 @@ class SupabaseTemplateStore:
             versions.append(
                 TemplateVersion(
                     version=fallback_version,
-                    status=template_status if template_status in ALLOWED_TEMPLATE_STATUS else "draft",
+                    status=template_status,
                     author=str(template_row.get("updated_by") or "system"),
                     createdAt=str(template_row.get("updated_at") or _now_iso()),
                     templateJson=template_json,
@@ -349,12 +395,18 @@ class SupabaseTemplateStore:
         return versions
 
     def _build_record(self, template_row: Dict[str, Any]) -> TemplateEditorRecord:
-        status = str(template_row.get("status") or "draft")
-        if status not in ALLOWED_TEMPLATE_STATUS:
-            status = "draft"
+        status = _normalize_template_status(template_row.get("status"))
         report_type_db = str(template_row.get("report_type") or DEFAULT_REPORT_TYPE_DB)
         versions = self._build_versions(template_row)
         current_version = int(template_row.get("current_version") or template_row.get("version") or 0)
+        feature_flag = _coerce_feature_flag(template_row.get("feature_flag"))
+        if "feature_flag" not in template_row:
+            current_version_entry = next((item for item in versions if int(item.version) == current_version), None)
+            if current_version_entry is None and versions:
+                current_version_entry = versions[-1]
+            inferred_flag = _extract_feature_flag(current_version_entry.templateJson if current_version_entry else None)
+            if inferred_flag is not None:
+                feature_flag = inferred_flag
         return TemplateEditorRecord(
             id=str(template_row["id"]),
             name=str(template_row.get("name") or "Unnamed Template"),
@@ -365,7 +417,7 @@ class SupabaseTemplateStore:
             updatedAt=str(template_row.get("updated_at") or _now_iso()),
             createdBy=str(template_row.get("created_by") or "system"),
             updatedBy=str(template_row.get("updated_by") or "system"),
-            featureFlag=True,
+            featureFlag=feature_flag,
             versions=versions,
         )
 
@@ -377,6 +429,7 @@ class SupabaseTemplateStore:
         compiled_html: str,
         author: str,
         change_note: Optional[str] = None,
+        published_at: Optional[str] = None,
     ) -> Dict[str, Any]:
         assets = self._upload_version_assets(template_id, version_number, template_json, compiled_html)
         payload = {
@@ -390,6 +443,8 @@ class SupabaseTemplateStore:
         }
         if change_note:
             payload["change_note"] = change_note
+        if published_at:
+            payload["published_at"] = published_at
         return self.client.insert_template_version(payload)
 
     def _promote_draft_to_version(
@@ -398,6 +453,7 @@ class SupabaseTemplateStore:
         version_number: int,
         author: str,
         change_note: Optional[str] = None,
+        published_at: Optional[str] = None,
     ) -> Dict[str, Any]:
         draft_editor = self._draft_editor_json_path(template_id)
         draft_compiled = self._draft_compiled_html_path(template_id)
@@ -435,7 +491,21 @@ class SupabaseTemplateStore:
         }
         if change_note:
             payload["change_note"] = change_note
+        if published_at:
+            payload["published_at"] = published_at
         return self.client.insert_template_version(payload)
+
+    def _ensure_version_published(self, template_id: str, version_number: int) -> None:
+        if not hasattr(self.client, "get_template_version") or not hasattr(self.client, "update_template_version"):
+            return
+        version_row = self.client.get_template_version(template_id, version_number)
+        if not version_row or version_row.get("published_at"):
+            return
+        self.client.update_template_version(
+            template_id,
+            version_number,
+            {"published_at": _now_iso()},
+        )
 
     def create_template(
         self,
@@ -445,7 +515,7 @@ class SupabaseTemplateStore:
         author: str,
         feature_flag: bool = False,
     ) -> TemplateEditorRecord:
-        _ = feature_flag
+        template_json = _apply_feature_flag(template_json, feature_flag)
         _raise_if_invalid_template(template_json, role="editor")
         sanitized, compiled = _sanitize_and_compile(template_json)
         report_type_db = _canonical_report_type_db(report_type or sanitized.reportType)
@@ -529,6 +599,11 @@ class SupabaseTemplateStore:
         if not row:
             raise ValueError("Plantilla no encontrada")
 
+        current_template_json, _ = self._load_current_template_assets(row)
+        persisted_feature_flag = _extract_feature_flag(current_template_json)
+        if persisted_feature_flag is None:
+            persisted_feature_flag = _coerce_feature_flag(row.get("feature_flag"))
+        template_json = _apply_feature_flag(template_json, persisted_feature_flag)
         validation = _raise_if_invalid_template(template_json, role)
         sanitized, compiled = _sanitize_and_compile(template_json)
         current_version = int(row.get("current_version") or 0)
@@ -569,14 +644,23 @@ class SupabaseTemplateStore:
         if current_status == "published":
             return self._build_record(row)
 
+        published_at = _now_iso()
         update_payload: Dict[str, Any] = {
             "status": "published",
             "updated_by": author,
-            "updated_at": _now_iso(),
+            "updated_at": published_at,
         }
         if current_version == 0:
-            self._promote_draft_to_version(template_id, 1, author, change_note="first publish from draft")
+            self._promote_draft_to_version(
+                template_id,
+                1,
+                author,
+                change_note="first publish from draft",
+                published_at=published_at,
+            )
             update_payload["current_version"] = 1
+        else:
+            self._ensure_version_published(template_id, current_version)
 
         updated_row = self.client.update_template(
             template_id,
@@ -674,6 +758,7 @@ class SupabaseTemplateStore:
                 "updated_at": _now_iso(),
             },
         )
+        self._ensure_version_published(template_id, version_to_restore)
         return self._build_record(updated_row)
 
     def get_published_template_by_name(self, template_name: str) -> Optional[str]:
@@ -772,6 +857,14 @@ class InMemoryTemplateClient:
         self.template_versions.append(self._copy(payload))
         return self._copy(payload)
 
+    def update_template_version(self, template_id: str, version_number: int, payload: Dict[str, Any]) -> Dict[str, Any]:
+        for index, row in enumerate(self.template_versions):
+            if row.get("template_id") == template_id and int(row.get("version_number") or 0) == int(version_number):
+                updated = {**row, **payload}
+                self.template_versions[index] = updated
+                return self._copy(updated)
+        raise ValueError("Versión de plantilla no encontrada")
+
     def upload_text(self, path: str, content: str, content_type: str) -> None:
         _ = content_type
         self.storage[path] = content
@@ -796,7 +889,7 @@ def _get_store(required: bool = False) -> Optional[SupabaseTemplateStore]:
                     _STORE = SupabaseTemplateStore(InMemoryTemplateClient())
                     _STORE_TEST_KEY = current_test
                 else:
-                    _STORE = SupabaseTemplateStore() if is_supabase_enabled() else SupabaseTemplateStore(InMemoryTemplateClient())
+                    _STORE = SupabaseTemplateStore() if is_supabase_enabled() else SupabaseTemplateStore(JsonTemplateClient())
     elif current_test and _STORE_TEST_KEY != current_test:
         with _STORE_LOCK:
             if _STORE_TEST_KEY != current_test:
@@ -818,6 +911,21 @@ def get_template(template_id: str) -> Optional[TemplateEditorRecord]:
     if store is None:
         return None
     return store.get_template(template_id)
+
+
+def get_template_versions(template_id: str) -> List[TemplateVersion]:
+    record = get_template(template_id)
+    if not record:
+        return []
+    return record.versions
+
+
+def get_template_version(template_id: str, version_number: int) -> Optional[TemplateVersion]:
+    versions = get_template_versions(template_id)
+    for version in versions:
+        if int(version.version) == int(version_number):
+            return version
+    return None
 
 
 def update_template(template_id: str, template_json: TemplateJson, author: str, role: UserRole) -> Tuple[TemplateEditorRecord, ValidationResult]:
