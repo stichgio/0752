@@ -48,6 +48,12 @@ class Settings(BaseSettings):
         default="",
         validation_alias=AliasChoices("PEXELS_API_KEY", "pexels_api_key"),
     )
+    # Si true, el proxy acepta X-Pexels-Api-Key del cliente cuando no hay key en servidor.
+    # En desarrollo (ENVIRONMENT=dev/local/…) también se acepta sin esta variable.
+    pexels_allow_client_key: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("PEXELS_ALLOW_CLIENT_KEY", "pexels_allow_client_key"),
+    )
 
     # ── GTK Runtime (Windows / WeasyPrint) ────────────────────────────────────
     gtk_runtime_bin: str = Field(default="")
@@ -74,6 +80,11 @@ class Settings(BaseSettings):
     def effective_supabase_key(self) -> str:
         """Resolves SUPABASE_SERVICE_ROLE_KEY with fallback to legacy SUPABASE_KEY."""
         return self.supabase_service_role_key or self.supabase_key
+
+    @property
+    def pexels_accepts_client_key(self) -> bool:
+        """Permite enviar la API key desde el navegador (localStorage) al proxy."""
+        return self.pexels_allow_client_key or self.is_development
 
     @property
     def effective_cors_origins(self) -> List[str]:

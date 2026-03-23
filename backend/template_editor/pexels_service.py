@@ -64,17 +64,21 @@ def _is_configured() -> bool:
     return bool((settings.pexels_api_key or "").strip())
 
 
-def _require_configured() -> str:
-    key = (settings.pexels_api_key or "").strip()
-    if not key:
-        raise HTTPException(
-            status_code=503,
-            detail={
-                "code": "PEXELS_NOT_CONFIGURED",
-                "message": "La integración con Pexels no está habilitada. Define PEXELS_API_KEY en el entorno.",
-            },
-        )
-    return key
+def _resolve_api_key(client_key: Optional[str]) -> str:
+    """Prioriza la key del servidor; si no hay, usa la del cliente si está permitido."""
+    server = (settings.pexels_api_key or "").strip()
+    if server:
+        return server
+    ck = (client_key or "").strip()
+    if ck and settings.pexels_accepts_client_key:
+        return ck
+    raise HTTPException(
+        status_code=503,
+        detail={
+            "code": "PEXELS_NOT_CONFIGURED",
+            "message": "La integración con Pexels no está habilitada. Define PEXELS_API_KEY en el backend o, si tu entorno lo permite, guarda tu clave en la app.",
+        },
+    )
 
 
 def _translate_pexels_error(status: int, body: str) -> HTTPException:
@@ -179,8 +183,9 @@ async def search_photos(
     size: Optional[str] = None,
     color: Optional[str] = None,
     locale: str = "es-ES",
+    client_key: Optional[str] = None,
 ) -> Dict[str, Any]:
-    api_key = _require_configured()
+    api_key = _resolve_api_key(client_key)
 
     params: Dict[str, Any] = {
         "query": query.strip(),
@@ -224,8 +229,9 @@ async def search_photos(
 async def curated_photos(
     page: int = 1,
     per_page: int = 24,
+    client_key: Optional[str] = None,
 ) -> Dict[str, Any]:
-    api_key = _require_configured()
+    api_key = _resolve_api_key(client_key)
 
     params: Dict[str, Any] = {
         "page": page,
@@ -259,5 +265,8 @@ async def curated_photos(
 
 
 def pexels_status() -> Dict[str, Any]:
-    """Devuelve si la integración está habilitada, sin exponer la key."""
-    return {"configured": _is_configured()}
+    """Estado sin exponer secretos. `configured` = key en servidor."""
+    return {
+        "configured": _is_configured(),
+        "acceptsClientKey": settings.pexels_accepts_client_key,
+    }

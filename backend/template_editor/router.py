@@ -397,13 +397,20 @@ async def delete_template_endpoint(template_id: str, author: str = "system"):
 from .pexels_service import curated_photos, pexels_status, search_photos  # noqa: E402
 
 
+def _client_pexels_key(request: Request) -> str | None:
+    if not settings.pexels_accepts_client_key:
+        return None
+    raw = (request.headers.get("x-pexels-api-key") or "").strip()
+    return raw or None
+
+
 @router.get(
     "/providers/pexels/status",
     summary="Estado de la integración Pexels",
     tags=["template-editor", "pexels"],
 )
 async def pexels_status_endpoint():
-    """Indica si PEXELS_API_KEY está configurada, sin exponer el secreto."""
+    """Indica si hay key en servidor y si se acepta clave desde el cliente."""
     return pexels_status()
 
 
@@ -413,6 +420,7 @@ async def pexels_status_endpoint():
     tags=["template-editor", "pexels"],
 )
 async def pexels_search_endpoint(
+    request: Request,
     query: str,
     page: int = 1,
     per_page: int = 24,
@@ -435,6 +443,7 @@ async def pexels_search_endpoint(
         size=size,
         color=color,
         locale=locale,
+        client_key=_client_pexels_key(request),
     )
 
 
@@ -444,6 +453,7 @@ async def pexels_search_endpoint(
     tags=["template-editor", "pexels"],
 )
 async def pexels_curated_endpoint(
+    request: Request,
     page: int = 1,
     per_page: int = 24,
 ):
@@ -452,4 +462,8 @@ async def pexels_curated_endpoint(
 
     Devuelve el mismo DTO que /search. Cachea por página/per_page (TTL 60 s).
     """
-    return await curated_photos(page=page, per_page=per_page)
+    return await curated_photos(
+        page=page,
+        per_page=per_page,
+        client_key=_client_pexels_key(request),
+    )
