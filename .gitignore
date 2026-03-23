@@ -42,7 +42,6 @@ coverage/
 # Mantener solo los archivos de ejemplo (plantillas sin secretos)
 !.env.example
 !*/.env.example
-.env.example
 # Local
 uploads/
 output/

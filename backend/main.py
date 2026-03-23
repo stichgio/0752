@@ -1,13 +1,19 @@
 # -*- coding: utf-8 -*-
+from pathlib import Path
+
 from dotenv import load_dotenv
+
+# Cargar .env desde la raíz del repo y desde backend/ (antes de cualquier import que lea os.environ)
+_backend_dir = Path(__file__).resolve().parent
+_repo_root = _backend_dir.parent
 try:
-    load_dotenv(encoding='utf-8')
-except (UnicodeDecodeError, ValueError):
+    load_dotenv(_repo_root / ".env", encoding="utf-8")
+    load_dotenv(_backend_dir / ".env", encoding="utf-8", override=True)
+except (UnicodeDecodeError, ValueError, OSError):
     import os
     os.environ.setdefault('PYTHONPATH', './backend')
 
 from contextlib import asynccontextmanager
-from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, Form, BackgroundTasks, HTTPException, APIRouter, Request, Query
 from fastapi.exceptions import RequestValidationError
 from fastapi.staticfiles import StaticFiles

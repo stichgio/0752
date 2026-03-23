@@ -10,7 +10,9 @@ import {
   SlidersHorizontal,
   X,
 } from 'lucide-react';
-import { generateId, type AssetLibraryItem } from '../canvasTypes';
+import { isAxiosError } from 'axios';
+import { apiClient } from '@/utils/apiClient';
+import type { AssetLibraryItem } from '../canvasTypes';
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -53,11 +55,73 @@ interface PexelsTabProps {
 
 // ── Constantes ────────────────────────────────────────────────────────────────
 
-const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
 const DEBOUNCE_MS = 500;
 const PER_PAGE = 24;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
+
+function detailMessage(detail: unknown): string {
+  if (typeof detail === 'string') return detail;
+  if (detail && typeof detail === 'object' && 'message' in detail) {
+    return String((detail as { message?: string }).message ?? '');
+  }
+  return '';
+}
+
+function detailCode(detail: unknown): string {
+  if (detail && typeof detail === 'object' && 'code' in detail) {
+    return String((detail as { code?: string }).code ?? '');
+  }
+  return '';
+}
+
+async function fetchPexelsCurated(page: number): Promise<PexelsResponse> {
+  try {
+    const { data } = await apiClient.get<PexelsResponse>('/api/template-editor/providers/pexels/curated', {
+      params: { page, per_page: PER_PAGE },
+      timeout: 20000,
+    });
+    return data;
+  } catch (e) {
+    if (!isAxiosError(e)) throw e;
+    const detail = e.response?.data?.detail;
+    const code = detailCode(detail);
+    const msg = detailMessage(detail) || e.message || `Error ${e.response?.status ?? ''}`;
+    const err = new Error(code ? `${code} ${msg}`.trim() : msg);
+    throw err;
+  }
+}
+
+async function fetchPexelsSearch(
+  query: string,
+  page: number,
+  orientation: string,
+  size: string,
+  color: string,
+): Promise<PexelsResponse> {
+  const params: Record<string, string | number> = {
+    query,
+    page,
+    per_page: PER_PAGE,
+    locale: 'es-ES',
+  };
+  if (orientation) params.orientation = orientation;
+  if (size) params.size = size;
+  if (color) params.color = color;
+  try {
+    const { data } = await apiClient.get<PexelsResponse>('/api/template-editor/providers/pexels/search', {
+      params,
+      timeout: 20000,
+    });
+    return data;
+  } catch (e) {
+    if (!isAxiosError(e)) throw e;
+    const detail = e.response?.data?.detail;
+    const code = detailCode(detail);
+    const msg = detailMessage(detail) || e.message || `Error ${e.response?.status ?? ''}`;
+    throw new Error(code ? `${code} ${msg}`.trim() : msg);
+  }
+}
 
 function buildAssetFromPhoto(photo: PexelsPhoto): AssetLibraryItem {
   return {
@@ -81,15 +145,6 @@ function buildAssetFromPhoto(photo: PexelsPhoto): AssetLibraryItem {
     attributionText: photo.attributionText,
     avgColor: photo.avgColor,
   };
-}
-
-async function fetchPexels(path: string): Promise<PexelsResponse> {
-  const res = await fetch(`${API_BASE}/template-editor${path}`);
-  if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    throw new Error(body?.detail?.message || body?.detail || `Error ${res.status}`);
-  }
-  return res.json() as Promise<PexelsResponse>;
 }
 
 // ── Componente principal ──────────────────────────────────────────────────────
@@ -131,27 +186,19 @@ export function PexelsTab({ assets, onAssetsChange, onInsertAsset }: PexelsTabPr
       setError(null);
       setNotConfigured(false);
       try {
-        let path: string;
-        if (debouncedQuery) {
-          const params = new URLSearchParams({
-            query: debouncedQuery,
-            page: String(page),
-            per_page: String(PER_PAGE),
-            locale: 'es-ES',
-          });
-          if (orientation) params.set('orientation', orientation);
-          if (size) params.set('size', size);
-          if (color) params.set('color', color);
-          path = `/providers/pexels/search?${params.toString()}`;
-        } else {
-          path = `/providers/pexels/curated?page=${page}&per_page=${PER_PAGE}`;
-        }
-        const result = await fetchPexels(path);
+        const result = debouncedQuery
+          ? await fetchPexelsSearch(debouncedQuery, page, orientation, size, color)
+          : await fetchPexelsCurated(page);
         if (!cancelled) setData(result);
       } catch (err) {
         if (cancelled) return;
         const msg = err instanceof Error ? err.message : 'Error desconocido';
-        if (msg.includes('PEXELS_NOT_CONFIGURED') || msg.toLowerCase().includes('no está habilitada')) {
+        const lower = msg.toLowerCase();
+        if (
+          msg.includes('PEXELS_NOT_CONFIGURED')
+          || lower.includes('no está habilitada')
+          || lower.includes('no esta habilitada')
+        ) {
           setNotConfigured(true);
         } else {
           setError(msg);

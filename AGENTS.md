@@ -254,7 +254,7 @@ cd frontend && npx tsc --noEmit
 - Crear instancias axios adicionales fuera de `apiClient.ts`
 - Usar `fetch()` directo en el frontend
 - Codificar archivos en UTF-8 a menos que sea estrictamente necesario y el proyecto lo requiera explícitamente
-
+- Crear un nuevo archivo .env.example teniendo el archivo .env principal.
 ---
 
 ## 🧩 Variables de entorno necesarias

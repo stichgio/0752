@@ -6,10 +6,19 @@ Todos los modulos del backend deben importar desde aqui:
     from config import settings
 """
 
+from pathlib import Path
 from typing import List
 
-from pydantic import AliasChoices, Field  
-from pydantic_settings import BaseSettings  
+from pydantic import AliasChoices, Field
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+# Resolver .env desde la raíz del repo y desde backend/ (uvicorn suele usar CWD=backend/)
+_BACKEND_DIR = Path(__file__).resolve().parent
+_REPO_ROOT = _BACKEND_DIR.parent
+_ENV_FILES = (
+    str(_REPO_ROOT / ".env"),
+    str(_BACKEND_DIR / ".env"),
+)
 
 
 class Settings(BaseSettings):
@@ -35,7 +44,10 @@ class Settings(BaseSettings):
     feature_template_editor: bool = Field(default=False)
 
     # ── Pexels integration ────────────────────────────────────────────────────
-    pexels_api_key: str = Field(default="")
+    pexels_api_key: str = Field(
+        default="",
+        validation_alias=AliasChoices("PEXELS_API_KEY", "pexels_api_key"),
+    )
 
     # ── GTK Runtime (Windows / WeasyPrint) ────────────────────────────────────
     gtk_runtime_bin: str = Field(default="")
@@ -45,12 +57,12 @@ class Settings(BaseSettings):
     ghostscript_quality: str = Field(default="printer")
 
 
-    model_config = {
-        "env_file": ".env",
-        "env_file_encoding": "utf-8",
-        "extra": "ignore",
-        "populate_by_name": True,
-    }
+    model_config = SettingsConfigDict(
+        env_file=_ENV_FILES,
+        env_file_encoding="utf-8",
+        extra="ignore",
+        populate_by_name=True,
+    )
 
     # ── Computed properties ───────────────────────────────────────────────────
 
