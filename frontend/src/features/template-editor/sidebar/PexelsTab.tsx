@@ -324,7 +324,7 @@ export function PexelsTab({ assets, onAssetsChange, onInsertAsset }: PexelsTabPr
 
   if (statusLoading) {
     return (
-      <div className="flex h-full items-center justify-center p-4">
+      <div className="flex min-h-0 flex-1 items-center justify-center p-4">
         <Loader2 size={22} className="animate-spin text-violet-400" />
       </div>
     );
@@ -354,7 +354,7 @@ export function PexelsTab({ assets, onAssetsChange, onInsertAsset }: PexelsTabPr
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       {/* Barra de búsqueda */}
       <div className="sticky top-0 z-10 space-y-2 border-b border-neutral-100 bg-white px-3 pb-2 pt-2.5">
         <div className="flex gap-1.5">
@@ -455,8 +455,8 @@ export function PexelsTab({ assets, onAssetsChange, onInsertAsset }: PexelsTabPr
         </div>
       </div>
 
-      {/* Contenido */}
-      <div className="flex-1 overflow-y-auto p-2">
+      {/* Contenido — min-h-0 necesario en hijos flex con overflow */}
+      <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden p-2">
         {loading ? (
           <div className="flex h-32 items-center justify-center">
             <Loader2 size={20} className="animate-spin text-violet-400" />
@@ -473,7 +473,11 @@ export function PexelsTab({ assets, onAssetsChange, onInsertAsset }: PexelsTabPr
               Reintentar
             </button>
           </div>
-        ) : data?.items.length === 0 ? (
+        ) : !data ? (
+          <div className="flex h-32 items-center justify-center">
+            <Loader2 size={20} className="animate-spin text-violet-300" />
+          </div>
+        ) : data.items?.length === 0 ? (
           <div className="rounded-xl border border-dashed border-neutral-200 bg-white px-4 py-8 text-center">
             <ImagePlus size={24} className="mx-auto text-neutral-300" />
             <p className="mt-2 text-[12px] font-semibold text-neutral-500">Sin resultados</p>
@@ -481,7 +485,7 @@ export function PexelsTab({ assets, onAssetsChange, onInsertAsset }: PexelsTabPr
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-1.5">
-            {(data?.items || []).map((photo) => (
+            {(data.items || []).map((photo) => (
               <PhotoCard
                 key={photo.providerAssetId}
                 photo={photo}
@@ -642,7 +646,7 @@ function PexelsClientKeySetup({ onSave, initialKey, errorText }: PexelsClientKey
   }, [initialKey]);
 
   return (
-    <div className="flex h-full items-center justify-center p-4">
+    <div className="flex min-h-0 flex-1 items-center justify-center p-4">
       <div className="w-full max-w-[240px] rounded-xl border border-dashed border-violet-200 bg-white px-4 py-6 text-center">
         <Camera size={26} className="mx-auto text-violet-300" />
         <p className="mt-2 text-[12px] font-semibold text-neutral-700">Conectar Pexels</p>
@@ -695,7 +699,7 @@ function PexelsClientKeySetup({ onSave, initialKey, errorText }: PexelsClientKey
 
 function PexelsNotConfigured() {
   return (
-    <div className="flex h-full items-center justify-center p-4">
+    <div className="flex min-h-0 flex-1 items-center justify-center p-4">
       <div className="rounded-xl border border-dashed border-neutral-200 bg-white px-5 py-8 text-center max-w-[240px]">
         <Camera size={28} className="mx-auto text-neutral-300" />
         <p className="mt-3 text-[12px] font-semibold text-neutral-600">Pexels no disponible</p>

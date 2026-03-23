@@ -202,13 +202,15 @@ export function AssetsPanel({ assets, onChange, onInsertAsset }: AssetsPanelProp
         </button>
       </div>
 
-      {/* Pestaña Pexels */}
+      {/* Pestaña Pexels — flex-1 min-h-0 igual que Biblioteca para que el scroll interno tenga altura */}
       {source === 'pexels' && (
-        <PexelsTab
-          assets={assets}
-          onAssetsChange={onChange}
-          onInsertAsset={onInsertAsset}
-        />
+        <div className="flex min-h-0 flex-1 flex-col">
+          <PexelsTab
+            assets={assets}
+            onAssetsChange={onChange}
+            onInsertAsset={onInsertAsset}
+          />
+        </div>
       )}
 
       {/* Pestaña Biblioteca (oculta cuando Pexels está activo) */}
