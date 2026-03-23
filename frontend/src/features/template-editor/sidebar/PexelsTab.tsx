@@ -339,6 +339,8 @@ export function PexelsTab({ assets, onAssetsChange, onInsertAsset }: PexelsTabPr
     );
   }
 
+  const isPermanentlyDisabled = pexelsStatus && !pexelsStatus.configured && !pexelsStatus.acceptsClientKey;
+
   if (notConfigured && pexelsStatus?.acceptsClientKey) {
     return (
       <PexelsClientKeySetup
@@ -349,7 +351,7 @@ export function PexelsTab({ assets, onAssetsChange, onInsertAsset }: PexelsTabPr
     );
   }
 
-  if (notConfigured) {
+  if (notConfigured || isPermanentlyDisabled) {
     return <PexelsNotConfigured />;
   }
 

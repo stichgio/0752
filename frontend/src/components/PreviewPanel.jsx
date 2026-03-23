@@ -336,6 +336,11 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
         const renderTemplate = async () => {
             let html = normalizePhotoGridTemplate(customTemplate.content);
 
+            // emergencias.html: layout-{{ panel_count }} y {% set panel_count %} no se ejecutan en el navegador
+            const emergenciasPanelCount = Math.min(images?.length || 0, 4);
+            html = html.replace(/\{\{\s*panel_count\s*\}\}/g, String(emergenciasPanelCount));
+            html = html.replace(/\{%\s*set\s+panel_count\s*=[\s\S]*?%\}/g, '');
+
             // 1. Prepare Data
             const reportData = {};
             // Reverse mapping to help looking up by Label

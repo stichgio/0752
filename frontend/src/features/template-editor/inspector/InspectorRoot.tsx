@@ -216,109 +216,37 @@ export function InspectorRoot({
 
       {(primaryElement.type === 'variable' || primaryElement.type === 'logo' || primaryElement.type === 'image' || primaryElement.type === 'qr') && (
         <div className="px-3 py-3 border-b border-neutral-100 space-y-2 bg-white">
-          <label className="text-[9px] font-bold uppercase tracking-widest text-neutral-400 block">Binding</label>
+          <label className="text-[9px] font-bold uppercase tracking-widest text-neutral-400 block">
+            {primaryElement.type === 'variable' ? 'Variable' :
+             primaryElement.type === 'qr' ? 'Contenido QR' :
+             'URL de Imagen'}
+          </label>
 
           {(primaryElement.type === 'variable' || primaryElement.type === 'qr') && (
-            <>
-              <select
-                className="w-full h-7 px-2 text-xs border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400 bg-white"
-                value={safeBinding.sourceField || ''}
-                onChange={(event) => updateBinding({
-                  target: primaryElement.type === 'qr' ? 'qr' : 'variable',
-                  mode: 'field',
-                  sourceField: event.target.value,
-                  previewLabel: event.target.value,
-                })}
-              >
-                <option value="">- Seleccionar campo -</option>
-                {fields.map((field) => (
-                  <option key={field.key} value={field.key}>{field.label || field.key}</option>
-                ))}
-              </select>
-              <input
-                type="text"
-                value={safeBinding.expression || primaryElement.variableName || primaryElement.qrConfig?.content || ''}
-                onChange={(event) => updateBinding({
-                  target: primaryElement.type === 'qr' ? 'qr' : 'variable',
-                  mode: 'expression',
-                  expression: event.target.value,
-                  previewLabel: event.target.value,
-                })}
-                className="w-full h-7 px-2 text-xs font-mono border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400"
-                placeholder={primaryElement.type === 'qr' ? 'report.data.get(\'codigo\', \'-\')' : "report.data.get('CAMPO', '-')"}
-              />
-            </>
+            <input
+              type="text"
+              value={primaryElement.type === 'qr' ? (primaryElement.qrConfig?.content || '') : (primaryElement.variableName || '')}
+              onChange={(event) => {
+                if (primaryElement.type === 'qr') {
+                  onUpdateElement(primaryElement.id, { qrConfig: { ...primaryElement.qrConfig, content: event.target.value } });
+                } else {
+                  onUpdateElement(primaryElement.id, { variableName: event.target.value });
+                }
+              }}
+              className="w-full h-7 px-2 text-xs font-mono border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400"
+              placeholder={primaryElement.type === 'qr' ? 'Contenido del QR' : "Nombre de la variable"}
+            />
           )}
 
-          {primaryElement.type === 'logo' && (
-            <>
-              <select
-                value={safeBinding.brandKitSlot || 'left'}
-                onChange={(event) => updateBinding({
-                  target: 'logo',
-                  mode: 'brand-kit',
-                  brandKitSlot: event.target.value === 'right' ? 'right' : 'left',
-                  expression: event.target.value === 'right' ? 'logo_right' : 'logo_left',
-                  previewLabel: event.target.value === 'right' ? 'Logo right' : 'Logo left',
-                })}
-                className="w-full h-7 px-2 text-xs border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400 bg-white"
-              >
-                <option value="left">Brand kit left</option>
-                <option value="right">Brand kit right</option>
-              </select>
-              <input
-                type="text"
-                value={primaryElement.imageUrl || ''}
-                onChange={(event) => onUpdateElement(primaryElement.id, { imageUrl: event.target.value })}
-                className="w-full h-7 px-2 text-xs border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400"
-                placeholder="URL opcional para override"
-              />
-            </>
+          {(primaryElement.type === 'logo' || primaryElement.type === 'image') && (
+            <input
+              type="text"
+              value={primaryElement.imageUrl || ''}
+              onChange={(event) => onUpdateElement(primaryElement.id, { imageUrl: event.target.value })}
+              className="w-full h-7 px-2 text-xs border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400"
+              placeholder="URL de la imagen"
+            />
           )}
-
-          {primaryElement.type === 'image' && (
-            <>
-              <select
-                value={safeBinding.assetId || ''}
-                onChange={(event) => updateBinding({
-                  target: 'image',
-                  mode: event.target.value ? 'asset' : 'expression',
-                  assetId: event.target.value || undefined,
-                  previewLabel: safeAssets.find((asset) => asset.id === event.target.value)?.name || '',
-                })}
-                className="w-full h-7 px-2 text-xs border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400 bg-white"
-              >
-                <option value="">- Seleccionar asset -</option>
-                {safeAssets.map((asset) => (
-                  <option key={asset.id} value={asset.id}>{asset.name}</option>
-                ))}
-              </select>
-              <input
-                type="text"
-                value={primaryElement.imageUrl || ''}
-                onChange={(event) => onUpdateElement(primaryElement.id, { imageUrl: event.target.value })}
-                className="w-full h-7 px-2 text-xs border border-neutral-200 rounded-md focus:outline-none focus:ring-1 focus:ring-violet-400"
-                placeholder="URL opcional de imagen"
-              />
-            </>
-          )}
-
-          {safeBrandKits.length > 0 && primaryElement.type === 'logo' && (
-            <div className="rounded-lg border border-neutral-200 bg-neutral-50 px-2 py-2 text-[10px] text-neutral-500">
-              Slots disponibles: {safeBrandKits.map((brandKit) => brandKit.name).join(', ')}
-            </div>
-          )}
-
-          <div className="px-2 py-1 bg-blue-50 border border-blue-100 rounded text-[10px] font-mono text-blue-700 break-all">
-            Preview: {resolvedPreview || '-'}
-          </div>
-          <button
-            type="button"
-            onClick={() => onRemoveBinding?.(primaryElement.id)}
-            className="inline-flex h-7 items-center justify-center rounded-md border border-neutral-200 bg-white px-2 text-[10px] font-semibold text-neutral-600 hover:bg-neutral-50"
-          >
-            Limpiar binding
-          </button>
         </div>
       )}
 

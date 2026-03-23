@@ -275,7 +275,7 @@
         }
 
         .layout-3 .photo-item:nth-child(3) {
-            grid-column: 1 / -1;
+            grid-column: span 2;
             justify-self: center;
             width: calc(50% - 1mm);
         }
@@ -385,7 +385,8 @@
         <div class="section-title">3.0 PANEL FOTOGRÁFICO</div>
         <div class="photo-section">
             {% if report.images %}
-            <div class="photo-grid layout-4">
+            {% set panel_count = report.images[:4]|length %}
+            <div class="photo-grid layout-{{ panel_count }}">
                 {% for img in report.images[:4] %}
                 <div class="photo-item">
                     <img src="{{ img.path }}" alt="{{ img.name }}">
