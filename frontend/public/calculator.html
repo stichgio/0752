@@ -590,7 +590,12 @@
             pointer-events: none;
         }
 
-        /* Responsive */
+        /* ================================================
+           RESPONSIVE DESIGN
+           Tablet → Phone → Small Phone
+           ================================================ */
+
+        /* Tablet / small desktop (≤800px) */
         @media (max-width: 800px) {
             .main-content {
                 grid-template-columns: 1fr;
@@ -607,18 +612,159 @@
             }
         }
 
+        /* Phone (≤600px) */
         @media (max-width: 600px) {
-            .card {
-                padding: 20px 16px;
+            body {
+                padding: 12px;
+                padding: 12px env(safe-area-inset-right) 12px env(safe-area-inset-left);
+                align-items: flex-start;
             }
 
+            .card {
+                padding: 16px 14px;
+                border-radius: var(--radius-sm);
+            }
+
+            /* Header stacks better on small screens */
+            .card-header {
+                padding-bottom: 12px;
+            }
+
+            .header-title {
+                font-size: 18px;
+                letter-spacing: 2px;
+            }
+
+            /* Tabs: adequate touch targets */
+            .tab-btn {
+                padding: 14px 12px;
+                font-size: 12px;
+                letter-spacing: 0.5px;
+                /* min 44px tap target */
+                min-height: 44px;
+            }
+
+            /* Input grid to single column */
             .inputs-grid {
                 grid-template-columns: 1fr;
                 gap: 16px;
             }
 
+            /* 16px font prevents iOS auto-zoom on focus */
+            .form-input {
+                font-size: 16px;
+                padding: 12px 0;
+                padding-right: 28px;
+            }
+
+            .input-label {
+                font-size: 11px;
+            }
+
+            /* Touch-friendly buttons */
+            .btn-add {
+                padding: 14px;
+                min-height: 44px;
+                font-size: 12px;
+            }
+
+            .btn {
+                padding: 16px;
+                font-size: 14px;
+                min-height: 48px;
+            }
+
+            /* Smaller result display */
+            .result-container {
+                padding: 20px 16px;
+            }
+
             .result-value {
                 font-size: 36px;
+                letter-spacing: 2px;
+            }
+
+            .result-label {
+                font-size: 10px;
+                letter-spacing: 1.5px;
+            }
+
+            /* List items: better touch targets */
+            .list-item {
+                padding: 12px 14px;
+            }
+
+            .btn-delete-item {
+                padding: 8px 10px;
+                min-width: 36px;
+                min-height: 36px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            /* Footer */
+            .btn-clear {
+                padding: 10px 20px;
+                min-height: 40px;
+            }
+
+            .auto-calc-toggle {
+                padding: 10px;
+            }
+
+            .toggle-checkbox {
+                width: 22px;
+                height: 22px;
+            }
+
+            .toggle-checkbox i {
+                font-size: 10px;
+            }
+        }
+
+        /* Small phone (≤380px) */
+        @media (max-width: 380px) {
+            body {
+                padding: 8px;
+            }
+
+            .card {
+                padding: 12px 10px;
+            }
+
+            .header-title {
+                font-size: 15px;
+                letter-spacing: 1px;
+            }
+
+            .back-link {
+                font-size: 11px;
+            }
+
+            .tab-btn {
+                padding: 12px 8px;
+                font-size: 11px;
+                letter-spacing: 0;
+            }
+
+            .result-value {
+                font-size: 28px;
+                letter-spacing: 1px;
+            }
+
+            .btn {
+                font-size: 13px;
+                padding: 14px;
+                letter-spacing: 1px;
+            }
+
+            .item-title {
+                font-size: 12px;
+            }
+
+            .item-dims {
+                font-size: 10px;
             }
         }
     </style>

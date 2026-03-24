@@ -15,6 +15,7 @@ import {
     FileSpreadsheet,
     Camera,
     Calculator,
+    Droplet,
 } from 'lucide-react';
 import PomodoroTimer from '../PomodoroTimer';
 
@@ -82,11 +83,17 @@ const navItems = [
         to: '/formatos',
         match: (pathname) => pathname.startsWith('/formatos'),
     },
-    {
+{
         icon: <Camera size={20} />,
-        label: 'Panel Fotográfico',
+        label: 'Panel Fotografico',
         to: '/panel-fotografico',
         match: (pathname) => pathname.startsWith('/panel-fotografico'),
+    },
+    {
+        icon: <Droplet size={20} />,
+        label: 'Desinf. Reservorios',
+        to: '/desinfeccion-reservorios',
+        match: (pathname) => pathname.startsWith('/desinfeccion-reservorios'),
     },
     {
         icon: <Calculator size={20} />,

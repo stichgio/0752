@@ -12,6 +12,7 @@ import TemplateEditorPage from './features/template-editor/page';
 import GioBoardPage from './features/whiteboard/page';
 import FormatosApp from './features/formatos/FormatosApp';
 import PanelFotografico from './features/panel-fotografico/PanelFotograficoApp.tsx';
+import DesinfeccionReservorios from './features/desinfeccion-reservorios/DesinfeccionReservoriosApp.tsx';
 import CalculatorWrapper from './features/calculator/CalculatorWrapper';
 
 const legacyRoutes = [
@@ -89,11 +90,19 @@ export default function AppRouter() {
                         </PageDocument>
                     }
                 />
-                <Route
+<Route
                     path="panel-fotografico"
                     element={
-                        <PageDocument title="Panel Fotográfico - Glitch" bodyClassName="bg-[#0d0d0d] text-[#eee]">
+                        <PageDocument title="Panel Fotografico - Glitch" bodyClassName="bg-[#0d0d0d] text-[#eee]">
                             <PanelFotografico />
+                        </PageDocument>
+                    }
+                />
+                <Route
+                    path="desinfeccion-reservorios"
+                    element={
+                        <PageDocument title="Desinfeccion de Reservorios - Glitch" bodyClassName="bg-[#0d0d0d] text-[#eee]">
+                            <DesinfeccionReservorios />
                         </PageDocument>
                     }
                 />
