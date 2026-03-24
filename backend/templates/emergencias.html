@@ -72,10 +72,10 @@
         }
 
         body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            font-size: 8pt;
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 10px;
             color: #222;
-            line-height: 1.15;
+            line-height: 1.3;
         }
 
         .page {
@@ -85,7 +85,8 @@
             margin: 0 auto;
             padding: 8mm;
             background: #fff;
-            display: block;
+            display: flex;
+            flex-direction: column;
             overflow: hidden;
             box-sizing: border-box;
             position: relative;
@@ -101,8 +102,9 @@
             justify-content: space-between;
             align-items: center;
             height: 20mm;
-            border-bottom: 1.5px solid #ddd;
-            margin-bottom: 2mm;
+            padding-bottom: 4mm;
+            border-bottom: 2px solid #333;
+            margin-bottom: 3mm;
             flex-shrink: 0;
         }
 
@@ -123,91 +125,99 @@
         .title {
             flex: 1;
             text-align: center;
-            font-size: 13pt;
-            font-weight: 700;
+            font-size: 16px;
+            font-weight: bold;
             text-transform: uppercase;
-            color: #333;
+            letter-spacing: 1px;
+            color: #000;
         }
 
         /* === TOP INFO BAR === */
         .info-bar {
             display: flex;
-            flex-wrap: nowrap;
-            justify-content: space-between;
-            align-items: center;
+            border: 1px solid #ccc;
             background: #f5f5f5;
-            border: 1px solid #ddd;
-            padding: 1.5mm 3mm;
             margin-bottom: 2mm;
-            font-size: 7.5pt;
             flex-shrink: 0;
-            white-space: nowrap;
         }
 
         .info-item {
+            flex: 1;
             display: flex;
+            align-items: center;
+            padding: 1.5mm 2mm;
+            border-right: 1px solid #ccc;
             gap: 1mm;
             white-space: nowrap;
         }
 
+        .info-item:last-child {
+            border-right: none;
+        }
+
         .info-label {
-            font-weight: 700 !important;
-            color: #000 !important;
-            font-size: 8pt !important;
+            font-size: 9pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #000;
+        }
+
+        .info-value {
+            font-size: 9pt;
+            font-weight: normal;
+            color: #000;
         }
 
         /* === SECTION HEADERS === */
         .section-title {
-            font-size: 7.5pt;
-            color: #0056b3;
-            font-weight: 700;
+            font-size: 10pt;
+            font-weight: bold;
+            color: #0066cc;
             text-transform: uppercase;
-            border-bottom: 1px solid #0056b3;
-            padding-bottom: 0.5mm;
-            margin: 1.5mm 0 1mm 0;
+            margin-bottom: 3mm;
+            padding-bottom: 3px;
+            border-bottom: 1px solid #0066cc;
             flex-shrink: 0;
         }
 
         /* === DATA GRIDS === */
-        /* === DATA GRIDS (Using Flexbox for stability) === */
-        .grid-6, .grid-4 {
-            display: block;
-            width: 100%;
-            margin-bottom: 2mm;
+        .localizacion {
+            margin-bottom: 3mm;
             flex-shrink: 0;
         }
 
-        .row-item {
-            display: inline-block;
-            vertical-align: middle;
-            margin-bottom: 1mm;
-            margin-right: 2mm;
+        .loc-table {
+            width: 100%;
+            border-collapse: collapse;
         }
 
-        .lbl {
-            font-weight: 700 !important;
-            text-align: right;
-            font-size: 7.5pt !important;
-            color: #000 !important;
+        .loc-table td {
+            padding: 1.5px 0;
+            vertical-align: baseline;
+        }
+
+        .loc-label {
+            font-size: 9pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #000;
             white-space: nowrap;
-            align-self: center;
+            padding-right: 6px;
         }
 
-        .val {
-            border: 1px dotted #888;
-            background: #fefefe;
-            padding: 0.8mm 1.5mm;
-            font-size: 7pt;
-            min-height: 4mm;
-            display: flex;
-            align-items: center;
+        .loc-value {
+            font-size: 9pt;
+            color: #000;
+            word-break: break-word;
         }
 
         /* === PHOTO SECTION (Fixed height or auto-fill) === */
         .photo-section {
-            border: 2px solid #333;
+            flex: 1;
+            border: 1px solid #0066cc;
             padding: 2mm;
-            display: block;
+            display: flex;
+            flex-direction: column;
             min-height: 0;
             overflow: hidden;
         }
@@ -215,22 +225,25 @@
         /* === UNIFIED PHOTO GRID (Using Flexbox and fixed heights for stability) === */
         .photo-grid {
             flex: 1;
-            display: block;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            align-content: space-evenly;
             width: 100%;
+            height: 100%;
             min-height: 0;
-            text-align: center;
         }
 
         .photo-item {
             border: 1.5px solid #eee;
-            background: #fff;
-            display: inline-block;
-            vertical-align: middle;
+            background-color: #f9f9f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             overflow: hidden;
             margin: 1mm;
             box-sizing: border-box;
-            background-color: #f9f9f9;
-            text-align: center;
         }
 
         .photo-item img {
@@ -306,43 +319,49 @@
 
         <!-- INFO BAR -->
         <div class="info-bar">
-            <div class="info-item"><span class="info-label">CENTRO DE SERVICIO:</span> {{ report.data.get('CENTRO', '-')
-                }}</div>
-            <div class="info-item"><span class="info-label">CONTRATISTA:</span> {{ report.data.get('CONTRATISTA', '-')
-                }}
+            <div class="info-item">
+                <span class="info-label">CENTRO DE SERVICIO:</span>
+                <span class="info-value">{{ report.data.get('CENTRO', '-') }}</span>
             </div>
-            <div class="info-item"><span class="info-label">NIS:</span> {{ report.data.get('NIS', '-') }}</div>
+            <div class="info-item">
+                <span class="info-label">CONTRATISTA:</span>
+                <span class="info-value">{{ report.data.get('CONTRATISTA', '-') }}</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">NIS:</span>
+                <span class="info-value">{{ report.data.get('NIS', '-') }}</span>
+            </div>
         </div>
 
         <!-- 1.0 LOCALIZACION -->
-        <div class="section-title">1.0 LOCALIZACIÓN</div>
-        <div class="grid-6">
-            <div class="row-item" style="width: 100%; display: flex;">
-                <span class="lbl" style="width: 25mm;">DIRECCION:</span>
-                <div class="val" style="flex: 1;">{{ report.data.get('DIRECCION', '-') }}</div>
-            </div>
-            <div class="row-item" style="width: 48%; display: inline-flex;">
-                <span class="lbl" style="width: 25mm;">LOCALIDAD:</span>
-                <div class="val" style="flex: 1;">{{ report.data.get('LOCALIDAD', '-') }}</div>
-            </div>
-            <div class="row-item" style="width: 48%; display: inline-flex; margin-right: 0;">
-                <span class="lbl" style="width: 25mm;">DISTRITO:</span>
-                <div class="val" style="flex: 1;">{{ report.data.get('DISTRITO', '-') }}</div>
-            </div>
-        </div>
+        <section class="localizacion">
+            <div class="section-title">1.0 LOCALIZACIÓN</div>
+            <table class="loc-table">
+                <tr>
+                    <td class="loc-label">DIRECCION:</td>
+                    <td class="loc-value" colspan="3">{{ report.data.get('DIRECCION', '-') }}</td>
+                </tr>
+                <tr>
+                    <td class="loc-label">LOCALIDAD:</td>
+                    <td class="loc-value">{{ report.data.get('LOCALIDAD', '-') }}</td>
+                    <td class="loc-label" style="padding-left:8px">DISTRITO:</td>
+                    <td class="loc-value">{{ report.data.get('DISTRITO', '-') }}</td>
+                </tr>
+            </table>
+        </section>
 
         <!-- 2.0 DETALLES -->
-        <div class="section-title">2.0 DETALLES DE ORDEN DE TRABAJO</div>
-        <div class="grid-4">
-            <div class="row-item" style="width: 48%; display: inline-flex;">
-                <span class="lbl" style="width: 25mm;">ACTIVIDAD:</span>
-                <div class="val" style="flex: 1;">{{ report.data.get('ACTIVIDAD', '-') }}</div>
-            </div>
-            <div class="row-item" style="width: 48%; display: inline-flex; margin-right: 0;">
-                <span class="lbl" style="width: 25mm;">SUBACTIVIDAD:</span>
-                <div class="val" style="flex: 1;">{{ report.data.get('SUBACTIVIDAD', '-') }}</div>
-            </div>
-        </div>
+        <section class="localizacion">
+            <div class="section-title">2.0 DETALLES DE ORDEN DE TRABAJO</div>
+            <table class="loc-table">
+                <tr>
+                    <td class="loc-label">ACTIVIDAD:</td>
+                    <td class="loc-value">{{ report.data.get('ACTIVIDAD', '-') }}</td>
+                    <td class="loc-label" style="padding-left:8px">SUBACTIVIDAD:</td>
+                    <td class="loc-value">{{ report.data.get('SUBACTIVIDAD', '-') }}</td>
+                </tr>
+            </table>
+        </section>
 
         <!-- 3.0 PANEL FOTOGRAFICO -->
         <div class="section-title">3.0 PANEL FOTOGRÁFICO</div>
