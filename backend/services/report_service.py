@@ -118,6 +118,7 @@ def _size_from_mm(width_mm, height_mm, dpi=TARGET_DPI):
 BACKEND_TEMPLATE_IMAGE_SLOTS_MM = {
     "report.html": {1: (135, 180), 2: (94, 180), 3: (94, 88), 4: (94, 88), 5: (94, 58), 6: (94, 58), "default": (94, 70)},
     "aniegos_ate.html": {1: (135, 180), 2: (94, 180), 3: (94, 88), 4: (94, 88), 5: (94, 58), 6: (94, 58), "default": (94, 70)},
+    "emergencias.html": {1: (135, 180), 2: (94, 180), 3: (100, 94), 4: (100, 94), "default": (94, 70)},
     "report_volanteo.html": {"default": (92, 78)},
     "format_etapas.html": {"default": (92, 76)},
     "format_reservorios.html": {"default": (60, 54)},
