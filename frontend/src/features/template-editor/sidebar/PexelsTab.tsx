@@ -10,8 +10,7 @@ import {
   SlidersHorizontal,
   X,
 } from 'lucide-react';
-import { isAxiosError } from 'axios';
-import { apiClient } from '@/utils/apiClient';
+import { extractHttpErrorMessage, HTTP_TIMEOUTS, requestJson } from '@/utils/apiClient';
 import type { AssetLibraryItem } from '../canvasTypes';
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
@@ -75,53 +74,26 @@ function buildPexelsHeaders(clientKey: string): Record<string, string> | undefin
   return { 'X-Pexels-Api-Key': k };
 }
 
-function detailMessage(detail: unknown): string {
-  if (typeof detail === 'string') return detail;
-  if (detail && typeof detail === 'object' && 'message' in detail) {
-    return String((detail as { message?: string }).message ?? '');
-  }
-  return '';
-}
-
-function detailCode(detail: unknown): string {
-  if (detail && typeof detail === 'object' && 'code' in detail) {
-    return String((detail as { code?: string }).code ?? '');
-  }
-  return '';
-}
-
 interface PexelsStatusResponse {
   configured: boolean;
   acceptsClientKey: boolean;
 }
 
 async function fetchPexelsStatus(): Promise<PexelsStatusResponse> {
-  const { data } = await apiClient.get<PexelsStatusResponse>('/api/template-editor/providers/pexels/status');
-  return data;
-}
-
-function throwFromAxios(e: unknown): never {
-  if (!isAxiosError(e)) throw e;
-  const raw = e.response?.data;
-  const detail = raw && typeof raw === 'object' && 'detail' in raw
-    ? (raw as { detail: unknown }).detail
-    : raw;
-  const code = detailCode(detail);
-  const msg = detailMessage(detail) || e.message || `Error ${e.response?.status ?? ''}`;
-  throw new Error(code ? `${code} ${msg}`.trim() : msg);
+  return requestJson<PexelsStatusResponse>('/api/template-editor/providers/pexels/status');
 }
 
 async function fetchPexelsCurated(page: number, clientKeyForHeader: string): Promise<PexelsResponse> {
   try {
     const headers = buildPexelsHeaders(clientKeyForHeader);
-    const { data } = await apiClient.get<PexelsResponse>('/api/template-editor/providers/pexels/curated', {
+    return await requestJson<PexelsResponse>('/api/template-editor/providers/pexels/curated', {
+      method: 'GET',
       params: { page, per_page: PER_PAGE },
-      timeout: 20000,
+      timeout: HTTP_TIMEOUTS.SHORT,
       ...(headers ? { headers } : {}),
     });
-    return data;
   } catch (e) {
-    throwFromAxios(e);
+    throw new Error(await extractHttpErrorMessage(e));
   }
 }
 
@@ -144,14 +116,14 @@ async function fetchPexelsSearch(
   if (color) params.color = color;
   try {
     const headers = buildPexelsHeaders(clientKeyForHeader);
-    const { data } = await apiClient.get<PexelsResponse>('/api/template-editor/providers/pexels/search', {
+    return await requestJson<PexelsResponse>('/api/template-editor/providers/pexels/search', {
+      method: 'GET',
       params,
-      timeout: 20000,
+      timeout: HTTP_TIMEOUTS.SHORT,
       ...(headers ? { headers } : {}),
     });
-    return data;
   } catch (e) {
-    throwFromAxios(e);
+    throw new Error(await extractHttpErrorMessage(e));
   }
 }
 

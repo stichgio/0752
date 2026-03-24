@@ -3,7 +3,8 @@ import {
     FileDown, Loader2, ScanLine, ChevronRight, AlertCircle, RefreshCw, Layers,
     Upload, Trash2, Settings2, Check, X, Plus, FileText, Move, Eye,
 } from 'lucide-react';
-import { apiClient } from '../../utils/apiClient';
+import { apiClient, extractHttpErrorMessage, HTTP_TIMEOUTS, requestBlob } from '../../utils/apiClient';
+import { useConfirmDialog } from '../../components/ui';
 import type { FormatInfo, VisualMapping } from './types';
 
 declare global {
@@ -17,10 +18,10 @@ function pad(n: number, len = 7) {
     return String(n).padStart(len, '0');
 }
 
-/* ─── Types ──────────────────────────────────────────────────── */
+/* â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 interface PageImg { url: string; pageNum: number; }
 
-/* ─── Multi-page PDF Viewer ──────────────────────────────────── */
+/* â”€â”€â”€ Multi-page PDF Viewer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function PdfMultiViewer({ blob, desde, total, padLen }: { blob: Blob | null; desde: number; total: number; padLen: number }) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [pageImgs, setPageImgs] = useState<PageImg[]>([]);
@@ -90,7 +91,7 @@ function PdfMultiViewer({ blob, desde, total, padLen }: { blob: Blob | null; des
     return (
         <div ref={containerRef} className="w-full h-full overflow-y-auto flex flex-col" style={{ scrollbarWidth: 'thin', scrollbarColor: '#2a2a2a transparent' }}>
             <div className="flex items-center justify-center gap-3 py-2 px-4 bg-neutral-800/50 border-b border-neutral-700 flex-shrink-0">
-                <button onClick={() => setZoom(z => Math.max(50, z - zoomStep))} className="w-7 h-7 rounded bg-neutral-700 hover:bg-neutral-600 text-amber-400 text-sm font-bold flex items-center justify-center transition-colors">−</button>
+                <button onClick={() => setZoom(z => Math.max(50, z - zoomStep))} className="w-7 h-7 rounded bg-neutral-700 hover:bg-neutral-600 text-amber-400 text-sm font-bold flex items-center justify-center transition-colors">âˆ’</button>
                 <span className="text-[11px] text-amber-400 font-medium min-w-[40px] text-center" style={{ fontFamily: "'Roboto Mono', monospace" }}>{zoom}%</span>
                 <button onClick={() => setZoom(z => Math.min(200, z + zoomStep))} className="w-7 h-7 rounded bg-neutral-700 hover:bg-neutral-600 text-amber-400 text-sm font-bold flex items-center justify-center transition-colors">+</button>
                 <button onClick={() => setZoom(100)} className="ml-1 text-[10px] text-neutral-500 hover:text-neutral-300 transition-colors">reset</button>
@@ -98,9 +99,9 @@ function PdfMultiViewer({ blob, desde, total, padLen }: { blob: Blob | null; des
             <div className="px-4 py-6 space-y-6 flex flex-col items-center flex-1">
                 {pageImgs.map((p) => (
                     <div key={p.pageNum} className="relative mx-auto bg-neutral-50 rounded-xl shadow-2xl shadow-black/50" style={{ width: `${(zoom / 100) * 100}%`, maxWidth: '100%' }}>
-                        <img src={p.url} alt={`Página ${p.pageNum}`} className="w-full object-contain rounded-lg block" draggable={false} style={{ imageRendering: 'auto' }} />
+                        <img src={p.url} alt={`PÃ¡gina ${p.pageNum}`} className="w-full object-contain rounded-lg block" draggable={false} style={{ imageRendering: 'auto' }} />
                         <div className="absolute bottom-3 right-3 flex items-center gap-1.5 bg-black/80 border border-amber-400/25 rounded px-2 py-1" style={{ fontFamily: "'Roboto Mono', monospace" }}>
-                            <span className="text-[8px] text-neutral-600">N°</span>
+                            <span className="text-[8px] text-neutral-600">NÂ°</span>
                             <span className="text-[10px] font-medium text-amber-400 tracking-widest">{pad(desde + p.pageNum - 1, padLen)}</span>
                         </div>
                     </div>
@@ -108,12 +109,12 @@ function PdfMultiViewer({ blob, desde, total, padLen }: { blob: Blob | null; des
                 {renderingPage > 0 && (
                     <div className="flex items-center gap-2.5 py-4 text-neutral-600">
                         <RefreshCw size={11} className="animate-spin text-amber-400/40 flex-shrink-0" />
-                        <span className="text-[10px] tracking-widest" style={{ fontFamily: "'Roboto Mono', monospace" }}>renderizando {renderingPage} / {previewCount}…</span>
+                        <span className="text-[10px] tracking-widest" style={{ fontFamily: "'Roboto Mono', monospace" }}>renderizando {renderingPage} / {previewCount}â€¦</span>
                     </div>
                 )}
                 {isCapped && renderingPage === 0 && pageImgs.length > 0 && (
                     <div className="w-full border border-amber-400/10 bg-amber-400/[0.03] rounded-md px-4 py-3 text-center">
-                        <p className="text-[10px] text-amber-400/50 tracking-wider" style={{ fontFamily: "'Roboto Mono', monospace" }}>vista previa: {MAX_PREVIEW_PAGES} de {total} páginas</p>
+                        <p className="text-[10px] text-amber-400/50 tracking-wider" style={{ fontFamily: "'Roboto Mono', monospace" }}>vista previa: {MAX_PREVIEW_PAGES} de {total} pÃ¡ginas</p>
                     </div>
                 )}
                 <div className="h-2" />
@@ -122,14 +123,14 @@ function PdfMultiViewer({ blob, desde, total, padLen }: { blob: Blob | null; des
     );
 }
 
-/* ─── Empty / Loading State ──────────────────────────────────── */
+/* â”€â”€â”€ Empty / Loading State â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function EmptyPreview({ loading }: { loading: boolean }) {
     return (
         <div className="w-full h-full flex flex-col items-center justify-center gap-4 text-neutral-700">
             {loading ? (
                 <>
                     <Loader2 size={22} className="animate-spin text-amber-400/40" />
-                    <span className="text-[11px] tracking-widest" style={{ fontFamily: "'Roboto Mono', monospace" }}>cargando formatos…</span>
+                    <span className="text-[11px] tracking-widest" style={{ fontFamily: "'Roboto Mono', monospace" }}>cargando formatosâ€¦</span>
                 </>
             ) : (
                 <>
@@ -143,7 +144,7 @@ function EmptyPreview({ loading }: { loading: boolean }) {
     );
 }
 
-/* ─── Mapping Editor Panel ───────────────────────────────────── */
+/* â”€â”€â”€ Mapping Editor Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function MappingEditor({ mapping, onChange, onSave, onCancel }: {
     mapping: VisualMapping;
     onChange: (m: VisualMapping) => void;
@@ -170,7 +171,7 @@ function MappingEditor({ mapping, onChange, onSave, onCancel }: {
                     { label: 'Alto', key: 'height' as const, step: 5 },
                     { label: 'Font Size', key: 'font_size' as const, step: 0.5 },
                     { label: 'Padding', key: 'padding' as const, step: 1 },
-                    { label: 'Página', key: 'page' as const, step: 1 },
+                    { label: 'PÃ¡gina', key: 'page' as const, step: 1 },
                 ].map(({ label, key, step }) => (
                     <div key={key}>
                         <div className="text-[8px] text-neutral-600 tracking-widest mb-1" style={{ fontFamily: "'Roboto Mono', monospace" }}>{label}</div>
@@ -252,7 +253,7 @@ function MappingEditor({ mapping, onChange, onSave, onCancel }: {
     );
 }
 
-/* ─── Upload Modal ───────────────────────────────────────────── */
+/* â”€â”€â”€ Upload Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function UploadModal({ onClose, onUploaded }: { onClose: () => void; onUploaded: (f: FormatInfo) => void }) {
     const [file, setFile] = useState<File | null>(null);
     const [nombre, setNombre] = useState('');
@@ -293,7 +294,7 @@ function UploadModal({ onClose, onUploaded }: { onClose: () => void; onUploaded:
                         type="text"
                         value={nombre}
                         onChange={e => setNombre(e.target.value)}
-                        placeholder="Ej: Formato Inspección"
+                        placeholder="Ej: Formato InspecciÃ³n"
                         className="w-full bg-black/60 border border-white/[0.08] hover:border-white/[0.14] focus:border-amber-400/40 rounded-md px-3 py-2.5 text-white text-sm focus:outline-none transition-colors"
                     />
                 </div>
@@ -303,7 +304,7 @@ function UploadModal({ onClose, onUploaded }: { onClose: () => void; onUploaded:
                     <label className="flex items-center gap-2.5 cursor-pointer bg-black/60 border border-dashed border-white/[0.12] hover:border-amber-400/30 rounded-md px-3 py-3 transition-colors">
                         <Upload size={14} className="text-neutral-500" />
                         <span className="text-[11px] text-neutral-400 truncate" style={{ fontFamily: "'Roboto Mono', monospace" }}>
-                            {file ? file.name : 'Seleccionar archivo…'}
+                            {file ? file.name : 'Seleccionar archivoâ€¦'}
                         </span>
                         <input type="file" accept=".pdf" className="hidden" onChange={e => setFile(e.target.files?.[0] ?? null)} />
                     </label>
@@ -335,14 +336,14 @@ function UploadModal({ onClose, onUploaded }: { onClose: () => void; onUploaded:
                     style={{ fontFamily: "'Roboto Mono', monospace" }}
                 >
                     {uploading ? <Loader2 size={13} className="animate-spin" /> : <Upload size={13} />}
-                    {uploading ? 'Subiendo…' : 'Subir Formato'}
+                    {uploading ? 'Subiendoâ€¦' : 'Subir Formato'}
                 </button>
             </div>
         </div>
     );
 }
 
-/* ─── Row utility ────────────────────────────────────────────── */
+/* â”€â”€â”€ Row utility â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 function Row({ label, value, valueClass = 'text-white' }: { label: string; value: string; valueClass?: string }) {
     return (
         <div className="flex items-center justify-between px-3 py-2">
@@ -352,7 +353,7 @@ function Row({ label, value, valueClass = 'text-white' }: { label: string; value
     );
 }
 
-/* ─── Main App ───────────────────────────────────────────────── */
+/* â”€â”€â”€ Main App â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 export default function FormatosApp() {
     const [formats, setFormats] = useState<FormatInfo[]>([]);
     const [loadingFormats, setLoadingFormats] = useState(true);
@@ -370,6 +371,7 @@ export default function FormatosApp() {
     const [showUpload, setShowUpload] = useState(false);
     const [mappingMode, setMappingMode] = useState(false);
     const [editMapping, setEditMapping] = useState<VisualMapping | null>(null);
+    const confirmDialog = useConfirmDialog();
 
     const selected = formats.find(f => f.id === selectedId) ?? null;
     const padLen = selected?.mapping?.padding ?? 7;
@@ -380,7 +382,7 @@ export default function FormatosApp() {
     const isValid = selected !== null && desde >= numMin && hasta >= desde && total <= maxPages && hasta <= numMax;
     const canGenerate = isValid && (selected?.strategy === 'legacy_xobject' || selected?.has_mapping);
 
-    /* ── Load formats ── */
+    /* â”€â”€ Load formats â”€â”€ */
     const fetchFormats = useCallback(async () => {
         setLoadingFormats(true);
         try {
@@ -397,7 +399,7 @@ export default function FormatosApp() {
 
     useEffect(() => { fetchFormats(); }, []);
 
-    /* ── Auto-preview on desde/hasta/format change ── */
+    /* â”€â”€ Auto-preview on desde/hasta/format change â”€â”€ */
     useEffect(() => {
         if (!selected || !canGenerate) { setPreviewBlob(null); return; }
         const capturedDesde = desde;
@@ -409,12 +411,16 @@ export default function FormatosApp() {
             if (capturedDesde < numMin || capturedHasta < capturedDesde) return;
             setPreviewLoading(true);
             try {
-                const res = await apiClient.post('/api/formatos/generate', {
-                    format_id: selected.id,
-                    desde: capturedDesde,
-                    hasta: previewHasta,
-                }, { responseType: 'blob' });
-                setPreviewBlob(res.data);
+                const blob = await requestBlob('/api/formatos/generate', {
+                    method: 'POST',
+                    data: {
+                        format_id: selected.id,
+                        desde: capturedDesde,
+                        hasta: previewHasta,
+                    },
+                    timeout: HTTP_TIMEOUTS.NONE,
+                });
+                setPreviewBlob(blob);
                 setPreviewDesde(capturedDesde);
                 setPreviewTotal(capturedTotal);
             } catch { /* silent */ } finally {
@@ -424,19 +430,21 @@ export default function FormatosApp() {
         return () => clearTimeout(t);
     }, [desde, hasta, selectedId, selected?.has_mapping]);
 
-    /* ── Download handler ── */
+    /* â”€â”€ Download handler â”€â”€ */
     const handleGenerate = async () => {
         if (!canGenerate || !selected) return;
         setLoading(true);
         setError(null);
         try {
-            const res = await apiClient.post('/api/formatos/generate', {
-                format_id: selected.id,
-                desde,
-                hasta,
-            }, { responseType: 'blob' });
-
-            const blob: Blob = res.data;
+            const blob = await requestBlob('/api/formatos/generate', {
+                method: 'POST',
+                data: {
+                    format_id: selected.id,
+                    desde,
+                    hasta,
+                },
+                timeout: HTTP_TIMEOUTS.NONE,
+            });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -448,27 +456,24 @@ export default function FormatosApp() {
                 : `${selected.id}_${desdeS}-${hastaS}.pdf`;
             a.click();
             URL.revokeObjectURL(url);
-        } catch (e: any) {
-            const detail = e?.response?.data;
-            if (detail instanceof Blob) {
-                try {
-                    const text = await detail.text();
-                    const parsed = JSON.parse(text);
-                    setError(parsed.detail ?? 'Error desconocido');
-                } catch {
-                    setError('Error desconocido');
-                }
-            } else {
-                setError(detail?.detail ?? e?.message ?? 'Error desconocido');
-            }
+        } catch (e: unknown) {
+            setError(await extractHttpErrorMessage(e));
         } finally {
             setLoading(false);
         }
     };
 
-    /* ── Delete handler ── */
+    /* â”€â”€ Delete handler â”€â”€ */
     const handleDelete = async (fid: string) => {
-        if (!confirm('¿Eliminar este formato?')) return;
+        const confirmed = await confirmDialog({
+            title: '¿Eliminar este formato?',
+            description: 'Esta acción quitará el formato de la lista disponible.',
+            confirmLabel: 'Eliminar',
+            cancelLabel: 'Cancelar',
+            tone: 'danger',
+        });
+        if (!confirmed) return;
+
         try {
             await apiClient.delete(`/api/formatos/${fid}`);
             setFormats(prev => prev.filter(f => f.id !== fid));
@@ -480,7 +485,7 @@ export default function FormatosApp() {
         }
     };
 
-    /* ── Save mapping ── */
+    /* â”€â”€ Save mapping â”€â”€ */
     const handleSaveMapping = async () => {
         if (!selected || !editMapping) return;
         try {
@@ -493,7 +498,7 @@ export default function FormatosApp() {
         }
     };
 
-    /* ── Upload callback ── */
+    /* â”€â”€ Upload callback â”€â”€ */
     const handleUploaded = (f: FormatInfo) => {
         setFormats(prev => [...prev, f]);
         setSelectedId(f.id);
@@ -504,7 +509,7 @@ export default function FormatosApp() {
 
     return (
         <div className="flex overflow-hidden bg-[#0a0a0a] text-white" style={{ height: 'calc(100vh - 0px)', fontFamily: "'Outfit', sans-serif" }}>
-            {/* ── LEFT: PREVIEW ─────────────────────────────────────── */}
+            {/* â”€â”€ LEFT: PREVIEW â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             <div className="flex-1 flex flex-col min-w-0 relative">
                 <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, rgba(255,255,255,0.06) 1px, transparent 1px)', backgroundSize: '28px 28px' }} />
 
@@ -517,24 +522,24 @@ export default function FormatosApp() {
                     <div className="flex items-center gap-3">
                         {previewBlob && previewPagesShown > 0 && (
                             <div className="flex items-center gap-1.5 border border-white/[0.08] rounded px-2.5 py-1 bg-white/[0.02]" style={{ fontFamily: "'Roboto Mono', monospace" }}>
-                                <span className="text-[9px] tracking-wider text-neutral-600">N°</span>
+                                <span className="text-[9px] tracking-wider text-neutral-600">NÂ°</span>
                                 <span className="text-[10px] font-medium text-white tracking-wider">
                                     {pad(previewDesde, padLen)}
-                                    {previewTotal > 1 ? ` → ${pad(previewDesde + previewTotal - 1, padLen)}` : ''}
+                                    {previewTotal > 1 ? ` â†’ ${pad(previewDesde + previewTotal - 1, padLen)}` : ''}
                                 </span>
                             </div>
                         )}
                         {previewLoading && (
                             <div className="flex items-center gap-1.5">
                                 <RefreshCw size={9} className="animate-spin text-amber-400/40" />
-                                <span className="text-[9px] tracking-wider text-neutral-600" style={{ fontFamily: "'Roboto Mono', monospace" }}>actualizando…</span>
+                                <span className="text-[9px] tracking-wider text-neutral-600" style={{ fontFamily: "'Roboto Mono', monospace" }}>actualizandoâ€¦</span>
                             </div>
                         )}
                         {previewBlob && previewPagesShown > 0 && (
                             <div className="flex items-center gap-1.5 border border-amber-400/25 rounded px-2.5 py-1 bg-amber-400/[0.04]" style={{ fontFamily: "'Roboto Mono', monospace" }}>
                                 <Layers size={9} className="text-amber-400/60" />
                                 <span className="text-[10px] font-medium text-amber-400 tracking-wider">
-                                    {isCapped ? `${MAX_PREVIEW_PAGES} / ${previewTotal}` : previewPagesShown} {previewPagesShown === 1 ? 'pág.' : 'págs.'}
+                                    {isCapped ? `${MAX_PREVIEW_PAGES} / ${previewTotal}` : previewPagesShown} {previewPagesShown === 1 ? 'pÃ¡g.' : 'pÃ¡gs.'}
                                 </span>
                             </div>
                         )}
@@ -551,7 +556,7 @@ export default function FormatosApp() {
                 </div>
             </div>
 
-            {/* ── RIGHT: SIDEBAR ────────────────────────────────────── */}
+            {/* â”€â”€ RIGHT: SIDEBAR â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             <div className="w-[320px] flex-shrink-0 flex flex-col border-l border-white/[0.06]" style={{ background: '#0e0e0e' }}>
                 {/* brand header */}
                 <div className="px-6 pt-7 pb-5 border-b border-white/[0.05]">
@@ -562,7 +567,7 @@ export default function FormatosApp() {
                 {/* scrollable config */}
                 <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
 
-                    {/* ─ Format Selector ─ */}
+                    {/* â”€ Format Selector â”€ */}
                     <section>
                         <div className="flex items-center justify-between mb-3">
                             <p className="text-[9px] tracking-[0.25em] uppercase text-neutral-600" style={{ fontFamily: "'Roboto Mono', monospace" }}>Formato</p>
@@ -588,7 +593,7 @@ export default function FormatosApp() {
                                     <div className="flex-1 min-w-0">
                                         <div className={`text-[11px] font-medium truncate ${f.id === selectedId ? 'text-amber-400' : 'text-white'}`}>{f.nombre}</div>
                                         <div className="text-[8px] text-neutral-600 tracking-widest uppercase" style={{ fontFamily: "'Roboto Mono', monospace" }}>
-                                            {f.origen}{!f.has_mapping && f.strategy === 'visual_overlay' ? ' · sin mapping' : ''}
+                                            {f.origen}{!f.has_mapping && f.strategy === 'visual_overlay' ? ' Â· sin mapping' : ''}
                                         </div>
                                     </div>
                                     {f.origen === 'uploaded' && (
@@ -609,7 +614,7 @@ export default function FormatosApp() {
 
                     <div className="border-t border-white/[0.05]" />
 
-                    {/* ─ Mapping Mode Toggle ─ */}
+                    {/* â”€ Mapping Mode Toggle â”€ */}
                     {selected && selected.strategy === 'visual_overlay' && (
                         <>
                             <section>
@@ -657,10 +662,10 @@ export default function FormatosApp() {
                         </>
                     )}
 
-                    {/* ─ Rango ─ */}
+                    {/* â”€ Rango â”€ */}
                     {selected && !mappingMode && (
                         <section>
-                            <p className="text-[9px] tracking-[0.25em] uppercase text-neutral-600 mb-3" style={{ fontFamily: "'Roboto Mono', monospace" }}>Rango de números</p>
+                            <p className="text-[9px] tracking-[0.25em] uppercase text-neutral-600 mb-3" style={{ fontFamily: "'Roboto Mono', monospace" }}>Rango de nÃºmeros</p>
                             <div className="space-y-2.5">
                                 <div>
                                     <div className="text-[9px] text-neutral-600 tracking-widest mb-1.5" style={{ fontFamily: "'Roboto Mono', monospace" }}>DESDE</div>
@@ -697,7 +702,7 @@ export default function FormatosApp() {
                         </section>
                     )}
 
-                    {/* ─ Resumen ─ */}
+                    {/* â”€ Resumen â”€ */}
                     {selected && !mappingMode && (
                         <>
                             <div className="border-t border-white/[0.05]" />
@@ -706,9 +711,9 @@ export default function FormatosApp() {
                                 <div className="rounded-md border border-white/[0.06] bg-black/30 divide-y divide-white/[0.04]">
                                     <Row label="Formato" value={selected.nombre} />
                                     <Row label="Tipo" value={total === 1 ? 'Individual' : 'Consolidado'} />
-                                    <Row label="Páginas" value={total > maxPages ? `${total} ✗` : String(total)} valueClass={total > maxPages ? 'text-red-400' : 'text-amber-400'} />
-                                    <Row label="Correlativo" value={total > 1 ? `${pad(desde, padLen)} → ${pad(hasta, padLen)}` : pad(desde, padLen)} />
-                                    {total > maxPages && <Row label="Límite" value={`máx. ${maxPages}`} valueClass="text-red-400/70" />}
+                                    <Row label="PÃ¡ginas" value={total > maxPages ? `${total} âœ—` : String(total)} valueClass={total > maxPages ? 'text-red-400' : 'text-amber-400'} />
+                                    <Row label="Correlativo" value={total > 1 ? `${pad(desde, padLen)} â†’ ${pad(hasta, padLen)}` : pad(desde, padLen)} />
+                                    {total > maxPages && <Row label="LÃ­mite" value={`mÃ¡x. ${maxPages}`} valueClass="text-red-400/70" />}
                                     {!canGenerate && selected.strategy === 'visual_overlay' && (
                                         <Row label="Estado" value="Mapping requerido" valueClass="text-red-400" />
                                     )}
@@ -717,7 +722,7 @@ export default function FormatosApp() {
                         </>
                     )}
 
-                    {/* ─ Error ─ */}
+                    {/* â”€ Error â”€ */}
                     {error && (
                         <div className="flex items-start gap-2 bg-red-950/30 border border-red-900/40 rounded-md p-3">
                             <AlertCircle size={11} className="text-red-400 mt-0.5 flex-shrink-0" />
@@ -726,7 +731,7 @@ export default function FormatosApp() {
                     )}
                 </div>
 
-                {/* ─ Footer / Generate ─ */}
+                {/* â”€ Footer / Generate â”€ */}
                 {!mappingMode && (
                     <div className="px-6 pb-6 pt-4 border-t border-white/[0.05] space-y-3">
                         <button
@@ -738,13 +743,13 @@ export default function FormatosApp() {
                             <div className="flex items-center gap-2">
                                 {loading ? <Loader2 size={13} className="animate-spin" /> : <FileDown size={13} />}
                                 <span className="text-[11px] tracking-wider">
-                                    {loading ? 'Generando…' : total <= 1 ? 'Generar PDF' : `Generar ${total} páginas`}
+                                    {loading ? 'Generandoâ€¦' : total <= 1 ? 'Generar PDF' : `Generar ${total} pÃ¡ginas`}
                                 </span>
                             </div>
                             {!loading && <ChevronRight size={12} className="opacity-40 group-hover:opacity-80 transition-opacity" />}
                         </button>
                         <p className="text-center text-[9px] tracking-[0.2em] text-neutral-700 uppercase" style={{ fontFamily: "'Roboto Mono', monospace" }}>
-                            máx. {maxPages} páginas / descarga
+                            mÃ¡x. {maxPages} pÃ¡ginas / descarga
                         </p>
                     </div>
                 )}

@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback } from 'react';
-import { getApiBase } from '@/utils/apiBase';
+import { extractHttpErrorMessage, openEventStream } from '@/utils/apiClient';
 
 interface ProgressState {
     phase: string;
@@ -168,21 +168,11 @@ export function useSSEProgress() {
         });
 
         try {
-            const base = getApiBase();
-            const url = `${base}${endpoint}`;
-
-            const response = await fetch(url, {
+            const reader = await openEventStream(endpoint, {
                 method: 'POST',
                 body: formData,
                 signal: controller.signal,
             });
-
-            if (!response.ok) {
-                throw new Error(`Error del servidor: ${response.status}`);
-            }
-
-            const reader = response.body?.getReader();
-            if (!reader) throw new Error('No se pudo obtener el flujo de lectura');
 
             const decoder = new TextDecoder();
             let buffer = '';
@@ -236,11 +226,12 @@ export function useSSEProgress() {
             if (!completed) {
                 throw new Error('La conexion SSE se cerro sin completar la operacion');
             }
-        } catch (err: any) {
-            if (err.name === 'AbortError') return;
+        } catch (err: unknown) {
+            if (err instanceof DOMException && err.name === 'AbortError') return;
             setIsLoading(false);
             setProgress(null);
-            opts.onError?.(err.message || 'Error desconocido');
+            const message = await extractHttpErrorMessage(err);
+            opts.onError?.(message);
         }
     }, []);
 

@@ -1,3 +1,5 @@
+import Dialog from './Dialog';
+import JobProgress from './JobProgress';
 
 interface ProgressInfo {
     percent: number;
@@ -31,6 +33,12 @@ function getStageCounterLabel(phase?: string): string {
     }
 }
 
+/**
+ * Full-screen loading modal for PDF generation and long processes.
+ *
+ * Backwards-compatible API: `message`, `accentColor`, `progress`.
+ * Internally composed with Dialog + JobProgress from the design system v1.
+ */
 export default function LoadingModal({
     message = 'Procesando...',
     accentColor = '#00a0b0',
@@ -55,47 +63,47 @@ export default function LoadingModal({
     );
 
     return (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-            <div className="bg-[#111] border border-[#333] rounded-lg p-8 flex flex-col items-center min-w-[340px] max-w-[420px]">
+        <Dialog
+            open={true}
+            onClose={() => { /* non-dismissable */ }}
+            closeOnBackdrop={false}
+            closeOnEscape={false}
+            size="sm"
+        >
+            <div className="flex flex-col items-center min-w-[300px]">
+                {/* Hide the close button via CSS since this modal is non-dismissable */}
+                <style>{`[data-testid="dialog-close"] { display: none !important; }`}</style>
+
                 {!progress ? (
                     <>
                         <div
                             className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto"
                             style={{ borderColor: accentColor }}
                         />
-                        <p className="mt-4 text-[#eee] font-mono text-center">{message}</p>
-                        <p className="mt-2 text-[#666] text-xs">Por favor espere...</p>
+                        <p className="mt-4 text-[var(--g-text)] font-mono text-center">{message}</p>
+                        <p className="mt-2 text-[var(--g-text-dim)] text-xs">Por favor espere...</p>
                     </>
                 ) : (
                     <>
-                        <p className="text-[#eee] font-mono text-center text-sm mb-4">{message}</p>
+                        <p className="text-[var(--g-text)] font-mono text-center text-sm mb-4">{message}</p>
 
-                        <div className="w-full bg-[#222] rounded-full h-3 overflow-hidden border border-[#333]">
-                            <div
-                                className="h-full rounded-full transition-all duration-200 ease-out"
-                                style={{
-                                    width: `${progress.percent}%`,
-                                    backgroundColor: accentColor,
-                                }}
+                        {/* Main progress bar */}
+                        <div className="w-full">
+                            <JobProgress
+                                value={progress.percent}
+                                total={100}
+                                label={progress.phaseLabel}
+                                state="running"
                             />
                         </div>
 
-                        <div className="w-full flex items-center justify-between mt-3">
-                            <span className="text-[#999] text-xs font-mono">
-                                {progress.phaseLabel}
-                            </span>
-                            <span className="text-[#eee] text-sm font-mono font-bold">
-                                {progress.percent}%
-                            </span>
-                        </div>
-
                         {showGenerationCounter && (
-                            <div className="w-full mt-3 rounded-md border border-[#2a2a2a] bg-black/30 px-3 py-2">
+                            <div className="w-full mt-3 rounded-md border border-[var(--g-border)] bg-black/30 px-3 py-2">
                                 <div className="flex items-center justify-between gap-3">
-                                    <span className="text-[#8a8a8a] text-[10px] font-mono uppercase tracking-wide">
+                                    <span className="text-[var(--g-text-dim)] text-[10px] font-mono uppercase tracking-wide">
                                         Generaciones listas
                                     </span>
-                                    <span className="text-[#eee] text-sm font-mono font-bold">
+                                    <span className="text-[var(--g-text)] text-sm font-mono font-bold">
                                         {generatedCount} / {totalReports}
                                     </span>
                                 </div>
@@ -103,19 +111,19 @@ export default function LoadingModal({
                         )}
 
                         {progress.detail && (
-                            <p className="mt-2 text-[#777] text-[11px] font-mono text-center">
+                            <p className="mt-2 text-[var(--g-text-dim)]/70 text-[11px] font-mono text-center">
                                 {progress.detail}
                             </p>
                         )}
 
                         {showStageCounter && (
-                            <p className="mt-1 text-[#666] text-xs font-mono">
+                            <p className="mt-1 text-[var(--g-text-dim)] text-xs font-mono">
                                 {getStageCounterLabel(progress.phase)}: {progress.current ?? 0} / {progress.total}
                             </p>
                         )}
                     </>
                 )}
             </div>
-        </div>
+        </Dialog>
     );
 }

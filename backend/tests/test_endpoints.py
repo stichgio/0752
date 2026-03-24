@@ -85,7 +85,7 @@ class TestMergePDFs:
             data={"strict": "false"}
         )
         assert response.status_code == 400
-        assert "no es un PDF vÃ¡lido" in response.json()["detail"]
+        assert "no es un PDF" in response.json()["detail"]
 
     def test_merge_normal_rejects_single_file(self):
         pdf = _make_blank_pdf()
@@ -117,7 +117,7 @@ class TestMergePDFs:
             ],
         )
         assert response.status_code == 400
-        assert "no es un PDF vÃ¡lido" in response.json()["detail"]
+        assert "no es un PDF" in response.json()["detail"]
 
 
 # --- PDF Split Endpoint ---
@@ -233,7 +233,7 @@ class TestTemplateEndpoints:
         assert "templates" in r.json()
 
     def test_list_templates_recovers_when_editor_templates_backend_fails(self, monkeypatch):
-        monkeypatch.setattr("main.get_all_published_templates", lambda: (_ for _ in ()).throw(RuntimeError("supabase down")))
+        monkeypatch.setattr("routers.templates.router.get_all_published_templates", lambda: (_ for _ in ()).throw(RuntimeError("supabase down")))
         r = client.get("/api/templates")
         assert r.status_code == 200
         assert r.json()["editorTemplates"] == []

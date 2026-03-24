@@ -1,5 +1,5 @@
 import { FichaTecnica } from './types';
-import { apiClient, appendLogos, postBlob } from '@/utils/apiClient';
+import { apiClient, appendLogos, HTTP_TIMEOUTS, postBlob } from '@/utils/apiClient';
 
 export const fichasTecnicasApi = {
     getAllFichas: async (
@@ -53,7 +53,7 @@ export const fichasTecnicasApi = {
         if (fichaIds && fichaIds.length > 0) {
             formData.append('ficha_ids', JSON.stringify(fichaIds));
         }
-        return postBlob('/api/fichas-tecnicas/generate-consolidated-pdf', formData, 300000);
+        return postBlob('/api/fichas-tecnicas/generate-consolidated-pdf', formData, HTTP_TIMEOUTS.LONG_EXPORT);
     },
 
     generatePDF: async (fichaId: string, logoLeft?: File | null, logoRight?: File | null) => {

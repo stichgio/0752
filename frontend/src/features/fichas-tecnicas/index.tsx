@@ -1,17 +1,19 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, FileDown, Files } from 'lucide-react';
+import { toast } from 'sonner';
 import DatabasePanel from './DatabasePanel';
 import PreviewPanel from './PreviewPanel';
 import FormPanel from './FormPanel';
 import { FichaTecnica, FichaTecnicaListItem } from './types';
 import { fichasTecnicasApi } from './api';
 import LoadingModal from '@/components/ui/LoadingModal';
+import { useConfirmDialog } from '@/components/ui';
 import { useFocusMode } from '@/hooks/useFocusMode';
 import { useLocalDraft } from '@/hooks/useLocalDraft';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { useSSEProgress } from '@/hooks/useSSEProgress';
-import { getApiBase } from '@/utils/apiBase';
+import { downloadByUrl, extractHttpErrorMessage, HTTP_TIMEOUTS } from '@/utils/apiClient';
 import { downloadBlob } from '@/utils/downloadBlob';
 
 export default function FichasTecnicas() {
@@ -23,12 +25,13 @@ export default function FichasTecnicas() {
     } = useLocalDraft<FichaTecnica>('current_ficha_draft');
     const { isLoading, loadingMessage, run } = useAsyncAction();
     const sseProgress = useSSEProgress();
+    const confirmDialog = useConfirmDialog();
 
     const [logoLeft, setLogoLeft] = useState<File | null>(null);
     const [logoRight, setLogoRight] = useState<File | null>(null);
 
     useEffect(() => {
-        loadFichas();
+        void loadFichas();
     }, []);
 
     const loadFichas = async () => {
@@ -39,8 +42,16 @@ export default function FichasTecnicas() {
     };
 
     const handleFichaSelect = async (fichaId: string) => {
-        if (hasUnsavedChanges && !window.confirm('¿Guardar cambios?')) return;
-        if (hasUnsavedChanges) await handleSaveChanges();
+        if (hasUnsavedChanges) {
+            const shouldSave = await confirmDialog({
+                title: '¿Guardar cambios antes de continuar?',
+                description: 'Se guardará la ficha actual antes de cargar otro registro.',
+                confirmLabel: 'Guardar y continuar',
+                cancelLabel: 'Seguir editando',
+            });
+            if (!shouldSave) return;
+            await handleSaveChanges();
+        }
 
         try {
             const ficha = await fichasTecnicasApi.getFicha(fichaId);
@@ -49,7 +60,7 @@ export default function FichasTecnicas() {
             setHasUnsavedChanges(false);
         } catch (error) {
             console.error('Error:', error);
-            alert('Error cargando ficha');
+            toast.error('Error cargando ficha');
         }
     };
 
@@ -68,7 +79,7 @@ export default function FichasTecnicas() {
             await loadFichas();
         } catch (error) {
             console.error('Error:', error);
-            alert('Error guardando');
+            toast.error('Error guardando');
         }
     };
 
@@ -77,36 +88,46 @@ export default function FichasTecnicas() {
             const result = await fichasTecnicasApi.importFile(file);
             const freshData = await fichasTecnicasApi.getAllFichas(undefined, true);
             setFichas(freshData.fichas || []);
-            alert(`${result.imported_count} fichas importadas`);
+            toast.success(`${result.imported_count} fichas importadas`);
         }, {
             message: 'Importando archivo...',
-            onError: msg => alert(`Error importando archivo: ${msg}`)
+            onError: (msg) => toast.error(`Error importando archivo: ${msg}`),
         });
     };
 
     const handleClearAllFichas = async () => {
-        if (window.confirm('¿ESTÁ SEGURO? \n\nEsto eliminará TODAS las fichas de la base de datos permanentemente.\nEsta acción no se puede deshacer.')) {
-            await run(async () => {
-                await fichasTecnicasApi.deleteAllFichas();
-                await loadFichas();
-                setFormData(null);
-                setSelectedFichaId(null);
-                setHasUnsavedChanges(false);
-            }, { onError: msg => alert(`Error eliminando fichas: ${msg}`) });
-        }
+        const confirmed = await confirmDialog({
+            title: '¿Eliminar todas las fichas?',
+            description: 'Esta acción eliminará todas las fichas de la base de datos de forma permanente y no se puede deshacer.',
+            confirmLabel: 'Eliminar todo',
+            cancelLabel: 'Cancelar',
+            tone: 'danger',
+        });
+        if (!confirmed) return;
+
+        await run(async () => {
+            await fichasTecnicasApi.deleteAllFichas();
+            await loadFichas();
+            setFormData(null);
+            setSelectedFichaId(null);
+            setHasUnsavedChanges(false);
+        }, { onError: (msg) => toast.error(`Error eliminando fichas: ${msg}`) });
     };
 
     const handleDownloadConsolidatedPDF = async () => {
         if (fichas.length === 0) {
-            alert('No hay fichas para exportar');
+            toast.info('No hay fichas para exportar');
             return;
         }
-        const confirmed = window.confirm(
-            `¿Desea generar un PDF consolidado con las ${fichas.length} fichas?\n\nEsto puede tomar varios minutos dependiendo de la cantidad de fichas.`
-        );
+
+        const confirmed = await confirmDialog({
+            title: '¿Generar PDF consolidado?',
+            description: `Se generará un PDF consolidado con ${fichas.length} fichas. Esto puede tomar varios minutos.`,
+            confirmLabel: 'Generar PDF',
+            cancelLabel: 'Cancelar',
+        });
         if (!confirmed) return;
 
-        // Use SSE for real-time progress
         const formData = new FormData();
         if (logoLeft) formData.append('logoLeft', logoLeft);
         if (logoRight) formData.append('logoRight', logoRight);
@@ -114,18 +135,17 @@ export default function FichasTecnicas() {
         sseProgress.run('/api/fichas-tecnicas/generate-consolidated-pdf-progress', formData, {
             onComplete: async (downloadUrl: string) => {
                 try {
-                    const base = getApiBase();
-                    const resp = await fetch(`${base}${downloadUrl}`);
-                    if (!resp.ok) throw new Error(`Error en descarga: ${resp.status}`);
-                    const blob = await resp.blob();
-                    downloadBlob(blob, `fichas_tecnicas_consolidado_${fichas.length}.pdf`);
-                } catch (err: any) {
-                    alert(`Error descargando PDF: ${err.message}`);
+                    const response = await downloadByUrl(downloadUrl, {
+                        timeout: HTTP_TIMEOUTS.NONE,
+                    });
+                    downloadBlob(response.data, `fichas_tecnicas_consolidado_${fichas.length}.pdf`);
+                } catch (err: unknown) {
+                    const message = await extractHttpErrorMessage(err);
+                    toast.error(`Error descargando PDF: ${message}`);
                 }
             },
-            onError: async (errMsg: string) => {
-                // Fallback to original non-SSE endpoint
-                console.warn('SSE failed, falling back:', errMsg);
+            onError: async (_errMsg: string) => {
+                console.warn('SSE failed, falling back');
                 await run(
                     async () => {
                         const blob = await fichasTecnicasApi.generateConsolidatedPDF(logoLeft, logoRight);
@@ -133,16 +153,16 @@ export default function FichasTecnicas() {
                     },
                     {
                         message: `Generando PDF consolidado (${fichas.length} fichas)...`,
-                        onError: msg => alert(`Error generando PDF consolidado: ${msg}`)
+                        onError: (msg) => toast.error(`Error generando PDF consolidado: ${msg}`),
                     }
                 );
-            }
+            },
         });
     };
 
     const handleDownloadPDF = async () => {
         if (!selectedFichaId) {
-            handleDownloadTemplatePDF();
+            await handleDownloadTemplatePDF();
             return;
         }
         await run(
@@ -150,7 +170,7 @@ export default function FichasTecnicas() {
                 const blob = await fichasTecnicasApi.generatePDF(selectedFichaId, logoLeft, logoRight);
                 downloadBlob(blob, `ficha_tecnica_${selectedFichaId}.pdf`);
             },
-            { message: 'Generando PDF...', onError: msg => alert(`Error generando PDF: ${msg}`) }
+            { message: 'Generando PDF...', onError: (msg) => toast.error(`Error generando PDF: ${msg}`) }
         );
     };
 
@@ -158,19 +178,19 @@ export default function FichasTecnicas() {
         await run(
             async () => {
                 const blob = await fichasTecnicasApi.generateTemplatePDF(logoLeft, logoRight);
-                downloadBlob(blob, `plantilla_ficha_tecnica.pdf`);
+                downloadBlob(blob, 'plantilla_ficha_tecnica.pdf');
             },
-            { message: 'Generando plantilla PDF...', onError: msg => alert(`Error generando plantilla PDF: ${msg}`) }
+            { message: 'Generando plantilla PDF...', onError: (msg) => toast.error(`Error generando plantilla PDF: ${msg}`) }
         );
     };
 
-    const currentIndex = fichas.findIndex(f => f.id === selectedFichaId);
+    const currentIndex = fichas.findIndex((ficha) => ficha.id === selectedFichaId);
     const canPrev = currentIndex > 0;
     const canNext = currentIndex < fichas.length - 1;
 
     const isFocusMode = useFocusMode({
-        onPrev: () => canPrev && handleFichaSelect(fichas[currentIndex - 1].id),
-        onNext: () => canNext && handleFichaSelect(fichas[currentIndex + 1].id),
+        onPrev: () => canPrev && void handleFichaSelect(fichas[currentIndex - 1].id),
+        onNext: () => canNext && void handleFichaSelect(fichas[currentIndex + 1].id),
     });
 
     return (
@@ -186,12 +206,12 @@ export default function FichasTecnicas() {
                         </h1>
                     </div>
                     <div className="flex items-center gap-4">
-                        <button onClick={() => canPrev && handleFichaSelect(fichas[currentIndex - 1].id)} disabled={!canPrev} className="btn-secondary flex items-center gap-2 disabled:opacity-50">
+                        <button onClick={() => canPrev && void handleFichaSelect(fichas[currentIndex - 1].id)} disabled={!canPrev} className="btn-secondary flex items-center gap-2 disabled:opacity-50">
                             <ChevronLeft size={16} />
                             Anterior
                         </button>
                         <span className="text-sm text-[#888] font-mono min-w-[80px] text-center">{selectedFichaId ? `${currentIndex + 1} de ${fichas.length}` : '-'}</span>
-                        <button onClick={() => canNext && handleFichaSelect(fichas[currentIndex + 1].id)} disabled={!canNext} className="btn-secondary flex items-center gap-2 disabled:opacity-50">
+                        <button onClick={() => canNext && void handleFichaSelect(fichas[currentIndex + 1].id)} disabled={!canNext} className="btn-secondary flex items-center gap-2 disabled:opacity-50">
                             Siguiente
                             <ChevronRight size={16} />
                         </button>
@@ -199,7 +219,7 @@ export default function FichasTecnicas() {
                             onClick={handleDownloadPDF}
                             disabled={isLoading}
                             className="btn-red flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                            title={selectedFichaId ? "Descargar PDF de la ficha actual" : "Descargar plantilla en blanco"}
+                            title={selectedFichaId ? 'Descargar PDF de la ficha actual' : 'Descargar plantilla en blanco'}
                         >
                             <FileDown size={16} />
                             {selectedFichaId ? 'Descargar PDF' : 'Descargar Plantilla'}
@@ -213,25 +233,20 @@ export default function FichasTecnicas() {
                             <Files size={16} />
                             PDF Consolidado
                         </button>
-
                     </div>
                 </div>
             </div>
 
-            {/* Main Layout Grid - Adjusted for Focus Mode */}
             <div className={`grid transition-all duration-300 ease-in-out h-[calc(100vh-80px)] overflow-hidden ${isFocusMode
-                    ? 'grid-cols-[0px_1fr_0px] gap-0 p-0 h-screen'
-                    : 'grid-cols-[300px_1fr_400px] gap-6 p-6'
-                }`}>
-                {/* Columna Izquierda: Base de Datos */}
+                ? 'grid-cols-[0px_1fr_0px] gap-0 p-0 h-screen'
+                : 'grid-cols-[300px_1fr_400px] gap-6 p-6'
+            }`}>
                 <div className={`h-full overflow-y-auto pr-2 transition-opacity duration-300 ${isFocusMode ? 'invisible opacity-0' : 'visible opacity-100'}`}>
                     <DatabasePanel fichas={fichas} selectedFichaId={selectedFichaId} onFichaSelect={handleFichaSelect} onImportFile={handleImportFile} onReload={loadFichas} onClearAll={handleClearAllFichas} />
                 </div>
 
-                {/* Columna Central: Vista Previa */}
                 <PreviewPanel fichaData={formData} logoLeft={logoLeft} logoRight={logoRight} />
 
-                {/* Columna Derecha: Formulario */}
                 <div className={`h-full overflow-y-auto pl-2 transition-opacity duration-300 ${isFocusMode ? 'invisible opacity-0' : 'visible opacity-100'}`}>
                     <FormPanel
                         fichaData={formData}
@@ -246,28 +261,26 @@ export default function FichasTecnicas() {
                 </div>
             </div>
 
-            {/* Navigation Buttons for Focus Mode */}
             {isFocusMode && (
                 <>
                     <button
-                        onClick={() => canPrev && handleFichaSelect(fichas[currentIndex - 1].id)}
+                        onClick={() => canPrev && void handleFichaSelect(fichas[currentIndex - 1].id)}
                         disabled={!canPrev}
                         className={`fixed left-4 top-1/2 -translate-y-1/2 p-2 transition-colors z-[100] outline-none ${!canPrev ? 'text-gray-800 opacity-50 cursor-not-allowed' : 'text-red-600 hover:text-red-500 opacity-80 hover:opacity-100'}`}
-                        title="Ficha Anterior"
+                        title="Ficha anterior"
                     >
                         <ChevronLeft size={80} strokeWidth={1.5} />
                     </button>
 
                     <button
-                        onClick={() => canNext && handleFichaSelect(fichas[currentIndex + 1].id)}
+                        onClick={() => canNext && void handleFichaSelect(fichas[currentIndex + 1].id)}
                         disabled={!canNext}
                         className={`fixed right-4 top-1/2 -translate-y-1/2 p-2 transition-colors z-[100] outline-none ${!canNext ? 'text-gray-800 opacity-50 cursor-not-allowed' : 'text-red-600 hover:text-red-500 opacity-80 hover:opacity-100'}`}
-                        title="Siguiente Ficha"
+                        title="Siguiente ficha"
                     >
                         <ChevronRight size={80} strokeWidth={1.5} />
                     </button>
 
-                    {/* Exit hint */}
                     <div className="fixed top-4 right-4 z-[100] text-white/30 text-xs font-mono pointer-events-none select-none">
                         MODO FOCUS (CTRL + .)
                     </div>
@@ -283,5 +296,3 @@ export default function FichasTecnicas() {
         </div>
     );
 }
-
-

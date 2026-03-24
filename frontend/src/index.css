@@ -13,6 +13,24 @@
   --page-shell-enter-duration: 180ms;
   --page-shell-exit-duration: 140ms;
   --page-shell-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* ── Glitch UI Design System v1 tokens ── */
+  --g-bg:       #0a0a0a;
+  --g-surface:  #141414;
+  --g-border:   #262626;
+  --g-text:     #e5e5e5;
+  --g-text-dim: #737373;
+  --g-accent:   #ffffff;
+  --g-success:  #22c55e;
+  --g-warning:  #eab308;
+  --g-danger:   #ef4444;
+}
+
+/* ── Glitch UI Shell (shared dark neutral body) ── */
+body.glitch-ui-shell {
+  background-color: var(--g-bg);
+  color: var(--g-text);
+  min-height: 100vh;
 }
 
 html {
@@ -112,6 +130,12 @@ body.template-editor-page-body {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* ── JobProgress indeterminate animation ── */
+@keyframes indeterminate {
+  0%   { transform: translateX(-120%); }
+  100% { transform: translateX(420%); }
 }
 
 /* Tailwind Layer Utilities */
@@ -353,6 +377,22 @@ select * {
   min-height: calc(100vh / 1.2);
   transform: scale(1.2);
   transform-origin: top left;
+}
+
+@media (max-width: 1023px) {
+  .template-editor-page-shell {
+    height: 100dvh;
+    min-height: 100dvh;
+    max-height: 100dvh;
+  }
+
+  .template-editor-page-zoom {
+    width: 100%;
+    height: 100%;
+    min-height: 100%;
+    max-height: 100%;
+    transform: none;
+  }
 }
 
 .template-editor-page-shell .template-editor-root {

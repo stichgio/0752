@@ -1,15 +1,12 @@
 import { useState, useCallback } from 'react';
+import { toast } from 'sonner';
+import { extractHttpErrorMessage } from '@/utils/apiClient';
 
 /**
  * Extracts a user-friendly error message from an axios error or generic Error.
  */
-export function extractErrorMessage(error: any): string {
-    return (
-        error?.response?.data?.detail?.message ||
-        error?.response?.data?.detail ||
-        error?.message ||
-        'Error desconocido'
-    );
+export async function extractErrorMessage(error: unknown): Promise<string> {
+    return extractHttpErrorMessage(error);
 }
 
 /**
@@ -28,13 +25,13 @@ export function useAsyncAction(defaultMessage = 'Procesando...') {
         try {
             const result = await action();
             return result;
-        } catch (error: any) {
-            const msg = extractErrorMessage(error);
+        } catch (error: unknown) {
+            const msg = await extractErrorMessage(error);
             if (options?.onError) {
                 options.onError(msg);
             } else {
                 console.error('Action failed:', error);
-                alert(msg);
+                toast.error(msg);
             }
             return null;
         } finally {

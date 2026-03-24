@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { LayoutTemplate, Search, ChevronRight } from 'lucide-react';
+import { useConfirmDialog } from '@/components/ui';
 import type { CanvasDocument } from '../canvasTypes';
 import { PRESET_TEMPLATES, PRESET_CATEGORIES, type PresetTemplate } from '../presetTemplates';
 
@@ -15,7 +16,6 @@ const NEW_TEMPLATE_IDS = new Set([
   'hoja-membretada-base',
 ]);
 
-// Mini thumbnail preview — shows colored header + layout lines
 function TemplateThumbnail({ color, category }: { color: string; category: string }) {
   const isReport = category === 'reportes' || category === 'fichas';
   const isCert = category === 'certificados';
@@ -25,7 +25,6 @@ function TemplateThumbnail({ color, category }: { color: string; category: strin
       className="w-full h-full rounded overflow-hidden relative"
       style={{ backgroundColor: '#f8f9fa' }}
     >
-      {/* Header bar */}
       <div className="absolute top-0 left-0 right-0 h-3 flex items-center px-1 gap-0.5" style={{ backgroundColor: color + '22', borderBottom: `1.5px solid ${color}` }}>
         <div className="w-3 h-2 rounded-sm" style={{ backgroundColor: color + '66' }} />
         <div className="flex-1 h-1.5 rounded" style={{ backgroundColor: color + '44' }} />
@@ -33,7 +32,6 @@ function TemplateThumbnail({ color, category }: { color: string; category: strin
       </div>
 
       {isCert ? (
-        // Certificado layout
         <>
           <div className="absolute inset-[3px] rounded border" style={{ borderColor: color }} />
           <div className="absolute top-5 left-1/2 -translate-x-1/2 w-8 h-2 rounded" style={{ backgroundColor: color + '66' }} />
@@ -43,32 +41,29 @@ function TemplateThumbnail({ color, category }: { color: string; category: strin
           <div className="absolute top-14 left-3 right-3 h-0.5 rounded" style={{ backgroundColor: color + '44' }} />
         </>
       ) : isReport ? (
-        // Report layout: info bar + grid
         <>
           <div className="absolute top-4 left-1 right-1 h-1.5 rounded" style={{ backgroundColor: '#f5f5f5', border: '0.5px solid #ddd' }} />
           <div className="absolute left-1 right-1 h-1 rounded" style={{ top: '1.625rem', backgroundColor: color + '33', borderBottom: `0.5px solid ${color}` }} />
           <div className="absolute top-8 left-1 right-1 bottom-4 rounded border" style={{ borderColor: color + '88', backgroundColor: color + '11' }}>
             <div className="grid grid-cols-2 gap-0.5 p-0.5 h-full">
-              {[0, 1, 2, 3].map(i => (
+              {[0, 1, 2, 3].map((i) => (
                 <div key={i} className="rounded" style={{ backgroundColor: color + '22', border: `0.5px solid ${color}44` }} />
               ))}
             </div>
           </div>
         </>
       ) : (
-        // Basic layout
         <>
           <div className="absolute top-5 left-2 right-2 h-2 rounded" style={{ backgroundColor: '#e5e7eb' }} />
           <div className="absolute top-8 left-1 right-1 h-0.5 rounded" style={{ backgroundColor: '#374151' }} />
           <div className="absolute top-9 left-2 right-2 space-y-0.5">
-            {[0, 1, 2, 3].map(i => (
+            {[0, 1, 2, 3].map((i) => (
               <div key={i} className="h-0.5 rounded" style={{ backgroundColor: '#e5e7eb', width: `${85 - i * 5}%` }} />
             ))}
           </div>
         </>
       )}
 
-      {/* Signature lines */}
       {isReport && (
         <div className="absolute bottom-1 left-1 right-1 flex gap-1">
           <div className="flex-1 h-0.5 rounded" style={{ backgroundColor: '#999' }} />
@@ -104,7 +99,6 @@ function TemplateCard({
         </span>
       )}
 
-      {/* Mini preview */}
       <div className="w-full h-16 mb-2 rounded overflow-hidden border border-neutral-100">
         <TemplateThumbnail color={template.thumbnail} category={template.category} />
       </div>
@@ -128,9 +122,8 @@ function TemplateCard({
         />
       </div>
 
-      {/* Tags */}
       <div className="flex flex-wrap gap-1 mt-1.5">
-        {template.tags.slice(0, 3).map(tag => (
+        {template.tags.slice(0, 3).map((tag) => (
           <span key={tag} className="px-1 py-0.5 bg-neutral-100 text-neutral-500 rounded text-[9px] leading-none">
             {tag}
           </span>
@@ -143,25 +136,30 @@ function TemplateCard({
 export function TemplatesPanel({ onLoadTemplate, isDirty }: TemplatesPanelProps) {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('all');
+  const confirmDialog = useConfirmDialog();
 
-  const filtered = PRESET_TEMPLATES.filter(t => {
+  const filtered = PRESET_TEMPLATES.filter((template) => {
     const matchesSearch =
       !search.trim() ||
-      t.name.toLowerCase().includes(search.toLowerCase()) ||
-      t.description.toLowerCase().includes(search.toLowerCase()) ||
-      t.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase()));
-    const matchesCat = activeCategory === 'all' || t.category === activeCategory;
+      template.name.toLowerCase().includes(search.toLowerCase()) ||
+      template.description.toLowerCase().includes(search.toLowerCase()) ||
+      template.tags.some((tag) => tag.toLowerCase().includes(search.toLowerCase()));
+    const matchesCat = activeCategory === 'all' || template.category === activeCategory;
     return matchesSearch && matchesCat;
   });
-  const newTemplates = filtered.filter((t) => NEW_TEMPLATE_IDS.has(t.id));
-  const regularTemplates = filtered.filter((t) => !NEW_TEMPLATE_IDS.has(t.id));
+  const newTemplates = filtered.filter((template) => NEW_TEMPLATE_IDS.has(template.id));
+  const regularTemplates = filtered.filter((template) => !NEW_TEMPLATE_IDS.has(template.id));
 
-  const handleLoad = (template: PresetTemplate) => {
+  const handleLoad = async (template: PresetTemplate) => {
     if (isDirty) {
-      const ok = window.confirm(
-        `¿Cargar la plantilla "${template.name}"? Se perderán los cambios no guardados.`
-      );
-      if (!ok) return;
+      const confirmed = await confirmDialog({
+        title: `¿Cargar la plantilla "${template.name}"?`,
+        description: 'Se perderán los cambios no guardados del documento actual.',
+        confirmLabel: 'Descartar y cargar',
+        cancelLabel: 'Cancelar',
+        tone: 'danger',
+      });
+      if (!confirmed) return;
     }
     const doc = template.build();
     doc.name = template.name;
@@ -170,7 +168,6 @@ export function TemplatesPanel({ onLoadTemplate, isDirty }: TemplatesPanelProps)
 
   return (
     <div className="flex flex-col h-full">
-      {/* Search */}
       <div className="px-3 py-2 border-b border-neutral-100">
         <div className="flex items-center gap-2 px-2 py-1.5 bg-neutral-50 rounded-lg border border-neutral-200 focus-within:ring-2 focus-within:ring-violet-200 focus-within:border-violet-300 transition-all">
           <Search size={12} className="text-neutral-400 flex-shrink-0" />
@@ -178,7 +175,7 @@ export function TemplatesPanel({ onLoadTemplate, isDirty }: TemplatesPanelProps)
             type="text"
             placeholder="Buscar plantilla..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
+            onChange={(event) => setSearch(event.target.value)}
             className="flex-1 bg-transparent text-xs text-neutral-700 outline-none placeholder-neutral-400 min-w-0"
           />
           {search && (
@@ -193,7 +190,6 @@ export function TemplatesPanel({ onLoadTemplate, isDirty }: TemplatesPanelProps)
         </div>
       </div>
 
-      {/* Category tabs */}
       <div className="flex gap-1 px-2 py-1.5 border-b border-neutral-100 overflow-x-auto scrollbar-hide">
         <button
           onClick={() => setActiveCategory('all')}
@@ -205,22 +201,21 @@ export function TemplatesPanel({ onLoadTemplate, isDirty }: TemplatesPanelProps)
         >
           Todas
         </button>
-        {PRESET_CATEGORIES.map(cat => (
+        {PRESET_CATEGORIES.map((category) => (
           <button
-            key={cat.id}
-            onClick={() => setActiveCategory(cat.id)}
+            key={category.id}
+            onClick={() => setActiveCategory(category.id)}
             className={`flex-shrink-0 px-2 py-0.5 rounded-full text-[10px] font-medium transition-colors ${
-              activeCategory === cat.id
+              activeCategory === category.id
                 ? 'bg-violet-100 text-violet-700'
                 : 'text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100'
             }`}
           >
-            {cat.label}
+            {category.label}
           </button>
         ))}
       </div>
 
-      {/* Template list */}
       <div className="flex-1 overflow-y-auto p-2">
         {filtered.length === 0 ? (
           <div className="py-10 text-center">
@@ -243,8 +238,8 @@ export function TemplatesPanel({ onLoadTemplate, isDirty }: TemplatesPanelProps)
                   </span>
                 </div>
                 <div className="grid grid-cols-1 gap-2">
-                  {newTemplates.map(t => (
-                    <TemplateCard key={t.id} template={t} onLoad={handleLoad} highlight />
+                  {newTemplates.map((template) => (
+                    <TemplateCard key={template.id} template={template} onLoad={(item) => void handleLoad(item)} highlight />
                   ))}
                 </div>
               </div>
@@ -258,21 +253,14 @@ export function TemplatesPanel({ onLoadTemplate, isDirty }: TemplatesPanelProps)
                   </p>
                 )}
                 <div className="grid grid-cols-2 gap-2">
-                  {regularTemplates.map(t => (
-                    <TemplateCard key={t.id} template={t} onLoad={handleLoad} />
+                  {regularTemplates.map((template) => (
+                    <TemplateCard key={template.id} template={template} onLoad={(item) => void handleLoad(item)} />
                   ))}
                 </div>
               </div>
             )}
           </div>
         )}
-      </div>
-
-      {/* Footer note */}
-      <div className="px-3 py-2 border-t border-neutral-100 bg-neutral-50">
-        <p className="text-[9px] text-neutral-400 text-center leading-tight">
-          {PRESET_TEMPLATES.length} plantillas disponibles · Click para cargar
-        </p>
       </div>
     </div>
   );

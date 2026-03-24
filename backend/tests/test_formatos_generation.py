@@ -113,7 +113,7 @@ def test_visual_formats_have_the_adjusted_ot_mapping():
     assert televisiva is not None and televisiva.mapping is not None
     assert televisiva.mapping.font_name == "Helvetica-Bold"
     assert televisiva.mapping.x == 534
-    assert televisiva.mapping.y == 25
+    assert televisiva.mapping.y == 41.0
     assert televisiva.mapping.blank_x is None
     assert televisiva.mapping.blank_width is None
     assert televisiva.mapping.blank_height is None

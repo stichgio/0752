@@ -54,7 +54,7 @@ export function ContextToolbar({
   if (selectedCount === 0) return null;
 
   return (
-    <div className="absolute top-2 left-1/2 z-50 flex -translate-x-1/2 items-center gap-0.5 rounded-lg border border-neutral-200 bg-white/95 px-1 py-0.5 shadow-lg backdrop-blur-sm">
+    <div className="absolute left-1/2 top-2 z-50 flex max-w-[calc(100vw-16px)] -translate-x-1/2 flex-nowrap items-center gap-0.5 overflow-x-auto rounded-lg border border-neutral-200 bg-white/95 px-1 py-0.5 shadow-lg backdrop-blur-sm [scrollbar-width:thin]">
       <span className="select-none px-2 text-[10px] font-medium text-neutral-400">{selectedCount} sel</span>
 
       <Divider />

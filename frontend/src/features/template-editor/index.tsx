@@ -21,6 +21,8 @@ import { templateEditorApi, canvasDocumentToTemplateJson } from './api';
 import { apiClient } from '@/utils/apiClient';
 import { downloadBlob } from '@/utils/downloadBlob';
 import ReportGenerator from './ReportGenerator';
+import { toast } from 'sonner';
+import { useConfirmDialog } from '@/components/ui';
 
 const SESSION_KEY = 'canvas-editor-session-v1';
 const DEFAULT_REPORT_TYPE = 'technical-report';
@@ -48,30 +50,9 @@ function normalizeDocument(doc: CanvasDocument): CanvasDocument {
   });
 }
 
-// ─── Toast ────────────────────────────────────────────────────────────────────
+// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Toast ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
-type Toast = { id: number; msg: string; type: 'ok' | 'err' | 'info' };
-
-const ToastStack = memo(function ToastStack({ items }: { items: Toast[] }) {
-  if (!items.length) return null;
-  return (
-    <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-[300] flex flex-col-reverse gap-2 pointer-events-none">
-      {items.map((t) => (
-        <div
-          key={t.id}
-          className={`rounded-lg px-4 py-2 text-sm font-medium shadow-lg ${t.type === 'ok' ? 'bg-emerald-600 text-white' :
-            t.type === 'err' ? 'bg-red-600 text-white' :
-              'bg-neutral-900 text-white'
-            }`}
-        >
-          {t.msg}
-        </div>
-      ))}
-    </div>
-  );
-});
-
-// ─── Status pill ──────────────────────────────────────────────────────────────
+// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Status pill ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 type PublishStatus = 'draft' | 'published' | 'archived';
 
@@ -83,24 +64,27 @@ const STATUS_LABEL: Record<PublishStatus, string> = {
 
 const OVERFLOW_MENU_ITEM_CLASS = 'flex w-full items-start gap-3 rounded-2xl px-3 py-2.5 text-left text-sm text-neutral-700 transition-colors hover:bg-neutral-100';
 
-const StatusPill = memo(function StatusPill({ status }: { status: PublishStatus }) {
+const StatusPill = memo(function StatusPill({ status, compact }: { status: PublishStatus; compact?: boolean }) {
   const cls: Record<PublishStatus, string> = {
-    draft: 'bg-amber-50 text-amber-700 ring-1 ring-amber-100',
-    published: 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-100',
-    archived: 'bg-white text-neutral-500 ring-1 ring-neutral-200',
+    draft: 'bg-amber-400/[0.14] text-amber-900/90',
+    published: 'bg-emerald-500/[0.12] text-emerald-800',
+    archived: 'bg-neutral-100 text-neutral-600',
   };
+  const size = compact
+    ? 'h-6 px-2 text-[10px]'
+    : 'h-7 px-2.5 text-[11px]';
   return (
-    <span className={`inline-flex h-7 items-center rounded-full px-2.5 text-[11px] font-semibold ${cls[status]}`}>
-      <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-current" />
+    <span className={`inline-flex items-center rounded-full font-medium tracking-tight ${size} ${cls[status]}`}>
+      <span className={`rounded-full bg-current opacity-80 ${compact ? 'mr-1 h-1 w-1' : 'mr-1.5 h-1.5 w-1.5'}`} />
       {STATUS_LABEL[status]}
     </span>
   );
 });
 
-// ─── Toolbar button ───────────────────────────────────────────────────────────
+// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Toolbar button ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 const ToolbarBtn = memo(function ToolbarBtn({
-  children, onClick, disabled, title, iconOnly = false, className = '',
+  children, onClick, disabled, title, iconOnly = false, className = '', variant = 'ghost',
 }: {
   children: React.ReactNode;
   onClick?: () => void;
@@ -108,20 +92,28 @@ const ToolbarBtn = memo(function ToolbarBtn({
   title?: string;
   iconOnly?: boolean;
   className?: string;
+  variant?: 'ghost' | 'soft' | 'minimal';
 }) {
+  const variantCls =
+    variant === 'soft'
+      ? 'bg-white text-neutral-600 shadow-sm ring-1 ring-neutral-200/60 hover:bg-neutral-50 hover:text-neutral-900'
+      : variant === 'minimal'
+        ? 'text-neutral-500 hover:bg-neutral-100/80 hover:text-neutral-900'
+        : 'text-neutral-500 hover:bg-neutral-100/80 hover:text-neutral-900';
   return (
     <button
+      type="button"
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className={`inline-flex items-center rounded-xl text-sm font-medium text-neutral-500 outline-none transition-colors hover:bg-neutral-100 hover:text-neutral-900 disabled:opacity-40 disabled:pointer-events-none ${iconOnly ? 'h-8 w-8 justify-center px-0' : 'h-8 gap-1.5 px-3'} ${className}`.trim()}
+      className={`inline-flex items-center rounded-lg text-sm font-medium outline-none transition-[color,background-color,opacity] duration-150 disabled:opacity-35 disabled:pointer-events-none touch-manipulation focus-visible:ring-2 focus-visible:ring-violet-400/40 focus-visible:ring-offset-1 ${variantCls} ${iconOnly ? 'h-9 w-9 justify-center px-0 sm:h-8 sm:w-8' : 'h-9 gap-1.5 px-2 sm:h-8 sm:gap-2 sm:px-2.5'} ${className}`.trim()}
     >
       {children}
     </button>
   );
 });
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Main component ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
 export default function TemplateEditor() {
   const {
@@ -139,7 +131,6 @@ export default function TemplateEditor() {
   const [serverTemplateId, setServerTemplateId] = useState<string | null>(null);
   const [dirty, setDirty] = useState(false);
   const [saveState, setSaveState] = useState<'saved' | 'saving' | 'unsaved'>('saved');
-  const [toasts, setToasts] = useState<Toast[]>([]);
   const [showPreview, setShowPreview] = useState(false);
   const [previewHtml, setPreviewHtml] = useState('');
   const [showGenerator, setShowGenerator] = useState(false);
@@ -152,12 +143,7 @@ export default function TemplateEditor() {
   const importRef = useRef<HTMLInputElement>(null);
   const utilitiesMenuRef = useRef<HTMLDivElement>(null);
   const effectiveReportType = doc.reportType || DEFAULT_REPORT_TYPE;
-
-  const toast = useCallback((msg: string, type: Toast['type'] = 'info') => {
-    const id = Date.now();
-    setToasts(t => [...t, { id, msg, type }]);
-    setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 3000);
-  }, []);
+  const confirmDialog = useConfirmDialog();
 
   const closeUtilitiesMenu = useCallback(() => {
     setShowUtilitiesMenu(false);
@@ -176,7 +162,7 @@ export default function TemplateEditor() {
     return () => document.removeEventListener('mousedown', handlePointerDown);
   }, [showUtilitiesMenu]);
 
-  // ── Load session ──────────────────────────────────────────────────────────
+  // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Load session ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
   useEffect(() => {
     try {
@@ -240,7 +226,7 @@ export default function TemplateEditor() {
     };
   }, [effectiveReportType]);
 
-  // ── Auto-save ─────────────────────────────────────────────────────────────
+  // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Auto-save ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
   useEffect(() => {
     setSaveState('unsaved');
@@ -256,7 +242,7 @@ export default function TemplateEditor() {
     return () => clearTimeout(t);
   }, [doc, status, serverTemplateId]);
 
-  // ── Warn on close ─────────────────────────────────────────────────────────
+  // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Warn on close ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
@@ -269,7 +255,7 @@ export default function TemplateEditor() {
     return () => window.removeEventListener('beforeunload', handler);
   }, [dirty]);
 
-  // ── History management ────────────────────────────────────────────────────
+  // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ History management ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
   const handleDocChange = useCallback((newDoc: CanvasDocument, options?: CanvasChangeOptions) => {
     if (options?.finalizeOnly) {
@@ -315,7 +301,7 @@ export default function TemplateEditor() {
     if (status === 'published') setStatus('draft');
   }, [canRedo, redoHistory, status]);
 
-  // ── Keyboard shortcuts ────────────────────────────────────────────────────
+  // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Keyboard shortcuts ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -337,10 +323,19 @@ export default function TemplateEditor() {
     return () => window.removeEventListener('keydown', handler);
   }, [undo, redo]);
 
-  // ── Actions ───────────────────────────────────────────────────────────────
+  // ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ Actions ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬ÃƒÂ¢Ã¢â‚¬ÂÃ¢â€šÂ¬
 
-  const newTemplate = useCallback(() => {
-    if (dirty && !window.confirm('¿Descartar cambios sin guardar?')) return;
+  const newTemplate = useCallback(async () => {
+    if (dirty) {
+      const confirmed = await confirmDialog({
+        title: 'Ã‚Â¿Descartar cambios sin guardar?',
+        description: 'Se perderÃƒÂ¡n los cambios actuales de la plantilla en ediciÃƒÂ³n.',
+        confirmLabel: 'Descartar cambios',
+        cancelLabel: 'Cancelar',
+        tone: 'danger',
+      });
+      if (!confirmed) return;
+    }
     const d = createEmptyDocument();
     resetDocHistory(d);
     setPageSettings(normalizePageSettings(d.pageSettings));
@@ -348,8 +343,8 @@ export default function TemplateEditor() {
     setStatus('draft');
     setServerTemplateId(null);
     localStorage.removeItem(SESSION_KEY);
-    toast('Nueva plantilla creada', 'ok');
-  }, [dirty, resetDocHistory, toast]);
+    toast.success('Nueva plantilla creada');
+  }, [confirmDialog, dirty, resetDocHistory, toast]);
 
   /** Load a preset or imported doc into the editor */
   const loadDocument = useCallback((newDoc: CanvasDocument) => {
@@ -363,21 +358,21 @@ export default function TemplateEditor() {
     setStatus('draft');
     setServerTemplateId(null);
     setDirty(true);
-    toast(`Plantilla "${normalizedDoc.name}" cargada`, 'ok');
+    toast.success(`Plantilla "${normalizedDoc.name}" cargada`);
   }, [setDocHistory, toast]);
 
   const exportHtml = useCallback(() => {
     const html = exportToJinja2(doc);
     const blob = new Blob([html], { type: 'text/html' });
     downloadBlob(blob, `${doc.name || 'template'}.html`);
-    toast('HTML exportado', 'ok');
+    toast.success('HTML exportado');
   }, [doc, toast]);
 
   const exportJson = useCallback(() => {
     const json = exportToJSON(doc);
     const blob = new Blob([json], { type: 'application/json' });
     downloadBlob(blob, `${doc.name || 'template'}.json`);
-    toast('JSON exportado', 'ok');
+    toast.success('JSON exportado');
   }, [doc, toast]);
 
   const handleImportJson = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -388,7 +383,7 @@ export default function TemplateEditor() {
       const text = ev.target?.result as string;
       const imported = importFromJSON(text);
       if (!imported) {
-        toast('JSON inválido o formato incorrecto', 'err');
+        toast.error('JSON invÃƒÂ¡lido o formato incorrecto');
       } else {
         loadDocument(imported);
       }
@@ -405,7 +400,7 @@ export default function TemplateEditor() {
 
   const saveTemplate = useCallback(async () => {
     if (!doc.elements.length) {
-      toast('Agrega al menos un elemento antes de guardar', 'err');
+      toast.error('Agrega al menos un elemento antes de guardar');
       return;
     }
     try {
@@ -431,16 +426,16 @@ export default function TemplateEditor() {
         SESSION_KEY,
         JSON.stringify({ doc: updated, status, serverTemplateId: resolvedTemplateId }),
       );
-      toast('Plantilla guardada en la nube', 'ok');
+      toast.success('Plantilla guardada en la nube');
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'Error al guardar en la nube';
-      toast(msg, 'err');
+      toast.error(msg);
     }
   }, [doc, effectiveReportType, serverTemplateId, status, setDocHistory, toast]);
 
   const publish = useCallback(async () => {
     if (!doc.elements.length) {
-      toast('Agrega al menos un elemento antes de publicar', 'err');
+      toast.error('Agrega al menos un elemento antes de publicar');
       return;
     }
 
@@ -461,7 +456,7 @@ export default function TemplateEditor() {
         const issues = Array.isArray(validation.issues) ? validation.issues : [];
         const firstError = issues.find((issue) => issue.level === 'error');
         if (firstError) {
-          toast(firstError.message || 'No se pudo publicar por un error de validacion', 'err');
+          toast.error(firstError.message || 'No se pudo publicar por un error de validaciÃƒÂ³n');
           return;
         }
       }
@@ -484,10 +479,10 @@ export default function TemplateEditor() {
         SESSION_KEY,
         JSON.stringify({ doc: updated, status: 'published', serverTemplateId: resolvedTemplateId }),
       );
-      toast('Plantilla publicada correctamente', 'ok');
+      toast.success('Plantilla publicada correctamente');
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'No se pudo publicar la plantilla';
-      toast(msg, 'err');
+      toast.error(msg);
     }
   }, [doc, effectiveReportType, serverTemplateId, setDocHistory, toast]);
 
@@ -497,11 +492,20 @@ export default function TemplateEditor() {
       setStatus('draft');
     }
     setPublishedTemplatesRefreshKey((prev) => prev + 1);
-    toast('Plantilla despublicada correctamente', 'ok');
+    toast.success('Plantilla despublicada correctamente');
   }, [serverTemplateId, toast]);
 
   const handleEditPublishedTemplate = useCallback(async (templateId: string) => {
-    if (dirty && !window.confirm('¿Descartar cambios sin guardar y cargar la plantilla publicada?')) return;
+    if (dirty) {
+      const confirmed = await confirmDialog({
+        title: 'Ã‚Â¿Descartar cambios y cargar la plantilla publicada?',
+        description: 'La plantilla actual tiene cambios sin guardar y se reemplazarÃƒÂ¡ por la versiÃƒÂ³n publicada.',
+        confirmLabel: 'Descartar y cargar',
+        cancelLabel: 'Cancelar',
+        tone: 'danger',
+      });
+      if (!confirmed) return;
+    }
 
     try {
       const { doc: loadedDoc } = await templateEditorApi.loadPublishedForEditing(templateId);
@@ -515,12 +519,12 @@ export default function TemplateEditor() {
         SESSION_KEY,
         JSON.stringify({ doc: normalizedDoc, status: 'published', serverTemplateId: templateId }),
       );
-      toast(`Plantilla "${normalizedDoc.name}" cargada para editar`, 'ok');
+      toast.success(`Plantilla "${normalizedDoc.name}" cargada para editar`);
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'No se pudo cargar la plantilla';
-      toast(msg, 'err');
+      toast.error(msg);
     }
-  }, [dirty, resetDocHistory, toast]);
+  }, [confirmDialog, dirty, resetDocHistory, toast]);
 
   const loadVersionHistory = useCallback(async () => {
     if (!serverTemplateId) return;
@@ -543,10 +547,10 @@ export default function TemplateEditor() {
       setPageSettings(normalizedDoc.pageSettings);
       setDirty(false);
       await loadVersionHistory();
-      toast(`Se restauro la version ${version}`, 'ok');
+      toast.success(`Se restaurÃƒÂ³ la versiÃƒÂ³n ${version}`);
     } catch (error) {
-      const msg = error instanceof Error ? error.message : 'No se pudo restaurar la version';
-      toast(msg, 'err');
+      const msg = error instanceof Error ? error.message : 'No se pudo restaurar la versiÃƒÂ³n';
+      toast.error(msg);
     }
   }, [loadVersionHistory, resetDocHistory, serverTemplateId, toast]);
 
@@ -558,90 +562,125 @@ export default function TemplateEditor() {
         setStatus('draft');
       }
       setPublishedTemplatesRefreshKey((prev) => prev + 1);
-      toast('Plantilla eliminada correctamente', 'ok');
+      toast.success('Plantilla eliminada correctamente');
     } catch (error) {
       const msg = error instanceof Error ? error.message : 'No se pudo eliminar la plantilla';
-      toast(msg, 'err');
+      toast.error(msg);
     }
   }, [serverTemplateId, toast]);
 
   return (
-    <div className="template-editor-root h-full w-full flex flex-col bg-neutral-50">
+    <div className="template-editor-root flex h-full min-h-0 w-full flex-col bg-neutral-50">
       {/* Header */}
-      <header className="border-b border-neutral-200 bg-white px-4 py-2 z-50 flex-shrink-0">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-3 md:flex-nowrap">
-            {/* Logo */}
-            <img
-              src="https://res.cloudinary.com/dzhp64paw/image/upload/v1771449784/logo_xipfod.png"
-              alt="Logo"
-              className="h-7 w-auto object-contain flex-shrink-0 opacity-95"
-            />
+      <header className="z-50 flex-shrink-0 border-b border-neutral-100 bg-white/80 px-3 py-2.5 backdrop-blur-md pt-[max(0.5rem,env(safe-area-inset-top))] sm:px-5 sm:py-3">
+        <div className="mx-auto flex max-w-[1920px] flex-col gap-2.5 lg:flex-row lg:items-center lg:justify-between lg:gap-6">
+          <div className="flex min-w-0 flex-1 flex-col gap-2.5 lg:flex-row lg:items-center lg:gap-4">
+            <div className="flex items-center justify-between gap-3 lg:contents">
+              <img
+                src="https://res.cloudinary.com/dzhp64paw/image/upload/v1771449784/logo_xipfod.png"
+                alt="Logo"
+                className="h-7 w-auto flex-shrink-0 object-contain opacity-90 lg:h-8"
+              />
+              <div
+                className="flex shrink-0 items-center gap-2 lg:hidden"
+                title={dirty ? 'Hay cambios sin guardar' : undefined}
+              >
+                <StatusPill status={status} compact />
+                {dirty && (
+                  <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" title="Cambios sin guardar" />
+                )}
+              </div>
+            </div>
 
-            <div className="flex min-w-0 w-full max-w-[560px] flex-wrap items-center gap-2 rounded-2xl border border-neutral-200 bg-neutral-50 px-2 py-1.5">
+            <div className="flex min-w-0 w-full max-w-full flex-1 items-center gap-1 rounded-xl border border-neutral-200/60 bg-neutral-50/50 px-2 py-1 transition-colors focus-within:border-violet-300/50 focus-within:bg-white sm:gap-2 sm:py-1.5 lg:max-w-[min(100%,520px)]">
               <button
+                type="button"
                 onClick={newTemplate}
                 title="Nueva plantilla en blanco"
-                className="inline-flex h-8 items-center gap-1.5 rounded-xl bg-white px-3 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-100"
+                className="inline-flex h-8 shrink-0 items-center justify-center gap-1 rounded-lg px-2 text-sm font-medium text-violet-700 transition hover:bg-violet-100/60 active:scale-[0.98] touch-manipulation sm:h-8 sm:px-2.5"
               >
-                <Plus size={15} />
-                Nuevo
+                <Plus size={17} strokeWidth={2.25} className="shrink-0" />
+                <span className="max-[340px]:sr-only">Nuevo</span>
               </button>
 
-              <div className="min-w-[180px] flex-1 md:max-w-[340px]">
+              <div className="hidden h-4 w-px shrink-0 bg-neutral-200 sm:block" aria-hidden />
+
+              <div className="min-w-0 flex-1 sm:min-w-[140px] sm:max-w-[320px]">
                 <input
-                  className="h-8 w-full min-w-0 rounded-xl border-0 bg-transparent px-2 text-sm font-medium text-neutral-700 outline-none transition focus:bg-white focus:ring-2 focus:ring-violet-200"
+                  className="h-8 w-full min-w-0 border-0 bg-transparent px-1 text-[15px] font-semibold leading-tight tracking-tight text-neutral-800 placeholder:text-neutral-400 placeholder:font-medium placeholder:tracking-normal outline-none sm:text-sm"
                   value={doc.name}
                   onChange={(e) => handleDocChange({ ...doc, name: e.target.value })}
-                  placeholder="Nombre de plantilla"
+                  placeholder="Nueva plantilla"
                   title="Nombre de plantilla"
+                  enterKeyHint="done"
                 />
               </div>
             </div>
           </div>
 
-          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2">
-            <div className="inline-flex h-8 items-center gap-2 rounded-full border border-neutral-200 bg-white px-2.5">
+          <div className="flex min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end lg:flex-nowrap lg:items-center lg:gap-2">
+            <div
+              className="hidden items-center gap-2 lg:flex"
+              title={dirty ? 'Hay cambios sin guardar' : undefined}
+            >
               <StatusPill status={status} />
               {dirty && (
-                <span className="h-2 w-2 rounded-full bg-amber-400 flex-shrink-0" title="Cambios sin guardar" />
+                <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-amber-400" title="Cambios sin guardar" />
               )}
             </div>
 
-            <div className="flex flex-wrap items-center gap-1 rounded-2xl border border-neutral-200 bg-white p-1">
-              <ToolbarBtn onClick={undo} disabled={!canUndo} title="Deshacer (Ctrl+Z)" iconOnly>
-                <Undo2 size={15} />
-              </ToolbarBtn>
-              <ToolbarBtn onClick={redo} disabled={!canRedo} title="Rehacer (Ctrl+Y)" iconOnly>
-                <Redo2 size={15} />
-              </ToolbarBtn>
+            <div
+              className="flex w-full min-w-0 items-stretch gap-1 rounded-xl bg-neutral-100/40 p-1 lg:w-auto lg:items-center lg:rounded-none lg:bg-transparent lg:p-0"
+              role="toolbar"
+              aria-label="Acciones de plantilla"
+            >
+              <div className="min-w-0 flex-1 overflow-x-auto overscroll-x-contain [-webkit-overflow-scrolling:touch] [scrollbar-width:thin] lg:flex-initial lg:overflow-visible">
+                <div className="flex w-max min-h-[2.25rem] items-center gap-0.5 pr-1 lg:min-h-0 lg:gap-1 lg:pr-0">
+                  <div className="mr-0.5 flex items-center gap-0 rounded-lg bg-white/70 p-0.5 ring-1 ring-neutral-200/40 lg:bg-neutral-100/50 lg:ring-0">
+                    <ToolbarBtn onClick={undo} disabled={!canUndo} title="Deshacer (Ctrl+Z)" iconOnly variant="minimal">
+                      <Undo2 size={15} strokeWidth={2} />
+                    </ToolbarBtn>
+                    <ToolbarBtn onClick={redo} disabled={!canRedo} title="Rehacer (Ctrl+Y)" iconOnly variant="minimal">
+                      <Redo2 size={15} strokeWidth={2} />
+                    </ToolbarBtn>
+                  </div>
 
-              <div className="mx-1 h-4 w-px bg-neutral-200" />
+                  <div className="mx-0.5 hidden h-5 w-px shrink-0 bg-neutral-200/80 md:block" aria-hidden />
 
-              <ToolbarBtn onClick={preview} title="Vista previa" className="text-neutral-700">
-                <Eye size={15} />
-                Vista previa
-              </ToolbarBtn>
-              <ToolbarBtn onClick={() => setShowGenerator(true)} title="Generar reporte" className="text-neutral-700">
-                <Printer size={15} />
-                Generar reporte
-              </ToolbarBtn>
-              <ToolbarBtn onClick={saveTemplate} disabled={!dirty} title="Guardar en la nube" className="text-neutral-700">
-                <Save size={15} />
-                Guardar
-              </ToolbarBtn>
+                  <ToolbarBtn variant="minimal" onClick={preview} title="Vista previa">
+                    <Eye size={16} strokeWidth={2} className="shrink-0 text-violet-600" aria-hidden />
+                    <span className="hidden xl:inline">Vista previa</span>
+                  </ToolbarBtn>
+                  <ToolbarBtn variant="minimal" onClick={() => setShowGenerator(true)} title="Generar reporte">
+                    <Printer size={16} strokeWidth={2} className="shrink-0 text-neutral-600" aria-hidden />
+                    <span className="hidden xl:inline">Generar reporte</span>
+                  </ToolbarBtn>
+                  <ToolbarBtn
+                    variant="minimal"
+                    onClick={saveTemplate}
+                    disabled={!dirty}
+                    title="Guardar en la nube"
+                    className="max-sm:!w-9 max-sm:!min-w-[2.25rem] max-sm:!justify-center max-sm:!gap-0 max-sm:!px-0"
+                  >
+                    <Save size={16} strokeWidth={2} className={dirty ? 'shrink-0 text-emerald-600' : 'shrink-0 text-neutral-400'} aria-hidden />
+                    <span className="hidden xl:inline">Guardar</span>
+                  </ToolbarBtn>
+                </div>
+              </div>
 
-              <div ref={utilitiesMenuRef} className="relative">
-                <ToolbarBtn
-                  onClick={() => setShowUtilitiesMenu((prev) => !prev)}
-                  title="Mas acciones"
-                  iconOnly
-                >
-                  <MoreHorizontal size={15} />
-                </ToolbarBtn>
+              <div className="flex shrink-0 items-center gap-1 border-l border-neutral-200/50 pl-1 lg:border-l-0 lg:pl-0">
+                <div ref={utilitiesMenuRef} className="relative">
+                  <ToolbarBtn
+                    variant="minimal"
+                    onClick={() => setShowUtilitiesMenu((prev) => !prev)}
+                    title="MÃƒÆ’Ã‚Â¡s acciones"
+                    iconOnly
+                  >
+                    <MoreHorizontal size={16} strokeWidth={2} />
+                  </ToolbarBtn>
 
-                {showUtilitiesMenu && (
-                  <div className="absolute right-0 top-full mt-2 w-72 rounded-2xl border border-neutral-200 bg-white p-2 shadow-[0_16px_36px_rgba(15,23,42,0.14)]">
+                  {showUtilitiesMenu && (
+                    <div className="absolute right-0 top-full z-[70] mt-2 w-[min(18rem,calc(100vw-1.5rem))] rounded-2xl border border-neutral-200 bg-white p-2 shadow-[0_16px_36px_rgba(15,23,42,0.14)] sm:w-72">
                     <div className="px-3 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-neutral-400">
                       Herramientas
                     </div>
@@ -715,16 +754,20 @@ export default function TemplateEditor() {
               </div>
 
               <button
+                type="button"
                 onClick={publish}
                 disabled={status === 'published' && !dirty}
                 title={status === 'published' && !dirty ? 'Ya publicada' : 'Publicar plantilla'}
-                className="ml-1 inline-flex h-8 items-center gap-1.5 rounded-xl bg-violet-600 px-3.5 text-sm font-semibold text-white transition-colors hover:bg-violet-700 disabled:pointer-events-none disabled:opacity-40"
+                className="ml-0.5 inline-flex h-9 min-w-[2.75rem] shrink-0 items-center justify-center gap-1.5 rounded-lg bg-gradient-to-b from-violet-600 to-violet-700 px-3.5 text-sm font-semibold text-white shadow-sm shadow-violet-600/20 transition hover:from-violet-500 hover:to-violet-600 hover:shadow-md active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40 disabled:shadow-none touch-manipulation sm:h-8"
               >
-                <Send size={14} />
-                {status === 'published' && !dirty ? 'Publicada' : 'Publicar'}
+                <Send size={15} strokeWidth={2.25} className="shrink-0 opacity-95" />
+                <span className="max-[380px]:sr-only">
+                  {status === 'published' && !dirty ? 'Publicada' : 'Publicar'}
+                </span>
               </button>
             </div>
           </div>
+        </div>
         </div>
       </header>
 
@@ -789,7 +832,7 @@ export default function TemplateEditor() {
             <div className="flex items-center justify-between px-4 py-3 border-b border-neutral-200 flex-shrink-0">
               <div className="flex items-center gap-2">
                 <Eye size={18} className="text-neutral-500" />
-                <span className="font-semibold text-neutral-800">Vista Previa — {doc.name}</span>
+                <span className="font-semibold text-neutral-800">Vista Previa ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â {doc.name}</span>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-xs text-neutral-400 select-none">ESC para cerrar</span>
@@ -841,7 +884,6 @@ export default function TemplateEditor() {
         </div>
       )}
 
-      <ToastStack items={toasts} />
 
       {/* Report Generator */}
       <ReportGenerator

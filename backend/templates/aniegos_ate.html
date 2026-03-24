@@ -7,8 +7,8 @@
     <style>
         /* STRICT A4 ONE-PAGE FIT */
         @page {
-            size: A4;
-            margin: 5mm;
+            size: A4 portrait;
+            margin: 0;
         }
 
         * {
@@ -19,8 +19,12 @@
 
         html,
         body {
+            width: 210mm;
+            height: 297mm;
             margin: 0;
             padding: 0;
+            overflow: hidden;
+            background: #fff;
         }
 
         /* PRINT STYLES */
@@ -31,10 +35,14 @@
                 width: 210mm;
                 height: 297mm;
                 overflow: hidden;
+                margin: 0;
+                padding: 0;
             }
 
             .page {
                 page-break-after: always;
+                page-break-inside: avoid;
+                margin: 0;
             }
         }
 
@@ -64,11 +72,14 @@
         }
 
         .page {
-            width: 200mm;
-            height: 287mm;
-            padding: 3mm;
+            width: 210mm;
+            height: 297mm;
+            margin: 0 auto;
+            padding: 8mm;
+            box-sizing: border-box;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
 
         /* === HEADER (Fixed Height) === */

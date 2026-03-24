@@ -43,7 +43,7 @@ export default function AppRouter() {
                 <Route
                     index
                     element={
-                        <PageDocument title="Glitch" bodyClassName="bg-neutral-950 text-slate-50 min-h-screen">
+                        <PageDocument title="Glitch" bodyClassName="glitch-ui-shell">
                             <App />
                         </PageDocument>
                     }
@@ -51,7 +51,7 @@ export default function AppRouter() {
                 <Route
                     path="compressor"
                     element={
-                        <PageDocument title="PDF Compressor" bodyClassName="technical-theme bg-[#0d0d0d] text-[#eee]">
+                        <PageDocument title="PDF Compressor" bodyClassName="glitch-ui-shell">
                             <Compressor />
                         </PageDocument>
                     }
@@ -68,7 +68,7 @@ export default function AppRouter() {
                 <Route
                     path="pdf-tools"
                     element={
-                        <PageDocument title="PDF Tools - Glitch" bodyClassName="bg-neutral-950 text-neutral-200 min-h-screen">
+                        <PageDocument title="PDF Tools - Glitch" bodyClassName="glitch-ui-shell">
                             <PdfToolsApp />
                         </PageDocument>
                     }

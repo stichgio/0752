@@ -15,8 +15,8 @@
 
         /* A4 Dimensions */
         @page {
-            size: A4;
-            margin: 8mm;
+            size: A4 portrait;
+            margin: 0;
         }
 
         body {
@@ -32,15 +32,17 @@
         /* Page Container */
         .page {
             width: 210mm;
-            min-height: 297mm;
+            height: 297mm;
+            max-height: 297mm;
             margin: 0 auto;
             padding: 8mm;
             background: #fff;
-            page-break-after: always;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
+            page-break-after: always;
+            page-break-inside: avoid;
             box-sizing: border-box;
+            overflow: hidden;
         }
 
         .page:last-child {

@@ -1,16 +1,16 @@
 /**
  * MultiSheetReportApp.jsx
- * Herramienta "Informe Multi-Hoja" — genera un PDF con N secciones bajo un
- * encabezado principal único y mini-encabezados opcionales por hoja.
+ * Herramienta "Informe Multi-Hoja" â€” genera un PDF con N secciones bajo un
+ * encabezado principal Ãºnico y mini-encabezados opcionales por hoja.
  *
- * Cómo añadir una nueva hoja al informe (runtime):
+ * CÃ³mo aÃ±adir una nueva hoja al informe (runtime):
  *   Selecciona una plantilla del dropdown "+ Agregar Hoja" en el Step 1.
- *   La hoja aparece automáticamente en el preview y se incluye en el PDF al exportar.
- *   Para "Grilla de Imágenes", puedes seleccionar imágenes específicas del pool global.
+ *   La hoja aparece automÃ¡ticamente en el preview y se incluye en el PDF al exportar.
+ *   Para "Grilla de ImÃ¡genes", puedes seleccionar imÃ¡genes especÃ­ficas del pool global.
  *
- * Cómo extender el mini-encabezado alternativo:
- *   Añadir campos al objeto altHeaderConfig y referenciarlos en el backend
- *   (routers/multi_sheet_report.py → _build_alt_header_html).
+ * CÃ³mo extender el mini-encabezado alternativo:
+ *   AÃ±adir campos al objeto altHeaderConfig y referenciarlos en el backend
+ *   (routers/multi_sheet_report.py â†’ _build_alt_header_html).
  */
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
@@ -38,18 +38,18 @@ import {
     Grid2X2,
 } from 'lucide-react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
-import { Step, LoadingModal } from '../../components/ui';
+import { Step, LoadingModal, useConfirmDialog } from '../../components/ui';
 import { downloadBlob } from '../../utils/downloadBlob';
-import { getApiBase } from '../../utils/apiBase';
+import { extractHttpErrorMessage, HTTP_TIMEOUTS, requestBlob, requestJson, requestText } from '../../utils/apiClient';
 import { useSSEProgress } from '../../hooks/useSSEProgress';
 import { excelSerialToDate, isDateColumn } from '../../utils';
 import { toast } from 'sonner';
 
-const API_BASE = `${getApiBase()}/api/multi-sheet`;
+const API_BASE = '/api/multi-sheet';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Utility: igual que en App.jsx (copiada, no importada — es local al componente)
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Utility: igual que en App.jsx (copiada, no importada â€” es local al componente)
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 /**
  * Verifica si un nombre de imagen corresponde al ID de un registro.
  * Pattern: ID_NUMBER.ext o ID.ext  (ej. 1_1.jpeg, 1_2.jpg, 1.png)
@@ -66,11 +66,11 @@ const matchesRecordId = (imageName, recordId) => {
     return regex.test(name);
 };
 
-// Grid layout helper — maps N images to optimal columns (mirrors backend _grid_cols)
+// Grid layout helper â€” maps N images to optimal columns (mirrors backend _grid_cols)
 const GRID_COLS_MAP = { 1: 1, 2: 2, 3: 2, 4: 2, 5: 3, 6: 3, 7: 3, 8: 4, 9: 3 };
 const getGridCols = (n) => GRID_COLS_MAP[n] || 3;
-const GRID_TEMPLATE_NAME = 'Grilla de Imágenes';
-const VOLANTEO_TEMPLATE_NAME = 'Panel Fotográfico Volanteo';
+const GRID_TEMPLATE_NAME = 'Grilla de ImÃ¡genes';
+const VOLANTEO_TEMPLATE_NAME = 'Panel FotogrÃ¡fico Volanteo';
 
 const getRowTextValue = (rowData, key) => {
     if (!rowData) return '-';
@@ -161,7 +161,7 @@ const normalizeTemplateSections = (rawSections) => {
                 : `section-${index + 1}`;
             const label = typeof section?.label === 'string' && section.label.trim()
                 ? section.label.trim()
-                : `Sección ${index + 1}`;
+                : `SecciÃ³n ${index + 1}`;
             const templates = Array.isArray(section?.templates)
                 ? Array.from(new Set(section.templates.map(t => String(t || '').trim()).filter(Boolean)))
                 : [];
@@ -172,16 +172,16 @@ const normalizeTemplateSections = (rawSections) => {
 };
 
 /**
- * Build a map: sheetId → hierarchy label ("1ª hoja", "2ª hoja", …)
+ * Build a map: sheetId â†’ hierarchy label ("1Âª hoja", "2Âª hoja", â€¦)
  * Only sheets with firstPageOnly=true get a label.
  */
 const buildHierarchyLabels = (sheetList) => {
     const labels = {};
     let pos = 0;
-    const ordinals = ['1ª', '2ª', '3ª', '4ª', '5ª', '6ª', '7ª', '8ª', '9ª'];
+    const ordinals = ['1Âª', '2Âª', '3Âª', '4Âª', '5Âª', '6Âª', '7Âª', '8Âª', '9Âª'];
     sheetList.forEach(sheet => {
         if (sheet?.firstPageOnly) {
-            labels[sheet.id] = `${ordinals[pos] || `${pos + 1}ª`} hoja`;
+            labels[sheet.id] = `${ordinals[pos] || `${pos + 1}Âª`} hoja`;
             pos++;
         }
     });
@@ -587,9 +587,9 @@ function ColumnMappingModal({
     );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Subcomponentes de preview
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 /** Preview inline del encabezado principal */
 function MainHeaderPreview({ title, subtitle, logoLeft, logoRight }) {
@@ -605,7 +605,7 @@ function MainHeaderPreview({ title, subtitle, logoLeft, logoRight }) {
             </div>
             <div className="flex-1 text-center px-2">
                 <div className="text-[10px] font-bold uppercase tracking-wider text-neutral-800 leading-tight">
-                    {title || 'INFORME TÉCNICO'}
+                    {title || 'INFORME TÃ‰CNICO'}
                 </div>
                 {subtitle && (
                     <div className="text-[9px] text-neutral-500 mt-0.5">{subtitle}</div>
@@ -658,16 +658,16 @@ function AltHeaderPreview({ altHeaderConfig, rowData, heightClass }) {
 }
 
 /** 
- * Grid de imágenes para el preview 
- * Muestra las miniaturas reales si están cargadas.
+ * Grid de imÃ¡genes para el preview 
+ * Muestra las miniaturas reales si estÃ¡n cargadas.
  */
 function ImageGridPreview({ images, imagesPerPage }) {
     if (!images || images.length === 0) {
         return (
             <div className="mt-2 border border-dashed border-neutral-200 rounded p-4 text-center">
                 <ImageIcon size={16} className="text-neutral-300 mx-auto mb-1" />
-                <p className="text-[10px] text-neutral-400">Sin imágenes encontradas</p>
-                <p className="text-[9px] text-neutral-300">Asegúrate de que el ID coincida con el nombre de los archivos</p>
+                <p className="text-[10px] text-neutral-400">Sin imÃ¡genes encontradas</p>
+                <p className="text-[9px] text-neutral-300">AsegÃºrate de que el ID coincida con el nombre de los archivos</p>
             </div>
         );
     }
@@ -694,7 +694,7 @@ function ImageGridPreview({ images, imagesPerPage }) {
                     </div>
                 </div>
             ))}
-            {/* Espacios vacíos si faltan fotos para completar la grilla visual */}
+            {/* Espacios vacÃ­os si faltan fotos para completar la grilla visual */}
             {Array.from({ length: Math.max(0, imagesPerPage - displayImages.length) }).map((_, i) => (
                 <div key={`empty-${i}`} className="aspect-[4/3] bg-neutral-100 rounded border border-dashed border-neutral-200 flex items-center justify-center">
                     <ImageIcon size={8} className="text-neutral-300" />
@@ -726,7 +726,7 @@ function VolanteoTemplatePreview({ rowData, images, logoLeft, logoRight }) {
                     }
                 </div>
                 <div className="text-center px-2">
-                    <h3 className="text-[11px] font-bold uppercase tracking-wide text-neutral-900">Panel Fotográfico Volanteo</h3>
+                    <h3 className="text-[11px] font-bold uppercase tracking-wide text-neutral-900">Panel FotogrÃ¡fico Volanteo</h3>
                 </div>
                 <div className="w-24 h-10 flex items-center justify-center">
                     {logoRight
@@ -756,19 +756,19 @@ function VolanteoTemplatePreview({ rowData, images, logoLeft, logoRight }) {
             </div>
 
             <section className="mt-2 shrink-0">
-                <div className="text-[9px] font-bold uppercase text-blue-700 border-b border-blue-700 pb-1 mb-1">1.0 Localización</div>
+                <div className="text-[9px] font-bold uppercase text-blue-700 border-b border-blue-700 pb-1 mb-1">1.0 LocalizaciÃ³n</div>
                 <div className="text-[8px] text-neutral-800">
                     <div className="mb-1"><span className="font-bold uppercase">Direcciones Afectadas:</span> {direcciones}</div>
                     <div className="flex gap-3 flex-wrap">
                         <div><span className="font-bold uppercase">Distrito:</span> {distrito}</div>
-                        <div><span className="font-bold uppercase">Código de Componente:</span> {codigoComponente}</div>
+                        <div><span className="font-bold uppercase">CÃ³digo de Componente:</span> {codigoComponente}</div>
                         <div><span className="font-bold uppercase">Estado:</span> {estado}</div>
                     </div>
                 </div>
             </section>
 
             <section className="mt-2 flex-1 min-h-0 flex flex-col h-full">
-                <div className="text-[9px] font-bold uppercase text-blue-700 border-b border-blue-700 pb-1 mb-1 shrink-0">2.0 Panel Fotográfico</div>
+                <div className="text-[9px] font-bold uppercase text-blue-700 border-b border-blue-700 pb-1 mb-1 shrink-0">2.0 Panel FotogrÃ¡fico</div>
                 {hasPhotos ? (
                     <div className="grid grid-cols-2 grid-rows-2 gap-1 border border-blue-700 p-1 flex-1 min-h-0 h-full w-full box-border">
                         {photos.map((img, idx) => (
@@ -784,7 +784,7 @@ function VolanteoTemplatePreview({ rowData, images, logoLeft, logoRight }) {
                     </div>
                 ) : (
                     <div className="border border-blue-700 text-neutral-400 text-[9px] italic flex-1 min-h-0 h-full w-full flex items-center justify-center text-center px-2">
-                        No se encontraron imágenes asociadas a este registro.
+                        No se encontraron imÃ¡genes asociadas a este registro.
                     </div>
                 )}
             </section>
@@ -841,7 +841,7 @@ function LocalTemplateIframePreview({ renderedHtml }) {
 function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, logoLeft, logoRight, altHeaderConfig, rowData, allImages, idColumn, localTemplateNames, fetchLocalTemplateHtml }) {
     const hasTemplate = Boolean(sheet.templateName);
 
-    // Obtener imágenes para esta fila si hay datos
+    // Obtener imÃ¡genes para esta fila si hay datos
     const rowImages = useMemo(() => {
         if (sheet.providedImages) {
             if (sheet.pageNum && sheet.totalPages) {
@@ -888,7 +888,7 @@ function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, lo
     const isVolanteoTemplate = sheet.templateName === VOLANTEO_TEMPLATE_NAME;
     const showStandardHeaderPreview = !isVolanteoTemplate && !isLocalTemplate;
     const pageIndicator = sheet.totalPages && sheet.totalPages > 1
-        ? ` (Pág ${sheet.pageNum}/${sheet.totalPages})`
+        ? ` (PÃ¡g ${sheet.pageNum}/${sheet.totalPages})`
         : '';
 
     return (
@@ -900,7 +900,7 @@ function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, lo
                         {index + 1}
                     </span>
                     <span className="text-white text-xs font-medium truncate max-w-[200px]">
-                        {sheet.title || 'Sin título'}{pageIndicator}
+                        {sheet.title || 'Sin tÃ­tulo'}{pageIndicator}
                     </span>
                 </div>
                 <div className="flex items-center gap-1.5">
@@ -930,10 +930,10 @@ function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, lo
                         : <MainHeaderPreview title={headerTitle} subtitle={headerSubtitle} logoLeft={logoLeft} logoRight={logoRight} />
                 )}
 
-                {/* Área de plantilla */}
+                {/* Ãrea de plantilla */}
                 {hasTemplate ? (
                     <div className={`${showStandardHeaderPreview ? 'mt-2 ' : ''}space-y-2`}>
-                        {/* Mostrar tarjeta de info solo si NO es plantilla local NI grilla de imágenes */}
+                        {/* Mostrar tarjeta de info solo si NO es plantilla local NI grilla de imÃ¡genes */}
                         {!isLocalTemplate && !isGridTemplate && (
                             <div className="border border-emerald-200 rounded bg-emerald-50 px-3 py-2 flex items-center justify-between gap-2">
                                 <div className="flex items-center gap-2 min-w-0">
@@ -952,7 +952,7 @@ function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, lo
                             </div>
                         )}
 
-                        {/* Preview específico de Grilla */}
+                        {/* Preview especÃ­fico de Grilla */}
                         {isGridTemplate && (
                             <ImageGridPreview images={rowImages} imagesPerPage={sheet.imagesPerPage || 4} />
                         )}
@@ -972,7 +972,7 @@ function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, lo
                     <div className="mt-2 border border-dashed border-neutral-200 rounded px-3 py-4 text-center">
                         <Eye size={16} className="text-neutral-300 mx-auto mb-1" />
                         <p className="text-[10px] text-neutral-400">Sin plantilla asignada</p>
-                        <p className="text-[9px] text-neutral-300 mt-0.5">Asígnala en el Step 1</p>
+                        <p className="text-[9px] text-neutral-300 mt-0.5">AsÃ­gnala en el Step 1</p>
                     </div>
                 )}
             </div>
@@ -980,35 +980,36 @@ function SheetPreviewCard({ sheet, index, total, headerTitle, headerSubtitle, lo
     );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Componente principal
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export default function MultiSheetReportApp() {
-    // ── Encabezado principal ──────────────────────────────────────────────────
-    const [headerTitle, setHeaderTitle] = useState('INFORME TÉCNICO');
+    const confirmDialog = useConfirmDialog();
+    // â”€â”€ Encabezado principal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    const [headerTitle, setHeaderTitle] = useState('INFORME TÃ‰CNICO');
     const [headerSubtitle, setHeaderSubtitle] = useState('');
     const [logoLeft, setLogoLeft] = useState(null);        // data URL (base64)
     const [logoRight, setLogoRight] = useState(null);
     const [logoLeftFile, setLogoLeftFile] = useState(null); // File object
     const [logoRightFile, setLogoRightFile] = useState(null);
 
-    // ── Drag & Drop — logos ───────────────────────────────────────────────────
+    // â”€â”€ Drag & Drop â€” logos â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const [isDraggingLogoLeft, setIsDraggingLogoLeft] = useState(false);
     const [isDraggingLogoRight, setIsDraggingLogoRight] = useState(false);
 
-    // ── Hojas del informe ─────────────────────────────────────────────────────
+    // â”€â”€ Hojas del informe â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     /**
      * @typedef {Object} SheetConfig
-     * @property {string}      id           - ID único (Date.now())
-     * @property {string}      title        - Título visible de la hoja
+     * @property {string}      id           - ID Ãºnico (Date.now())
+     * @property {string}      title        - TÃ­tulo visible de la hoja
      * @property {string|null} templateName - Nombre de la plantilla asignada
-     * @property {boolean}     useAltHeader - true → usar mini-encabezado
-     * @property {boolean}     firstPageOnly - true → se usa solo como 1° hoja
+     * @property {boolean}     useAltHeader - true â†’ usar mini-encabezado
+     * @property {boolean}     firstPageOnly - true â†’ se usa solo como 1Â° hoja
      */
     const [sheets, setSheets] = useState([]);
 
-    // ── Datos globales (Excel/CSV) ────────────────────────────────────────────
+    // â”€â”€ Datos globales (Excel/CSV) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const [data, setData] = useState([]);
     const [headers, setHeaders] = useState([]);
     const [idColumn, setIdColumn] = useState('');
@@ -1025,7 +1026,7 @@ export default function MultiSheetReportApp() {
     const [customFieldMappings, setCustomFieldMappings] = useState([]);
     const [hasPendingDataCommit, setHasPendingDataCommit] = useState(false);
 
-    // ── Mini-encabezado alternativo ───────────────────────────────────────────
+    // â”€â”€ Mini-encabezado alternativo â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const [altHeaderConfig, setAltHeaderConfig] = useState({
         idField: '',
         dateField: '',
@@ -1033,22 +1034,22 @@ export default function MultiSheetReportApp() {
         height: 'compact',
     });
 
-    // ── Imágenes ──────────────────────────────────────────────────────────────
+    // â”€â”€ ImÃ¡genes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const [images, setImages] = useState([]);
     const [isDraggingImages, setIsDraggingImages] = useState(false);
 
-    // ── Plantillas disponibles (del backend) ──────────────────────────────────
+    // â”€â”€ Plantillas disponibles (del backend) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const [availableTemplates, setAvailableTemplates] = useState([]);
     const [templateSections, setTemplateSections] = useState([]);
     const [localTemplateNames, setLocalTemplateNames] = useState(new Set());
     const localTemplateHtmlCache = useRef({});
 
-    // ── Selección y exportación ───────────────────────────────────────────────
+    // â”€â”€ SelecciÃ³n y exportaciÃ³n â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const [selectedIndex, setSelectedIndex] = useState('');
     const [exportScope, setExportScope] = useState('single');
     const [searchOrder, setSearchOrder] = useState('');
 
-    // ── Loading ───────────────────────────────────────────────────────────────
+    // â”€â”€ Loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const [isPdfLoading, setIsPdfLoading] = useState(false);
     const [pdfLoadingMessage, setPdfLoadingMessage] = useState('');
     const sseProgress = useSSEProgress();
@@ -1056,16 +1057,14 @@ export default function MultiSheetReportApp() {
     // Original Quality Mode
     const [originalQuality, setOriginalQuality] = useState(false);
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // Carga de plantillas disponibles
-    // ─────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     useEffect(() => {
         let cancelled = false;
         const load = async () => {
             try {
-                const res = await fetch(`${API_BASE}/templates`);
-                if (!res.ok) throw new Error('Error al obtener plantillas');
-                const json = await res.json();
+                const json = await requestJson(`${API_BASE}/templates`);
                 const templates = Array.isArray(json.templates)
                     ? Array.from(new Set(json.templates.map(t => String(t || '').trim()).filter(Boolean)))
                     : [];
@@ -1104,9 +1103,7 @@ export default function MultiSheetReportApp() {
 
             try {
                 const encoded = encodeURIComponent(templateName);
-                const res = await fetch(`${API_BASE}/templates/${encoded}/mapping-fields`);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const json = await res.json();
+                const json = await requestJson(`${API_BASE}/templates/${encoded}/mapping-fields`);
                 const fields = Array.isArray(json.fields)
                     ? dedupeStrings(json.fields)
                     : [];
@@ -1263,9 +1260,9 @@ export default function MultiSheetReportApp() {
         setCustomFieldMappings(prev => prev.filter(entry => entry.id !== id));
     }, []);
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // Handlers: logos
-    // ─────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleLogoFile = useCallback((file, side) => {
         if (!file || !file.type.startsWith('image/')) return;
         if (side === 'left') setLogoLeftFile(file);
@@ -1284,9 +1281,9 @@ export default function MultiSheetReportApp() {
         if (file) handleLogoFile(file, side);
     }, [handleLogoFile]);
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // Handlers: Excel/CSV
-    // ─────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const processExcelFile = useCallback(async (file) => {
         try {
             const buffer = await file.arrayBuffer();
@@ -1349,9 +1346,9 @@ export default function MultiSheetReportApp() {
         if (file) processExcelFile(file);
     }, [processExcelFile]);
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Handlers: imágenes
-    // ─────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Handlers: imÃ¡genes
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const handleImageFiles = useCallback((fileList) => {
         const imgs = Array.from(fileList).filter(f => f.type.startsWith('image/'));
         if (imgs.length === 0) return;
@@ -1374,11 +1371,11 @@ export default function MultiSheetReportApp() {
         handleImageFiles(e.dataTransfer.files);
     }, [handleImageFiles]);
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Handlers: gestión de hojas
-    // ─────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // Handlers: gestiÃ³n de hojas
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const addSheet = useCallback((templateName) => {
-        // Use provided template or default to Grilla de Imágenes
+        // Use provided template or default to Grilla de ImÃ¡genes
         const defaultTemplate = templateName || (availableTemplates.includes(GRID_TEMPLATE_NAME)
             ? GRID_TEMPLATE_NAME
             : (availableTemplates[0] ?? null));
@@ -1389,22 +1386,26 @@ export default function MultiSheetReportApp() {
             useAltHeader: false,
             firstPageOnly: false,
             imagesPerPage: 4,
-            // For Grilla de Imágenes: store selected image indices from global pool
+            // For Grilla de ImÃ¡genes: store selected image indices from global pool
             selectedImageIndices: defaultTemplate === GRID_TEMPLATE_NAME ? [] : undefined,
         }]);
     }, [availableTemplates]);
 
-    const removeSheet = useCallback((id) => {
-        setSheets(prev => {
-            const sheet = prev.find(s => s.id === id);
-            if (sheet?.templateName) {
-                if (!window.confirm(`¿Eliminar la hoja "${sheet.title}" (tiene plantilla asignada)?`)) {
-                    return prev;
-                }
-            }
-            return prev.filter(s => s.id !== id);
-        });
-    }, []);
+    const removeSheet = useCallback(async (id) => {
+        const sheet = sheets.find((item) => item.id === id);
+        if (sheet?.templateName) {
+            const confirmed = await confirmDialog({
+                title: `¿Eliminar la hoja "${sheet.title}"?`,
+                description: 'La hoja tiene una plantilla asignada y se quitará del informe actual.',
+                confirmLabel: 'Eliminar hoja',
+                cancelLabel: 'Cancelar',
+                tone: 'danger',
+            });
+            if (!confirmed) return;
+        }
+
+        setSheets((prev) => prev.filter((item) => item.id !== id));
+    }, [confirmDialog, sheets]);
 
     const updateSheet = useCallback((id, patch) => {
         setSheets(prev => prev.map(s => s.id === id ? { ...s, ...patch } : s));
@@ -1426,9 +1427,9 @@ export default function MultiSheetReportApp() {
         });
     }, []);
 
-    // ─────────────────────────────────────────────────────────────────────────
-    // Imágenes filtradas por registro
-    // ─────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ImÃ¡genes filtradas por registro
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const getImagesForRow = useCallback((row) => {
         if (!row || !idColumn) return [];
         const recordId = String(row[idColumn]);
@@ -1446,43 +1447,41 @@ export default function MultiSheetReportApp() {
             return localTemplateHtmlCache.current[templateName];
         }
         const encoded = encodeURIComponent(templateName);
-        const res = await fetch(`${API_BASE}/templates/${encoded}/html`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const html = await res.text();
+        const html = await requestText(`${API_BASE}/templates/${encoded}/html`);
         localTemplateHtmlCache.current[templateName] = html;
         return html;
     }, []);
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // Construir FormData para el backend
-    // ─────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     /**
      * @backend-contract
      * Contrato esperado del endpoint POST /api/multi-sheet/generate-pdf:
      *
      * FormData fields:
-     *   sheets_config   (str/JSON)  → SheetEntry[]
+     *   sheets_config   (str/JSON)  â†’ SheetEntry[]
      *     SheetEntry: { order, title, templateName, useAltHeader, rowData, imageFilenames, imagesPerPage }
      *     - rowData: objeto plano con los datos del Excel/CSV para este registro.
-     *     - imageFilenames: nombres de archivos de imágenes incluidas en 'files'.
+     *     - imageFilenames: nombres de archivos de imÃ¡genes incluidas en 'files'.
      *
-     *   header_config   (str/JSON)  → { title, subtitle, logoLeft?, logoRight? }
+     *   header_config   (str/JSON)  â†’ { title, subtitle, logoLeft?, logoRight? }
      *     - logoLeft / logoRight: data URI base64 o null.
-     *     - Si el logo se adjunta como archivo, se envía null aquí para no
-     *       inflar el tamaño del campo multipart.
+     *     - Si el logo se adjunta como archivo, se envÃ­a null aquÃ­ para no
+     *       inflar el tamaÃ±o del campo multipart.
      *
-     *   alt_header_config (str/JSON) → { idField, dateField, extraText, height }
+     *   alt_header_config (str/JSON) â†’ { idField, dateField, extraText, height }
      *     - height: "very-compact" | "compact" | "normal"
      *
-     *   files           (File[])    → imágenes adjuntas (campo 'files')
-     *   logoLeftFile    (File)      → logo izquierdo como archivo (opcional)
-     *   logoRightFile   (File)      → logo derecho como archivo (opcional)
+     *   files           (File[])    â†’ imÃ¡genes adjuntas (campo 'files')
+     *   logoLeftFile    (File)      â†’ logo izquierdo como archivo (opcional)
+     *   logoRightFile   (File)      â†’ logo derecho como archivo (opcional)
      *
      * Respuesta: application/pdf (streaming)
      *
      * Modo "Todos":
-     *   sheetsConfig contiene N×M entradas (N registros × M hojas configuradas),
-     *   en orden continuo. El backend las concatena en un único PDF.
+     *   sheetsConfig contiene NÃ—M entradas (N registros Ã— M hojas configuradas),
+     *   en orden continuo. El backend las concatena en un Ãºnico PDF.
      */
     const buildFormData = useCallback((rowIndices) => {
         const formData = new FormData();
@@ -1587,9 +1586,9 @@ export default function MultiSheetReportApp() {
         return { formData, count: sheetsConfig.length };
     }, [sheets, data, getImagesForRow, images, headerTitle, headerSubtitle, logoLeft, logoRight, altHeaderConfig, logoLeftFile, logoRightFile, originalQuality]);
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // Exportar PDF
-    // ─────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const hasActiveSheets = sheets.length > 0;
     const canExport = hasActiveSheets &&
         (exportScope === 'all' ? data.length > 0 : selectedIndex !== '');
@@ -1603,20 +1602,18 @@ export default function MultiSheetReportApp() {
 
         const { formData, count } = buildFormData(rowIndices);
         const msgBase = exportScope === 'all'
-            ? `Generando informe (${data.length} registros × ${sheets.length} hojas)...`
+            ? `Generando informe (${data.length} registros Ã— ${sheets.length} hojas)...`
             : 'Generando informe PDF...';
 
         try {
             setIsPdfLoading(true);
             setPdfLoadingMessage(msgBase);
 
-            const res = await fetch(`${API_BASE}/generate-pdf`, { method: 'POST', body: formData });
-            if (!res.ok) {
-                const errText = await res.text();
-                throw new Error(`El servidor devolvió ${res.status}: ${errText}`);
-            }
-
-            const blob = await res.blob();
+            const blob = await requestBlob(`${API_BASE}/generate-pdf`, {
+                method: 'POST',
+                data: formData,
+                timeout: HTTP_TIMEOUTS.NONE,
+            });
             const recId = exportScope === 'single' && data[selectedIndex] && idColumn
                 ? data[selectedIndex][idColumn]
                 : new Date().toISOString().split('T')[0];
@@ -1625,10 +1622,11 @@ export default function MultiSheetReportApp() {
         } catch (err) {
             console.error('[MultiSheet] Error generando PDF:', err);
             let msg = 'Error al generar PDF: ';
-            if (err.message.includes('Failed to fetch')) {
+            const message = await extractHttpErrorMessage(err);
+            if (message === 'No se pudo conectar con el servidor.') {
                 msg += 'No se puede conectar con el servidor.';
             } else {
-                msg += err.message;
+                msg += message;
             }
             toast.error(msg);
         } finally {
@@ -1636,24 +1634,24 @@ export default function MultiSheetReportApp() {
         }
     }, [canExport, exportScope, data, selectedIndex, idColumn, sheets, buildFormData]);
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // Datos del registro seleccionado (para previews)
-    // ─────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const selectedRow = selectedIndex !== '' ? data[Number(selectedIndex)] : null;
     const anyAltHeader = sheets.some(s => s.useAltHeader);
 
-    // ─────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     // Render
-    // ─────────────────────────────────────────────────────────────────────────
+    // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     return (
         <DashboardLayout>
             <div className="flex h-full min-h-0 w-full bg-neutral-900 overflow-hidden font-sans text-sm">
 
-                {/* ── Sidebar ───────────────────────────────────────────────── */}
+                {/* â”€â”€ Sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
                 <aside className="w-96 min-h-0 bg-neutral-950 text-white flex flex-col border-r border-neutral-800">
                     <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 space-y-6">
 
-                        {/* Step 0 — Logos y Encabezado Principal */}
+                        {/* Step 0 â€” Logos y Encabezado Principal */}
                         <Step number="0" title="Logos y Encabezado" icon={<Settings size={16} />}>
                             <div className="space-y-3">
                                 {/* Logos */}
@@ -1680,7 +1678,7 @@ export default function MultiSheetReportApp() {
                                                 ? <img src={logoLeft} className="h-full object-contain p-1" alt="logo-izq" />
                                                 : <div className="text-center">
                                                     <div className={`text-xs ${isDraggingLogoLeft ? 'text-violet-300' : 'text-neutral-500'}`}>
-                                                        {isDraggingLogoLeft ? 'Soltar aquí' : 'Subir Logo'}
+                                                        {isDraggingLogoLeft ? 'Soltar aquÃ­' : 'Subir Logo'}
                                                     </div>
                                                 </div>
                                             }
@@ -1716,7 +1714,7 @@ export default function MultiSheetReportApp() {
                                                 ? <img src={logoRight} className="h-full object-contain p-1" alt="logo-der" />
                                                 : <div className="text-center">
                                                     <div className={`text-xs ${isDraggingLogoRight ? 'text-violet-300' : 'text-neutral-500'}`}>
-                                                        {isDraggingLogoRight ? 'Soltar aquí' : 'Subir Logo'}
+                                                        {isDraggingLogoRight ? 'Soltar aquÃ­' : 'Subir Logo'}
                                                     </div>
                                                 </div>
                                             }
@@ -1731,38 +1729,38 @@ export default function MultiSheetReportApp() {
                                     </div>
                                 </div>
 
-                                {/* Título y Subtítulo */}
+                                {/* TÃ­tulo y SubtÃ­tulo */}
                                 <div>
-                                    <label className="block text-xs text-neutral-400 mb-1">Título del informe</label>
+                                    <label className="block text-xs text-neutral-400 mb-1">TÃ­tulo del informe</label>
                                     <input
                                         type="text"
                                         value={headerTitle}
                                         onChange={e => setHeaderTitle(e.target.value)}
-                                        placeholder="INFORME TÉCNICO"
+                                        placeholder="INFORME TÃ‰CNICO"
                                         className="w-full bg-neutral-900 border border-neutral-700 rounded px-2 py-1.5 text-xs text-white focus:border-white outline-none placeholder:text-neutral-600"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs text-neutral-400 mb-1">Subtítulo (opcional)</label>
+                                    <label className="block text-xs text-neutral-400 mb-1">SubtÃ­tulo (opcional)</label>
                                     <input
                                         type="text"
                                         value={headerSubtitle}
                                         onChange={e => setHeaderSubtitle(e.target.value)}
-                                        placeholder="Empresa · Año"
+                                        placeholder="Empresa Â· AÃ±o"
                                         className="w-full bg-neutral-900 border border-neutral-700 rounded px-2 py-1.5 text-xs text-white focus:border-white outline-none placeholder:text-neutral-600"
                                     />
                                 </div>
                             </div>
                         </Step>
 
-                        {/* Step 1 — Hojas del Informe */}
+                        {/* Step 1 â€” Hojas del Informe */}
                         <Step number="1" title="Hojas del Informe" icon={<Layers size={16} />}>
                             <div className="space-y-2">
                                 {/* Lista de hojas */}
                                 {(() => {
                                     const _hl = buildHierarchyLabels(sheets); return sheets.map((sheet, index) => (
                                         <div key={sheet.id} className="bg-neutral-900 border border-neutral-800 rounded-lg p-2 space-y-2">
-                                            {/* Fila superior: número, título, toggle, controles */}
+                                            {/* Fila superior: nÃºmero, tÃ­tulo, toggle, controles */}
                                             <div className="flex items-center gap-1.5">
                                                 <span className="text-neutral-600 text-[10px] font-mono w-4 shrink-0">{index + 1}</span>
                                                 <input
@@ -1770,7 +1768,7 @@ export default function MultiSheetReportApp() {
                                                     value={sheet.title}
                                                     onChange={e => updateSheet(sheet.id, { title: e.target.value })}
                                                     className="flex-1 min-w-0 bg-neutral-800 border border-neutral-700 rounded px-2 py-1 text-xs text-white focus:border-white outline-none"
-                                                    placeholder="Título de hoja"
+                                                    placeholder="TÃ­tulo de hoja"
                                                 />
                                                 {/* Toggle mini-header */}
                                                 <button
@@ -1780,7 +1778,7 @@ export default function MultiSheetReportApp() {
                                                 >
                                                     {sheet.useAltHeader ? <ToggleRight size={18} /> : <ToggleLeft size={18} />}
                                                 </button>
-                                                {/* Marcar como hoja diferente (jerarquía) */}
+                                                {/* Marcar como hoja diferente (jerarquÃ­a) */}
                                                 <button
                                                     onClick={() => toggleFirstPageSheet(sheet.id)}
                                                     title={sheet.firstPageOnly ? `Quitar ${_hl[sheet.id]}` : 'Marcar como hoja diferente'}
@@ -1789,7 +1787,7 @@ export default function MultiSheetReportApp() {
                                                             ? 'border-amber-400/60 text-amber-300 bg-amber-500/10'
                                                             : 'border-neutral-700 text-neutral-500 hover:text-neutral-300 hover:border-neutral-500'}`}
                                                 >
-                                                    {sheet.firstPageOnly ? _hl[sheet.id] : '1°'}
+                                                    {sheet.firstPageOnly ? _hl[sheet.id] : '1Â°'}
                                                 </button>
                                                 {/* Mover arriba */}
                                                 <button
@@ -1816,7 +1814,7 @@ export default function MultiSheetReportApp() {
                                                 </button>
                                             </div>
 
-                                            {/* Selector de plantilla: solo Grilla de Imágenes + plantillas locales (.mtemplates/) */}
+                                            {/* Selector de plantilla: solo Grilla de ImÃ¡genes + plantillas locales (.mtemplates/) */}
                                             <select
                                                 className={`w-full bg-neutral-800 border rounded px-2 py-1 text-xs text-white outline-none transition-colors
                                                 ${sheet.templateName ? 'border-emerald-600' : 'border-neutral-700'}`}
@@ -1824,7 +1822,7 @@ export default function MultiSheetReportApp() {
                                                 onChange={e => updateSheet(sheet.id, { templateName: e.target.value || null })}
                                             >
                                                 <option value="">-- Asignar Plantilla --</option>
-                                                {/* Grilla de Imágenes siempre disponible */}
+                                                {/* Grilla de ImÃ¡genes siempre disponible */}
                                                 <optgroup label="Plantillas base">
                                                     <option value={GRID_TEMPLATE_NAME}>{GRID_TEMPLATE_NAME}</option>
                                                 </optgroup>
@@ -1842,12 +1840,12 @@ export default function MultiSheetReportApp() {
                                                 })()}
                                             </select>
 
-                                            {/* Selector de tamaño de grilla (solo si es "Grilla de Imágenes") */}
+                                            {/* Selector de tamaÃ±o de grilla (solo si es "Grilla de ImÃ¡genes") */}
                                             {sheet.templateName === GRID_TEMPLATE_NAME && (
                                                 <>
                                                     <div className="mt-1.5 flex flex-wrap gap-1 p-1.5 bg-neutral-900/50 rounded border border-neutral-700">
                                                         <div className="w-full text-[9px] text-neutral-500 font-bold uppercase tracking-wider mb-1 flex items-center gap-1">
-                                                            <Grid2X2 size={10} /> Fotos por página
+                                                            <Grid2X2 size={10} /> Fotos por pÃ¡gina
                                                         </div>
                                                         {[2, 3, 4, 5, 6, 7, 8, 9].map(num => (
                                                             <button
@@ -1863,11 +1861,11 @@ export default function MultiSheetReportApp() {
                                                         ))}
                                                     </div>
 
-                                                    {/* Selector de imágenes para la grilla */}
+                                                    {/* Selector de imÃ¡genes para la grilla */}
                                                     {images.length > 0 && (
                                                         <div className="mt-1.5 p-1.5 bg-neutral-900/50 rounded border border-neutral-700 max-h-32 overflow-y-auto">
                                                             <div className="text-[9px] text-neutral-500 font-bold uppercase tracking-wider mb-1 flex items-center gap-1 sticky top-0 bg-neutral-900/80">
-                                                                <ImageIcon size={10} /> Seleccionar imágenes ({sheet.selectedImageIndices?.length || 0}/{sheet.imagesPerPage || 4})
+                                                                <ImageIcon size={10} /> Seleccionar imÃ¡genes ({sheet.selectedImageIndices?.length || 0}/{sheet.imagesPerPage || 4})
                                                             </div>
                                                             <div className="grid grid-cols-4 gap-1">
                                                                 {images.slice(0, 20).map((img, idx) => {
@@ -1910,20 +1908,20 @@ export default function MultiSheetReportApp() {
                                                             </div>
                                                             {images.length > 20 && (
                                                                 <div className="text-[8px] text-neutral-500 text-center mt-1">
-                                                                    +{images.length - 20} más
+                                                                    +{images.length - 20} mÃ¡s
                                                                 </div>
                                                             )}
                                                             <button
                                                                 onClick={() => updateSheet(sheet.id, { selectedImageIndices: [] })}
                                                                 className="mt-1 text-[8px] text-neutral-500 hover:text-neutral-300 underline w-full text-center"
                                                             >
-                                                                Limpiar selección
+                                                                Limpiar selecciÃ³n
                                                             </button>
                                                         </div>
                                                     )}
                                                     {images.length === 0 && (
                                                         <div className="mt-1.5 p-2 text-[9px] text-neutral-500 text-center border border-dashed border-neutral-700 rounded">
-                                                            Sube imágenes en el paso 2 para seleccionarlas
+                                                            Sube imÃ¡genes en el paso 2 para seleccionarlas
                                                         </div>
                                                     )}
                                                 </>
@@ -1985,7 +1983,7 @@ export default function MultiSheetReportApp() {
                             </div>
                         </Step>
 
-                        {/* Step 2 — Datos Globales */}
+                        {/* Step 2 â€” Datos Globales */}
                         <Step number="2" title="Cargar Datos" icon={<FileSpreadsheet size={16} />}>
                             <div className="space-y-2">
                                 {/* Zona drag & drop Excel */}
@@ -1999,7 +1997,7 @@ export default function MultiSheetReportApp() {
                                             ${isDraggingData ? 'border-violet-500 bg-neutral-800' : 'border-neutral-700 hover:bg-neutral-900'}`}
                                     >
                                         <div className={`text-xs transition-colors ${isDraggingData ? 'text-white' : 'text-neutral-400 group-hover:text-white'}`}>
-                                            {isDraggingData ? 'Soltar aquí' : data.length > 0
+                                            {isDraggingData ? 'Soltar aquÃ­' : data.length > 0
                                                 ? `${data.length} registros cargados`
                                                 : 'Seleccionar Excel / CSV'}
                                         </div>
@@ -2046,7 +2044,7 @@ export default function MultiSheetReportApp() {
                                     </div>
                                 )}
 
-                                {/* Zona imágenes */}
+                                {/* Zona imÃ¡genes */}
                                 <label className={`block w-full cursor-pointer group ${!idColumn ? 'opacity-40 pointer-events-none' : ''}`}>
                                     <div
                                         onDragOver={e => { e.preventDefault(); setIsDraggingImages(true); }}
@@ -2057,9 +2055,9 @@ export default function MultiSheetReportApp() {
                                             ${isDraggingImages ? 'border-violet-500 bg-neutral-800' : 'border-neutral-700 hover:bg-neutral-900'}`}
                                     >
                                         <div className={`text-xs transition-colors ${isDraggingImages ? 'text-white' : 'text-neutral-500 group-hover:text-white'}`}>
-                                            {isDraggingImages ? 'Soltar aquí' : images.length > 0
-                                                ? `${images.length} imágenes`
-                                                : <span className="flex items-center justify-center gap-1.5"><ImageIcon size={12} /> Subir Imágenes</span>
+                                            {isDraggingImages ? 'Soltar aquÃ­' : images.length > 0
+                                                ? `${images.length} imÃ¡genes`
+                                                : <span className="flex items-center justify-center gap-1.5"><ImageIcon size={12} /> Subir ImÃ¡genes</span>
                                             }
                                         </div>
                                     </div>
@@ -2068,13 +2066,13 @@ export default function MultiSheetReportApp() {
                                 {images.length > 0 && (
                                     <button onClick={() => { images.forEach(img => URL.revokeObjectURL(img.url)); setImages([]); }}
                                         className="text-[10px] text-red-400/60 hover:text-red-400 w-full text-right">
-                                        Limpiar imágenes
+                                        Limpiar imÃ¡genes
                                     </button>
                                 )}
                             </div>
                         </Step>
 
-                        {/* Step 3 — Mini-Encabezado Alternativo */}
+                        {/* Step 3 â€” Mini-Encabezado Alternativo */}
                         <Step number="3" title="Mini-Encabezado" icon={<FileText size={16} />}>
                             <div className={`space-y-2 ${!anyAltHeader ? 'opacity-40' : ''}`}>
                                 {!anyAltHeader && (
@@ -2117,7 +2115,7 @@ export default function MultiSheetReportApp() {
                                         value={altHeaderConfig.extraText}
                                         onChange={e => setAltHeaderConfig(p => ({ ...p, extraText: e.target.value }))}
                                         disabled={!anyAltHeader}
-                                        placeholder="Ej: Inspección mensual"
+                                        placeholder="Ej: InspecciÃ³n mensual"
                                         className="w-full bg-neutral-900 border border-neutral-700 rounded px-2 py-1 text-xs text-white outline-none placeholder:text-neutral-600 disabled:cursor-not-allowed"
                                     />
                                 </div>
@@ -2148,7 +2146,7 @@ export default function MultiSheetReportApp() {
                             </div>
                         </Step>
 
-                        {/* Step 4 — Seleccionar Registro y Exportar */}
+                        {/* Step 4 â€” Seleccionar Registro y Exportar */}
                         <Step
                             number="4"
                             title="Seleccionar y Exportar"
@@ -2212,9 +2210,9 @@ export default function MultiSheetReportApp() {
                                 {/* Resumen */}
                                 <div className="bg-neutral-900 border border-neutral-800 rounded p-2 text-[10px] font-mono text-neutral-500 space-y-0.5">
                                     <div>Hojas activas: <span className="text-white">{sheets.length}</span></div>
-                                    <div>Imágenes: <span className="text-white">{images.length}</span></div>
+                                    <div>ImÃ¡genes: <span className="text-white">{images.length}</span></div>
                                     {exportScope === 'all' && (
-                                        <div>PDFs a generar: <span className="text-amber-400">{data.length} × {sheets.length} hojas</span></div>
+                                        <div>PDFs a generar: <span className="text-amber-400">{data.length} Ã— {sheets.length} hojas</span></div>
                                     )}
                                 </div>
 
@@ -2242,11 +2240,11 @@ export default function MultiSheetReportApp() {
                                 </div>
                                 {originalQuality && (
                                     <div className="text-[9px] text-amber-400/80 px-1 mt-1">
-                                        ⚠ Sin compresión. El archivo será más pesado.
+                                        âš  Sin compresiÃ³n. El archivo serÃ¡ mÃ¡s pesado.
                                     </div>
                                 )}
 
-                                {/* Botón descargar */}
+                                {/* BotÃ³n descargar */}
                                 <button
                                     onClick={handleDownloadPdf}
                                     disabled={!canExport || isPdfLoading}
@@ -2267,7 +2265,7 @@ export default function MultiSheetReportApp() {
                     </div>
                 </aside>
 
-                {/* ── Panel de Preview ──────────────────────────────────────── */}
+                {/* â”€â”€ Panel de Preview â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
                 <main className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-neutral-800 p-6">
                     {sheets.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-center">
@@ -2276,7 +2274,7 @@ export default function MultiSheetReportApp() {
                                 Sin hojas configuradas
                             </h2>
                             <p className="text-neutral-600 text-xs max-w-xs">
-                                Agrega hojas en el Step 1 para comenzar a componer tu informe multi-sección.
+                                Agrega hojas en el Step 1 para comenzar a componer tu informe multi-secciÃ³n.
                             </p>
                         </div>
                     ) : (
@@ -2285,7 +2283,7 @@ export default function MultiSheetReportApp() {
                             <div className="flex items-center gap-2 mb-2">
                                 <Layers size={16} className="text-neutral-400" />
                                 <span className="text-neutral-400 text-xs font-mono uppercase tracking-widest">
-                                    Vista previa — {sheets.length} {sheets.length === 1 ? 'hoja' : 'hojas'}
+                                    Vista previa â€” {sheets.length} {sheets.length === 1 ? 'hoja' : 'hojas'}
                                 </span>
                                 {selectedRow && idColumn && (
                                     <span className="ml-auto text-xs bg-white/10 text-white px-2 py-0.5 rounded font-mono">
@@ -2344,7 +2342,7 @@ export default function MultiSheetReportApp() {
                                                     />
                                                     <div className="flex items-center gap-2 my-2">
                                                         <div className="flex-1 border-b border-neutral-600 border-dashed" />
-                                                        <span className="text-neutral-600 text-[9px] font-mono whitespace-nowrap">SALTO DE PÁGINA</span>
+                                                        <span className="text-neutral-600 text-[9px] font-mono whitespace-nowrap">SALTO DE PÃGINA</span>
                                                         <div className="flex-1 border-b border-neutral-600 border-dashed" />
                                                     </div>
                                                 </div>
@@ -2352,7 +2350,7 @@ export default function MultiSheetReportApp() {
                                         }
                                         if (!hasManualSelection) unassignedImagesForPreview = [];
                                     } else {
-                                        // First page (1°) o menos imágenes que photosPerPage
+                                        // First page (1Â°) o menos imÃ¡genes que photosPerPage
                                         previewCards.push(
                                             <div key={sheet.id}>
                                                 <SheetPreviewCard
@@ -2372,7 +2370,7 @@ export default function MultiSheetReportApp() {
                                                 />
                                                 <div className="flex items-center gap-2 my-2">
                                                     <div className="flex-1 border-b border-neutral-600 border-dashed" />
-                                                    <span className="text-neutral-600 text-[9px] font-mono whitespace-nowrap">SALTO DE SECCIÓN</span>
+                                                    <span className="text-neutral-600 text-[9px] font-mono whitespace-nowrap">SALTO DE SECCIÃ“N</span>
                                                     <div className="flex-1 border-b border-neutral-600 border-dashed" />
                                                 </div>
                                             </div>
@@ -2387,7 +2385,7 @@ export default function MultiSheetReportApp() {
                                 return previewCards;
                             })()}
 
-                            {/* Info de exportación */}
+                            {/* Info de exportaciÃ³n */}
                             <div className="mt-4 bg-neutral-900/60 border border-neutral-700 rounded-lg p-3 text-[10px] font-mono text-neutral-500">
                                 <div className="flex items-center gap-1.5 mb-1">
                                     <CheckCircle size={10} className="text-emerald-400" />
@@ -2395,7 +2393,7 @@ export default function MultiSheetReportApp() {
                                 </div>
                                 <div className="flex items-center gap-1.5">
                                     <ImageIcon size={10} className="text-blue-400" />
-                                    <span className="text-neutral-400">Imágenes cargadas: {images.length}</span>
+                                    <span className="text-neutral-400">ImÃ¡genes cargadas: {images.length}</span>
                                     {selectedRow && idColumn && (
                                         <span className="text-neutral-500 ml-1">
                                             ({getImagesForRow(selectedRow).length} para este registro)

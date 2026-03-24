@@ -1,3 +1,8 @@
+type HeaderLike =
+    | Headers
+    | { get?: (name: string) => unknown }
+    | Record<string, unknown>;
+
 export function downloadBlob(blob: Blob, filename: string): void {
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -17,13 +22,43 @@ function decodeHeaderValue(value: string): string {
     }
 }
 
-export function getFilenameFromHeaders(headers: Headers): string | null {
-    const headerFilename = headers.get('X-Filename');
+function getHeaderValue(headers: HeaderLike, name: string): string | null {
+    if (headers instanceof Headers) {
+        return headers.get(name);
+    }
+
+    if (typeof headers.get === 'function') {
+        const value = headers.get(name);
+        if (Array.isArray(value)) {
+            return value.join(', ');
+        }
+        if (value === null || value === undefined) {
+            return null;
+        }
+        return String(value);
+    }
+
+    const lowerName = name.toLowerCase();
+    const rawValue = headers[lowerName] ?? headers[name];
+
+    if (Array.isArray(rawValue)) {
+        return rawValue.join(', ');
+    }
+
+    if (rawValue === null || rawValue === undefined) {
+        return null;
+    }
+
+    return String(rawValue);
+}
+
+export function getFilenameFromHeaders(headers: HeaderLike): string | null {
+    const headerFilename = getHeaderValue(headers, 'X-Filename');
     if (headerFilename) {
         return decodeHeaderValue(headerFilename.trim());
     }
 
-    const contentDisposition = headers.get('Content-Disposition') || '';
+    const contentDisposition = getHeaderValue(headers, 'Content-Disposition') || '';
     const encodedMatch = contentDisposition.match(/filename\*=UTF-8''([^;\n]+)/i);
     if (encodedMatch?.[1]) {
         return decodeHeaderValue(encodedMatch[1].trim());

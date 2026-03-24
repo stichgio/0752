@@ -45,8 +45,8 @@ export function StatusBar({
     const escapeRef = useRef(false);
 
     return (
-        <div className="h-7 bg-white/80 backdrop-blur-sm border-t border-neutral-100 flex items-center justify-between px-3 text-[10px] text-neutral-400 select-none shrink-0 gap-3 shadow-[0_-1px_4px_rgba(0,0,0,0.03)]">
-            <div className="flex items-center gap-1.5 min-w-0">
+        <div className="flex min-h-7 shrink-0 flex-col gap-1.5 border-t border-neutral-100 bg-white/80 px-2 py-1.5 text-[10px] text-neutral-400 shadow-[0_-1px_4px_rgba(0,0,0,0.03)] backdrop-blur-sm select-none sm:h-7 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:py-0 sm:px-3">
+            <div className="flex min-w-0 flex-wrap items-center gap-1.5 sm:flex-nowrap">
                 <button
                     className="p-0.5 hover:text-neutral-800 rounded transition-colors"
                     onClick={() => onZoomChange(Math.max(10, zoom - 10))}
@@ -111,8 +111,9 @@ export function StatusBar({
                     </button>
                 )}
 
-                <div className="w-px h-3 bg-neutral-200 mx-1" />
+                <div className="mx-1 hidden h-3 w-px bg-neutral-200 sm:block" />
 
+                <div className="hidden flex-wrap items-center gap-0.5 md:flex">
                 {ZOOM_PRESETS.map((preset) => (
                     <button
                         key={preset}
@@ -125,9 +126,10 @@ export function StatusBar({
                         {preset}%
                     </button>
                 ))}
+                </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                 <label className="flex items-center gap-1 text-[10px] text-neutral-600">
                     <input
                         type="checkbox"
@@ -185,7 +187,7 @@ export function StatusBar({
                 )}
 
                 {selectionCount === 1 && selectedElementMetrics && (
-                    <span className="font-mono text-[10px] text-neutral-700">
+                    <span className="hidden font-mono text-[10px] text-neutral-700 lg:inline">
                         {`X: ${selectedElementMetrics.x.toFixed(1)}  Y: ${selectedElementMetrics.y.toFixed(1)}  W: ${selectedElementMetrics.width.toFixed(1)}  H: ${selectedElementMetrics.height.toFixed(1)}`}
                     </span>
                 )}

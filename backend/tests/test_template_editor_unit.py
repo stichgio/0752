@@ -238,32 +238,32 @@ def test_compile_signature_supports_legacy_signature_config_fallback():
 # _normalize_photo_grid_template_compat tests
 # ---------------------------------------------------------------------------
 
-from main import _normalize_photo_grid_template_compat
+from core.helpers import normalize_photo_grid_template_compat
 
 
 def test_compat_returns_none_for_none():
-    assert _normalize_photo_grid_template_compat(None) is None
+    assert normalize_photo_grid_template_compat(None) is None
 
 
 def test_compat_returns_empty_string_unchanged():
-    assert _normalize_photo_grid_template_compat("") == ""
+    assert normalize_photo_grid_template_compat("") == ""
 
 
 def test_compat_skips_html_without_photo_cell_wrap():
     html = "<html><head></head><body><p>Hello</p></body></html>"
-    assert _normalize_photo_grid_template_compat(html) == html
+    assert normalize_photo_grid_template_compat(html) == html
 
 
 def test_compat_injects_style_before_head_close():
     html = '<html><head></head><body><div class="photo-cell-wrap"></div></body></html>'
-    result = _normalize_photo_grid_template_compat(html)
+    result = normalize_photo_grid_template_compat(html)
     assert "photo-grid-compat-fix" in result
     assert result.index("photo-grid-compat-fix") < result.index("</head>")
 
 
 def test_compat_injects_style_as_prefix_when_no_head():
     html = '<div class="photo-cell-wrap"><img src="x.jpg"></div>'
-    result = _normalize_photo_grid_template_compat(html)
+    result = normalize_photo_grid_template_compat(html)
     assert result.startswith("\n<style")
     assert "photo-grid-compat-fix" in result
     assert html in result
@@ -279,7 +279,7 @@ def test_compat_does_not_restructure_html():
         '<div class="photo-label">ANTES</div>'
         '</div>'
     )
-    result = _normalize_photo_grid_template_compat(legacy)
+    result = normalize_photo_grid_template_compat(legacy)
     # The original markup must be intact (no wrapping divs inserted).
     assert legacy in result
 
@@ -292,7 +292,7 @@ def test_compat_handles_modern_template_with_photo_media():
         '<div class="photo-label">FOTO</div>'
         '</div></body></html>'
     )
-    result = _normalize_photo_grid_template_compat(modern)
+    result = normalize_photo_grid_template_compat(modern)
     assert "photo-grid-compat-fix" in result
     # Original structure preserved.
     assert '<div class="photo-media"><img src="x.jpg"></div>' in result
@@ -301,14 +301,14 @@ def test_compat_handles_modern_template_with_photo_media():
 def test_compat_css_covers_legacy_direct_img():
     """CSS must include rules for img as direct child of .photo-cell-wrap."""
     html = '<div class="photo-cell-wrap"><img src="x.jpg"></div>'
-    result = _normalize_photo_grid_template_compat(html)
+    result = normalize_photo_grid_template_compat(html)
     assert ".photo-cell-wrap > img" in result
 
 
 def test_compat_css_covers_photo_media_img():
     """CSS must include rules for img inside .photo-media."""
     html = '<div class="photo-cell-wrap"><div class="photo-media"><img></div></div>'
-    result = _normalize_photo_grid_template_compat(html)
+    result = normalize_photo_grid_template_compat(html)
     assert ".photo-media > img" in result
 
 
@@ -321,7 +321,7 @@ def test_compat_injects_chrome_page_fix_for_photo_page_templates():
         '</section>'
         '</div></body></html>'
     )
-    result = _normalize_photo_grid_template_compat(html)
+    result = normalize_photo_grid_template_compat(html)
     assert "chrome-page-compat-fix" in result
     assert "grid-template-rows: repeat(2, minmax(0, 1fr))" in result
     assert result.index("chrome-page-compat-fix") < result.index("</head>")
@@ -336,7 +336,7 @@ def test_compat_injects_chrome_page_fix_for_canvas_photo_templates():
         '</div>'
         '</div></body></html>'
     )
-    result = _normalize_photo_grid_template_compat(html)
+    result = normalize_photo_grid_template_compat(html)
     assert "chrome-page-compat-fix" in result
     assert ".template-container" in result
     assert ".photo-grid-table" in result
@@ -345,7 +345,7 @@ def test_compat_injects_chrome_page_fix_for_canvas_photo_templates():
 
 def test_compat_skips_chrome_page_fix_for_plain_html():
     html = '<html><head></head><body><div class="page">Hola</div></body></html>'
-    result = _normalize_photo_grid_template_compat(html)
+    result = normalize_photo_grid_template_compat(html)
     assert "chrome-page-compat-fix" not in result
 
 
@@ -359,7 +359,7 @@ def test_compat_skips_chrome_page_fix_for_photo_cell_wrap_only():
         '<div class="photo-cell-wrap"><img src="x.jpg"></div>'
         '</div></body></html>'
     )
-    result = _normalize_photo_grid_template_compat(html)
+    result = normalize_photo_grid_template_compat(html)
     # Phase 1 must inject photo-grid-compat-fix (because of photo-cell-wrap)
     assert "photo-grid-compat-fix" in result
     # Phase 2 must NOT inject chrome-page-compat-fix (no real photo panel markers)

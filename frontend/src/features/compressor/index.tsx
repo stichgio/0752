@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { extractHttpErrorMessage, HTTP_TIMEOUTS, requestBlobResponse } from '@/utils/apiClient';
 import { formatBytes } from '@/utils/formatBytes';
 import { downloadBlob } from '@/utils/downloadBlob';
 import {
@@ -19,6 +20,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardLayout from '../../components/layout/DashboardLayout';
+import { PageHeader, StatusBadge, JobProgress, EmptyState } from '../../components/ui';
 import {
     CompressedFile,
     CompressionOptions,
@@ -69,7 +71,11 @@ function buildCompressionErrorMessage(error: unknown): string {
         return 'Archivo demasiado grande. Intenta con un PDF menor o divídelo antes de comprimir.';
     }
 
-    if (rawMessage.includes('Failed to fetch') || rawMessage.includes('NetworkError')) {
+    if (
+        rawMessage.includes('Failed to fetch')
+        || rawMessage.includes('NetworkError')
+        || rawMessage.includes('No se pudo conectar con el servidor.')
+    ) {
         return 'No se pudo conectar al servidor. Verifica tu red o vuelve a intentar en unos segundos.';
     }
 
@@ -82,6 +88,30 @@ function buildCompressionErrorMessage(error: unknown): string {
     }
 
     return rawMessage;
+}
+
+function getResponseHeader(
+    headers: Record<string, unknown>,
+    name: string
+): string {
+    const value = headers[name.toLowerCase()];
+    if (Array.isArray(value)) {
+        return value.join(', ');
+    }
+    return String(value || '');
+}
+
+function isAbortLikeError(error: unknown): boolean {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+        return true;
+    }
+
+    if (!error || typeof error !== 'object') {
+        return false;
+    }
+
+    const maybeError = error as { name?: string; code?: string };
+    return maybeError.name === 'CanceledError' || maybeError.code === 'ERR_CANCELED';
 }
 
 function generateId(): string {
@@ -127,40 +157,17 @@ function ToastContainer({ toasts, removeToast }: { toasts: Toast[]; removeToast:
 }
 
 // ============================================================================
-// COMPONENTE: PROGRESS BAR
-// ============================================================================
-function ProgressBar({ current, total }: { current: number; total: number }) {
-    const percentage = total > 0 ? (current / total) * 100 : 0;
-
-    return (
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-800">
-            <motion.div
-                className="h-full bg-white"
-                initial={{ width: 0 }}
-                animate={{ width: `${percentage}%` }}
-                transition={{ duration: 0.3, ease: "easeOut" }}
-            />
-        </div>
-    );
-}
-
-// ============================================================================
-// COMPONENTE: METHOD BADGE
+// COMPONENTE: METHOD BADGE (via StatusBadge)
 // ============================================================================
 function MethodBadge({ method }: { method: 'ghostscript' | 'pypdf' | 'none' }) {
     if (method === 'none') return null;
     const isGs = method === 'ghostscript';
     return (
-        <span
-            title={isGs ? 'Comprimido con Ghostscript' : 'Comprimido con pypdf (fallback)'}
-            className={`inline-flex cursor-default items-center rounded-full border px-2 py-0.5 text-[10px] font-mono font-bold uppercase tracking-[0.18em] ${
-                isGs
-                    ? 'border-white/20 bg-white text-black'
-                    : 'border-amber-500/20 bg-amber-500/10 text-amber-300'
-            }`}
+        <StatusBadge
+            tone={isGs ? 'processing' : 'warning'}
         >
             {isGs ? 'GS' : 'pypdf'}
-        </span>
+        </StatusBadge>
     );
 }
 
@@ -193,7 +200,7 @@ export default function Compressor() {
     const abortControllerRef = useRef<AbortController | null>(null);
     const downloadPopoverRef = useRef<HTMLDivElement>(null);
 
-    const API_BASE = import.meta.env.VITE_API_URL || '/api';
+    const API_BASE = '/api';
 
     useEffect(() => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(options));
@@ -472,57 +479,42 @@ export default function Compressor() {
                     endpoint: `${API_BASE}/compressor/compress-single`,
                 });
 
-                const response = await fetch(`${API_BASE}/compressor/compress-single`, {
+                const response = await requestBlobResponse(`${API_BASE}/compressor/compress-single`, {
                     method: 'POST',
-                    body: formData,
+                    data: formData,
                     signal,
+                    timeout: HTTP_TIMEOUTS.NONE,
                 });
 
-                if (!response.ok) {
-                    const contentType = response.headers.get('content-type') || '';
-                    let errorText = '';
-
-                    if (contentType.includes('application/json')) {
-                        const errorJson = await response.json();
-                        errorText = typeof errorJson?.detail === 'string'
-                            ? errorJson.detail
-                            : JSON.stringify(errorJson);
-                    } else {
-                        errorText = await response.text();
-                    }
-
-                    throw new Error(errorText || `Error ${response.status}`);
-                }
-
-                const responseType = response.headers.get('content-type') || '';
+                const responseType = getResponseHeader(response.headers, 'content-type');
                 if (!responseType.includes('application/pdf') && !responseType.includes('application/octet-stream')) {
                     debugLog('Content-Type inesperado en respuesta', { responseType, file: fileItem.originalName });
                     throw new Error(`El servidor devolvió un tipo de respuesta inesperado: ${responseType || 'desconocido'}`);
                 }
 
-                const compressedBlob = await response.blob();
+                const compressedBlob = response.data;
                 const isValidPdf = await isPdfBlob(compressedBlob);
                 if (!isValidPdf) {
                     throw new Error('La respuesta del servidor no contiene un archivo PDF válido.');
                 }
 
                 // Read response headers
-                const headerOriginal = response.headers.get('X-Original-Size');
-                const headerCompressed = response.headers.get('X-Compressed-Size');
+                const headerOriginal = getResponseHeader(response.headers, 'x-original-size');
+                const headerCompressed = getResponseHeader(response.headers, 'x-compressed-size');
                 const originalSize = parseInt(headerOriginal || '0', 10) || fileItem.originalSize;
                 const compressedSize = parseInt(headerCompressed || '0', 10) || compressedBlob.size;
-                const rawErrorHeader = response.headers.get('X-Error');
+                const rawErrorHeader = getResponseHeader(response.headers, 'x-error');
                 const errorHeader = rawErrorHeader ? decodeURIComponent(rawErrorHeader) : null;
                 const missingHeaders = !headerOriginal || !headerCompressed;
 
                 // X-Compression-Method header (2.1)
-                const compressionMethodRaw = response.headers.get('X-Compression-Method') || 'none';
+                const compressionMethodRaw = getResponseHeader(response.headers, 'x-compression-method') || 'none';
                 const compressionMethod = (['ghostscript', 'pypdf', 'none'].includes(compressionMethodRaw)
                     ? compressionMethodRaw
                     : 'none') as 'ghostscript' | 'pypdf' | 'none';
 
                 // X-Processing-Time header (2.2) — fall back to client-side measurement
-                const serverTime = response.headers.get('X-Processing-Time');
+                const serverTime = getResponseHeader(response.headers, 'x-processing-time');
                 const processingTime = serverTime
                     ? parseFloat(serverTime)
                     : parseFloat(((Date.now() - fetchStart) / 1000).toFixed(1));
@@ -594,7 +586,7 @@ export default function Compressor() {
                 }
 
             } catch (error) {
-                if (error instanceof DOMException && error.name === 'AbortError') {
+                if (isAbortLikeError(error)) {
                     // Abort caught inside the loop — reset remaining files
                     const remainingIds = new Set(pendingFiles.slice(i).map(f => f.id));
                     setFiles(prev => prev.map(f =>
@@ -604,7 +596,12 @@ export default function Compressor() {
                     break;
                 }
 
-                const userErrorMessage = buildCompressionErrorMessage(error);
+                const rawStatus = typeof error === 'object' && error !== null && 'response' in error
+                    ? Number((error as { response?: { status?: number } }).response?.status || 0)
+                    : 0;
+                const extractedMessage = await extractHttpErrorMessage(error);
+                const normalizedError = new Error(rawStatus > 0 ? `${rawStatus} ${extractedMessage}` : extractedMessage);
+                const userErrorMessage = buildCompressionErrorMessage(normalizedError);
                 debugLog('Error durante compresión', {
                     file: fileItem.originalName,
                     raw: error instanceof Error ? error.message : String(error),
@@ -675,19 +672,14 @@ export default function Compressor() {
             pendingFiles.forEach(f => formData.append('files', f.file));
             formData.append('pdf_quality', options.pdfQuality);
 
-            const response = await fetch(`${API_BASE}/compressor/compress`, {
+            const response = await requestBlobResponse(`${API_BASE}/compressor/compress`, {
                 method: 'POST',
-                body: formData,
+                data: formData,
                 signal: abortController.signal,
+                timeout: HTTP_TIMEOUTS.NONE,
             });
 
-            if (!response.ok) {
-                const errorJson = await response.json().catch(() => null);
-                throw new Error(errorJson?.detail || `Error ${response.status}`);
-            }
-
-            const blob = await response.blob();
-            downloadBlob(blob, 'pdfs_comprimidos.zip');
+            downloadBlob(response.data, 'pdfs_comprimidos.zip');
 
             // Mark all as completed (without individual stats — ZIP mode)
             setFiles(prev => prev.map(f =>
@@ -698,18 +690,19 @@ export default function Compressor() {
 
             addToast(`ZIP descargado: ${pendingFiles.length} PDFs comprimidos`, 'success');
         } catch (error) {
-            if (error instanceof DOMException && error.name === 'AbortError') {
+            if (isAbortLikeError(error)) {
                 setFiles(prev => prev.map(f =>
                     pendingFiles.find(p => p.id === f.id) ? { ...f, status: 'pending' } : f
                 ));
                 addToast('Descarga ZIP cancelada.', 'info', 3000);
             } else {
+                const message = await extractHttpErrorMessage(error);
                 setFiles(prev => prev.map(f =>
                     pendingFiles.find(p => p.id === f.id)
-                        ? { ...f, status: 'error', error: 'Error al comprimir' }
+                        ? { ...f, status: 'error', error: message }
                         : f
                 ));
-                addToast('Error al crear el ZIP. Intenta el modo individual.', 'error', 5000);
+                addToast(`Error al crear el ZIP. ${message}`, 'error', 5000);
             }
         } finally {
             setIsProcessing(false);
@@ -799,18 +792,10 @@ export default function Compressor() {
                 <div className="mx-auto flex min-h-full w-full max-w-6xl flex-col gap-4 pb-28">
                     <section className="rounded-[28px] border border-neutral-800 bg-neutral-950/80 p-4 shadow-[0_0_0_1px_rgba(255,255,255,0.02)] backdrop-blur md:p-5">
                         <div className="flex flex-col gap-4">
-                            <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-                                <div className="space-y-2">
-                                    <div className="flex items-center gap-3">
-                                        <span className="h-2.5 w-2.5 rounded-full bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.55)]" />
-                                        <h1 className="font-[DotGothic16] text-4xl tracking-tight text-white">
-                                            PDF COMPRESSOR
-                                        </h1>
-                                    </div>
-                                    <p className="max-w-2xl text-xs font-mono uppercase tracking-[0.22em] text-neutral-500">
-                                        Compresion PDF monocroma, cola compacta y control fino por lote.
-                                    </p>
-                                </div>
+                            <PageHeader
+                                title="PDF COMPRESSOR"
+                                description="Compresion PDF monocroma, cola compacta y control fino por lote."
+                                actions={
 
                                 <div className="flex flex-1 flex-wrap items-center gap-2 xl:justify-end">
                                     <label className="flex min-w-[17rem] flex-1 items-center gap-3 rounded-2xl border border-neutral-800 bg-neutral-900/60 px-3 py-2.5 sm:flex-none">
@@ -887,7 +872,8 @@ export default function Compressor() {
                                         )}
                                     </div>
                                 </div>
-                            </div>
+                                }
+                            />
 
                             <motion.div
                                 className={`flex cursor-pointer flex-col gap-3 rounded-2xl border border-dashed px-4 py-3 transition-colors sm:flex-row sm:items-center sm:justify-between ${
@@ -1146,25 +1132,19 @@ export default function Compressor() {
                                     animate={{ opacity: 1 }}
                                     className="flex h-full flex-col items-center justify-center px-6 text-center"
                                 >
-                                    <motion.div
-                                        animate={{ y: [0, -4, 0] }}
-                                        transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-                                        className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-neutral-800 bg-neutral-900/80"
-                                    >
-                                        <Archive size={24} className="text-neutral-500" />
-                                    </motion.div>
-                                    <p className="font-mono text-sm uppercase tracking-[0.2em] text-neutral-400">
-                                        No hay PDFs en cola
-                                    </p>
-                                    <p className="mt-2 max-w-md text-sm font-mono text-neutral-600">
-                                        Usa la barra superior para arrastrar, hacer clic, o pegar archivos PDF.
-                                    </p>
-                                    <p className="mt-5 flex items-center gap-2 text-xs font-mono text-neutral-500">
-                                        <kbd className="rounded-lg border border-neutral-800 bg-neutral-900 px-2.5 py-1.5">Ctrl</kbd>
-                                        <span>+</span>
-                                        <kbd className="rounded-lg border border-neutral-800 bg-neutral-900 px-2.5 py-1.5">V</kbd>
-                                        <span>para pegar</span>
-                                    </p>
+                                    <EmptyState
+                                        icon={<Archive size={24} className="text-[var(--g-text-dim)]" />}
+                                        title="No hay PDFs en cola"
+                                        description="Usa la barra superior para arrastrar, hacer clic, o pegar archivos PDF."
+                                        action={
+                                            <p className="flex items-center gap-2 text-xs font-mono text-neutral-500">
+                                                <kbd className="rounded-lg border border-neutral-800 bg-neutral-900 px-2.5 py-1.5">Ctrl</kbd>
+                                                <span>+</span>
+                                                <kbd className="rounded-lg border border-neutral-800 bg-neutral-900 px-2.5 py-1.5">V</kbd>
+                                                <span>para pegar</span>
+                                            </p>
+                                        }
+                                    />
                                 </motion.div>
                             )}
                         </AnimatePresence>
@@ -1215,15 +1195,15 @@ export default function Compressor() {
                                         {isProcessing ? (
                                             <div className="space-y-2">
                                                 {processingProgress.total > 0 && (
-                                                    <>
-                                                        <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-[0.18em] text-neutral-500">
-                                                            <span>Progreso</span>
-                                                            <span>{processingProgress.current} / {processingProgress.total}</span>
-                                                        </div>
-                                                        <ProgressBar current={processingProgress.current} total={processingProgress.total} />
-                                                    </>
+                                                    <JobProgress
+                                                        label="Progreso"
+                                                        value={processingProgress.current}
+                                                        total={processingProgress.total}
+                                                        detail={processingMessage || undefined}
+                                                        state="running"
+                                                    />
                                                 )}
-                                                {processingMessage && (
+                                                {!processingProgress.total && processingMessage && (
                                                     <p className="truncate text-xs font-mono text-neutral-400" title={processingMessage}>
                                                         {processingMessage}
                                                     </p>

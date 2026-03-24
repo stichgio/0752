@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, FileDown, Files } from 'lucide-react';
+import { toast } from 'sonner';
 import DatabasePanel from './DatabasePanel';
 import PreviewPanel from './PreviewPanel';
 import FormPanel from './FormPanel';
@@ -8,11 +9,12 @@ import { TechnicalReport, TechnicalReportListItem } from './types';
 import { technicalReportsApi } from './api';
 import html2canvas from 'html2canvas';
 import LoadingModal from '@/components/ui/LoadingModal';
+import { useConfirmDialog } from '@/components/ui';
 import { useFocusMode } from '@/hooks/useFocusMode';
 import { useLocalDraft } from '@/hooks/useLocalDraft';
 import { useAsyncAction } from '@/hooks/useAsyncAction';
 import { useSSEProgress } from '@/hooks/useSSEProgress';
-import { getApiBase } from '@/utils/apiBase';
+import { downloadByUrl, extractHttpErrorMessage, HTTP_TIMEOUTS } from '@/utils/apiClient';
 import { downloadBlob } from '@/utils/downloadBlob';
 
 export default function TechnicalReports() {
@@ -24,12 +26,13 @@ export default function TechnicalReports() {
     } = useLocalDraft<TechnicalReport>('current_report_draft');
     const { isLoading, loadingMessage, run } = useAsyncAction();
     const sseProgress = useSSEProgress();
+    const confirmDialog = useConfirmDialog();
 
     const [logoLeft, setLogoLeft] = useState<File | null>(null);
     const [logoRight, setLogoRight] = useState<File | null>(null);
 
     useEffect(() => {
-        loadReports();
+        void loadReports();
     }, []);
 
     const loadReports = async () => {
@@ -40,8 +43,16 @@ export default function TechnicalReports() {
     };
 
     const handleReportSelect = async (reportId: string) => {
-        if (hasUnsavedChanges && !window.confirm('¿Guardar cambios?')) return;
-        if (hasUnsavedChanges) await handleSaveChanges();
+        if (hasUnsavedChanges) {
+            const shouldSave = await confirmDialog({
+                title: '¿Guardar cambios antes de continuar?',
+                description: 'Se guardará el informe actual antes de cargar otro registro.',
+                confirmLabel: 'Guardar y continuar',
+                cancelLabel: 'Seguir editando',
+            });
+            if (!shouldSave) return;
+            await handleSaveChanges();
+        }
 
         try {
             const report = await technicalReportsApi.getReport(reportId);
@@ -50,7 +61,7 @@ export default function TechnicalReports() {
             setHasUnsavedChanges(false);
         } catch (error) {
             console.error('Error:', error);
-            alert('Error cargando informe');
+            toast.error('Error cargando informe');
         }
     };
 
@@ -69,7 +80,7 @@ export default function TechnicalReports() {
             await loadReports();
         } catch (error) {
             console.error('Error:', error);
-            alert('Error guardando');
+            toast.error('Error guardando');
         }
     };
 
@@ -78,20 +89,27 @@ export default function TechnicalReports() {
             const result = await technicalReportsApi.importCSV(file);
             const freshData = await technicalReportsApi.getAllReports(undefined, true);
             setReports(freshData.reports || []);
-            alert(`${result.imported_count} informes importados`);
-        }, { onError: msg => alert(`Error importando archivo: ${msg}`) });
+            toast.success(`${result.imported_count} informes importados`);
+        }, { onError: (msg) => toast.error(`Error importando archivo: ${msg}`) });
     };
 
     const handleClearAllReports = async () => {
-        if (window.confirm('¿ESTÁ SEGURO? \n\nEsto eliminará TODOS los informes de la base de datos permanentemente.\nEsta acción no se puede deshacer.')) {
-            await run(async () => {
-                await technicalReportsApi.deleteAllReports();
-                await loadReports();
-                setFormData(null);
-                setSelectedReportId(null);
-                setHasUnsavedChanges(false);
-            }, { onError: msg => alert(`Error eliminando informes: ${msg}`) });
-        }
+        const confirmed = await confirmDialog({
+            title: '¿Eliminar todos los informes?',
+            description: 'Esta acción eliminará todos los informes de la base de datos de forma permanente y no se puede deshacer.',
+            confirmLabel: 'Eliminar todo',
+            cancelLabel: 'Cancelar',
+            tone: 'danger',
+        });
+        if (!confirmed) return;
+
+        await run(async () => {
+            await technicalReportsApi.deleteAllReports();
+            await loadReports();
+            setFormData(null);
+            setSelectedReportId(null);
+            setHasUnsavedChanges(false);
+        }, { onError: (msg) => toast.error(`Error eliminando informes: ${msg}`) });
     };
 
     const handleDownloadPDF = async () => {
@@ -101,7 +119,7 @@ export default function TechnicalReports() {
                 const blob = await technicalReportsApi.generatePDF(formData, [], logoLeft, logoRight);
                 downloadBlob(blob, `informe_${selectedReportId}.pdf`);
             },
-            { message: 'Generando PDF...', onError: msg => alert(`Error generando PDF: ${msg}`) }
+            { message: 'Generando PDF...', onError: (msg) => toast.error(`Error generando PDF: ${msg}`) }
         );
     };
 
@@ -114,7 +132,7 @@ export default function TechnicalReports() {
                 const canvas = await html2canvas(element, {
                     scale: 2,
                     backgroundColor: '#ffffff',
-                    useCORS: true
+                    useCORS: true,
                 });
                 const dataUrl = canvas.toDataURL('image/png');
                 const link = document.createElement('a');
@@ -124,22 +142,24 @@ export default function TechnicalReports() {
                 link.click();
                 link.remove();
             },
-            { message: 'Capturando imagen...', onError: msg => alert(`Error descargando imagen: ${msg}`) }
+            { message: 'Capturando imagen...', onError: (msg) => toast.error(`Error descargando imagen: ${msg}`) }
         );
     };
 
     const handleDownloadConsolidatedPDF = async () => {
         if (reports.length === 0) {
-            alert('No hay informes para exportar');
+            toast.info('No hay informes para exportar');
             return;
         }
 
-        const confirmed = window.confirm(
-            `¿Desea generar un PDF consolidado con los ${reports.length} informes?\n\nEsto puede tomar varios minutos dependiendo de la cantidad de informes.`
-        );
+        const confirmed = await confirmDialog({
+            title: '¿Generar PDF consolidado?',
+            description: `Se generará un PDF consolidado con ${reports.length} informes. Esto puede tomar varios minutos.`,
+            confirmLabel: 'Generar PDF',
+            cancelLabel: 'Cancelar',
+        });
         if (!confirmed) return;
 
-        // Use SSE for real-time progress
         const formData = new FormData();
         if (logoLeft) formData.append('logoLeft', logoLeft);
         if (logoRight) formData.append('logoRight', logoRight);
@@ -147,18 +167,17 @@ export default function TechnicalReports() {
         sseProgress.run('/api/technical-reports/generate-consolidated-pdf-progress', formData, {
             onComplete: async (downloadUrl: string) => {
                 try {
-                    const base = getApiBase();
-                    const resp = await fetch(`${base}${downloadUrl}`);
-                    if (!resp.ok) throw new Error(`Error en descarga: ${resp.status}`);
-                    const blob = await resp.blob();
-                    downloadBlob(blob, `informes_tecnicos_consolidado_${reports.length}.pdf`);
-                } catch (err: any) {
-                    alert(`Error descargando PDF: ${err.message}`);
+                    const response = await downloadByUrl(downloadUrl, {
+                        timeout: HTTP_TIMEOUTS.NONE,
+                    });
+                    downloadBlob(response.data, `informes_tecnicos_consolidado_${reports.length}.pdf`);
+                } catch (err: unknown) {
+                    const message = await extractHttpErrorMessage(err);
+                    toast.error(`Error descargando PDF: ${message}`);
                 }
             },
-            onError: async (errMsg: string) => {
-                // Fallback to original non-SSE endpoint
-                console.warn('SSE failed, falling back:', errMsg);
+            onError: async (_errMsg: string) => {
+                console.warn('SSE failed, falling back');
                 await run(
                     async () => {
                         const blob = await technicalReportsApi.generateConsolidatedPDF(logoLeft, logoRight);
@@ -166,20 +185,20 @@ export default function TechnicalReports() {
                     },
                     {
                         message: `Generando PDF consolidado (${reports.length} informes)...`,
-                        onError: msg => alert(`Error generando PDF consolidado: ${msg}`)
+                        onError: (msg) => toast.error(`Error generando PDF consolidado: ${msg}`),
                     }
                 );
-            }
+            },
         });
     };
 
-    const currentIndex = reports.findIndex(r => r.id === selectedReportId);
+    const currentIndex = reports.findIndex((report) => report.id === selectedReportId);
     const canPrev = currentIndex > 0;
     const canNext = currentIndex < reports.length - 1;
 
     const isFocusMode = useFocusMode({
-        onPrev: () => canPrev && handleReportSelect(reports[currentIndex - 1].id),
-        onNext: () => canNext && handleReportSelect(reports[currentIndex + 1].id),
+        onPrev: () => canPrev && void handleReportSelect(reports[currentIndex - 1].id),
+        onNext: () => canNext && void handleReportSelect(reports[currentIndex + 1].id),
     });
 
     return (
@@ -195,12 +214,12 @@ export default function TechnicalReports() {
                         </h1>
                     </div>
                     <div className="flex items-center gap-4">
-                        <button onClick={() => canPrev && handleReportSelect(reports[currentIndex - 1].id)} disabled={!canPrev} className="btn-secondary flex items-center gap-2 disabled:opacity-50">
+                        <button onClick={() => canPrev && void handleReportSelect(reports[currentIndex - 1].id)} disabled={!canPrev} className="btn-secondary flex items-center gap-2 disabled:opacity-50">
                             <ChevronLeft size={16} />
                             Anterior
                         </button>
                         <span className="text-sm text-[#888] font-mono min-w-[80px] text-center">{selectedReportId ? `${currentIndex + 1} de ${reports.length}` : '-'}</span>
-                        <button onClick={() => canNext && handleReportSelect(reports[currentIndex + 1].id)} disabled={!canNext} className="btn-secondary flex items-center gap-2 disabled:opacity-50">
+                        <button onClick={() => canNext && void handleReportSelect(reports[currentIndex + 1].id)} disabled={!canNext} className="btn-secondary flex items-center gap-2 disabled:opacity-50">
                             Siguiente
                             <ChevronRight size={16} />
                         </button>
@@ -221,20 +240,16 @@ export default function TechnicalReports() {
                 </div>
             </div>
 
-            {/* Main Layout Grid - Adjusted for Focus Mode */}
             <div className={`grid transition-all duration-300 ease-in-out h-[calc(100vh-80px)] overflow-hidden ${isFocusMode
                 ? 'grid-cols-[0px_1fr_0px] gap-0 p-0 h-screen'
                 : 'grid-cols-[300px_1fr_400px] gap-6 p-6'
-                }`}>
-                {/* Columna Izquierda: Scroll Independiente */}
+            }`}>
                 <div className={`h-full overflow-y-auto pr-2 transition-opacity duration-300 ${isFocusMode ? 'invisible opacity-0' : 'visible opacity-100'}`}>
                     <DatabasePanel reports={reports} selectedReportId={selectedReportId} onReportSelect={handleReportSelect} onImportCSV={handleImportCSV} onReload={loadReports} onClearAll={handleClearAllReports} />
                 </div>
 
-                {/* Columna Central */}
                 <PreviewPanel reportData={formData} zoom={100} logoLeft={logoLeft} logoRight={logoRight} />
 
-                {/* Columna Derecha: Scroll Independiente */}
                 <div className={`h-full overflow-y-auto pl-2 transition-opacity duration-300 ${isFocusMode ? 'invisible opacity-0' : 'visible opacity-100'}`}>
                     <FormPanel
                         reportData={formData}
@@ -249,28 +264,26 @@ export default function TechnicalReports() {
                     />
                 </div>
             </div>
-            {/* Navigation Buttons for Focus Mode */}
             {isFocusMode && (
                 <>
                     <button
-                        onClick={() => canPrev && handleReportSelect(reports[currentIndex - 1].id)}
+                        onClick={() => canPrev && void handleReportSelect(reports[currentIndex - 1].id)}
                         disabled={!canPrev}
                         className={`fixed left-4 top-1/2 -translate-y-1/2 p-2 transition-colors z-[100] outline-none ${!canPrev ? 'text-gray-800 opacity-50 cursor-not-allowed' : 'text-red-600 hover:text-red-500 opacity-80 hover:opacity-100'}`}
-                        title="Informe Anterior"
+                        title="Informe anterior"
                     >
                         <ChevronLeft size={80} strokeWidth={1.5} />
                     </button>
 
                     <button
-                        onClick={() => canNext && handleReportSelect(reports[currentIndex + 1].id)}
+                        onClick={() => canNext && void handleReportSelect(reports[currentIndex + 1].id)}
                         disabled={!canNext}
                         className={`fixed right-4 top-1/2 -translate-y-1/2 p-2 transition-colors z-[100] outline-none ${!canNext ? 'text-gray-800 opacity-50 cursor-not-allowed' : 'text-red-600 hover:text-red-500 opacity-80 hover:opacity-100'}`}
-                        title="Siguiente Informe"
+                        title="Siguiente informe"
                     >
                         <ChevronRight size={80} strokeWidth={1.5} />
                     </button>
 
-                    {/* Exit hint */}
                     <div className="fixed top-4 right-4 z-[100] text-white/30 text-xs font-mono pointer-events-none select-none">
                         MODO FOCUS (CTRL + .)
                     </div>
@@ -287,5 +300,3 @@ export default function TechnicalReports() {
         </div>
     );
 }
-
-

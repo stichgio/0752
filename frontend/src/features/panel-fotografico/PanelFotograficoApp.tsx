@@ -12,7 +12,7 @@ import {
     X,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { postBlob } from '../../utils/apiClient';
+import { HTTP_TIMEOUTS, postBlob } from '../../utils/apiClient';
 
 // ─── types ───────────────────────────────────────────────────────────────────
 
@@ -382,7 +382,7 @@ export default function PanelFotograficoApp() {
             if (logoLeft) formData.append('logoLeft', logoLeft.file, logoLeft.file.name);
             if (logoRight) formData.append('logoRight', logoRight.file, logoRight.file.name);
 
-            const blob = await postBlob('/api/panel-fotografico/render-pdf', formData, 120000);
+            const blob = await postBlob('/api/panel-fotografico/render-pdf', formData, HTTP_TIMEOUTS.EXPORT);
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;

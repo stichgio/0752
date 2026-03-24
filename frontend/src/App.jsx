@@ -12,11 +12,10 @@ import { toast } from 'sonner';
 import { REPORT_FIELDS, TEMPLATE_KEY_MAP, DATE_FIELDS, TEMPLATE_HEADERS } from './constants';
 import { useFocusMode } from './hooks/useFocusMode';
 import { useSSEProgress } from './hooks/useSSEProgress';
-import { getApiBase } from './utils/apiBase';
+import { downloadByUrl, extractHttpErrorMessage, HTTP_TIMEOUTS, requestBlobResponse, requestJson } from './utils/apiClient';
 import { excelSerialToDate, formatDateValue, isDateColumn } from './utils';
 import { clearPersistedLogo, loadPersistedLogo, savePersistedLogo } from './utils/persistedLogos';
 
-const API_BASE_URL = `${getApiBase()}/api`;
 const LOGO_LEFT_STORAGE_KEY = 'mainGeneratorLogoLeft';
 const LOGO_RIGHT_STORAGE_KEY = 'mainGeneratorLogoRight';
 
@@ -169,9 +168,7 @@ export default function App() {
 
         const loadTemplates = async () => {
             try {
-                const res = await fetch(`${API_BASE_URL}/templates`);
-                if (!res.ok) throw new Error('Error al obtener plantillas');
-                const data = await res.json();
+                const data = await requestJson('/api/templates');
 
                 if (cancelled) return;
                 setAvailableTemplates(Array.isArray(data.templates) ? data.templates : []);
@@ -277,9 +274,7 @@ export default function App() {
         if (!filename) return;
 
         try {
-            const res = await fetch(`${API_BASE_URL}/templates/${filename}`);
-            if (!res.ok) throw new Error("Error al cargar la plantilla");
-            const data = await res.json();
+            const data = await requestJson(`/api/templates/${filename}`);
 
             const validation = validateTemplateStructure(data.content);
             if (validation.valid) {
@@ -303,7 +298,8 @@ export default function App() {
         } catch (err) {
             console.error(err);
             setTemplateStatus('invalid');
-            setTemplateError("Error al cargar la plantilla: " + err.message);
+            const message = await extractHttpErrorMessage(err);
+            setTemplateError("Error al cargar la plantilla: " + message);
         }
     };
 
@@ -624,15 +620,15 @@ export default function App() {
             sseProgress.run('/api/generate-pdf-progress', formData, {
                 onComplete: async (downloadUrl) => {
                     try {
-                        const base = getApiBase();
-                        const resp = await fetch(`${base}${downloadUrl}`);
-                        if (!resp.ok) throw new Error(`Error en descarga: ${resp.status}`);
-                        const blob = await resp.blob();
-                        const filename = getFilenameFromHeaders(resp.headers)
+                        const response = await downloadByUrl(downloadUrl, {
+                            timeout: HTTP_TIMEOUTS.NONE,
+                        });
+                        const filename = getFilenameFromHeaders(response.headers)
                             || `Paneles_Consolidado_${new Date().toISOString().split('T')[0]}.pdf`;
-                        downloadBlob(blob, filename);
+                        downloadBlob(response.data, filename);
                     } catch (err) {
-                        toast.error(`Error descargando PDF: ${err.message}`);
+                        const message = await extractHttpErrorMessage(err);
+                        toast.error(`Error descargando PDF: ${message}`);
                     }
                 },
                 onError: async (errMsg) => {
@@ -641,14 +637,17 @@ export default function App() {
                     try {
                         setIsPdfLoading(true);
                         setPdfLoadingMessage(`Generando PDF consolidado (${payload.length} registros)...`);
-                        const response = await fetch(`${API_BASE_URL}/generate-pdf`, { method: 'POST', body: formData });
-                        if (!response.ok) throw new Error(`El servidor devolvió ${response.status}`);
-                        const blob = await response.blob();
+                        const response = await requestBlobResponse('/api/generate-pdf', {
+                            method: 'POST',
+                            data: formData,
+                            timeout: HTTP_TIMEOUTS.NONE,
+                        });
                         const filename = getFilenameFromHeaders(response.headers)
                             || `Paneles_Consolidado_${new Date().toISOString().split('T')[0]}.pdf`;
-                        downloadBlob(blob, filename);
+                        downloadBlob(response.data, filename);
                     } catch (fallbackErr) {
-                        toast.error(`Error generando PDF: ${fallbackErr.message}`);
+                        const message = await extractHttpErrorMessage(fallbackErr);
+                        toast.error(`Error generando PDF: ${message}`);
                     } finally {
                         setIsPdfLoading(false);
                     }
@@ -661,30 +660,24 @@ export default function App() {
                 setPdfLoadingMessage(exportScope === 'single' ? 'Generando PDF...' : `Generando PDF consolidado (${payload.length} registros)...`);
 
                 console.log(`Sending PDF request: ${payload.length} reports, ${allImages.size} images`);
-                const response = await fetch(`${API_BASE_URL}/generate-pdf`, {
+                const response = await requestBlobResponse('/api/generate-pdf', {
                     method: 'POST',
-                    body: formData,
+                    data: formData,
+                    timeout: HTTP_TIMEOUTS.NONE,
                 });
 
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`El servidor devolvió ${response.status}: ${errorText}`);
-                }
-
-                const blob = await response.blob();
                 const filename = getFilenameFromHeaders(response.headers)
                     || `Reporte_${data[selectedIndex][idColumn] || 'Output'}.pdf`;
-                downloadBlob(blob, filename);
+                downloadBlob(response.data, filename);
 
             } catch (err) {
                 console.error("PDF Generation Error:", err);
                 let errorMessage = 'Error al generar PDF: ';
-                if (err.message.includes('Failed to fetch')) {
+                const message = await extractHttpErrorMessage(err);
+                if (message === 'No se pudo conectar con el servidor.') {
                     errorMessage += 'No se puede conectar con el servidor. Verifica que el backend esté activo y la URL sea correcta.';
-                } else if (err.message.includes('NetworkError')) {
-                    errorMessage += 'Error de red. Verifica tu conexión a internet.';
                 } else {
-                    errorMessage += err.message;
+                    errorMessage += message;
                 }
                 toast.error(errorMessage);
             } finally {

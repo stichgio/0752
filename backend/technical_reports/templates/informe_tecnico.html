@@ -7,8 +7,8 @@
     <title>Informe Técnico SEDAPAL - Limpieza y Desinfección</title>
     <style>
         @page {
-            size: A4;
-            margin: 5mm;
+            size: A4 portrait;
+            margin: 0;
         }
 
         * {
@@ -22,15 +22,19 @@
             font-size: 7.5pt;
             line-height: 1.15;
             background: #fff;
+            margin: 0;
             padding: 0;
             color: #333;
+            width: 210mm;
         }
 
         .page-container {
-            max-width: 100%;
+            width: 210mm;
+            min-height: 297mm;
             margin: 0 auto;
             background: #fff;
-            padding: 8px;
+            padding: 8mm !important;
+            box-sizing: border-box;
             page-break-after: always;
         }
 
@@ -309,7 +313,6 @@
 
             .page-container {
                 box-shadow: none;
-                padding: 0;
             }
         }
     </style>

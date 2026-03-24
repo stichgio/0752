@@ -107,8 +107,8 @@ def test_render_pdf_1_to_4_images_produces_one_page(client, monkeypatch):
     assert "application/pdf" in response.headers.get("content-type", "")
     assert captured
     html = captured[0]
-    assert 'class="photo-grid photo-grid-three"' in html
-    assert 'class="photo-grid-three-bottom"' in html
+    assert 'class="photo-grid"' in html
+    assert 'grid-column: span 2' in html
     assert "Sin imagen" not in html
     assert html.count('class="photo-cell"') == 3
     assert "photo-table" not in html

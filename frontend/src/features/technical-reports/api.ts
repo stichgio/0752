@@ -1,5 +1,5 @@
 import { TechnicalReport } from './types';
-import { apiClient, appendLogos, postBlob } from '@/utils/apiClient';
+import { apiClient, appendLogos, HTTP_TIMEOUTS, postBlob } from '@/utils/apiClient';
 
 export const technicalReportsApi = {
     getAllReports: async (
@@ -73,6 +73,6 @@ export const technicalReportsApi = {
         if (reportIds && reportIds.length > 0) {
             formData.append('report_ids', JSON.stringify(reportIds));
         }
-        return postBlob('/api/technical-reports/generate-consolidated-pdf', formData, 300000);
+        return postBlob('/api/technical-reports/generate-consolidated-pdf', formData, HTTP_TIMEOUTS.LONG_EXPORT);
     }
 };

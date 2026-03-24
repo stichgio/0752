@@ -1,43 +1,32 @@
-import { getApiBase } from '../../../utils/apiBase';
+import { extractHttpErrorMessage, requestBlob } from '../../../utils/apiClient';
 
-const API_BASE = `${getApiBase()}/api/tools`;
+const API_BASE = '/api/tools';
 
 /**
  * Centralized fetch wrapper for PDF Tools endpoints.
  * Handles network errors vs HTTP errors with descriptive messages.
  */
 async function callApi(path, formData) {
-    const fullUrl = `${API_BASE}${path}`;
-    let res;
-
     try {
-        res = await fetch(fullUrl, { method: 'POST', body: formData });
-    } catch (_networkErr) {
+        return await requestBlob(`${API_BASE}${path}`, {
+            method: 'POST',
+            data: formData,
+        });
+    } catch (error) {
+        const message = await extractHttpErrorMessage(error);
         const isLocal =
             window.location.hostname === 'localhost' ||
             window.location.hostname === '127.0.0.1';
-        throw new Error(
-            isLocal
-                ? 'No se pudo conectar con el servidor. Verifica que el backend esta corriendo en http://localhost:7860 y que el proxy de Vite esta activo.'
-                : `No se pudo conectar con el backend. URL intentada: ${fullUrl}`,
-        );
-    }
+        if (message === 'No se pudo conectar con el servidor.') {
+            throw new Error(
+                isLocal
+                    ? 'No se pudo conectar con el servidor. Verifica que el backend esta corriendo en http://localhost:7860 y que el proxy de Vite esta activo.'
+                    : `No se pudo conectar con el backend. URL intentada: ${API_BASE}${path}`,
+            );
+        }
 
-    if (!res.ok) {
-        let detail = `Error del servidor (${res.status})`;
-        try {
-            const ct = res.headers.get('content-type') || '';
-            if (ct.includes('application/json')) {
-                const json = await res.json();
-                detail = json.detail || JSON.stringify(json);
-            } else {
-                detail = (await res.text()) || detail;
-            }
-        } catch { /* ignore parse errors */ }
-        throw new Error(detail);
+        throw new Error(message);
     }
-
-    return res;
 }
 
 export async function mergePdfsInterleaved(files, strict = false, chunkSizes = null) {
@@ -47,15 +36,13 @@ export async function mergePdfsInterleaved(files, strict = false, chunkSizes = n
     if (Array.isArray(chunkSizes) && chunkSizes.length === files.length && chunkSizes.length > 0) {
         fd.append('chunk_sizes', JSON.stringify(chunkSizes));
     }
-    const res = await callApi('/merge-pdfs', fd);
-    return res.blob();
+    return callApi('/merge-pdfs', fd);
 }
 
 export async function mergePdfsNormal(files) {
     const fd = new FormData();
     files.forEach((f) => fd.append('files', f));
-    const res = await callApi('/merge-pdfs-normal', fd);
-    return res.blob();
+    return callApi('/merge-pdfs-normal', fd);
 }
 
 export async function splitPdf(file, mode, options = {}) {
@@ -69,8 +56,7 @@ export async function splitPdf(file, mode, options = {}) {
         fd.append('ranges', JSON.stringify(options.ranges));
     }
 
-    const res = await callApi('/split-pdf', fd);
-    return res.blob();
+    return callApi('/split-pdf', fd);
 }
 
 export async function organizePdf(file, operations, cutPoints = []) {
@@ -95,14 +81,12 @@ export async function organizePdf(file, operations, cutPoints = []) {
         fd.append('mode', 'organize');
     }
 
-    const res = await callApi('/organize-pdf', fd);
-    return res.blob();
+    return callApi('/organize-pdf', fd);
 }
 
 export async function extractPages(file, pageNumbers) {
     const fd = new FormData();
     fd.append('file', file);
     fd.append('pages', JSON.stringify(pageNumbers));
-    const res = await callApi('/extract-pages', fd);
-    return res.blob();
+    return callApi('/extract-pages', fd);
 }

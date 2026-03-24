@@ -16,6 +16,7 @@ import {
     Loader2,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { extractHttpErrorMessage, HTTP_TIMEOUTS, requestBlobResponse } from '@/utils/apiClient';
 import { downloadBlob, getFilenameFromHeaders } from '@/utils/downloadBlob';
 import { clearPersistedLogo, loadPersistedLogo, savePersistedLogo } from '@/utils/persistedLogos';
 import {
@@ -25,12 +26,12 @@ import {
 } from '@/utils/editorTemplateSelector';
 import { excelSerialToDate, formatDateValue, isDateColumn } from '@/utils';
 import { templateEditorApi } from './api';
+import { toast } from 'sonner';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 const LOGO_LEFT_STORAGE_KEY = 'templateEditorGeneratorLogoLeft';
 const LOGO_RIGHT_STORAGE_KEY = 'templateEditorGeneratorLogoRight';
 
-/* ── Report fields & mappings (mirrored from App.jsx constants) ─── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Report fields & mappings (mirrored from App.jsx constants) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 const REPORT_FIELDS = [
     { id: 'centro', label: 'CENTRO' },
     { id: 'nis', label: 'NIS' },
@@ -45,7 +46,7 @@ const TEMPLATE_KEY_MAP: Record<string, string> = {
     ot: 'Nro OT',
 };
 
-/* ── Custom Step component ────────────────────────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Custom Step component Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 function Step({
     number,
     title,
@@ -89,7 +90,7 @@ function Step({
     );
 }
 
-/* ── Loading modal ─────────────────────────────────────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Loading modal Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 function LoadingModal({ message }: { message: string }) {
     return (
         <div className="fixed inset-0 z-[200] bg-black/90 flex items-center justify-center">
@@ -101,7 +102,7 @@ function LoadingModal({ message }: { message: string }) {
     );
 }
 
-/* ── Preview Panel for custom template rendering ───────────────── */
+/* Ã¢â€â‚¬Ã¢â€â‚¬ Preview Panel for custom template rendering Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ */
 function TemplatePreview({
     renderedHtml,
     panelRef,
@@ -160,9 +161,9 @@ function TemplatePreview({
     );
 }
 
-/* ═══════════════════════════════════════════════════════════════════
-   ReportGenerator – Independent PDF generator for Template Editor
-   ═══════════════════════════════════════════════════════════════════ */
+/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
+   ReportGenerator Ã¢â‚¬â€œ Independent PDF generator for Template Editor
+   Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */
 
 function extractCompiledTemplate(record: any): { content: string; templateJson: any } {
     if (!record || !Array.isArray(record.versions) || record.versions.length === 0) {
@@ -207,7 +208,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     const [exportScope, setExportScope] = useState<'single' | 'all'>('single');
     const [exportFormat, setExportFormat] = useState<'consolidated' | 'individual'>('consolidated');
 
-    // Template State — ONLY editor templates
+    // Template State Ã¢â‚¬â€ ONLY editor templates
     const [editorTemplates, setEditorTemplates] = useState<{ id: string; name: string; status: string }[]>([]);
     const [selectedTemplate, setSelectedTemplate] = useState<{
         name: string;
@@ -298,7 +299,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
         };
     }, []);
 
-    // ── Fetch ONLY editor templates (published) ──────────────────────
+    // Ã¢â€â‚¬Ã¢â€â‚¬ Fetch ONLY editor templates (published) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     useEffect(() => {
         if (!isVisible) return;
         let cancelled = false;
@@ -306,25 +307,23 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
         const loadTemplates = async () => {
             try {
                 const [editorResult, publishedResult] = await Promise.allSettled([
-                    fetch(`${API_BASE_URL}/template-editor/templates`),
-                    fetch(`${API_BASE_URL}/templates/published`),
+                    templateEditorApi.list(),
+                    templateEditorApi.getPublished(),
                 ]);
 
                 let dbEditorTemplates: any[] = [];
-                if (editorResult.status === 'fulfilled' && editorResult.value.ok) {
-                    const editorData = await editorResult.value.json();
-                    dbEditorTemplates = Array.isArray(editorData.templates)
-                        ? editorData.templates
+                if (editorResult.status === 'fulfilled') {
+                    dbEditorTemplates = Array.isArray(editorResult.value)
+                        ? editorResult.value
                             .map((item: any) => normalizeEditorTemplate(item, item?.status || 'draft'))
                             .filter((item: any) => item.id && item.name)
                         : [];
                 }
 
                 let publishedEditorTemplates: any[] = [];
-                if (publishedResult.status === 'fulfilled' && publishedResult.value.ok) {
-                    const publishedData = await publishedResult.value.json();
-                    publishedEditorTemplates = Array.isArray(publishedData.templates)
-                        ? publishedData.templates
+                if (publishedResult.status === 'fulfilled') {
+                    publishedEditorTemplates = Array.isArray(publishedResult.value)
+                        ? publishedResult.value
                             .map((item: any) => normalizeEditorTemplate(item, item?.status || 'published'))
                             .filter((item: any) => item.id && item.name)
                         : [];
@@ -347,7 +346,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
         return () => { cancelled = true; };
     }, [isVisible]);
 
-    // ── Select an editor template ──────────────────────────────────
+    // Ã¢â€â‚¬Ã¢â€â‚¬ Select an editor template Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     const handleEditorTemplateSelect = useCallback(async (editorTemplateId: string) => {
         if (!editorTemplateId) return;
 
@@ -423,7 +422,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
         }
     }, [editorTemplates]);
 
-    // ── Reset template ────────────────────────────────────────────
+    // Ã¢â€â‚¬Ã¢â€â‚¬ Reset template Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     const handleResetTemplate = useCallback(() => {
         setSelectedTemplate(null);
         setTemplateStatus(null);
@@ -432,7 +431,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
         setRenderedHtml('');
     }, []);
 
-    // ── Logo upload ────────────────────────────────────────────────
+    // Ã¢â€â‚¬Ã¢â€â‚¬ Logo upload Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     const handleLogoUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>, side: 'left' | 'right') => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -447,7 +446,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
         reader.readAsDataURL(file);
     }, []);
 
-    // ── File upload ────────────────────────────────────────────────
+    // Ã¢â€â‚¬Ã¢â€â‚¬ File upload Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
@@ -480,11 +479,11 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                 }
             } catch (err) {
                 console.error('Error parsing Excel file:', err);
-                alert('Error al parsear el archivo Excel. Asegúrate de que el formato sea correcto.');
+                toast.error('Error al parsear el archivo Excel. Asegúrate de que el formato sea correcto.');
             }
         };
         reader.onerror = () => {
-            alert('Error al leer el archivo. Por favor intenta de nuevo.');
+            toast.error('Error al leer el archivo. Por favor intenta de nuevo.');
         };
         reader.readAsBinaryString(file);
     }, []);
@@ -502,12 +501,12 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
         setMappings(newMap);
     };
 
-    // ── Image upload ───────────────────────────────────────────────
+    // Ã¢â€â‚¬Ã¢â€â‚¬ Image upload Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) setImages(Array.from(e.target.files));
     }, []);
 
-    // ── Match image name to record ID ──────────────────────────────
+    // Ã¢â€â‚¬Ã¢â€â‚¬ Match image name to record ID Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     const matchesRecordId = useCallback((imageName: string, recordId: string) => {
         const id = String(recordId).trim();
         const name = imageName.toLowerCase();
@@ -534,18 +533,18 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
         });
     }, [data, selectedIndex, idColumn, images, matchesRecordId]);
 
-    // ── Photo-grid fix CSS (shared by both preview modes) ──────────
+    // Ã¢â€â‚¬Ã¢â€â‚¬ Photo-grid fix CSS (shared by both preview modes) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     const PHOTO_FIX_CSS = `
 <style id="__photo-fix__">
-  /* ── Backward compat: old templates have class="element photo-grid" on the
+  /* Ã¢â€â‚¬Ã¢â€â‚¬ Backward compat: old templates have class="element photo-grid" on the
        outer wrapper.  Keep it block-positioned with its inline mm dimensions.
-       Specificity 0,2,0 beats .photo-grid (0,1,0). ── */
+       Specificity 0,2,0 beats .photo-grid (0,1,0). Ã¢â€â‚¬Ã¢â€â‚¬ */
   .element.photo-grid {
     display: block !important;
   }
 
-  /* ── CSS Grid container (frontend export path).
-       :not(.element) ensures we never touch the outer positioned wrapper. ── */
+  /* Ã¢â€â‚¬Ã¢â€â‚¬ CSS Grid container (frontend export path).
+       :not(.element) ensures we never touch the outer positioned wrapper. Ã¢â€â‚¬Ã¢â€â‚¬ */
   .photo-grid:not(.element) {
     display: grid !important;
     grid-template-columns: repeat(2, 1fr) !important;
@@ -557,9 +556,9 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     box-sizing: border-box !important;
   }
 
-  /* ── Table container (backend compiled path).
+  /* Ã¢â€â‚¬Ã¢â€â‚¬ Table container (backend compiled path).
        The backend compiles photo-grids as <table class="photo-grid-table">
-       with <td class="photo-cell">.  DO NOT apply display:flex to <td>. ── */
+       with <td class="photo-cell">.  DO NOT apply display:flex to <td>. Ã¢â€â‚¬Ã¢â€â‚¬ */
   .photo-grid-table {
     width: 100% !important;
     height: 100% !important;
@@ -568,7 +567,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     table-layout: fixed !important;
   }
 
-  /* ── Legacy panel-fotografico containers ── */
+  /* Ã¢â€â‚¬Ã¢â€â‚¬ Legacy panel-fotografico containers Ã¢â€â‚¬Ã¢â€â‚¬ */
   .panel-fotografico,
   [class*="photo-section"] {
     display: flex !important;
@@ -578,8 +577,8 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     overflow: hidden !important;
   }
 
-  /* ── photo-cell: generic rules safe for both <td> and <div>.
-       NO display override here — <td> must keep display:table-cell. ── */
+  /* Ã¢â€â‚¬Ã¢â€â‚¬ photo-cell: generic rules safe for both <td> and <div>.
+       NO display override here Ã¢â‚¬â€ <td> must keep display:table-cell. Ã¢â€â‚¬Ã¢â€â‚¬ */
   .photo-cell {
     overflow: hidden !important;
     min-height: 0 !important;
@@ -587,14 +586,14 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     box-sizing: border-box !important;
   }
 
-  /* ── photo-cell as CSS Grid child (div): needs flex for internal layout ── */
+  /* Ã¢â€â‚¬Ã¢â€â‚¬ photo-cell as CSS Grid child (div): needs flex for internal layout Ã¢â€â‚¬Ã¢â€â‚¬ */
   .photo-grid:not(.element) > .photo-cell {
     display: flex !important;
     flex-direction: column !important;
     position: relative !important;
   }
 
-  /* ── Inner flex wrapper: handles layout inside both <td> and grid cells ── */
+  /* Ã¢â€â‚¬Ã¢â€â‚¬ Inner flex wrapper: handles layout inside both <td> and grid cells Ã¢â€â‚¬Ã¢â€â‚¬ */
   .photo-cell-wrap {
     display: flex !important;
     flex-direction: column !important;
@@ -607,7 +606,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     overflow: hidden !important;
   }
 
-  /* ── photo-media: positioning anchor for absolute images ── */
+  /* Ã¢â€â‚¬Ã¢â€â‚¬ photo-media: positioning anchor for absolute images Ã¢â€â‚¬Ã¢â€â‚¬ */
   .photo-media {
     flex: 1 1 auto !important;
     min-height: 0 !important;
@@ -619,7 +618,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     justify-content: center !important;
   }
 
-  /* ── Images: absolutely positioned within .photo-media ── */
+  /* Ã¢â€â‚¬Ã¢â€â‚¬ Images: absolutely positioned within .photo-media Ã¢â€â‚¬Ã¢â€â‚¬ */
   .photo-media > img {
     position: absolute !important;
     top: 0 !important;
@@ -631,7 +630,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     display: block !important;
   }
 
-  /* ── Photo labels (ANTES, DURANTE, etc.) ── */
+  /* Ã¢â€â‚¬Ã¢â€â‚¬ Photo labels (ANTES, DURANTE, etc.) Ã¢â€â‚¬Ã¢â€â‚¬ */
   .photo-label,
   .photo-caption {
     flex-shrink: 0 !important;
@@ -645,7 +644,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     font-family: Arial, sans-serif !important;
   }
 
-  /* ── Broken or empty images: hide but keep space ── */
+  /* Ã¢â€â‚¬Ã¢â€â‚¬ Broken or empty images: hide but keep space Ã¢â€â‚¬Ã¢â€â‚¬ */
   img[src=""],
   img:not([src]) {
     visibility: hidden !important;
@@ -659,15 +658,15 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
             return;
         }
 
-        // Si hay plantilla pero no hay fila seleccionada → mostrar estructura
+        // Si hay plantilla pero no hay fila seleccionada Ã¢â€ â€™ mostrar estructura
         if (selectedIndex === '' || data.length === 0) {
             let previewHtml = selectedTemplate.content;
 
-            // ── PASO 1: Eliminar bloques Jinja de control ({% ... %}) ──
+            // Ã¢â€â‚¬Ã¢â€â‚¬ PASO 1: Eliminar bloques Jinja de control ({% ... %}) Ã¢â€â‚¬Ã¢â€â‚¬
             previewHtml = previewHtml.replace(/\{%[\s\S]*?%\}/g, '');
             previewHtml = previewHtml.replace(/\{#[\s\S]*?#\}/g, '');
 
-            // ── PASO 2: Limpiar variables dentro de atributos HTML ──────
+            // Ã¢â€â‚¬Ã¢â€â‚¬ PASO 2: Limpiar variables dentro de atributos HTML Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
             previewHtml = previewHtml.replace(
                 /src=["']\s*\{\{[^}]+\}\}\s*["']/g,
                 'src=""'
@@ -693,7 +692,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                 '=""'
             );
 
-            // ── PASO 3: Variables Jinja de datos visibles (en contenido) ─
+            // Ã¢â€â‚¬Ã¢â€â‚¬ PASO 3: Variables Jinja de datos visibles (en contenido) Ã¢â€â‚¬
             previewHtml = previewHtml.replace(
                 /\{\{\s*report\.data\.get\(\s*['"]([^'"]+)['"]\s*(?:,\s*[^)]+)?\s*\)\s*\}\}/g,
                 (_m: string, key: string) =>
@@ -701,20 +700,20 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                     `padding:1px 4px;font-family:monospace;border-radius:2px">[${key}]</span>`
             );
 
-            // ── PASO 4: Variables Jinja simples restantes en contenido ───
+            // Ã¢â€â‚¬Ã¢â€â‚¬ PASO 4: Variables Jinja simples restantes en contenido Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
             previewHtml = previewHtml.replace(
                 /\{\{[^}]+\}\}/g,
                 '<span style="display:inline-block;width:40px;height:8px;' +
                 'background:#ececec;border-radius:2px;vertical-align:middle"></span>'
             );
 
-            // ── PASO 4.5: Detectar photo-grid vacío y llenar con 4 celdas placeholder ──
-            // Después de eliminar los {% for %} los grids quedan:
+            // Ã¢â€â‚¬Ã¢â€â‚¬ PASO 4.5: Detectar photo-grid vacÃƒÂ­o y llenar con 4 celdas placeholder Ã¢â€â‚¬Ã¢â€â‚¬
+            // DespuÃƒÂ©s de eliminar los {% for %} los grids quedan:
             // <div class="photo-grid"></div>  o  <div class="photo-grid">   </div>
             previewHtml = previewHtml.replace(
                 /(<div[^>]*class="[^"]*photo-grid[^"]*"[^>]*>)\s*(<\/div>)/g,
                 (_m: string, openTag: string) => {
-                    const labels = ['ANTES', 'DURANTE', 'DESPUÉS', 'DETALLE'];
+                    const labels = ['ANTES', 'DURANTE', 'DESPUÃƒâ€°S', 'DETALLE'];
                     const cells = labels.map(label => `
         <div class="photo-cell" style="
           background: #f0f0f0;
@@ -755,7 +754,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                 }
             );
 
-            // ── PASO 5: Ocultar imágenes rotas con src="" ────────────────
+            // Ã¢â€â‚¬Ã¢â€â‚¬ PASO 5: Ocultar imÃƒÂ¡genes rotas con src="" Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
             const previewNoDataStyles = `
 <style id="__preview-nodata__">
   img[src=""],
@@ -864,7 +863,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
         html = html.replace(reportImagesIfElse, (_m: string, ifC: string, elseC: string) => (imageCount > 0 ? ifC : elseC));
 
         // Simple replacements
-        html = html.split('{{ title }}').join('PANEL FOTOGRÁFICO');
+        html = html.split('{{ title }}').join('PANEL FOTOGRÃƒÂFICO');
         html = html.split('{{ logo_left }}').join(logoLeft || emptyPixel);
         html = html.split('{{ logo_right }}').join(logoRight || emptyPixel);
 
@@ -936,7 +935,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
         setRenderedHtml(finalHtml);
     }, [selectedTemplate, data, selectedIndex, mappings, logoLeft, logoRight, images, customColumns, getFilteredImages, idColumn]);
 
-    // ── PDF Generation ─────────────────────────────────────────────
+    // Ã¢â€â‚¬Ã¢â€â‚¬ PDF Generation Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     const handleBackendDownload = useCallback(async () => {
         if (exportScope === 'single' && selectedIndex === '') return;
         if (exportScope === 'all' && data.length === 0) return;
@@ -1017,38 +1016,33 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                     : `Generando PDF consolidado (${payload.length} registros)...`
             );
 
-            const response = await fetch(`${API_BASE_URL}/generate-pdf`, {
+            const response = await requestBlobResponse('/api/generate-pdf', {
                 method: 'POST',
-                body: formData,
+                data: formData,
+                timeout: HTTP_TIMEOUTS.NONE,
             });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`El servidor devolvió ${response.status}: ${errorText}`);
-            }
-
-            const blob = await response.blob();
             const filename = getFilenameFromHeaders(response.headers)
                 || (
                     exportScope === 'single'
                         ? `Reporte_${data[Number(selectedIndex)][idColumn] || 'Output'}.pdf`
                         : `Paneles_Consolidado_${new Date().toISOString().split('T')[0]}.pdf`
                 );
-            downloadBlob(blob, filename);
-        } catch (err: any) {
+            downloadBlob(response.data, filename);
+        } catch (err: unknown) {
             let errorMessage = 'Error al generar PDF: ';
-            if (err.message.includes('Failed to fetch')) {
+            const message = await extractHttpErrorMessage(err);
+            if (message === 'No se pudo conectar con el servidor.') {
                 errorMessage += 'No se puede conectar con el servidor.';
             } else {
-                errorMessage += err.message;
+                errorMessage += message;
             }
-            alert(errorMessage);
+            toast.error(errorMessage);
         } finally {
             setIsPdfLoading(false);
         }
     }, [data, selectedIndex, exportScope, selectedTemplate, mappings, customColumns, idColumn, images, requiresImages, logoLeftFile, logoRightFile, matchesRecordId, getFilteredImages, originalQuality]);
 
-    // ── Custom column handlers ─────────────────────────────────────
+    // Ã¢â€â‚¬Ã¢â€â‚¬ Custom column handlers Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     const addCustomColumn = useCallback(() => {
         if (!newColumnName.trim()) {
             setColumnError('El nombre de la columna es requerido');
@@ -1090,7 +1084,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
     return (
         <div className="fixed inset-0 z-[90] flex bg-black">
             <div className="flex w-full h-full bg-[#000] animate-in fade-in slide-in-from-bottom-4 duration-300">
-                {/* ═══ Sidebar ═══ */}
+                {/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â Sidebar Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */}
                 <aside className="w-[280px] bg-[#000] border-r border-[#1a1a1a] flex flex-col flex-shrink-0">
                     {/* Header */}
                     <div className="h-11 flex items-center justify-between px-4 border-b border-[#1a1a1a] flex-shrink-0">
@@ -1153,13 +1147,13 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                                 </select>
 
                                 {templateStatus === 'invalid' && templateError && (
-                                    <div className="border border-[#ff3b30]/30 bg-[#ff3b30]/5 text-[#ff3b30] text-[10px] font-mono rounded-none p-2 mb-3 flex items-center gap-2">⚠️ {templateError}</div>
+                                    <div className="border border-[#ff3b30]/30 bg-[#ff3b30]/5 text-[#ff3b30] text-[10px] font-mono rounded-none p-2 mb-3 flex items-center gap-2">Ã¢Å¡Â Ã¯Â¸Â {templateError}</div>
                                 )}
 
                                 <div className="flex items-center justify-between py-2 px-3 border border-[#1a1a1a] bg-[#050505]">
                                     <span className="text-[9px] font-mono uppercase tracking-[0.2em] text-[#444]">Activa</span>
                                     <span className={`text-[10px] font-mono truncate max-w-[160px] ${selectedTemplate ? 'text-white' : 'text-[#333]'}`}>
-                                        {selectedTemplate ? selectedTemplate.name : '—'}
+                                        {selectedTemplate ? selectedTemplate.name : 'Ã¢â‚¬â€'}
                                     </span>
                                 </div>
 
@@ -1175,7 +1169,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                                 {/* Images Required Toggle */}
                                 <div className="flex items-center justify-between py-2 px-3 border border-[#1a1a1a]">
                                     <span className="text-[10px] font-mono uppercase tracking-wider text-[#666] flex items-center gap-2">
-                                        <ImageIcon size={10} /> Requiere imágenes
+                                        <ImageIcon size={10} /> Requiere imÃƒÂ¡genes
                                     </span>
                                     <label className="relative inline-flex items-center cursor-pointer">
                                         <input
@@ -1252,7 +1246,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                                             onClick={() => removeCustomColumn(col.id)}
                                             className="text-[#ff3b30] hover:text-white text-[10px] px-2 hover:bg-[#ff3b30] rounded-none transition-colors"
                                         >
-                                            ✕
+                                            Ã¢Å“â€¢
                                         </button>
                                     </div>
                                 ))}
@@ -1270,7 +1264,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                         {/* Step 4: Images */}
                         <Step
                             number="4"
-                            title={requiresImages ? 'Cargar Imágenes' : 'Imágenes (Opcional)'}
+                            title={requiresImages ? 'Cargar ImÃƒÂ¡genes' : 'ImÃƒÂ¡genes (Opcional)'}
                             disabled={!idColumn || !requiresImages}
                             icon={<ImageIcon size={14} />}
                         >
@@ -1278,7 +1272,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                                 <label className="block w-full cursor-pointer group">
                                     <div className="border border-[#222] hover:border-white rounded-none p-2.5 text-center bg-[#050505] transition-colors">
                                         <span className="text-[#666] font-mono text-[10px] uppercase tracking-wider group-hover:text-white transition-colors">
-                                            {images.length > 0 ? `${images.length} imágenes` : 'Subir Carpeta de Fotos'}
+                                            {images.length > 0 ? `${images.length} imÃƒÂ¡genes` : 'Subir Carpeta de Fotos'}
                                         </span>
                                     </div>
                                     <input type="file" hidden multiple accept="image/*" onChange={handleImageUpload} />
@@ -1339,7 +1333,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
 
                             {/* Export Options */}
                             <div className="bg-[#050505] border border-[#1a1a1a] rounded-none p-2 mt-2">
-                                <h4 className="text-[10px] uppercase font-mono tracking-widest text-[#555] mb-2">Exportación</h4>
+                                <h4 className="text-[10px] uppercase font-mono tracking-widest text-[#555] mb-2">ExportaciÃƒÂ³n</h4>
                                 <div className="flex gap-2 mb-2">
                                     <button
                                         className={`flex-1 ${exportScope === 'single' ? 'bg-white text-black font-mono font-bold text-[10px] tracking-wider uppercase py-2 px-3 rounded-none transition-all' : 'bg-transparent border border-[#222] text-[#555] hover:border-[#444] hover:text-white font-mono text-[10px] tracking-wider uppercase py-2 px-3 rounded-none transition-all'}`}
@@ -1405,7 +1399,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                             </div>
                             {originalQuality && (
                                 <div className="text-[9px] font-mono text-amber-400/80 px-3 mt-1">
-                                    ⚠ Sin compresión. El archivo será más pesado.
+                                    Ã¢Å¡Â  Sin compresiÃƒÂ³n. El archivo serÃƒÂ¡ mÃƒÂ¡s pesado.
                                 </div>
                             )}
 
@@ -1420,7 +1414,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                     </div>
                 </aside>
 
-                {/* ═══ Preview Area ═══ */}
+                {/* Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â Preview Area Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â */}
                 <main className="flex-1 flex flex-col h-full overflow-hidden bg-[#f5f5f5]">
                     {/* Preview header */}
                     <div className="h-10 flex items-center justify-between px-5 bg-[#000] border-b border-[#111] flex-shrink-0">
@@ -1428,7 +1422,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                             Vista Previa
                             {selectedTemplate && (
                                 <span className="text-white ml-3 normal-case tracking-normal">
-                                    — {selectedTemplate.name}
+                                    Ã¢â‚¬â€ {selectedTemplate.name}
                                 </span>
                             )}
                             {selectedIndex !== '' && data[Number(selectedIndex)] && idColumn && ` | ${data[Number(selectedIndex)][idColumn]}`}
@@ -1437,7 +1431,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
                             onClick={onClose}
                             className="text-[9px] font-mono uppercase tracking-widest text-[#333] hover:text-white transition-colors"
                         >
-                            ESC · cerrar
+                            ESC Ã‚Â· cerrar
                         </button>
                     </div>
 

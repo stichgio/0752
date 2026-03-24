@@ -1,5 +1,6 @@
 import React, { startTransition, useState, useEffect, useRef } from 'react';
 import { FileDown, Loader2, ScanLine, ChevronRight, AlertCircle, RefreshCw, Layers } from 'lucide-react';
+import { extractHttpErrorMessage, HTTP_TIMEOUTS, requestBlob } from '@/utils/apiClient';
 
 declare global {
     interface Window { pdfjsLib: any; }
@@ -234,17 +235,15 @@ export default function FormatoDApp() {
             if (capturedDesde < 1 || capturedHasta < capturedDesde) return;
             setPreviewLoading(true);
             try {
-                const res = await fetch(API_URL, {
+                const blob = await requestBlob(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ desde: capturedDesde, hasta: previewHasta }),
+                    data: { desde: capturedDesde, hasta: previewHasta },
+                    timeout: HTTP_TIMEOUTS.NONE,
                 });
-                if (res.ok) {
-                    const blob = await res.blob();
-                    setPreviewBlob(blob);
-                    setPreviewDesde(capturedDesde);
-                    setPreviewTotal(capturedTotal);
-                }
+                setPreviewBlob(blob);
+                setPreviewDesde(capturedDesde);
+                setPreviewTotal(capturedTotal);
             } catch { /* silent */ } finally {
                 setPreviewLoading(false);
             }
@@ -258,16 +257,12 @@ export default function FormatoDApp() {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch(API_URL, {
+            const blob = await requestBlob(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ desde, hasta }),
+                data: { desde, hasta },
+                timeout: HTTP_TIMEOUTS.NONE,
             });
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
-                throw new Error(data.detail ?? `Error ${res.status}`);
-            }
-            const blob = await res.blob();
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -277,7 +272,7 @@ export default function FormatoDApp() {
             a.click();
             URL.revokeObjectURL(url);
         } catch (e: unknown) {
-            setError(e instanceof Error ? e.message : 'Error desconocido');
+            setError(await extractHttpErrorMessage(e));
         } finally {
             setLoading(false);
         }

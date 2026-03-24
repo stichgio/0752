@@ -20,6 +20,7 @@ import {
   mmToPx,
 } from './canvasTypes';
 import { useCanvasViewport } from './hooks/useCanvasViewport';
+import { useCompactEditorLayout } from './hooks/useCompactEditorLayout';
 import { PRESET_BLOCKS } from './utils/presetBlocks';
 import { SidebarRoot } from './sidebar/SidebarRoot';
 import { CanvasArea } from './canvas/CanvasArea';
@@ -238,6 +239,55 @@ export default function CanvasEditor({
 
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true);
+  const isCompactLayout = useCompactEditorLayout();
+  const [viewportWidth, setViewportWidth] = useState(
+    () => (typeof window !== 'undefined' ? window.innerWidth : 1280),
+  );
+
+  const compactLeftSidebarPx = Math.max(260, Math.min(leftSidebarWidth, viewportWidth - 20));
+  const compactRightSidebarPx = Math.max(260, Math.min(rightSidebarWidth, viewportWidth - 20));
+
+  useEffect(() => {
+    const onResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  useEffect(() => {
+    if (isCompactLayout) {
+      setIsLeftSidebarOpen(false);
+      setIsRightSidebarOpen(false);
+    } else {
+      setIsLeftSidebarOpen(true);
+      setIsRightSidebarOpen(true);
+    }
+  }, [isCompactLayout]);
+
+  useEffect(() => {
+    if (!isCompactLayout) return undefined;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsLeftSidebarOpen(false);
+        setIsRightSidebarOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isCompactLayout]);
+
+  const openLeftSidebarMobile = useCallback(() => {
+    setIsLeftSidebarOpen(true);
+    if (isCompactLayout) setIsRightSidebarOpen(false);
+  }, [isCompactLayout]);
+
+  const toggleRightSidebar = useCallback(() => {
+    setIsRightSidebarOpen((prev) => {
+      const next = !prev;
+      if (next && isCompactLayout) setIsLeftSidebarOpen(false);
+      return next;
+    });
+  }, [isCompactLayout]);
+
   const [activeResizer, setActiveResizer] = useState<'left' | 'right' | null>(null);
   const [snapConfig, setSnapConfig] = useState<SnapConfig>(() => loadSnapConfig());
   const [showRulers, setShowRulers] = useState(true);
@@ -1189,11 +1239,40 @@ export default function CanvasEditor({
       />
 
       <div ref={bodyRef} className="relative flex-1 flex overflow-hidden min-w-0">
+        {!isFocusMode && isCompactLayout && isLeftSidebarOpen && (
+          <button
+            type="button"
+            aria-label="Cerrar panel lateral"
+            className="fixed inset-0 z-[40] bg-neutral-900/35 backdrop-blur-[2px] lg:hidden"
+            onClick={() => setIsLeftSidebarOpen(false)}
+          />
+        )}
+
+        {!isFocusMode && isCompactLayout && !isLeftSidebarOpen && (
+          <button
+            type="button"
+            onClick={openLeftSidebarMobile}
+            className="absolute left-0 top-1/2 z-[35] flex h-11 w-6 -translate-y-1/2 items-center justify-center rounded-r-full border border-l-0 border-neutral-200/90 bg-white/95 text-neutral-500 shadow-md transition hover:border-violet-200 hover:text-violet-600 lg:hidden"
+            title="Mostrar biblioteca y capas"
+            aria-label="Mostrar panel izquierdo"
+          >
+            <ChevronRight size={14} />
+          </button>
+        )}
+
         {/* Sidebar */}
         {!isFocusMode && isLeftSidebarOpen && (
           <>
+            <div
+              className={
+                isCompactLayout
+                  ? 'fixed left-0 top-0 z-[45] flex h-full max-h-[100dvh] shadow-2xl lg:static lg:z-auto lg:h-full lg:max-h-none lg:shadow-none'
+                  : 'contents'
+              }
+              style={isCompactLayout ? { width: compactLeftSidebarPx } : undefined}
+            >
             <SidebarRoot
-              width={leftSidebarWidth}
+              width={isCompactLayout ? compactLeftSidebarPx : leftSidebarWidth}
               document={doc}
               activePageId={activePageId}
               pageElements={currentPageElements}
@@ -1249,11 +1328,12 @@ export default function CanvasEditor({
               dataPreview={dataPreview}
               onInsertBoundField={handleInsertBoundField}
             />
+            </div>
             <div
               role="separator"
               aria-orientation="vertical"
               aria-label="Redimensionar panel izquierdo"
-              className="group relative w-1.5 flex-none cursor-col-resize select-none"
+              className="group relative hidden w-1.5 flex-none cursor-col-resize select-none lg:flex"
               onMouseDown={(event) => startResize('left', event)}
             >
               <div
@@ -1276,7 +1356,7 @@ export default function CanvasEditor({
 
           {/* Text Format Toolbar — shown above canvas when exactly 1 text element selected */}
           {selectedTextElement !== null && (
-            <div className="flex-none flex items-center px-3 py-1 border-b border-neutral-100/80 bg-white/80 backdrop-blur-sm gap-2 shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+            <div className="flex min-w-0 flex-none flex-wrap items-center gap-2 border-b border-neutral-100/80 bg-white/80 px-2 py-1 shadow-[0_1px_4px_rgba(0,0,0,0.04)] backdrop-blur-sm sm:px-3">
               <span className="select-none text-[9px] font-bold uppercase tracking-widest text-neutral-300 pr-1">
                 Texto
               </span>
@@ -1354,12 +1434,25 @@ export default function CanvasEditor({
           />
         </div>
 
+        {!isFocusMode && isCompactLayout && isRightSidebarOpen && (
+          <button
+            type="button"
+            aria-label="Cerrar inspector"
+            className="fixed inset-0 z-[40] bg-neutral-900/35 backdrop-blur-[2px] lg:hidden"
+            onClick={() => setIsRightSidebarOpen(false)}
+          />
+        )}
+
         {!isFocusMode && (
           <button
             type="button"
-            onClick={() => setIsRightSidebarOpen((prev) => !prev)}
-            className="absolute top-1/2 z-30 h-10 w-5 -translate-y-1/2 rounded-l-full border border-neutral-200/80 bg-white/90 backdrop-blur-sm text-neutral-400 shadow-sm transition-all hover:text-violet-600 hover:border-violet-200 hover:shadow-md flex items-center justify-center"
-            style={{ right: isRightSidebarOpen ? rightSidebarWidth - 1 : 0 }}
+            onClick={toggleRightSidebar}
+            className="absolute top-1/2 z-[35] flex h-10 w-5 -translate-y-1/2 items-center justify-center rounded-l-full border border-neutral-200/80 bg-white/95 text-neutral-500 shadow-md transition-all hover:border-violet-200 hover:text-violet-600 hover:shadow-lg"
+            style={{
+              right: isRightSidebarOpen
+                ? (isCompactLayout ? compactRightSidebarPx : rightSidebarWidth) - 1
+                : 0,
+            }}
             title={isRightSidebarOpen ? 'Ocultar inspector' : 'Mostrar inspector'}
             aria-label={isRightSidebarOpen ? 'Ocultar inspector' : 'Mostrar inspector'}
           >
@@ -1374,7 +1467,7 @@ export default function CanvasEditor({
               role="separator"
               aria-orientation="vertical"
               aria-label="Redimensionar panel derecho"
-              className="group relative w-1.5 flex-none cursor-col-resize select-none"
+              className="group relative hidden w-1.5 flex-none cursor-col-resize select-none lg:flex"
               onMouseDown={(event) => startResize('right', event)}
             >
               <div
@@ -1382,22 +1475,31 @@ export default function CanvasEditor({
                   }`}
               />
             </div>
-            <InspectorRoot
-              width={rightSidebarWidth}
-              selectedIds={selectedIds}
-              elements={currentPageElements}
-              onUpdateElement={handleUpdateElement}
-              theme={doc.theme}
-              pageSettings={pageSettings}
-              onPageSettingsChange={onPageSettingsChange}
-              bindingMap={doc.bindingMap}
-              dataSourceDefinition={doc.dataSourceDefinition}
-              dataPreview={dataPreview}
-              assetLibrary={doc.assetLibrary || []}
-              brandKits={doc.brandKits || []}
-              onUpsertBinding={handleUpsertBinding}
-              onRemoveBinding={handleRemoveBinding}
-            />
+            <div
+              className={
+                isCompactLayout
+                  ? 'fixed right-0 top-0 z-[45] flex h-full max-h-[100dvh] shadow-2xl lg:static lg:z-auto lg:h-full lg:max-h-none lg:shadow-none'
+                  : 'contents'
+              }
+              style={isCompactLayout ? { width: compactRightSidebarPx } : undefined}
+            >
+              <InspectorRoot
+                width={isCompactLayout ? compactRightSidebarPx : rightSidebarWidth}
+                selectedIds={selectedIds}
+                elements={currentPageElements}
+                onUpdateElement={handleUpdateElement}
+                theme={doc.theme}
+                pageSettings={pageSettings}
+                onPageSettingsChange={onPageSettingsChange}
+                bindingMap={doc.bindingMap}
+                dataSourceDefinition={doc.dataSourceDefinition}
+                dataPreview={dataPreview}
+                assetLibrary={doc.assetLibrary || []}
+                brandKits={doc.brandKits || []}
+                onUpsertBinding={handleUpsertBinding}
+                onRemoveBinding={handleRemoveBinding}
+              />
+            </div>
           </>
         )}
       </div>

@@ -1,6 +1,7 @@
 import type { CanvasDocument, TemplateElement, PageSettings, CanvasPage } from './canvasTypes';
 import { createDefaultPageSettings } from './canvasTypes';
 import { ensureCanvasDocument } from './documentModel';
+import { requestJson as requestApiJson } from '@/utils/apiClient';
 
 type TemplateStatus = 'draft' | 'published' | 'archived';
 
@@ -51,8 +52,9 @@ interface UpsertDraftInput {
   featureFlag?: boolean;
 }
 
-const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
 const VARIABLE_TOKEN_REGEX = /\{\{\s*([a-zA-Z0-9_.-]+)(?:\|[a-zA-Z_][a-zA-Z0-9_]*)?\s*\}\}/g;
+
+type RequestConfig = Parameters<typeof requestApiJson>[1];
 
 function normalizeStatus(raw: unknown): TemplateStatus {
   const status = String(raw || 'draft').toLowerCase();
@@ -64,26 +66,8 @@ function toErrorMessage(err: unknown, fallback: string): string {
   return fallback;
 }
 
-async function parseJsonSafe(response: Response): Promise<any> {
-  try {
-    return await response.json();
-  } catch {
-    return null;
-  }
-}
-
-async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, init);
-  if (!response.ok) {
-    const payload = await parseJsonSafe(response);
-    const detail =
-      payload?.detail ||
-      payload?.message ||
-      (typeof payload === 'string' ? payload : '') ||
-      response.statusText;
-    throw new Error(`${response.status} ${detail}`.trim());
-  }
-  return (await response.json()) as T;
+async function requestJson<T>(path: string, config?: RequestConfig): Promise<T> {
+  return requestApiJson<T>(`/api${path}`, config);
 }
 
 function extractVariablesFromContent(content: string | undefined): string[] {
@@ -290,7 +274,7 @@ async function createDraft(input: UpsertDraftInput): Promise<string> {
   const created = await requestJson<{ id: string }>('/template-editor/templates', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    data: payload,
   });
   return String(created.id || '');
 }
@@ -305,7 +289,7 @@ async function updateDraft(templateId: string, input: UpsertDraftInput): Promise
   await requestJson('/template-editor/templates/' + encodeURIComponent(templateId), {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
+    data: payload,
   });
 }
 
@@ -313,37 +297,37 @@ export const templateEditorApi = {
   create: async (data: any) => requestJson('/template-editor/templates', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    data,
   }),
 
   update: async (id: string, data: any) => requestJson('/template-editor/templates/' + encodeURIComponent(id), {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    data,
   }),
 
   publish: async (id: string, author = 'editor') => requestJson('/templates/' + encodeURIComponent(id), {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status: 'published', author }),
+    data: { status: 'published', author },
   }),
 
   unpublish: async (id: string, author = 'editor') => requestJson('/templates/' + encodeURIComponent(id), {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ status: 'draft', author }),
+    data: { status: 'draft', author },
   }),
 
   preview: async (id: string, sampleData: Record<string, unknown> = {}, logos?: { logo_left?: string; logo_right?: string }) => requestJson('/template-editor/templates/' + encodeURIComponent(id) + '/preview', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sampleData, logo_left: logos?.logo_left || null, logo_right: logos?.logo_right || null }),
+    data: { sampleData, logo_left: logos?.logo_left || null, logo_right: logos?.logo_right || null },
   }),
 
   render: async (id: string, sampleData: Record<string, unknown> = {}, logos?: { logo_left?: string; logo_right?: string }) => requestJson<{ templateId: string; previewHtml: string }>('/template-editor/templates/' + encodeURIComponent(id) + '/render', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sampleData, logo_left: logos?.logo_left || null, logo_right: logos?.logo_right || null }),
+    data: { sampleData, logo_left: logos?.logo_left || null, logo_right: logos?.logo_right || null },
   }),
 
   delete: async (id: string, author = 'editor') => requestJson('/template-editor/templates/' + encodeURIComponent(id) + '?author=' + encodeURIComponent(author), {
@@ -383,18 +367,18 @@ export const templateEditorApi = {
   },
 
   updateStatus: async (id: string, status: TemplateStatus, author = 'editor') => {
-    const payload = JSON.stringify({ status, author });
+    const payload = { status, author };
     try {
       return await requestJson('/templates/' + encodeURIComponent(id), {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: payload,
+        data: payload,
       });
     } catch {
       return requestJson('/templates/' + encodeURIComponent(id), {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: payload,
+        data: payload,
       });
     }
   },
@@ -441,14 +425,14 @@ export const templateEditorApi = {
     requestJson('/template-editor/templates/' + encodeURIComponent(id) + '/rollback', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ author, targetVersion }),
+      data: { author, targetVersion },
     }),
 
   previewMatrix: async (id: string, samples: Array<{ id: string; sampleData: Record<string, unknown> }>) =>
     requestJson<{ templateId: string; previews: Array<{ id: string; previewHtml: string }> }>('/template-editor/templates/' + encodeURIComponent(id) + '/preview-matrix', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ samples }),
+      data: { samples },
     }),
 
   getTemplateAssets: async (id: string) =>
@@ -474,7 +458,7 @@ export const templateEditorApi = {
     requestJson<{ valid: boolean; issues: Array<{ level: 'error' | 'warning'; code: string; message: string; path?: string }> }>(`/template-editor/templates/${encodeURIComponent(templateId)}/validate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role, templateJson }),
+      data: { role, templateJson },
     }),
 
   loadPublishedForEditing: async (id: string): Promise<{ doc: CanvasDocument; name: string }> => {

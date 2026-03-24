@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Layers, Shuffle, Scissors, LayoutGrid, FileOutput } from 'lucide-react';
 import DashboardLayout from '../../components/layout/DashboardLayout';
+import { PageHeader } from '../../components/ui';
 import MergeInterleavedTab from './tabs/MergeInterleavedTab';
 import MergeNormalTab from './tabs/MergeNormalTab';
 import SplitTab from './tabs/SplitTab';
@@ -80,21 +81,10 @@ export default function PdfToolsApp() {
             <div className="h-full flex flex-col">
                 <div className="px-4 md:px-8 xl:px-12 pt-6 pb-0">
                     <div className={`${WORKSPACE_WIDTH} mx-auto`}>
-                        <div className="flex items-center justify-between mb-6">
-                            <div>
-                                <h1 className="text-4xl font-bold tracking-tight text-white font-[DotGothic16]">
-                                    PDF TOOLS
-                                </h1>
-                                <p className="text-base text-neutral-500 mt-1 font-mono">
-                                    Merge &middot; Split &middot; Organize &middot; Extract
-                                </p>
-                            </div>
-
-                            <div className="hidden sm:flex items-center gap-2">
-                                <div className="w-8 h-px bg-neutral-700" />
-                                <div className="w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(215,25,33,0.5)]" />
-                            </div>
-                        </div>
+                        <PageHeader
+                            title="PDF TOOLS"
+                            description="Merge &middot; Split &middot; Organize &middot; Extract"
+                        />
 
                         <div className="flex gap-0.5 border-b border-neutral-800/60 overflow-x-auto scrollbar-none">
                             {TABS.map((tab) => {

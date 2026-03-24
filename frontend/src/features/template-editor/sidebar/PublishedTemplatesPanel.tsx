@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Library, Search, Pencil, Trash2 } from 'lucide-react';
+import { useConfirmDialog } from '@/components/ui';
 import { templateEditorApi } from '../api';
 import { Badge, Button, Card, Input } from '../ui/ui';
 
@@ -42,6 +43,7 @@ export function PublishedTemplatesPanel({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState<string | null>(null);
+  const confirmDialog = useConfirmDialog();
 
   const loadTemplates = useCallback(async () => {
     setLoading(true);
@@ -69,7 +71,13 @@ export function PublishedTemplatesPanel({
   }, [search, templates]);
 
   const handleUnpublish = useCallback(async (item: PublishedTemplateSummary) => {
-    const confirmed = window.confirm(`¿Despublicar "${item.name}"?`);
+    const confirmed = await confirmDialog({
+      title: `¿Despublicar "${item.name}"?`,
+      description: 'La plantilla volverá a estado borrador y dejará de aparecer como publicada.',
+      confirmLabel: 'Despublicar',
+      cancelLabel: 'Cancelar',
+      tone: 'danger',
+    });
     if (!confirmed) return;
 
     try {
@@ -85,7 +93,7 @@ export function PublishedTemplatesPanel({
     } finally {
       setBusyId(null);
     }
-  }, [loadTemplates, onUnpublishTemplate]);
+  }, [confirmDialog, loadTemplates, onUnpublishTemplate]);
 
   const handleEdit = useCallback(async (item: PublishedTemplateSummary) => {
     try {
@@ -101,7 +109,13 @@ export function PublishedTemplatesPanel({
   }, [onEditPublishedTemplate]);
 
   const handleDelete = useCallback(async (item: PublishedTemplateSummary) => {
-    const confirmed = window.confirm(`¿Eliminar la plantilla "${item.name}"? Esta acción no se puede deshacer.`);
+    const confirmed = await confirmDialog({
+      title: `¿Eliminar la plantilla "${item.name}"?`,
+      description: 'Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+      cancelLabel: 'Cancelar',
+      tone: 'danger',
+    });
     if (!confirmed) return;
 
     try {
@@ -117,7 +131,7 @@ export function PublishedTemplatesPanel({
     } finally {
       setBusyId(null);
     }
-  }, [loadTemplates, onDeletePublishedTemplate]);
+  }, [confirmDialog, loadTemplates, onDeletePublishedTemplate]);
 
   return (
     <div className="flex h-full flex-col p-3 gap-3">
