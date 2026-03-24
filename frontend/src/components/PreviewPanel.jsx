@@ -2,6 +2,7 @@ import React, { forwardRef, useState, useEffect, useRef } from 'react';
 import { formatDateValue } from '../utils';
 
 const MAQ_BALDE_TEMPLATE_NAME = 'maq balde sjl.html';
+const MAQUINA_BALDE_TEMPLATE_NAME = 'maquina-balde.html';
 const EMPTY_PIXEL = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1' height='1'%3E%3C/svg%3E";
 
 const chunkItems = (items, size) => {
@@ -31,8 +32,18 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
     const templateObjUrlsRef = useRef([]);
     const [imageUrls, setImageUrls] = useState([]);
 
+    const isMaquinaBaldeTemplate = (template) => {
+        if (!template) return false;
+        const normalizedName = String(template.name || template.filename || '')
+            .trim()
+            .toLowerCase()
+            .replace(/\s+/g, ' ');
+        return normalizedName === MAQUINA_BALDE_TEMPLATE_NAME || normalizedName.includes('maquina-balde');
+    };
+
     const isMaqBaldeTemplate = (template) => {
         if (!template) return false;
+        if (isMaquinaBaldeTemplate(template)) return false;
 
         const normalizedName = String(template.name || template.filename || '')
             .trim()
@@ -46,7 +57,7 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
             || templateContent.includes('photo-cell-photo-3');
     };
 
-    const isFixedA4TemplatePreview = customTemplate?.name === 'report_volanteo.html' || isMaqBaldeTemplate(customTemplate);
+    const isFixedA4TemplatePreview = customTemplate?.name === 'report_volanteo.html' || isMaqBaldeTemplate(customTemplate) || isMaquinaBaldeTemplate(customTemplate);
 
     useEffect(() => {
         if (!images || images.length === 0) {
@@ -315,6 +326,169 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
 </html>`;
     };
 
+    const buildMaquinaBaldePreviewHtml = (reportData, imageFiles, leftLogo, rightLogo, trackObjectURL) => {
+        const pickValue = (...candidates) => {
+            for (const candidate of candidates) {
+                const normalized = normalizePreviewValue(candidate, '');
+                if (normalized && normalized !== '-') return normalized;
+            }
+            return '-';
+        };
+
+        const title = pickValue(reportData.titulo, reportData.TITULO, 'Maquina de Balde');
+        const fechaTrabajo = pickValue(
+            reportData.FECHA_TRABAJO,
+            reportData['FECHA DE TRABAJO'],
+            reportData['Fecha de Trabajo'],
+            reportData.fecha_trabajo,
+        );
+        const nis = pickValue(reportData.NIS, reportData.nis);
+        const sgio = pickValue(reportData.SGIO, reportData.sgio);
+        const direccion = pickValue(
+            reportData.DIRECCION,
+            reportData.direccion,
+            reportData.DIRECCIONES,
+        );
+        const localidad = pickValue(reportData.LOCALIDAD, reportData.localidad);
+        const distrito = pickValue(reportData.DISTRITO, reportData.distrito);
+        const actividad = pickValue(reportData.ACTIVIDAD, reportData.actividad);
+
+        const pageChunks = imageFiles.length > 0 ? chunkItems(imageFiles, 4) : [[]];
+        const totalPages = pageChunks.length;
+
+        const pagesHtml = pageChunks.map((pageImages, pageIndex) => {
+            const pageLabel = totalPages > 1 ? `<div class="page-label">Pagina ${pageIndex + 1}/${totalPages}</div>` : '';
+            const slots = pageImages.length === 3
+                ? pageImages
+                : [...pageImages, ...Array.from({ length: Math.max(0, 4 - pageImages.length) }, () => null)];
+
+            const gridHtml = slots.map((img, slotIndex) => {
+                const extraClass = pageImages.length === 3 && slotIndex === 2 ? ' photo-cell-photo-3' : '';
+                if (!img) return `<div class="photo-cell${extraClass}"><div class="photo-placeholder">Sin imagen</div></div>`;
+
+                const imgUrl = trackObjectURL(img);
+                const altText = img.name || `Foto ${slotIndex + 1}`;
+                return `
+                <div class="photo-cell${extraClass}">
+                    <img src="${escapeHtml(imgUrl)}" alt="${escapeHtml(altText)}">
+                </div>`;
+            }).join('');
+
+            return `
+        <div class="page">
+            <header class="header">
+                <div class="header-logo">
+                    ${leftLogo ? `<img src="${escapeHtml(leftLogo)}" alt="Logo Izquierdo">` : '<span class="header-logo-placeholder"></span>'}
+                </div>
+                <div class="header-title">
+                    <h1>${escapeHtml(title)}</h1>
+                    ${pageLabel}
+                </div>
+                <div class="header-logo">
+                    ${rightLogo ? `<img src="${escapeHtml(rightLogo)}" alt="Logo Derecho">` : '<span class="header-logo-placeholder"></span>'}
+                </div>
+            </header>
+
+            <div class="info-bar">
+                <div class="info-item">
+                    <span class="info-label">Fecha de Trabajo:</span>
+                    <span class="info-value">${escapeHtml(fechaTrabajo)}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">NIS:</span>
+                    <span class="info-value">${escapeHtml(nis)}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">SGIO:</span>
+                    <span class="info-value">${escapeHtml(sgio)}</span>
+                </div>
+            </div>
+
+            <section class="localizacion">
+                <div class="section-title">1.0 Localizacion</div>
+                <table class="loc-table">
+                    <tr>
+                        <td class="loc-label">Direccion:</td>
+                        <td class="loc-value" colspan="3">${escapeHtml(direccion)}</td>
+                    </tr>
+                    <tr>
+                        <td style="width:50%">
+                            <span class="loc-label">Localidad:</span>
+                            <span class="loc-value">${escapeHtml(localidad)}</span>
+                        </td>
+                        <td style="width:50%">
+                            <span class="loc-label">Distrito:</span>
+                            <span class="loc-value">${escapeHtml(distrito)}</span>
+                        </td>
+                    </tr>
+                </table>
+            </section>
+
+            <section class="actividad-section">
+                <div class="section-title">2.0 Detalles de Orden de Trabajo</div>
+                <table class="actividad-table">
+                    <tr>
+                        <td class="loc-label">Actividad:</td>
+                        <td class="loc-value" colspan="3">${escapeHtml(actividad)}</td>
+                    </tr>
+                </table>
+            </section>
+
+            <section class="panel-fotografico">
+                <div class="section-title">3.0 Panel Fotografico</div>
+                <div class="photo-grid">
+                    ${gridHtml}
+                </div>
+            </section>
+        </div>`;
+        }).join('');
+
+        return `<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>${escapeHtml(title)}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        @page { size: A4 portrait; margin: 0; background: #ffffff; }
+        html, body { margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; font-size: 10px; line-height: 1.3; color: #222; background: #ffffff; width: 210mm; height: 297mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        .page { width: 210mm; height: 297mm; max-height: 297mm; margin: 0 auto; padding: 8mm; background: #ffffff; display: flex; flex-direction: column; page-break-after: always; page-break-inside: avoid; box-sizing: border-box; overflow: hidden; }
+        .page:last-child { page-break-after: auto; }
+        .header { display: flex; justify-content: space-between; align-items: center; height: 20mm; padding-bottom: 4mm; border-bottom: 2px solid #333; margin-bottom: 3mm; flex-shrink: 0; }
+        .header-logo { width: 55mm; height: 18mm; display: flex; align-items: center; justify-content: center; }
+        .header-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+        .header-logo-placeholder { font-size: 14px; font-weight: bold; color: #666; }
+        .header-title { flex: 1; text-align: center; }
+        .header-title h1 { font-size: 16px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; color: #000; }
+        .header-title .page-label { font-size: 9px; color: #777; margin-top: 2px; }
+        .info-bar { display: flex; border: 1px solid #ccc; background: #f5f5f5; margin-bottom: 2mm; flex-shrink: 0; }
+        .info-item { flex: 1; display: flex; align-items: center; padding: 1.5mm 2mm; border-right: 1px solid #ccc; gap: 1mm; white-space: nowrap; }
+        .info-item:last-child { border-right: none; }
+        .info-label { font-size: 9pt; font-weight: bold; text-transform: uppercase; color: #000; }
+        .info-value { font-size: 9pt; font-weight: normal; color: #000; }
+        .section-title { font-size: 10pt; font-weight: bold; color: #0066cc; text-transform: uppercase; margin-bottom: 3mm; padding-bottom: 3px; border-bottom: 1px solid #0066cc; flex-shrink: 0; }
+        .localizacion { margin-bottom: 3mm; flex-shrink: 0; }
+        .actividad-section { margin-bottom: 3mm; flex-shrink: 0; }
+        .loc-table { width: 100%; border-collapse: collapse; }
+        .loc-table td { padding: 1.5px 0; vertical-align: baseline; }
+        .loc-label { font-size: 9pt; font-weight: bold; text-transform: uppercase; color: #000; white-space: nowrap; padding-right: 6px; }
+        .loc-value { font-size: 9pt; color: #000; word-break: break-word; }
+        .actividad-table { width: 100%; border-collapse: collapse; }
+        .actividad-table td { padding: 1.5px 0; vertical-align: baseline; }
+        .panel-fotografico { flex: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+        .photo-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 2mm; width: 100%; height: 100%; border: 1px solid #0066cc; padding: 2mm; flex: 1; min-height: 0; overflow: hidden; box-sizing: border-box; background: #ffffff; }
+        .photo-cell { background: #ffffff; border: 1px solid #ddd; width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; box-sizing: border-box; }
+        .photo-cell img { max-width: 100%; max-height: 100%; object-fit: contain; object-position: center; display: block; }
+        .photo-cell-photo-3 { grid-column: span 2; justify-self: center; width: calc(50% - 1mm); }
+        .photo-placeholder { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: #999; font-size: 10px; font-style: italic; background: #ffffff; }
+    </style>
+</head>
+<body>
+    ${pagesHtml}
+</body>
+</html>`;
+    };
+
     // Render custom template effect
     useEffect(() => {
         // Revoke old object URLs from previous render
@@ -403,6 +577,13 @@ const PreviewPanel = forwardRef(({ data, images, mappings, logoLeft, logoRight, 
                         reportData[col.name.toLowerCase()] = value;
                     }
                 });
+            }
+
+            if (isMaquinaBaldeTemplate(customTemplate)) {
+                const html = buildMaquinaBaldePreviewHtml(reportData, images, logoLeft, logoRight, trackObjectURL);
+                templateObjUrlsRef.current = newObjUrls;
+                setRenderedHtml(html);
+                return;
             }
 
             if (isMaqBaldeTemplate(customTemplate)) {

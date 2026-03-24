@@ -386,7 +386,7 @@ export default function MaquinaBaldeApp() {
                 formData.append('logo_right', logoRight.file);
             }
 
-            const blob = await postBlob('/api/maquina-balde/render-pdf', formData, HTTP_TIMEOUTS.LONG);
+            const blob = await postBlob('/api/maquina-balde/render-pdf', formData, HTTP_TIMEOUTS.LONG_EXPORT);
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -719,7 +719,7 @@ export default function MaquinaBaldeApp() {
                                     <div className="space-y-2">
                                         <div className="flex items-center justify-between">
                                             <span className="text-[10px] text-neutral-500">
-                                                {photos.length} imagen{photos.length !== 1 ? 'es' : ''} • {totalPages} hoja{totalPages !== 1 ? 's' : ''}
+                                                {photos.length} imagen{photos.length !== 1 ? 'es' : ''} â€¢ {totalPages} hoja{totalPages !== 1 ? 's' : ''}
                                             </span>
                                             <button
                                                 onClick={() => {

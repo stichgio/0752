@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import base64
 import io
+import json
 import logging
 import os
 import traceback
@@ -20,7 +21,7 @@ from concurrent.futures import ThreadPoolExecutor
 from html import escape
 from typing import Any, List, Optional
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, File, Form, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 
 from config import settings
@@ -337,10 +338,14 @@ html, body {{
                 <td class="loc-value" colspan="3">{direcciones}</td>
             </tr>
             <tr>
-                <td class="loc-label">Localidad:</td>
-                <td class="loc-value" style="width:50%">{localidad}</td>
-                <td class="loc-label">Distrito:</td>
-                <td class="loc-value" style="width:50%">{distrito}</td>
+                <td style="width:50%">
+                    <span class="loc-label">Localidad:</span>
+                    <span class="loc-value">{localidad}</span>
+                </td>
+                <td style="width:50%">
+                    <span class="loc-label">Distrito:</span>
+                    <span class="loc-value">{distrito}</span>
+                </td>
             </tr>
         </table>
     </section>
@@ -566,13 +571,13 @@ def _render_panel_pdf_with_pillow(
             draw.text((x_cell + int(2 * DPI / 25.4), y_cell + int(2 * DPI / 25.4)), f"Imagen {idx + 1}", font=value_font, fill="#999")
 
     buf = io.BytesIO()
-    img.save(buf, format="JPEG", quality=85)
+    img.save(buf, format="PDF", resolution=150.0)
     return buf.getvalue()
 
 
 @router.post("/render-pdf")
 async def render_pdf(
-    background_tasks,
+    background_tasks: BackgroundTasks,
     header_config: str = Form(...),
     images: List[UploadFile] = File(default=[]),
     logo_left: Optional[UploadFile] = File(default=None),
