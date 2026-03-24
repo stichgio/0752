@@ -16,13 +16,11 @@ import { HTTP_TIMEOUTS, postBlob } from '../../utils/apiClient';
 
 interface HeaderConfig {
     titulo: string;
-    CENTRO: string;
     FECHA_TRABAJO: string;
     NIS: string;
     SGIO: string;
     DIRECCION: string;
     DISTRITO: string;
-    ESTADO: string;
 }
 
 interface PhotoFile {
@@ -43,24 +41,20 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
 
 const DEFAULT_HEADER: HeaderConfig = {
     titulo: 'Desinfeccion de Reservorios',
-    CENTRO: '',
     FECHA_TRABAJO: '',
     NIS: '',
     SGIO: '',
     DIRECCION: '',
     DISTRITO: '',
-    ESTADO: '',
 };
 
 const HEADER_FIELDS: Array<{ key: keyof HeaderConfig; label: string; wide?: boolean }> = [
     { key: 'titulo', label: 'Titulo del Reporte', wide: true },
-    { key: 'CENTRO', label: 'Centro de Servicios' },
     { key: 'FECHA_TRABAJO', label: 'Fecha de Trabajo' },
     { key: 'NIS', label: 'NIS' },
     { key: 'SGIO', label: 'SGIO' },
     { key: 'DIRECCION', label: 'Direccion', wide: true },
     { key: 'DISTRITO', label: 'Distrito' },
-    { key: 'ESTADO', label: 'Estado' },
 ];
 
 function SheetPreview({
@@ -144,7 +138,6 @@ function SheetPreview({
                 }}
             >
                 {[
-                    { label: 'Centro de Servicios', value: header.CENTRO },
                     { label: 'Fecha de Trabajo', value: header.FECHA_TRABAJO },
                     { label: 'NIS', value: header.NIS },
                     { label: 'SGIO', value: header.SGIO },
@@ -178,7 +171,7 @@ function SheetPreview({
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9pt' }}>
                     <tbody>
                         <tr>
-                            <td style={{ fontWeight: 'bold', textTransform: 'uppercase', color: '#000', paddingRight: '6px', whiteSpace: 'nowrap' }}>Direcciones Afectadas:</td>
+                            <td style={{ fontWeight: 'bold', textTransform: 'uppercase', color: '#000', paddingRight: '6px', whiteSpace: 'nowrap' }}>Direccion:</td>
                             <td colSpan={3}>{header.DIRECCION || '-'}</td>
                         </tr>
                         <tr>

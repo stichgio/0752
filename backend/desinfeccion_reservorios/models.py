@@ -9,4 +9,3 @@ class HeaderConfig(BaseModel):
     SGIO: str = ""
     DIRECCION: str = ""
     DISTRITO: str = ""
-    ESTADO: str = ""

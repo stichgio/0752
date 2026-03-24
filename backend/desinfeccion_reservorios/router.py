@@ -134,11 +134,9 @@ def _build_panel_page_html(
     total_pages: int,
 ) -> str:
     titulo = _safe(header.get("titulo"), "Desinfeccion de Reservorios")
-    centro = _safe(header.get("CENTRO"))
     fecha_trabajo = _safe(header.get("FECHA_TRABAJO"))
     nis = _safe(header.get("NIS"))
     sgio = _safe(header.get("SGIO"))
-    estado = _safe(header.get("ESTADO"))
     direcciones = _safe(header.get("DIRECCION"))
     distrito = _safe(header.get("DISTRITO"))
     logo_left_html = (
@@ -315,10 +313,6 @@ html, body {{
     </header>
 
     <div class="info-bar">
-        <div class="info-item">
-            <span class="info-label">Centro de Servicios:</span>
-            <span class="info-value">{centro}</span>
-        </div>
         <div class="info-item">
             <span class="info-label">Fecha de Trabajo:</span>
             <span class="info-value">{fecha_trabajo}</span>
@@ -526,7 +520,6 @@ def _render_panel_pdf_with_pillow(
         y = header_bottom + 22
 
         info_items = [
-            ("Centro de Servicios", _safe(header.get("CENTRO")), False),
             ("Fecha de Trabajo", _safe(header.get("FECHA_TRABAJO")), False),
             ("NIS", _safe(header.get("NIS")), False),
             ("SGIO", _safe(header.get("SGIO")), False),
@@ -560,7 +553,7 @@ def _render_panel_pdf_with_pillow(
         draw.line((margin, y, page_width - margin, y), fill=blue, width=2)
         y += 14
         localizacion = [
-            ("Direcciones Afectadas:", _safe(header.get("DIRECCIONES_AFECTADAS"))),
+            ("Direccion:", _safe(header.get("DIRECCION"))),
             ("Distrito:", _safe(header.get("DISTRITO"))),
         ]
         for label, value in localizacion:
