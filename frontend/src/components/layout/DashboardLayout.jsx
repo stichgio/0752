@@ -16,6 +16,7 @@ import {
     Camera,
     Calculator,
     Droplet,
+    PaintBucket,
 } from 'lucide-react';
 import PomodoroTimer from '../PomodoroTimer';
 
@@ -94,6 +95,12 @@ const navItems = [
         label: 'Desinf. Reservorios',
         to: '/desinfeccion-reservorios',
         match: (pathname) => pathname.startsWith('/desinfeccion-reservorios'),
+    },
+    {
+        icon: <PaintBucket size={20} />,
+        label: 'Maquina de Balde',
+        to: '/maquina-balde',
+        match: (pathname) => pathname.startsWith('/maquina-balde'),
     },
     {
         icon: <Calculator size={20} />,

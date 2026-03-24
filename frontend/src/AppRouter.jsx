@@ -13,6 +13,7 @@ import GioBoardPage from './features/whiteboard/page';
 import FormatosApp from './features/formatos/FormatosApp';
 import PanelFotografico from './features/panel-fotografico/PanelFotograficoApp.tsx';
 import DesinfeccionReservorios from './features/desinfeccion-reservorios/DesinfeccionReservoriosApp.tsx';
+import MaquinaBalde from './features/maquina-balde/MaquinaBaldeApp.tsx';
 import CalculatorWrapper from './features/calculator/CalculatorWrapper';
 
 const legacyRoutes = [
@@ -103,6 +104,14 @@ export default function AppRouter() {
                     element={
                         <PageDocument title="Desinfeccion de Reservorios - Glitch" bodyClassName="bg-[#0d0d0d] text-[#eee]">
                             <DesinfeccionReservorios />
+                        </PageDocument>
+                    }
+                />
+                <Route
+                    path="maquina-balde"
+                    element={
+                        <PageDocument title="Maquina de Balde - Glitch" bodyClassName="bg-[#0d0d0d] text-[#eee]">
+                            <MaquinaBalde />
                         </PageDocument>
                     }
                 />

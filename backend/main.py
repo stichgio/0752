@@ -35,6 +35,7 @@ from msheets.multi_sheet_report import router as msheets_router
 from formatos.router import router as formatos_router  # noqa
 from panel_fotografico.router import router as panel_fotografico_router  # noqa
 from desinfeccion_reservorios.router import router as desinfeccion_reservorios_router  # noqa
+from maquina_balde.router import router as maquina_balde_router  # noqa
 from routers.templates.router import router as api_templates_router
 from routers.generation.router import router as generation_router
 from routers.temp_downloads.router import router as temp_downloads_router
@@ -180,6 +181,7 @@ app.include_router(msheets_router, prefix="/api/multi-sheet")
 app.include_router(formatos_router)
 app.include_router(panel_fotografico_router)
 app.include_router(desinfeccion_reservorios_router)
+app.include_router(maquina_balde_router)
 
 # New dedicated routers (extracted from main.py)
 app.include_router(api_templates_router)
