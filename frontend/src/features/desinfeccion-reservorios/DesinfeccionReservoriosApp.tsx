@@ -269,8 +269,9 @@ export default function DesinfeccionReservoriosApp() {
     const logoRightRef = useRef<HTMLInputElement>(null);
 
     const chunks = chunkArray(photos, CHUNK_SIZE);
-    const totalPages = chunks.length;
-    const currentChunk = chunks[currentPage] ?? [];
+    const previewChunks = chunks.length > 0 ? chunks : [[]];
+    const totalPages = previewChunks.length;
+    const currentChunk = previewChunks[currentPage] ?? [];
 
     const handleHeaderChange = useCallback(
         (key: keyof HeaderConfig, value: string) => {
@@ -297,7 +298,9 @@ export default function DesinfeccionReservoriosApp() {
             setPhotos((prev) => {
                 const updated = prev.filter((p) => p.id !== id);
                 const newTotalPages = Math.ceil(updated.length / CHUNK_SIZE);
-                if (currentPage >= newTotalPages && newTotalPages > 0) {
+                if (newTotalPages === 0) {
+                    setCurrentPage(0);
+                } else if (currentPage >= newTotalPages) {
                     setCurrentPage(newTotalPages - 1);
                 }
                 return updated;
@@ -618,50 +621,30 @@ export default function DesinfeccionReservoriosApp() {
 
                 <div className="flex-1 p-4 overflow-auto flex justify-center items-start bg-neutral-300">
                     <AnimatePresence mode="wait">
-                        {totalPages === 0 ? (
-                            <motion.div
-                                key="empty"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="flex flex-col items-center justify-center gap-4 text-neutral-700 mt-20"
+                        <motion.div
+                            key={currentPage}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -8 }}
+                            transition={{ duration: 0.2 }}
+                            style={{ transformOrigin: 'top center' }}
+                        >
+                            <div
+                                style={{
+                                    transform: 'scale(1)',
+                                    transformOrigin: 'top center',
+                                }}
                             >
-                                <Droplet size={48} strokeWidth={1} />
-                                <p className="text-sm font-medium">Agrega imagenes para ver la vista previa</p>
-                                <button
-                                    onClick={() => imageInputRef.current?.click()}
-                                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white hover:bg-neutral-200 text-black text-sm font-medium transition-colors"
-                                >
-                                    <ImagePlus size={15} />
-                                    Agregar imagenes
-                                </button>
-                            </motion.div>
-                        ) : (
-                            <motion.div
-                                key={currentPage}
-                                initial={{ opacity: 0, y: 8 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -8 }}
-                                transition={{ duration: 0.2 }}
-                                style={{ transformOrigin: 'top center' }}
-                            >
-                                <div
-                                    style={{
-                                        transform: 'scale(1)',
-                                        transformOrigin: 'top center',
-                                    }}
-                                >
-                                    <SheetPreview
-                                        header={header}
-                                        logoLeft={logoLeft?.url ?? null}
-                                        logoRight={logoRight?.url ?? null}
-                                        images={currentChunk}
-                                        pageNum={currentPage + 1}
-                                        totalPages={totalPages}
-                                    />
-                                </div>
-                            </motion.div>
-                        )}
+                                <SheetPreview
+                                    header={header}
+                                    logoLeft={logoLeft?.url ?? null}
+                                    logoRight={logoRight?.url ?? null}
+                                    images={currentChunk}
+                                    pageNum={currentPage + 1}
+                                    totalPages={totalPages}
+                                />
+                            </div>
+                        </motion.div>
                     </AnimatePresence>
                 </div>
             </main>

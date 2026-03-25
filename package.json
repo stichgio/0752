@@ -1,11 +1,11 @@
 {
-  "name": "0752",
+  "name": "gio",
   "version": "1.0.0",
   "description": "---\r title: Stich 0752\r emoji: 📊\r colorFrom: blue\r colorTo: indigo\r sdk: docker\r pinned: false\r ---",
   "main": "index.js",
   "scripts": {
     "dev": "npm run dev --prefix frontend",
-    "backend": "python backend/main.py",
+    "backend": ".\\venv\\Scripts\\python.exe backend/main.py",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
