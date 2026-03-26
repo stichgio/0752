@@ -222,14 +222,12 @@
             overflow: hidden;
         }
 
-        /* === UNIFIED PHOTO GRID (Using Flexbox and fixed heights for stability) === */
+        /* === PHOTO GRID — adaptive layout by image count === */
         .photo-grid {
             flex: 1;
             display: flex;
             flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: center;
-            align-content: space-between;
+            gap: 2mm;
             width: 100%;
             height: 100%;
             min-height: 0;
@@ -241,23 +239,33 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
             box-sizing: border-box;
+            padding: 1mm;
         }
 
         .photo-item img {
-            max-width: 100%;
-            max-height: 100%;
-            width: auto;
-            height: auto;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
             display: block;
-            margin: 0 auto;
         }
 
-        /* === LAYOUT: IMAGES === */
+        /* === LAYOUT-1: 1 imagen — centrada y grande === */
+        .layout-1 {
+            justify-content: center;
+            align-items: center;
+            align-content: center;
+        }
+
         .layout-1 .photo-item {
             width: 100%;
             height: 100%;
+        }
+
+        /* === LAYOUT-2: 2 imágenes — apiladas verticalmente === */
+        .layout-2 {
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         .layout-2 .photo-item {
@@ -265,13 +273,39 @@
             height: calc(50% - 1mm);
         }
 
-        .layout-3 .photo-item,
+        /* === LAYOUT-3: 3 imágenes — 2 arriba + 1 abajo centrada === */
+        .layout-3 {
+            justify-content: space-between;
+            align-content: space-between;
+        }
+
+        .layout-3 .photo-item {
+            width: calc(50% - 1mm);
+            height: calc(50% - 1mm);
+        }
+
+        .layout-3 .photo-item:nth-child(3) {
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* === LAYOUT-4: 4 imágenes — grid 2x2 === */
+        .layout-4 {
+            justify-content: space-between;
+            align-content: space-between;
+        }
+
         .layout-4 .photo-item {
             width: calc(50% - 1mm);
             height: calc(50% - 1mm);
         }
 
         /* DEFAULT PHOTO SPACING */
+        .layout-grid {
+            justify-content: space-between;
+            align-content: space-between;
+        }
+
         .layout-grid .photo-item {
             width: calc(50% - 1mm);
             height: calc(50% - 1mm);
