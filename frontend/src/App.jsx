@@ -424,6 +424,19 @@ export default function App() {
         return regex.test(name);
     };
 
+    // Helper: Sort images by the numeric suffix in their filename
+    // e.g., 4079638_1.jpg, 4079638_2.jpg, 4079638_3.jpg → sorted by 1, 2, 3
+    const naturalSortByName = (a, b) => {
+        const extractSuffix = (name) => {
+            const match = name.match(/[-_](\d+)\.[^.]+$/i);
+            return match ? parseInt(match[1], 10) : 0;
+        };
+        const numA = extractSuffix(a.name);
+        const numB = extractSuffix(b.name);
+        if (numA !== numB) return numA - numB;
+        return a.name.localeCompare(b.name);
+    };
+
     const getFilteredImages = () => {
         if (selectedIndex === '' || selectedIndex === null || selectedIndex === undefined) return [];
 
@@ -440,11 +453,14 @@ export default function App() {
 
         // Remove duplicates by name (in case of re-uploads)
         const seen = new Set();
-        return filtered.filter(img => {
+        const unique = filtered.filter(img => {
             if (seen.has(img.name)) return false;
             seen.add(img.name);
             return true;
         });
+
+        // Sort by numeric suffix (e.g., _1, _2, _3) for consistent ordering
+        return unique.sort(naturalSortByName);
     };
 
     const filteredImages = useMemo(() => getFilteredImages(), [selectedIndex, data, idColumn, images]);
@@ -568,7 +584,8 @@ export default function App() {
 
                 if (requiresImages) {
                     // Use exact matching to prevent ID collisions (e.g., ID "1" matching "11")
-                    const rowImages = images.filter(img => matchesRecordId(img.name, recordId));
+                    // Sort by numeric suffix for consistent ordering (e.g., _1, _2, _3)
+                    const rowImages = images.filter(img => matchesRecordId(img.name, recordId)).sort(naturalSortByName);
 
                     if (rowImages.length > 0) {
                         const rowData = formatRowData(row);

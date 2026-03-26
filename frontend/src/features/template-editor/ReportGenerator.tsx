@@ -517,6 +517,19 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
         return regex.test(name);
     }, []);
 
+    // Helper: Sort images by the numeric suffix in their filename
+    // e.g., 4079638_1.jpg, 4079638_2.jpg, 4079638_3.jpg -> sorted by 1, 2, 3
+    const naturalSortByName = useCallback((a: File, b: File) => {
+        const extractSuffix = (name: string) => {
+            const match = name.match(/[-_](\d+)\.[^.]+$/i);
+            return match ? parseInt(match[1], 10) : 0;
+        };
+        const numA = extractSuffix(a.name);
+        const numB = extractSuffix(b.name);
+        if (numA !== numB) return numA - numB;
+        return a.name.localeCompare(b.name);
+    }, []);
+
     const getFilteredImages = useCallback(() => {
         if (selectedIndex === '') return [];
         const index = Number(selectedIndex);
@@ -526,12 +539,14 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
         const recordId = String(row[idColumn]);
         const filtered = images.filter((img) => matchesRecordId(img.name, recordId));
         const seen = new Set<string>();
-        return filtered.filter((img) => {
+        const unique = filtered.filter((img) => {
             if (seen.has(img.name)) return false;
             seen.add(img.name);
             return true;
         });
-    }, [data, selectedIndex, idColumn, images, matchesRecordId]);
+        // Sort by numeric suffix (e.g., _1, _2, _3) for consistent ordering
+        return unique.sort(naturalSortByName);
+    }, [data, selectedIndex, idColumn, images, matchesRecordId, naturalSortByName]);
 
     // Ã¢â€â‚¬Ã¢â€â‚¬ Photo-grid fix CSS (shared by both preview modes) Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
     const PHOTO_FIX_CSS = `
@@ -982,7 +997,7 @@ export default function ReportGenerator({ isVisible, onClose }: ReportGeneratorP
             data.forEach((row) => {
                 const recordId = String(row[idColumn]);
                 if (requiresImages) {
-                    const rowImages = images.filter((img) => matchesRecordId(img.name, recordId));
+                    const rowImages = images.filter((img) => matchesRecordId(img.name, recordId)).sort(naturalSortByName);
                     if (rowImages.length > 0) {
                         payload.push({ row_data: formatRowData(row), image_filenames: rowImages.map((f) => f.name), id_value: idColumn ? row[idColumn] ?? '' : '' });
                         rowImages.forEach((img) => allImages.add(img));
