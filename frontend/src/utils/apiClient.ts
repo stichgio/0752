@@ -1,5 +1,6 @@
 import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { getApiBase } from './apiBase';
+import { auth } from '../firebase/config';
 
 export const HTTP_TIMEOUTS = {
     NONE: 0,
@@ -13,6 +14,40 @@ export const apiClient = axios.create({
     baseURL: getApiBase(),
     timeout: HTTP_TIMEOUTS.DEFAULT,
 });
+
+// --- Firebase Auth interceptors ---
+
+// Request: attach fresh Firebase ID token
+apiClient.interceptors.request.use(async (config) => {
+    try {
+        const currentUser = auth.currentUser;
+        if (currentUser) {
+            const idToken = await currentUser.getIdToken();
+            config.headers.set('Authorization', `Bearer ${idToken}`);
+        }
+    } catch (err) {
+        // If token fetch fails, let the request proceed without auth
+        // (backend will return 401 which triggers the response interceptor)
+        console.warn('[apiClient] Failed to get Firebase ID token:', err);
+    }
+    return config;
+});
+
+// Response: redirect to /login on 401
+apiClient.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+        if (axios.isAxiosError(error) && error.response?.status === 401) {
+            try {
+                await auth.signOut();
+            } catch { /* ignore */ }
+            if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+                window.location.replace('/login');
+            }
+        }
+        return Promise.reject(error);
+    },
+);
 
 type ApiRequestConfig<D = unknown> = Omit<AxiosRequestConfig<D>, 'url'>;
 

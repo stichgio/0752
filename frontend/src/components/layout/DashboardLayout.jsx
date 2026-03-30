@@ -17,8 +17,11 @@ import {
     Calculator,
     Droplet,
     PaintBucket,
+    LogOut,
+    Users,
 } from 'lucide-react';
 import PomodoroTimer from '../PomodoroTimer';
+import { useAuth } from '../../contexts/AuthContext';
 
 const DashboardLayoutContext = createContext(false);
 
@@ -169,14 +172,7 @@ const DashboardLayout = ({ children }) => {
                         })}
                     </nav>
 
-                    <div className="p-2 border-t border-neutral-800">
-                        <button
-                            onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-                            className="w-full flex items-center justify-center p-2 rounded-md hover:bg-neutral-900 text-neutral-500 hover:text-white transition-colors"
-                        >
-                            {isSidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-                        </button>
-                    </div>
+                    <SidebarFooter isSidebarCollapsed={isSidebarCollapsed} setIsSidebarCollapsed={setIsSidebarCollapsed} />
                 </aside>
 
                 <div style={{ viewTransitionName: 'dashboard-content' }} className="flex-1 flex flex-col h-full overflow-hidden bg-neutral-950 relative">
@@ -194,5 +190,73 @@ const DashboardLayout = ({ children }) => {
     );
 };
 
-export default DashboardLayout;
+function SidebarFooter({ isSidebarCollapsed, setIsSidebarCollapsed }) {
+    const { user, userRole, logout } = useAuth();
 
+    const initial = user?.email ? user.email[0].toUpperCase() : '?';
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+        } catch (err) {
+            console.error('Logout failed:', err);
+        }
+    };
+
+    return (
+        <div className="border-t border-neutral-800">
+            {/* Admin link */}
+            {userRole === 'admin' && (
+                <NavLink
+                    to="/admin/users"
+                    className={({ isActive }) =>
+                        `flex items-center gap-2 px-3 py-2.5 mx-2 mt-2 rounded-md text-xs font-medium transition-colors ${
+                            isActive
+                                ? 'bg-amber-950/40 text-amber-400 border border-amber-800/40'
+                                : 'text-neutral-500 hover:text-white hover:bg-neutral-900'
+                        } ${isSidebarCollapsed ? 'justify-center' : ''}`
+                    }
+                    title={isSidebarCollapsed ? 'Panel de Usuarios' : ''}
+                >
+                    <Users size={15} />
+                    {!isSidebarCollapsed && <span>Panel de Usuarios</span>}
+                </NavLink>
+            )}
+
+            {/* User info + logout */}
+            <div className={`flex items-center gap-2 px-3 py-2.5 mx-2 my-1 ${isSidebarCollapsed ? 'justify-center' : ''}`}>
+                <div
+                    className="w-7 h-7 rounded-full bg-neutral-800 border border-neutral-700 flex items-center justify-center text-xs font-bold text-neutral-300 shrink-0"
+                    title={user?.email || ''}
+                >
+                    {initial}
+                </div>
+                {!isSidebarCollapsed && (
+                    <div className="min-w-0 flex-1">
+                        <p className="text-xs text-neutral-300 truncate">{user?.email || ''}</p>
+                        <p className="text-[10px] text-neutral-600 capitalize">{userRole || 'user'}</p>
+                    </div>
+                )}
+                <button
+                    onClick={handleLogout}
+                    className={`p-1.5 rounded-md text-neutral-500 hover:text-red-400 hover:bg-red-950/30 transition-colors ${isSidebarCollapsed ? '' : 'ml-auto'}`}
+                    title="Cerrar sesion"
+                >
+                    <LogOut size={14} />
+                </button>
+            </div>
+
+            {/* Collapse toggle */}
+            <div className="px-2 pb-2">
+                <button
+                    onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                    className="w-full flex items-center justify-center p-2 rounded-md hover:bg-neutral-900 text-neutral-500 hover:text-white transition-colors"
+                >
+                    {isSidebarCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+                </button>
+            </div>
+        </div>
+    );
+}
+
+export default DashboardLayout;

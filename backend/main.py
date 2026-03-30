@@ -40,6 +40,7 @@ from routers.templates.router import router as api_templates_router
 from routers.generation.router import router as generation_router
 from routers.temp_downloads.router import router as temp_downloads_router
 from routers.pdf_tools.router import router as api_pdf_tools_router
+from routers.admin_users import router as admin_users_router
 from config import settings
 from services.report_service import ReportService
 
@@ -156,7 +157,7 @@ cors_allowed_origins = settings.effective_cors_origins
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_allowed_origins,
-    allow_credentials=False,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=[
@@ -188,6 +189,7 @@ app.include_router(api_templates_router)
 app.include_router(generation_router)
 app.include_router(temp_downloads_router)
 app.include_router(api_pdf_tools_router)
+app.include_router(admin_users_router)
 
 
 # SERVING FRONTEND (React) - For Hugging Face Spaces / Docker

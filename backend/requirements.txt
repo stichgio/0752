@@ -20,3 +20,5 @@ bleach>=6.1.0
 supabase>=2.8.1
 python-dotenv>=1.0.1
 pydantic-settings>=2.0.0
+firebase-admin
+pydantic[email]

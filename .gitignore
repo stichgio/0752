@@ -47,6 +47,10 @@ uploads/
 output/
 tmp/
 .vscode/
+# Firebase service account keys — NEVER commit
+*service-account*.json
+*serviceAccount*.json
+*adminsdk*.json
 # Git worktrees
 .worktrees/
 

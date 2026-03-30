@@ -62,6 +62,10 @@ class Settings(BaseSettings):
     ghostscript_enabled: bool = Field(default=True)
     ghostscript_quality: str = Field(default="printer")
 
+    # ── Firebase Admin ────────────────────────────────────────────────────────
+    firebase_service_account_path: str = Field(default="")
+    firebase_service_account_json: str = Field(default="")
+
 
     model_config = SettingsConfigDict(
         env_file=_ENV_FILES,

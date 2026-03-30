@@ -1,6 +1,8 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import App from './App.jsx';
 import DashboardLayout from './components/layout/DashboardLayout';
+import ProtectedRoute from './components/ProtectedRoute';
+import AdminRoute from './components/AdminRoute';
 import Compressor from './features/compressor';
 import FichasTecnicas from './features/fichas-tecnicas';
 import ImageOptimizer from './features/image-optimizer';
@@ -15,6 +17,8 @@ import PanelFotografico from './features/panel-fotografico/PanelFotograficoApp.t
 import DesinfeccionReservorios from './features/desinfeccion-reservorios/DesinfeccionReservoriosApp.tsx';
 import MaquinaBalde from './features/maquina-balde/MaquinaBaldeApp.tsx';
 import CalculatorWrapper from './features/calculator/CalculatorWrapper';
+import Login from './pages/Login';
+import UserPanel from './pages/admin/UserPanel';
 
 const legacyRoutes = [
     { path: 'index.html', to: '/' },
@@ -33,6 +37,10 @@ const legacyRoutes = [
 export default function AppRouter() {
     return (
         <Routes>
+            {/* Public route: Login */}
+            <Route path="login" element={<Login />} />
+
+            {/* Legacy redirects */}
             {legacyRoutes.map(({ path, to }) => (
                 <Route
                     key={path}
@@ -41,7 +49,12 @@ export default function AppRouter() {
                 />
             ))}
 
-            <Route element={<DashboardLayout />}>
+            {/* Protected routes inside DashboardLayout */}
+            <Route element={
+                <ProtectedRoute>
+                    <DashboardLayout />
+                </ProtectedRoute>
+            }>
                 <Route
                     index
                     element={
@@ -91,7 +104,7 @@ export default function AppRouter() {
                         </PageDocument>
                     }
                 />
-<Route
+                <Route
                     path="panel-fotografico"
                     element={
                         <PageDocument title="Panel Fotografico - Glitch" bodyClassName="bg-[#0d0d0d] text-[#eee]">
@@ -123,25 +136,47 @@ export default function AppRouter() {
                         </PageDocument>
                     }
                 />
+
+                {/* Admin routes */}
+                <Route
+                    path="admin/users"
+                    element={
+                        <AdminRoute>
+                            <UserPanel />
+                        </AdminRoute>
+                    }
+                />
             </Route>
 
+            {/* Protected routes outside DashboardLayout */}
             <Route
                 path="reportes-tecnicos"
                 element={
-                    <PageDocument title="Informes Tecnicos" bodyClassName="technical-theme bg-[#0d0d0d] text-[#eee]">
-                        <TechnicalReports />
-                    </PageDocument>
+                    <ProtectedRoute>
+                        <PageDocument title="Informes Tecnicos" bodyClassName="technical-theme bg-[#0d0d0d] text-[#eee]">
+                            <TechnicalReports />
+                        </PageDocument>
+                    </ProtectedRoute>
                 }
             />
             <Route
                 path="fichas-tecnicas"
                 element={
-                    <PageDocument title="Fichas Tecnicas" bodyClassName="technical-theme bg-[#0d0d0d] text-[#eee]">
-                        <FichasTecnicas />
-                    </PageDocument>
+                    <ProtectedRoute>
+                        <PageDocument title="Fichas Tecnicas" bodyClassName="technical-theme bg-[#0d0d0d] text-[#eee]">
+                            <FichasTecnicas />
+                        </PageDocument>
+                    </ProtectedRoute>
                 }
             />
-            <Route path="template-editor" element={<TemplateEditorPage />} />
+            <Route
+                path="template-editor"
+                element={
+                    <ProtectedRoute>
+                        <TemplateEditorPage />
+                    </ProtectedRoute>
+                }
+            />
 
             <Route path="*" element={<Navigate replace to="/" />} />
         </Routes>

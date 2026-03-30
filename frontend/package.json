@@ -11,10 +11,11 @@
     },
     "dependencies": {
         "@excalidraw/excalidraw": "^0.18.0",
-        "gio": "file:..",
         "axios": "^1.5.1",
         "browser-image-compression": "^2.0.2",
+        "firebase": "^12.11.0",
         "framer-motion": "^10.16.4",
+        "gio": "file:..",
         "html2canvas": "^1.4.1",
         "jszip": "^3.10.1",
         "lucide-react": "^0.284.0",
