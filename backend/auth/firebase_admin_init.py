@@ -49,10 +49,12 @@ def _initialize_firebase():
             logger.info("[Firebase] Initialized with Application Default Credentials")
             return _app
         except Exception:
-            raise RuntimeError(
-                "No se encontro configuracion de Firebase Admin. "
-                "Configura FIREBASE_SERVICE_ACCOUNT_PATH o FIREBASE_SERVICE_ACCOUNT_JSON."
+            logger.warning(
+                "[Firebase] No se encontro configuracion de Firebase Admin. "
+                "La autenticacion estara deshabilitada hasta que configures "
+                "FIREBASE_SERVICE_ACCOUNT_PATH o FIREBASE_SERVICE_ACCOUNT_JSON."
             )
+            return None
 
     _app = firebase_admin.initialize_app(cred)
     return _app
@@ -76,6 +78,12 @@ def verify_firebase_token(token: str) -> dict:
     Raises:
         firebase_admin.auth.InvalidIdTokenError: si el token es invalido
         firebase_admin.auth.ExpiredIdTokenError: si el token esta expirado
+        RuntimeError: si Firebase Admin no esta configurado
     """
-    get_firebase_app()  # Asegurar inicializacion
+    app = get_firebase_app()  # Asegurar inicializacion
+    if app is None:
+        raise RuntimeError(
+            "Firebase Admin SDK no esta configurado. "
+            "La verificacion de tokens no esta disponible."
+        )
     return firebase_auth.verify_id_token(token)
