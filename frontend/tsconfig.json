@@ -16,10 +16,6 @@
         "isolatedModules": true,
         "noEmit": true,
         "jsx": "react-jsx",
-        /* Context */
-        "types": [
-            "vite/client"
-        ],
         "baseUrl": ".",
         "paths": {
             "@/*": [

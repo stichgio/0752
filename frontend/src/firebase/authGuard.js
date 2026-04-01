@@ -1,5 +1,5 @@
 import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from './config';
+import { auth, hasFirebaseConfig } from './config';
 
 /**
  * Standalone auth guard for HTML pages that may not use the React SPA router.
@@ -11,6 +11,11 @@ import { auth } from './config';
  *   initAuthGuard();
  */
 export function initAuthGuard() {
+    if (!hasFirebaseConfig || !auth) {
+        window.location.replace('/login');
+        return;
+    }
+
     // Create a full-screen loading overlay to prevent content flash
     const overlay = document.createElement('div');
     overlay.id = 'auth-guard-overlay';

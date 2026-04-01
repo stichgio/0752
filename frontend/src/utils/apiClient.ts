@@ -20,6 +20,9 @@ export const apiClient = axios.create({
 // Request: attach fresh Firebase ID token
 apiClient.interceptors.request.use(async (config) => {
     try {
+        if (!auth) {
+            return config;
+        }
         const currentUser = auth.currentUser;
         if (currentUser) {
             const idToken = await currentUser.getIdToken();
@@ -39,7 +42,7 @@ apiClient.interceptors.response.use(
     async (error) => {
         if (axios.isAxiosError(error) && error.response?.status === 401) {
             try {
-                await auth.signOut();
+                await auth?.signOut();
             } catch { /* ignore */ }
             if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
                 window.location.replace('/login');

@@ -10,6 +10,7 @@ const ERROR_MESSAGES = {
     'auth/too-many-requests': 'Demasiados intentos. Intenta mas tarde',
     'auth/invalid-email': 'Correo electronico invalido',
     'auth/user-disabled': 'Esta cuenta ha sido desactivada',
+    'auth/configuration-missing': 'Firebase no esta configurado en el archivo .env',
 };
 
 function getErrorMessage(error) {
@@ -55,7 +56,7 @@ function InteractiveGrid() {
 }
 
 export default function Login() {
-    const { login, isAuthenticated, isLoading } = useAuth();
+    const { login, isAuthenticated, isLoading, hasFirebaseConfig, firebaseConfigError } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -136,6 +137,16 @@ export default function Login() {
                         </motion.div>
                     )}
 
+                    {!hasFirebaseConfig && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            className="mb-8 p-3 border border-amber-900/50 bg-amber-950/20 text-[11px] font-mono text-amber-400 uppercase tracking-widest antialiased"
+                        >
+                            <span className="opacity-50 mr-2">{'>'}</span> {firebaseConfigError}
+                        </motion.div>
+                    )}
+
                     <form onSubmit={handleSubmit} className="space-y-7">
                         <div className="space-y-3">
                             <label className="block text-[10px] font-mono text-neutral-500 uppercase tracking-[0.15em]">
@@ -169,7 +180,7 @@ export default function Login() {
                         <div className="pt-2">
                             <button
                                 type="submit"
-                                disabled={submitting}
+                                disabled={submitting || !hasFirebaseConfig}
                                 className="w-full relative group bg-[#1a1a1a] border border-[#3a3a3a] hover:border-neutral-400 text-neutral-300 px-4 py-3.5 text-[11px] font-mono uppercase tracking-[0.2em] transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed overflow-hidden"
                             >
                                 <div className="absolute inset-0 bg-neutral-200 translate-y-[101%] group-hover:translate-y-0 transition-transform duration-300 ease-[0.16,1,0.3,1]" />

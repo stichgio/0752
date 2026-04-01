@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
 from pathlib import Path
+import os
 
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+except ModuleNotFoundError:
+    def load_dotenv(*_args, **_kwargs):
+        return False
 
 # Cargar .env desde la raíz del repo y desde backend/ (antes de cualquier import que lea os.environ)
 _backend_dir = Path(__file__).resolve().parent
@@ -10,7 +15,6 @@ try:
     load_dotenv(_repo_root / ".env", encoding="utf-8")
     load_dotenv(_backend_dir / ".env", encoding="utf-8", override=True)
 except (UnicodeDecodeError, ValueError, OSError):
-    import os
     os.environ.setdefault('PYTHONPATH', './backend')
 
 from contextlib import asynccontextmanager
@@ -20,7 +24,6 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 import logging
-import os
 import json
 from typing import Any
 

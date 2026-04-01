@@ -9,6 +9,36 @@ const firebaseConfig = {
     appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-export const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+const requiredFirebaseKeys = [
+    'apiKey',
+    'authDomain',
+    'projectId',
+    'appId',
+];
+
+export const hasFirebaseConfig = requiredFirebaseKeys.every((key) => {
+    const value = firebaseConfig[key];
+    return typeof value === 'string' && value.trim().length > 0;
+});
+
+export const firebaseConfigError = hasFirebaseConfig
+    ? ''
+    : 'Faltan variables VITE_FIREBASE_* en el archivo .env del frontend.';
+
+let app = null;
+let auth = null;
+let db = null;
+
+if (hasFirebaseConfig) {
+    try {
+        app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        db = getFirestore(app);
+    } catch (error) {
+        console.error('[Firebase] Error initializing Firebase:', error);
+    }
+} else {
+    console.warn('[Firebase] Initialization skipped:', firebaseConfigError);
+}
+
+export { app, auth, db };
