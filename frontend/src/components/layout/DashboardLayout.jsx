@@ -15,6 +15,8 @@ import {
     Calculator,
     Droplet,
     PaintBucket,
+    Megaphone,
+    ScrollText,
     LogOut,
     Users,
     MoreHorizontal,
@@ -142,6 +144,20 @@ const NAV_CATALOG = [
         label: 'Calculadora',
         to: '/calculator',
         match: (pathname) => pathname.startsWith('/calculator'),
+    },
+    {
+        id: 'volantes-generator',
+        icon: Megaphone,
+        label: 'Generar Volantes',
+        to: '/volantes-generator',
+        match: (pathname) => pathname.startsWith('/volantes-generator'),
+    },
+    {
+        id: 'padron-generator',
+        icon: ScrollText,
+        label: 'Generar Padrones',
+        to: '/padron-generator',
+        match: (pathname) => pathname.startsWith('/padron-generator'),
     },
 ];
 
