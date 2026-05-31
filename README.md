@@ -366,7 +366,6 @@ MIT — Libre para uso comercial y personal
 
 ## 📞 Soporte
 
-- 📧 Email: stichgio@example.com
 - 💬 Issues: [GitHub Issues](https://github.com/stichgio/0752/issues)
 - 🐛 Bugs: Reportar con reproducible example
 
